@@ -99,11 +99,16 @@ def read_bpod_mat_data(ops):
             else:
                 elem_list.append(sub_elem)
         return elem_list
-    bpod_sess_data = sio.loadmat(
+    raw = sio.loadmat(
         os.path.join(ops['save_path0'], 'bpod_session_data.mat'),
         struct_as_record=False, squeeze_me=True)
-    bpod_sess_data = _check_keys(bpod_sess_data)
-    bpod_sess_data = bpod_sess_data['SessionData']
+    raw = _check_keys(raw)['SessionData']
+    trial_seq = [[0]*5 + raw['ProcessedSessionData'][i]['trial_seq'] + [0]*5
+                 for i in range(raw['nTrials'])]
+    trial_seq = np.concatenate(trial_seq)
+    bpod_sess_data = {
+        'jitter_flag' : np.array(raw['JitterFlag']),
+        'opto_flag' : np.array(raw['OptoTag']),
+        'trial_seq' : trial_seq,
+        }
     return bpod_sess_data
-
-

@@ -11,6 +11,32 @@ from postprocess.ReadResults import read_dff
 from postprocess.ReadResults import read_neural_trials
 
 
+#%% ppc
+
+def plot_example_spikes()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # get saved results.
 
 def read_data(ops):

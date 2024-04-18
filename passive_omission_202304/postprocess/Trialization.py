@@ -6,6 +6,7 @@ import numpy as np
 
 from postprocess.ReadResults import read_raw_voltages
 from postprocess.ReadResults import read_dff
+from postprocess.ReadResults import read_bpod_mat_data
 
 
 # detect the rising edge and falling edge of binary series.
@@ -39,12 +40,39 @@ def correct_time_img_center(time_img):
     return time_neuro
 
 
+# labeling grating sequence with bpod session data.
+
+def label_stim_seq(vol_stim_bin, bpod_sess_data):
+    try:
+        # get edges for trial sequence in bpod session data.
+        trial_seq = bpod_sess_data['trial_seq']
+        diff_trial_seq = np.diff(trial_seq, prepend=0)
+        diff_trial_seq = diff_trial_seq[diff_trial_seq!=0]
+        # get edges for stimulus voltage recording.
+        diff_vol_stim_bin = np.diff(vol_stim_bin, prepend=0)
+        if len(diff_trial_seq) != len(np.where(diff_vol_stim_bin!=0)[0]):
+            raise ValueError('Grating number is not consistent')
+        else:
+            label_stim = vol_stim_bin.copy()
+            non_zero_indexes = np.where(diff_vol_stim_bin != 0)[0]
+            for i in range(len(diff_trial_seq) // 2):
+                stim_start_idx = non_zero_indexes[i * 2]
+                stim_end_idx = non_zero_indexes[i * 2 + 1]
+                label = diff_trial_seq[i * 2]
+                label_stim[stim_start_idx: stim_end_idx] = label   
+    except:
+        print('Labeling failed and return with original voltage')
+        label_stim = vol_stim_bin
+    return label_stim
+
+
 # align the stimulus sequence with fluorescence signal.
 
 def align_stim(
         vol_time,
         time_neuro,
         vol_stim_bin,
+        label_stim,
         ):
     # find the rising and falling time of stimulus.
     stim_time_up, stim_time_down = get_trigger_time(
@@ -63,7 +91,8 @@ def align_stim(
     # reconstruct stimulus sequence.
     stim = np.zeros(len(time_neuro))
     for i in range(len(stim_start)):
-        stim[stim_start[i]:stim_end[i]] = 1
+        label = label_stim[vol_time==stim_time_up[i]][0]
+        stim[stim_start[i]:stim_end[i]] = label
     return stim
 
 
@@ -93,22 +122,22 @@ def get_trial_start_end(
 # trial segmentation.
 
 def trial_split(
-        dff,
-        stim,
-        time_neuro,
-        start, end
+        start, end,
+        dff, stim, time_neuro,
+        label_stim, vol_time,
         ):
     neural_trials = dict()
     for i in range(len(start)):
-        # find start and end timing index.
-        start_idx = np.where(time_neuro > start[i])[0][0]
-        end_idx = np.where(time_neuro < end[i])[0][-1] if end[i] != -1 else -1
-        # save time and stimulus for each trial.
         neural_trials[str(i)] = dict()
-        neural_trials[str(i)]['time'] = time_neuro[start_idx:end_idx]
-        neural_trials[str(i)]['stim'] = stim[start_idx:end_idx]
-        # save traces for each trial.
-        neural_trials[str(i)]['dff'] = dff[:,start_idx:end_idx]
+        start_idx_dff = np.where(time_neuro > start[i])[0][0]
+        end_idx_dff   = np.where(time_neuro < end[i])[0][-1] if end[i] != -1 else -1
+        neural_trials[str(i)]['time'] = time_neuro[start_idx_dff:end_idx_dff]
+        neural_trials[str(i)]['stim'] = stim[start_idx_dff:end_idx_dff]
+        neural_trials[str(i)]['dff'] = dff[:,start_idx_dff:end_idx_dff]
+        start_idx_vol = np.where(vol_time > start[i])[0][0]
+        end_idx_vol   = np.where(vol_time < end[i])[0][-1] if end[i] != -1 else -1
+        neural_trials[str(i)]['vol_stim'] = label_stim[start_idx_vol:end_idx_vol]
+        neural_trials[str(i)]['vol_time'] = vol_time[start_idx_vol:end_idx_vol]
     return neural_trials
 
 
@@ -138,36 +167,6 @@ def save_trials(
     f.close()
 
 
-# tentative function to hard code trial types for passive sessions.
-
-def add_jitter_flag(ops, neural_trials):
-    from sklearn.mixture import GaussianMixture
-    def frame_dur(stim, time):
-        diff_stim = np.diff(stim, prepend=0)
-        idx_up   = np.where(diff_stim == 1)[0]
-        idx_down = np.where(diff_stim == -1)[0]
-        dur_high = time[idx_down] - time[idx_up]
-        dur_low  = time[idx_up[1:]] - time[idx_down[:-1]]
-        return [dur_high, dur_low]
-    def get_mean_std(isi):
-        gmm = GaussianMixture(n_components=2)
-        gmm.fit(isi.reshape(-1,1))
-        std = np.mean(np.sqrt(gmm.covariances_.flatten()))
-        return std
-    thres = 25
-    jitter_flag = []
-    for i in range(len(neural_trials)):
-        stim = neural_trials[str(i)]['stim']
-        time = neural_trials[str(i)]['time']
-        [_, isi] = frame_dur(stim, time)
-        std = get_mean_std(isi)
-        jitter_flag.append(std)
-    jitter_flag = np.array(jitter_flag)
-    jitter_flag[jitter_flag<thres] = 0
-    jitter_flag[jitter_flag>thres] = 1
-    np.save(os.path.join(ops['save_path0'], 'jitter_flag.npy'), jitter_flag)
-
-
 # main function for trialization
 
 def run(ops):
@@ -187,23 +186,28 @@ def run(ops):
         time_img, _   = get_trigger_time(vol_time, vol_img_bin)
         # correct imaging timing.
         time_neuro = correct_time_img_center(time_img)
+        
+        # label gratings with session data.
+        print('Reading Bpod session data')
+        bpod_sess_data = read_bpod_mat_data(ops)
+        print('Labeling gratings')
+        label_stim = label_stim_seq(vol_stim_bin, bpod_sess_data)
     
         # stimulus alignment.
         print('Aligning stimulus to 2p frame')
-        stim = align_stim(vol_time, time_neuro, vol_stim_bin)
+        stim = align_stim(vol_time, time_neuro, vol_stim_bin, label_stim)
     
         # trial segmentation.
         print('Segmenting trials')
         start, end = get_trial_start_end(vol_time, vol_start_bin)
-        neural_trials = trial_split(dff, stim, time_neuro, start, end)
+        neural_trials = trial_split(
+            start, end,
+            dff, stim, time_neuro,
+            label_stim, vol_time)
     
         # save the final data.
         print('Saving trial data')
         save_trials(ops, neural_trials)
-    
-        # add trial type.
-        print('Getting trial meta infomation')
-        add_jitter_flag(ops, neural_trials)
     
     except:
         print('Trialization failed')

@@ -51,23 +51,21 @@ if __name__ == "__main__":
     parser.add_argument('--range_footprint', required=True, type=str, help='The range of footprint for quality control')
     parser.add_argument('--max_aspect',      required=True, type=str, help='The maximum value of aspect ratio for quality control.')
     args = parser.parse_args()
+    range_skew, max_connect, max_aspect, range_footprint = get_qc_args(args)
+    ops = read_ops(args.session_name)
 
     '''
-    session_name = 'FN16_P_20240408_omi_t'
+    session_name = 'FN15_P_20240412_omi_t'
     ops = read_ops(session_name)
     range_skew = [0,5]
     max_connect = 1
-    max_aspect = 5
-    range_footprint = [0,3]
+    max_aspect = 1.3
+    range_footprint = [1,2]
 
     QualControlDataIO.run(
         ops, range_skew, max_connect, max_aspect, range_footprint,
         run_qc=False)
     '''
-
-    range_skew, max_connect, max_aspect, range_footprint = get_qc_args(args)
-
-    ops = read_ops(args.session_name)
 
     QualControlDataIO.run(
         ops, range_skew, max_connect, max_aspect, range_footprint)
@@ -78,4 +76,4 @@ if __name__ == "__main__":
 
     Trialization.run(ops)
 
-    Visualization.run(ops)
+    # Visualization.run(ops)

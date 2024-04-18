@@ -75,8 +75,7 @@ def plot_ppc_anat_mean(ax, mean_anat, masks, labels):
     anat_img = np.zeros((mean_anat.shape[0], mean_anat.shape[1], 3))
     anat_img[:,:,0] = adjust_contrast(mean_anat)
     anat_img = adjust_contrast(anat_img)
-    labeled_masks_img = get_labeled_masks_img(masks, labels)
-    x_all, y_all = np.where(find_boundaries(labeled_masks_img[:,:,0]))
+    x_all, y_all = np.where(find_boundaries(masks))
     for x,y in zip(x_all, y_all):
         anat_img[x,y,:] = np.array([255,255,255])
     ax.matshow(anat_img)

@@ -65,6 +65,7 @@ def get_stim_response(
         fluo = neural_trials[str(trials)]['dff']
         stim = neural_trials[str(trials)]['stim']
         time = neural_trials[str(trials)]['time']
+        stim[stim!=0] = 1
         # compute stimulus start point.
         grat_start = get_grating_start(stim)
         for idx in grat_start:
@@ -149,7 +150,7 @@ def adjust_layout(ax):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.set_xlabel('time since center grating start (ms)')
-    ax.set_ylabel('response')
+    ax.set_ylabel('df/f (z-scored)')
     ax.legend(loc='upper right')
 
 
@@ -177,10 +178,11 @@ def plot_ppc_exc_mean(
     jitter_sem = sem(jitter_all, axis=0)
     upper = np.max(fix_mean) + np.max(fix_sem)
     lower = np.min(fix_mean) - np.max(fix_sem)
-    ax.plot(
+    ax.fill_between(
         fix_stim_time,
-        rescale(stim_vol_fix, upper, lower),
-        color='grey', label='fix stim')
+        lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+        where=(stim_vol_fix==1),
+        color='silver', step='mid', label='fix stim')
     ax.plot(
         fix_stim_time,
         rescale(stim_vol_jitter, upper, lower),
@@ -188,21 +190,21 @@ def plot_ppc_exc_mean(
     ax.plot(
         fix_neu_time,
         fix_mean,
-        color='seagreen', label='excitory_fix')
+        color='mediumseagreen', label='excitory_fix')
     ax.plot(
         jitter_neu_time,
         jitter_mean,
-        color='mediumspringgreen', label='excitory_jitter')
+        color='turquoise', label='excitory_jitter')
     ax.fill_between(
         fix_neu_time,
         fix_mean - fix_sem,
         fix_mean + fix_sem,
-        color='seagreen', alpha=0.2)
+        color='mediumseagreen', alpha=0.2)
     ax.fill_between(
         jitter_neu_time,
         jitter_mean - jitter_sem,
         jitter_mean + jitter_sem,
-        color='mediumspringgreen', alpha=0.2)
+        color='turquoise', alpha=0.2)
     adjust_layout(ax)
     ax.set_xlim([np.min(fix_stim_time), np.max(fix_stim_time)])
     ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
@@ -232,10 +234,11 @@ def plot_ppc_inh_mean(
     jitter_sem = sem(jitter_all, axis=0)
     upper = np.max(fix_mean) + np.max(fix_sem)
     lower = np.min(fix_mean) - np.max(fix_sem)
-    ax.plot(
+    ax.fill_between(
         fix_stim_time,
-        rescale(stim_vol_fix, upper, lower),
-        color='grey', label='fix stim')
+        lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+        where=(stim_vol_fix==1),
+        color='silver', step='mid', label='fix stim')
     ax.plot(
         fix_stim_time,
         rescale(stim_vol_jitter, upper, lower),

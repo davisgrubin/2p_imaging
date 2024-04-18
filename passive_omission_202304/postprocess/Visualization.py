@@ -7,6 +7,7 @@ from postprocess.ReadResults import read_raw_voltages
 from postprocess.ReadResults import read_dff
 from postprocess.ReadResults import read_neural_trials
 from postprocess.ReadResults import read_move_offset
+from postprocess.ReadResults import read_bpod_mat_data
 
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
@@ -26,9 +27,12 @@ from plot.fig3_align_omi import plot_ppc_exc_omi_mean
 from plot.fig3_align_omi import plot_ppc_inh_omi_mean
 from plot.fig3_align_omi import plot_ppc_omi_fix_heatmap
 from plot.fig3_align_omi import plot_ppc_omi_jitter_heatmap
+from plot.fig3_align_omi import plot_ppc_omi_isi
+from plot.fig5_raw_traces import plot_ppc_examplt_traces
 from plot.misc import plot_motion_offset_hist
 from plot.misc import plot_inh_exc_label_pc
 from plot.misc import plot_isi_distribution
+from plot.misc import plot_omi_distribution
 
 
 [labels,
@@ -45,9 +49,8 @@ dff = read_dff(ops)
 
 neural_trials = read_neural_trials(ops)
 
-jitter_flag = np.load(
-    os.path.join(ops['save_path0'], 'jitter_flag.npy'),
-    allow_pickle=True)
+bpod_sess_data = read_bpod_mat_data(ops)
+jitter_flag = bpod_sess_data['jitter_flag']
 
 [xoff, yoff] = read_move_offset(ops)
 
@@ -70,13 +73,20 @@ ax10 = plt.subplot(gs[5, 2:4])
 # omission heatmap.
 ax11 = plt.subplot(gs[4, 4])
 ax12 = plt.subplot(gs[4, 5])
+# jitter omission response.
+ax13 = plt.subplot(gs[5, 4])
 
 # offset.
-ax13 = plt.subplot(gs[0, 6])
+ax14 = plt.subplot(gs[0, 6])
 # labels.
-ax14 = plt.subplot(gs[0, 7])
+ax15 = plt.subplot(gs[0, 7])
 # isi distribution.
-ax15 = plt.subplot(gs[1, 6])
+ax16 = plt.subplot(gs[1, 6])
+# omission distribution.
+ax17 = plt.subplot(gs[1, 7])
+
+# example traces.
+ax18 = plt.subplot(gs[2:4, 6:8])
 
 
 # plot results.
@@ -103,14 +113,22 @@ plot_ppc_omi_fix_heatmap(ax11,
 plot_ppc_omi_jitter_heatmap(ax12,
     vol_stim_bin, vol_time, neural_trials, jitter_flag, labels)
 
-plot_motion_offset_hist(ax13, xoff, yoff)
+plot_ppc_omi_isi(ax13,
+    vol_stim_bin, vol_time, neural_trials, jitter_flag, labels)
 
-plot_inh_exc_label_pc(ax14, labels)
+plot_motion_offset_hist(ax14, xoff, yoff)
 
-plot_isi_distribution(ax15, vol_stim_bin, vol_time)
+plot_inh_exc_label_pc(ax15, labels)
+
+plot_isi_distribution(ax16, neural_trials, jitter_flag)
+
+plot_omi_distribution(ax17, neural_trials, jitter_flag)
+
+plot_ppc_examplt_traces(ax18,
+    dff, labels, vol_stim_bin, vol_img_bin, vol_time)
 
 # save figure.
-fig.set_size_inches(32, 24)
+fig.set_size_inches(56, 42)
 fig.savefig(os.path.join(
     ops['save_path0'], 'figures', 'session_report_'+session_name+'.pdf'),
     dpi=300)
