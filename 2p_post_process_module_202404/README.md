@@ -3,7 +3,7 @@
 Run on windows command line window:
 ```
 python run_postprocess.py `
---session_name 'FN15_P_omi_032124_w' `
+--session_data_path 'FN15_P_omi_032124_w' `
 --range_skew '0,5' `
 --max_connect '3' `
 --range_footprint '1,3' `
