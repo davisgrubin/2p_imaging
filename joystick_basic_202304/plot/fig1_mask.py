@@ -164,7 +164,7 @@ def plot_ppc_roi_func(ax, roi_id, max_func, masks):
     c = int(max(0, min(masks.shape[1] - size, center_col - size/2)))
     max_func_img = max_func[r:r+size, c:c+size]
     roi_masks = (masks[r:r+size, c:c+size]==(roi_id+1))*1
-    img = np.zeros((max_func_img.shape[0], max_func_img.shape[1], 3), dtype='uint8')
+    img = np.zeros((max_func_img.shape[0], max_func_img.shape[1], 3))
     img[:,:,1] = max_func_img
     img = adjust_contrast(img)
     x_all, y_all = np.where(find_boundaries(roi_masks))
@@ -189,7 +189,7 @@ def plot_ppc_roi_anat(ax, roi_id, mean_anat, masks):
     c = int(max(0, min(masks.shape[1] - size, center_col - size/2)))
     mean_anat_img = mean_anat[r:r+size, c:c+size]
     roi_masks = (masks[r:r+size, c:c+size]==(roi_id+1))*1
-    img = np.zeros((mean_anat_img.shape[0], mean_anat_img.shape[1], 3), dtype='uint8')
+    img = np.zeros((mean_anat_img.shape[0], mean_anat_img.shape[1], 3))
     img[:,:,0] = mean_anat_img
     img = adjust_contrast(img)
     x_all, y_all = np.where(find_boundaries(roi_masks))
@@ -249,71 +249,3 @@ def plot_ppc_roi_masks(ax, roi_id, masks):
         str(roi_id).zfill(4)))
 
     
-#%% crbl
-
-'''
-# main function for plot.
-
-def plot_fig1(ops):
-
-    try:
-        print('plotting fig1 masks')
-
-        # read mask from in save_path0 in ops.
-        [labels,
-         masks,
-         mean_func, max_func,
-         mean_anat] = read_masks(ops)
-
-        # 1 channel data.
-        if ops['nchannels'] == 1:
-
-            # plot figs.
-            fig, axs = plt.subplots(1, 3, figsize=(12, 4))
-            plt.subplots_adjust(hspace=0.6)
-            plt.subplots_adjust(wspace=0.6)
-
-            # mean image.
-            axs[0].matshow(
-                adjust_contrast(mean_func),
-                cmap=LinearSegmentedColormap.from_list(
-                    "black_green", [(0, 0, 0), (0, 1, 0)]))
-            axs[0].set_title('mean')
-
-            # max projection.
-            axs[1].matshow(
-                adjust_contrast(max_func),
-                cmap=LinearSegmentedColormap.from_list(
-                    "black_green", [(0, 0, 0), (0, 1, 0)]))
-            axs[1].set_title('max projection')
-
-            # ROI masks.
-            colors = plt.cm.nipy_spectral(np.linspace(0, 1, int(np.max(masks)+1)))
-            np.random.shuffle(colors)
-            colors[0,:] = [0,0,0,1]
-            cmap = ListedColormap(colors)
-            axs[2].matshow(masks, cmap=cmap)
-            axs[2].set_title('ROI masks')
-
-            # adjust layout
-            for i in range(axs.shape[0]):
-                axs[i].tick_params(tick1On=False)
-                axs[i].spines['left'].set_visible(False)
-                axs[i].spines['right'].set_visible(False)
-                axs[i].spines['top'].set_visible(False)
-                axs[i].spines['bottom'].set_visible(False)
-                axs[i].set_xticks([])
-                axs[i].set_yticks([])
-            fig.suptitle('Channel images and masks by suite2p')
-            fig.tight_layout()
-
-        # save figure
-        fig.savefig(os.path.join(
-            ops['save_path0'], 'figures',
-            'fig1_mask.pdf'),
-            dpi=300)
-        plt.close()
-
-    except:
-        print('plotting fig1 failed')
-'''
