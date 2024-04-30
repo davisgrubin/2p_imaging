@@ -13,7 +13,7 @@ def adjust_contrast(org_img, lower_percentile=50, upper_percentile=99):
     lower = np.percentile(org_img, lower_percentile)
     upper = np.percentile(org_img, upper_percentile)
     img = np.clip((org_img - lower) * 255 / (upper - lower), 0, 255)
-    img = img.astype(np.uint8)
+    img = img.astype('int32')
     return img
 
 
@@ -37,10 +37,10 @@ def get_labeled_masks_img(
         masks,
         labels,
         ):
-    labeled_masks_img = np.zeros((masks.shape[0], masks.shape[1], 3), dtype='uint8')
+    labeled_masks_img = np.zeros((masks.shape[0], masks.shape[1], 3), dtype='int32')
     neuron_idx = np.where(labels == 1)[0] + 1
     for i in neuron_idx:
-        neuron_mask = ((masks == i) * 255).astype('uint8')
+        neuron_mask = ((masks == i) * 255).astype('int32')
         labeled_masks_img[:,:,0] += neuron_mask
     return labeled_masks_img
 
@@ -48,7 +48,7 @@ def get_labeled_masks_img(
 # functional channel max projection.
 
 def plot_ppc_func_max(ax, max_func, masks):
-    func_img = np.zeros((max_func.shape[0], max_func.shape[1], 3), dtype='uint8')
+    func_img = np.zeros((max_func.shape[0], max_func.shape[1], 3), dtype='int32')
     func_img[:,:,1] = adjust_contrast(max_func)
     func_img = adjust_contrast(func_img)
     x_all, y_all = np.where(find_boundaries(masks))
@@ -73,7 +73,7 @@ def plot_ppc_func_masks(ax, masks):
 # anatomy channel mean image.
 
 def plot_ppc_anat_mean(ax, mean_anat, masks, labels):
-    anat_img = np.zeros((mean_anat.shape[0], mean_anat.shape[1], 3), dtype='uint8')
+    anat_img = np.zeros((mean_anat.shape[0], mean_anat.shape[1], 3), dtype='int32')
     anat_img[:,:,0] = adjust_contrast(mean_anat)
     anat_img = adjust_contrast(anat_img)
     x_all, y_all = np.where(find_boundaries(masks))
@@ -100,7 +100,7 @@ def plot_ppc_anat_label_masks(ax, masks, labels):
 # superimpose image.
 
 def plot_ppc_superimpose(ax, max_func, mean_anat, masks, labels):
-    super_img = np.zeros((max_func.shape[0], max_func.shape[1], 3), dtype='uint8')
+    super_img = np.zeros((max_func.shape[0], max_func.shape[1], 3), dtype='int32')
     super_img[:,:,0] = adjust_contrast(mean_anat)
     super_img[:,:,1] = adjust_contrast(max_func)
     super_img = adjust_contrast(super_img)
@@ -120,7 +120,7 @@ def plot_ppc_shared_masks(ax, masks, labels):
     label_masks[:,:,0] = get_labeled_masks_img(masks, labels)[:,:,0]
     label_masks[:,:,1] = masks
     label_masks[label_masks >= 1] = 255
-    label_masks = label_masks.astype('uint8')
+    label_masks = label_masks.astype('int32')
     ax.matshow(label_masks)
     adjust_layout(ax)
     ax.set_title('channel masks superimpose')
@@ -129,15 +129,15 @@ def plot_ppc_shared_masks(ax, masks, labels):
 # ROI global location.
 
 def plot_ppc_roi_loc(ax, roi_id, max_func, mean_anat, masks, labels):
-    super_img = np.zeros((max_func.shape[0], max_func.shape[1], 3), dtype='uint8')
+    super_img = np.zeros((max_func.shape[0], max_func.shape[1], 3), dtype='int32')
     super_img[:,:,0] = adjust_contrast(mean_anat)
     super_img[:,:,1] = adjust_contrast(max_func)
     super_img = adjust_contrast(super_img)
     x_all, y_all = np.where(masks==(roi_id+1))
-    c_x = np.mean(x_all).astype('uint8')
-    c_y = np.mean(y_all).astype('uint8')
-    super_img[c_x,:,:] = np.array([0,0,255])
-    super_img[:,c_y,:] = np.array([0,0,255])
+    c_x = np.mean(x_all).astype('int32')
+    c_y = np.mean(y_all).astype('int32')
+    super_img[c_x,:,:] = np.array([128,128,255])
+    super_img[:,c_y,:] = np.array([128,128,255])
     for x,y in zip(x_all, y_all):
         super_img[x,y,:] = np.array([255,255,255])
     ax.matshow(super_img)
@@ -205,7 +205,7 @@ def plot_ppc_roi_anat(ax, roi_id, mean_anat, masks):
 
 def plot_ppc_roi_superimpose(ax, roi_id, max_func, mean_anat, masks):
     size = 128
-    super_img = np.zeros((max_func.shape[0], max_func.shape[1], 3), dtype='uint8')
+    super_img = np.zeros((max_func.shape[0], max_func.shape[1], 3), dtype='int32')
     super_img[:,:,0] = adjust_contrast(mean_anat)
     super_img[:,:,1] = adjust_contrast(max_func)
     super_img = adjust_contrast(super_img)
@@ -239,7 +239,7 @@ def plot_ppc_roi_masks(ax, roi_id, masks):
     r = int(max(0, min(masks.shape[0] - size, center_row - size/2)))
     c = int(max(0, min(masks.shape[1] - size, center_col - size/2)))
     roi_masks = (masks[r:r+size, c:c+size]==(roi_id+1))*1
-    img = np.zeros((roi_masks.shape[0], roi_masks.shape[1], 3), dtype='uint8')
+    img = np.zeros((roi_masks.shape[0], roi_masks.shape[1], 3), dtype='int32')
     x_all, y_all = np.where(roi_masks)
     for x,y in zip(x_all, y_all):
         img[x,y,:] = np.array([255,255,255])
@@ -247,5 +247,4 @@ def plot_ppc_roi_masks(ax, roi_id, masks):
     adjust_layout(ax)
     ax.set_title('ROI # {} masks'.format(
         str(roi_id).zfill(4)))
-
     
