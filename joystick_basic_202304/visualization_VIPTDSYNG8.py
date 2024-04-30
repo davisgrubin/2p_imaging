@@ -183,7 +183,7 @@ def plot_js_ppc_individual_roi(ops):
     with PdfPages(os.path.join(
             ops['save_path0'], 'figures', 'roi_report.pdf')
             ) as pdf:
-        #dff.shape[0]
+
         for roi_id in tqdm(range(dff.shape[0])):
             fig = plt.figure(layout='tight')
             gs = GridSpec(2+trace_num_fig, 10, figure=fig)
