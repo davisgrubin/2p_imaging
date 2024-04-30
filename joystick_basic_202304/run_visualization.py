@@ -132,7 +132,6 @@ def plot_js_ppc_seesion_report(ops):
     
     # isi distribution.
     isi_ax = plt.subplot(gs[1, 7])
-    
     plot_isi_distribution(isi_ax, neural_trials)
     
     # save figure.
