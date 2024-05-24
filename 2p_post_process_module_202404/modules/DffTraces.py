@@ -12,6 +12,7 @@ def get_dff(
         ops,
         fluo,
         neuropil,
+        norm,
         ):
     # correct with neuropil signals.
     dff = fluo.copy() - ops['neucoeff']*neuropil
@@ -20,8 +21,9 @@ def get_dff(
     for j in range(dff.shape[0]):
         # baseline subtraction.
         dff[j,:] = ( dff[j,:] - f0[j,:] ) / f0[j,:]
-        # z score.
-        dff[j,:] = (dff[j,:] - np.mean(dff[j,:])) / (np.std(dff[j,:]) + 1e-5)
+        if norm:
+            # z score.
+            dff[j,:] = (dff[j,:] - np.mean(dff[j,:])) / (np.std(dff[j,:]) + 1e-5)
     return dff
 
 
@@ -35,7 +37,7 @@ def save_dff(ops, dff):
 
 # main function to compute spikings.
 
-def run(ops):
+def run(ops, norm=True):
     print('===============================================')
     print('=========== dff trace normalization ===========')
     print('===============================================')
@@ -47,7 +49,7 @@ def run(ops):
         os.path.join(ops['save_path0'], 'qc_results', 'neuropil.npy'),
         allow_pickle=True)
     print('Running baseline subtraction and normalization')
-    dff = get_dff(ops, fluo, neuropil)
+    dff = get_dff(ops, fluo, neuropil, norm)
     print('Results saved')
     save_dff(ops, dff)
 

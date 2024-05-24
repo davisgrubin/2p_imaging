@@ -9,9 +9,15 @@ from skimage.measure import label
 # read raw results from suite2p pipeline.
 
 def read_raw(ops):
-    F    = np.load(os.path.join(ops['save_path'], 'F.npy'),    allow_pickle=True)
-    Fneu = np.load(os.path.join(ops['save_path'], 'Fneu.npy'), allow_pickle=True)
-    stat = np.load(os.path.join(ops['save_path'], 'stat.npy'), allow_pickle=True)
+    F = np.load(
+        os.path.join(ops['save_path0'],
+        'suite2p', 'plane0', 'F.npy'), allow_pickle=True)
+    Fneu = np.load(
+        os.path.join(ops['save_path0'],
+        'suite2p', 'plane0', 'Fneu.npy'), allow_pickle=True)
+    stat = np.load(
+        os.path.join(ops['save_path0'],
+        'suite2p', 'plane0', 'stat.npy'), allow_pickle=True)
     return [F, Fneu, stat]
 
 
@@ -23,6 +29,7 @@ def get_metrics(ops, stat):
     footprint = np.array([stat[i]['footprint']    for i in range(len(stat))])
     skew      = np.array([stat[i]['skew']         for i in range(len(stat))])
     aspect    = np.array([stat[i]['aspect_ratio'] for i in range(len(stat))])
+    compact   = np.array([stat[i]['compact'] for i in range(len(stat))])
     # compute connetivity of ROIs.
     masks = stat_to_masks(ops, stat)
     connect = []
@@ -32,13 +39,20 @@ def get_metrics(ops, stat):
         # find component number.
         connect.append(np.max(label(m, connectivity=1)))
     connect = np.array(connect)
-    return skew, connect, aspect, footprint
+    return skew, connect, aspect, compact, footprint
 
 
 # threshold the statistics to keep good ROIs.
 
-def thres_stat(ops, stat, range_skew, max_connect, max_aspect, range_footprint):
-    skew, connect, aspect, footprint = get_metrics(ops, stat)
+def thres_stat(
+        ops, stat,
+        range_skew,
+        max_connect,
+        max_aspect,
+        range_compact,
+        range_footprint
+        ):
+    skew, connect, aspect, compact, footprint = get_metrics(ops, stat)
     # find bad roi indice.
     bad_roi_id = set()
     bad_roi_id = bad_roi_id.union(
@@ -50,6 +64,9 @@ def thres_stat(ops, stat, range_skew, max_connect, max_aspect, range_footprint):
     bad_roi_id = bad_roi_id.union(
         bad_roi_id,
         np.where(aspect>max_aspect)[0])
+    bad_roi_id = bad_roi_id.union(
+        bad_roi_id,
+        np.where((compact<range_compact[0]) | (compact>range_compact[1]))[0])
     bad_roi_id = bad_roi_id.union(
         bad_roi_id,
         np.where(connect>max_connect)[0])
@@ -119,7 +136,7 @@ def save_move_offset(ops):
 
 def run(
         ops,
-        range_skew, max_connect, max_aspect, range_footprint,
+        range_skew, max_connect, max_aspect, range_compact, range_footprint,
         run_qc=True
         ):
     print('===============================================')
@@ -131,10 +148,16 @@ def run(
         range_skew[0], range_skew[1]))
     print('Found max number of connectivity components as {}'.format(
         max_connect))
+    print('Found maximum aspect ratio as {}'.format(
+        max_aspect))
+    print('Found range of campact as {}'.format(
+        range_compact))
     [F, Fneu, stat] = read_raw(ops)
     print('Found {} ROIs from suite2p'.format(F.shape[0]))
     if run_qc:
-        bad_roi_id = thres_stat(ops, stat, range_skew, max_connect, max_aspect, range_footprint)
+        bad_roi_id = thres_stat(
+            ops, stat,
+            range_skew, max_connect, max_aspect, range_compact, range_footprint)
         print('Found {} bad ROIs'.format(len(bad_roi_id)))
     else:
         bad_roi_id = []
