@@ -4,6 +4,7 @@ import json
 import h5py
 import shutil
 import argparse
+import numpy as np
 import pandas as pd
 from datetime import datetime
 
@@ -92,16 +93,53 @@ def process_vol(args):
         df_vol = pd.read_csv(
             os.path.join(args.data_path, vol_record[0]),
             engine='python')
-        # column 0: time index in ms.
-        # column 1: trial start signal from bpod.
-        # column 2: stimulus signal from photodiode.
-        # column 3: BNC2 not in use.
-        # column 4: image trigger signal from 2p scope camera.
-        vol_time  = df_vol.iloc[:,0].to_numpy()
-        vol_start = df_vol.iloc[:,1].to_numpy()
-        vol_stim  = df_vol.iloc[:,2].to_numpy()
-        vol_img   = df_vol.iloc[:,4].to_numpy()
-        return vol_time, vol_start, vol_stim, vol_img
+        # time index in ms.
+        vol_time  = df_vol['Time(ms)'].to_numpy()
+        # AI0: Bpod BNC1 (trial start signal from bpod).
+        if ' Input 0' in df_vol.columns.tolist():
+            vol_start = df_vol[' Input 0'].to_numpy()
+        else:
+            vol_start = np.zeros_like(vol_time)
+        # AI1: sync patch and photodiode (visual stimulus).
+        if ' Input 1' in df_vol.columns.tolist():
+            vol_stim_vis = df_vol[' Input 1'].to_numpy()
+        else:
+            vol_stim_vis = np.zeros_like(vol_time)
+        # AI2: HIFI BNC output.
+        if ' Input 2' in df_vol.columns.tolist():
+            vol_hifi = df_vol[' Input 2'].to_numpy()
+        else:
+            vol_hifi = np.zeros_like(vol_time)
+        # AI3: ETL scope imaging output (2p microscope image trigger signal).
+        if ' Input 3' in df_vol.columns.tolist():
+            vol_img = df_vol[' Input 3'].to_numpy()
+        else:
+            vol_img = np.zeros_like(vol_time)
+        # AI4: Hifi audio output waveform (HIFI waveform signal).
+        if ' Input 4' in df_vol.columns.tolist():
+            vol_stim_aud = df_vol[' Input 4'].to_numpy()
+        else:
+            vol_stim_aud = np.zeros_like(vol_time)
+        # AI5: FLIR output.
+        if ' Input 5' in df_vol.columns.tolist():
+            vol_flir = df_vol[' Input 5'].to_numpy()
+        else:
+            vol_flir = np.zeros_like(vol_time)
+        # AI6: PMT shutter.
+        if ' Input 6' in df_vol.columns.tolist():
+            vol_pmt = df_vol[' Input 6'].to_numpy()
+        else:
+            vol_pmt = np.zeros_like(vol_time)
+        vol = {
+            'vol_time'     : vol_time,
+            'vol_start'    : vol_start,
+            'vol_stim_vis' : vol_stim_vis,
+            'vol_hifi'     : vol_hifi,
+            'vol_img'      : vol_img,
+            'vol_stim_aud' : vol_stim_aud,
+            'vol_flir'     : vol_flir,
+            'vol_pmt'      : vol_pmt}
+        return vol
 
     # threshold the continuous voltage recordings to 01 series.
     def thres_binary(
@@ -114,21 +152,16 @@ def process_vol(args):
         return data_bin
 
     # convert all voltage recordings to binary series.
-    def vol_to_binary(
-            vol_start,
-            vol_stim,
-            vol_img
-            ):
-        vol_start_bin = thres_binary(vol_start, 1)
-        vol_stim_bin  = thres_binary(vol_stim, 1)
-        vol_img_bin   = thres_binary(vol_img, 1)
-        return vol_start_bin, vol_stim_bin, vol_img_bin
+    def vol_to_binary(vol):
+        vol['vol_start']    = thres_binary(vol['vol_start'],    1)
+        vol['vol_stim_vis'] = thres_binary(vol['vol_stim_vis'], 1)
+        vol['vol_hifi']     = thres_binary(vol['vol_hifi'],     0.5)
+        vol['vol_img']      = thres_binary(vol['vol_img'],      1)
+        vol['vol_flir']     = thres_binary(vol['vol_flir'],     0.5)
+        return vol
 
     # save voltage data.
-    def save_vol(
-            args,
-            vol_time, vol_start_bin, vol_stim_bin, vol_img_bin,
-            ):
+    def save_vol(args, vol):
         # file structure:
         # args.save_path / raw_voltages.h5
         # -- raw
@@ -139,18 +172,21 @@ def process_vol(args):
         f = h5py.File(os.path.join(
             args.save_path, 'raw_voltages.h5'), 'w')
         grp = f.create_group('raw')
-        grp['vol_time']      = vol_time
-        grp['vol_start_bin'] = vol_start_bin
-        grp['vol_stim_bin']  = vol_stim_bin
-        grp['vol_img_bin']   = vol_img_bin
+        grp['vol_time']      = vol['vol_time']
+        grp['vol_start_bin'] = vol['vol_start']
+        grp['vol_stim_bin']  = vol['vol_stim_vis']
+        grp['vol_hifi']      = vol['vol_hifi']
+        grp['vol_img_bin']   = vol['vol_img']
+        grp['vol_stim_aud']  = vol['vol_stim_aud']
+        grp['vol_flir']      = vol['vol_flir']
+        grp['vol_pmt']       = vol['vol_pmt']
         f.close()
 
     # run processing.
     try:
-        vol_time, vol_start, vol_stim, vol_img = read_vol_to_np(args)
-        vol_start_bin, vol_stim_bin, vol_img_bin = vol_to_binary(
-            vol_start, vol_stim, vol_img)
-        save_vol(args, vol_time, vol_start_bin, vol_stim_bin, vol_img_bin)
+        vol = read_vol_to_np(args)
+        vol = vol_to_binary(vol)
+        save_vol(args, vol)
     except:
         print('Valid voltage recordings csv file not found')
 
@@ -171,7 +207,7 @@ def move_bpod_mat(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Experiments can go shit but Yicong will love you forever!')
-    parser.add_argument('--denoise',         required=True, type=int, help='Whether run denoising algorithm.')
+    parser.add_argument('--denoise',         required=True, type=int, help='Whether run denoising.')
     parser.add_argument('--spatial_scale',   required=True, type=int, help='The optimal scale in suite2p.')
     parser.add_argument('--data_path',       required=True, type=str, help='Path to the 2P imaging data.')
     parser.add_argument('--save_path',       required=True, type=str, help='Path to save the results.')

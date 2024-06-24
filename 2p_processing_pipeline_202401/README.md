@@ -5,8 +5,8 @@ Run on windows command line window:
 python run_suite2p_pipeline.py `
 --denoise 0 `
 --spatial_scale 1 `
---data_path './testdata/P3' `
---save_path0 './results/P3' `
+--data_path 'C:\\Users\\yhuang887\\Downloads\\FN14_P_20240507_odd_t-440' `
+--save_path './results/FN14_P_20240507_odd_t' `
 --nchannels 2 `
 --functional_chan 2 `
 --brain_region 'ppc' `
@@ -167,3 +167,6 @@ Results will be in ./Results
 
 ## 2024.04.10
 - Removed all post processing modules to new project.
+
+## 2024.06.24
+- Updated voltage recordings for 6 channels.
