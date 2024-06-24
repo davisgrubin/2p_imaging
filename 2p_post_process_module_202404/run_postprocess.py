@@ -58,13 +58,13 @@ if __name__ == "__main__":
          range_footprint] = get_qc_args(args)
         ops = read_ops(args.session_data_path)
     else:
-        session_data_path = 'C:/Users/yhuang887/Projects/interval_discrimination_basic_202404/results/FN14_P_20240418_2afc_t'
+        session_data_path = 'C:/Users/yhuang887/Projects/interval_discrimination_basic_202404/results/FN14_P_20240530_2afc_t'
         ops = read_ops(session_data_path)
         range_skew = [-5,5]
         max_connect = 1
-        max_aspect = 1.35
-        range_footprint = [0,1]
-        range_compact = [0,1.05]
+        max_aspect = 5
+        range_footprint = [1,2]
+        range_compact = [0,1.1]
         diameter = 6
     '''
     QualControlDataIO.run(
