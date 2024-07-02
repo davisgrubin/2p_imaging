@@ -81,7 +81,7 @@ def adjust_layout_js(ax):
 
     
 # adjust layout for grand average neural traces.
-def adjust_layout_grand(ax):
+def adjust_layout_neu(ax):
     ax.tick_params(axis='y', tick1On=False)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)

@@ -6,7 +6,7 @@ from scipy.stats import sem
 from modules.Alignment import get_stim_response
 from modules.Alignment import get_outcome_response
 from plot.utils import get_roi_label_color
-from plot.utils import adjust_layout_grand
+from plot.utils import adjust_layout_neu
 from plot.utils import utils
 
 
@@ -58,7 +58,7 @@ class plotter_utils(utils):
                     np.max([sem_all, sem_reward, sem_punish])
             lower = np.min([mean_all, mean_reward, mean_punish]) -\
                     np.max([sem_all, sem_reward, sem_punish])
-            adjust_layout_grand(ax)
+            adjust_layout_neu(ax)
             ax.fill_between(
                 stim_seq,
                 lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
@@ -84,7 +84,7 @@ class plotter_utils(utils):
             outcome,
             lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
             color='gold', alpha=0.15, step='mid', label='outcome')
-        adjust_layout_grand(ax)
+        adjust_layout_neu(ax)
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         ax.set_xlabel('time since outcome (ms)')
     

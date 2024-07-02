@@ -3,7 +3,7 @@ from scipy.stats import sem
 
 from modules.Alignment import get_motor_response
 from plot.utils import get_roi_label_color
-from plot.utils import adjust_layout_grand
+from plot.utils import adjust_layout_neu
 from plot.utils import utils
 
 
@@ -41,7 +41,7 @@ class plotter_utils(utils):
         upper = np.max(mean_neu) + np.max(sem_neu)
         lower = np.min(mean_neu) - np.max(sem_neu)
         ax.axvline(0, color='gold', lw=1, label='licking', linestyle='--')
-        adjust_layout_grand(ax)
+        adjust_layout_neu(ax)
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         ax.set_xlabel('time since licking (ms)')
     
@@ -64,7 +64,7 @@ class plotter_utils(utils):
         lower = np.min([mean_all, mean_reward, mean_punish]) -\
                 np.max([sem_all, sem_reward, sem_punish])
         ax.axvline(0, color='gold', lw=1, linestyle='--')
-        adjust_layout_grand(ax)
+        adjust_layout_neu(ax)
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
     
     # roi mean response to 1st press.
