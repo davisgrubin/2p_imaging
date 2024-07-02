@@ -8,7 +8,7 @@ from tqdm import tqdm
 from matplotlib.gridspec import GridSpec
 
 from modules import Trialization
-from modules import ClassifyResponse
+from modules import StatTest
 from modules.ReadResults import read_masks
 from modules.ReadResults import read_raw_voltages
 from modules.ReadResults import read_dff
@@ -314,7 +314,7 @@ def run(session_data_path):
     print('============= trials segmentation =============')
     print('===============================================')
     #Trialization.run(ops)
-    ClassifyResponse.run(ops)
+    StatTest.run(ops)
     plot_js_VIPTD_G8(ops, session_data_name)
     print('===============================================')
     print('Processing {} completed'.format(session_data_name))
