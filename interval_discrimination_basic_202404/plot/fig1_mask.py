@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import matplotlib.pyplot as plt
 from skimage.segmentation import find_boundaries
+from matplotlib.colors import ListedColormap
 
 
 # label images with yellow and green.
@@ -50,37 +52,56 @@ def adjust_layout(ax):
     ax.set_yticks([])
 
 
-class plotter_VIPTD_G8_masks:
+class plotter_all_masks:
     
     def __init__(
             self,
             labels,
             masks,
-            mean_func, max_func,
-            mean_anat
+            mean_func=None,
+            max_func=None,
+            mean_anat=None,
+            masks_anat=None,
             ):
         self.labels = labels
         self.masks = masks
         self.mean_func = mean_func
         self.max_func = max_func
         self.mean_anat = mean_anat
+        self.masks_anat = masks_anat
         self.labeled_masks_img = get_labeled_masks_img(masks, labels, 1)
         self.unsure_masks_img = get_labeled_masks_img(masks, labels, 0)
         self.size = 128
         self.roi_row, self.roi_col = get_roi_range(self.size, masks)
         
     # functional channel max projection.
-    def func_max(self, ax):
+    def func(self, ax, img):
+        if img == 'mean':
+            f = self.mean_func
+            t = 'functional channel mean projection'
+        if img == 'max':
+            f = self.max_func
+            t = 'functional channel max projection'
         func_img = np.zeros(
-            (self.max_func.shape[0], self.max_func.shape[1], 3), dtype='int32')
-        func_img[:,:,1] = adjust_contrast(self.max_func)
+            (f.shape[0], f.shape[1], 3), dtype='int32')
+        func_img[:,:,1] = adjust_contrast(f)
         func_img = adjust_contrast(func_img)
         x_all, y_all = np.where(find_boundaries(self.masks))
         for x,y in zip(x_all, y_all):
             func_img[x,y,:] = np.array([255,255,255])
         ax.matshow(func_img)
         adjust_layout(ax)
-        ax.set_title('functional channel max projection image')
+        ax.set_title(t)
+
+    # functional channel ROI masks with color.
+    def func_masks_color(self, ax):
+        colors = plt.cm.nipy_spectral(np.linspace(0, 1, int(np.max(self.masks)+1)))
+        np.random.shuffle(colors)
+        colors[0,:] = [0,0,0,1]
+        cmap = ListedColormap(colors)
+        ax.matshow(self.masks, cmap=cmap)
+        adjust_layout(ax)
+        ax.set_title('functional channel ROI masks')
 
     # functional channel ROI masks.
     def func_masks(self, ax):
@@ -91,9 +112,39 @@ class plotter_VIPTD_G8_masks:
         ax.matshow(masks_img)
         adjust_layout(ax)
         ax.set_title('functional channel ROI masks')
+    
+    # anatomy channel and cellpose results.
+    def anat_cellpose(self, ax):
+        anat_img = np.zeros(
+            (self.mean_anat.shape[0], self.mean_anat.shape[1], 3), dtype='int32')
+        anat_img[:,:,0] = adjust_contrast(self.mean_anat)
+        anat_img = adjust_contrast(anat_img)
+        x_all, y_all = np.where(find_boundaries(self.masks_anat))
+        for x,y in zip(x_all, y_all):
+            anat_img[x,y,:] = np.array([255,255,255])
+        ax.matshow(anat_img)
+        adjust_layout(ax)
+        ax.set_title('cellpose results on anatomy channel mean image')
+    
+    # suite2p masks and cellpose masks superimpose.
+    def masks_superimpose(self, ax):
+        masks_img = np.zeros(
+            (self.masks.shape[0], self.masks.shape[1], 3), dtype='int32')
+        masks_img[:,:,1] = self.masks
+        masks_img[:,:,0] = self.masks_anat
+        masks_img[masks_img >= 1] = 255
+        x_all, y_all = np.where(find_boundaries(self.labeled_masks_img[:,:,0]))
+        for x,y in zip(x_all, y_all):
+            masks_img[x,y,:] = np.array([255,255,255])
+        x_all, y_all = np.where(find_boundaries(self.unsure_masks_img[:,:,0]))
+        for x,y in zip(x_all, y_all):
+            masks_img[x,y,:] = np.array([0,196,255])
+        ax.matshow(masks_img)
+        adjust_layout(ax)
+        ax.set_title('functional and anatomical masks superimpose')
 
     # anatomy channel mean image.
-    def anat_mean(self, ax):
+    def anat(self, ax):
         anat_img = np.zeros(
             (self.mean_anat.shape[0], self.mean_anat.shape[1], 3), dtype='int32')
         anat_img[:,:,0] = adjust_contrast(self.mean_anat)
@@ -118,11 +169,14 @@ class plotter_VIPTD_G8_masks:
         ax.set_title('anatomy channel label masks')
 
     # superimpose image.
-    def superimpose(self, ax):
-        super_img = np.zeros(
-            (self.max_func.shape[0], self.max_func.shape[1], 3), dtype='int32')
+    def superimpose(self, ax, img):
+        if img == 'mean':
+            f = self.mean_func
+        if img == 'max':
+            f = self.max_func
+        super_img = np.zeros((f.shape[0], f.shape[1], 3), dtype='int32')
         super_img[:,:,0] = adjust_contrast(self.mean_anat)
-        super_img[:,:,1] = adjust_contrast(self.max_func)
+        super_img[:,:,1] = adjust_contrast(f)
         super_img = adjust_contrast(super_img)
         x_all, y_all = np.where(find_boundaries(self.labeled_masks_img[:,:,0]))
         for x,y in zip(x_all, y_all):
@@ -143,13 +197,36 @@ class plotter_VIPTD_G8_masks:
         ax.matshow(label_masks)
         adjust_layout(ax)
         ax.set_title('channel masks superimpose')
+    
+    # ROI global location for 1 channel data.
+    def roi_loc_1chan(self, ax, roi_id, img):
+        if img == 'mean':
+            f = self.mean_func
+        if img == 'max':
+            f = self.max_func
+        func_img = np.zeros((f.shape[0], f.shape[1], 3), dtype='int32')
+        func_img[:,:,1] = adjust_contrast(f)
+        func_img = adjust_contrast(func_img)
+        x_all, y_all = np.where(self.masks==(roi_id+1))
+        c_x = np.mean(x_all).astype('int32')
+        c_y = np.mean(y_all).astype('int32')
+        func_img[c_x,:,:] = np.array([128,128,255])
+        func_img[:,c_y,:] = np.array([128,128,255])
+        for x,y in zip(x_all, y_all):
+            func_img[x,y,:] = np.array([255,255,255])
+        ax.matshow(func_img)
+        adjust_layout(ax)
+        ax.set_title('ROI # {} location'.format(str(roi_id).zfill(4)))
 
-    # ROI global location.
-    def roi_loc(self, ax, roi_id):
-        super_img = np.zeros(
-            (self.max_func.shape[0], self.max_func.shape[1], 3), dtype='int32')
+    # ROI global location for 2 channel data.
+    def roi_loc_2chan(self, ax, roi_id, img):
+        if img == 'mean':
+            f = self.mean_func
+        if img == 'max':
+            f = self.max_func
+        super_img = np.zeros((f.shape[0], f.shape[1], 3), dtype='int32')
         super_img[:,:,0] = adjust_contrast(self.mean_anat)
-        super_img[:,:,1] = adjust_contrast(self.max_func)
+        super_img[:,:,1] = adjust_contrast(f)
         super_img = adjust_contrast(super_img)
         x_all, y_all = np.where(self.masks==(roi_id+1))
         c_x = np.mean(x_all).astype('int32')
@@ -168,21 +245,27 @@ class plotter_VIPTD_G8_masks:
             c = 'inhibitory'
         ax.set_title('ROI # {} location ({})'.format(str(roi_id).zfill(4), c))
     
-    # ROI functional channel max projection.
-    def roi_func(self, ax, roi_id):
+    # ROI functional channel.
+    def roi_func(self, ax, roi_id, img):
+        if img == 'mean':
+            f = self.mean_func
+            t = 'functional channel mean projection'
+        if img == 'max':
+            f = self.max_func
+            t = 'functional channel max projection'
         r = self.roi_row[roi_id]
         c = self.roi_col[roi_id]
-        max_func_img = self.max_func[r:r+self.size, c:c+self.size]
+        func_img = f[r:r+self.size, c:c+self.size]
         roi_masks = (self.masks[r:r+self.size, c:c+self.size]==(roi_id+1))*1
-        img = np.zeros((max_func_img.shape[0], max_func_img.shape[1], 3))
-        img[:,:,1] = max_func_img
+        img = np.zeros((func_img.shape[0], func_img.shape[1], 3))
+        img[:,:,1] = func_img
         img = adjust_contrast(img)
         x_all, y_all = np.where(find_boundaries(roi_masks))
         for x,y in zip(x_all, y_all):
             img[x,y,:] = np.array([255,255,255])
         ax.matshow(img)
         adjust_layout(ax)
-        ax.set_title('functional channel max projection')
+        ax.set_title(t)
     
     # ROI anatomical channel mean projection.
     def roi_anat(self, ax, roi_id):
@@ -200,12 +283,15 @@ class plotter_VIPTD_G8_masks:
         adjust_layout(ax)
         ax.set_title('anatomy channel mean image')
 
-    # ROI channel image superimpose.
-    def roi_superimpose(self, ax, roi_id):
-        super_img = np.zeros(
-            (self.max_func.shape[0], self.max_func.shape[1], 3), dtype='int32')
+    # ROI channel image superimpose with max functional.
+    def roi_superimpose(self, ax, roi_id, img):
+        if img == 'mean':
+            f = self.mean_func
+        if img == 'max':
+            f = self.max_func
+        super_img = np.zeros((f.shape[0], f.shape[1], 3), dtype='int32')
         super_img[:,:,0] = adjust_contrast(self.mean_anat)
-        super_img[:,:,1] = adjust_contrast(self.max_func)
+        super_img[:,:,1] = adjust_contrast(f)
         super_img = adjust_contrast(super_img)
         r = self.roi_row[roi_id]
         c = self.roi_col[roi_id]
@@ -217,7 +303,7 @@ class plotter_VIPTD_G8_masks:
         ax.matshow(super_img)
         adjust_layout(ax)
         ax.set_title('channel images superimpose')
-    
+
     # ROI masks.
     def roi_masks(self, ax, roi_id):
         r = self.roi_row[roi_id]
@@ -230,4 +316,3 @@ class plotter_VIPTD_G8_masks:
         ax.matshow(img)
         adjust_layout(ax)
         ax.set_title('ROI masks')
-

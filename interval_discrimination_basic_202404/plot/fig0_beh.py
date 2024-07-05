@@ -4,37 +4,6 @@ import numpy as np
 from scipy.stats import sem
 
 
-# normalization into [0,1].
-def norm01(data):
-    return (data - np.min(data)) / (np.max(data) - np.min(data) + 1e-5)
-
-
-# rescale voltage recordings.
-def rescale(data, upper, lower):
-    data = data.copy()
-    data = ( data - np.min(data) ) / (np.max(data) - np.min(data))
-    data = data * (upper - lower) + lower
-    return data
-
-
-# cut sequence into the same length as the shortest one given pivots.
-def trim_seq(
-        data,
-        pivots,
-        ):
-    if len(data[0].shape) == 1:
-        len_l_min = np.min(pivots)
-        len_r_min = np.min([len(data[i])-pivots[i] for i in range(len(data))])
-        data = [data[i][pivots[i]-len_l_min:pivots[i]+len_r_min]
-                for i in range(len(data))]
-    if len(data[0].shape) == 3:
-        len_l_min = np.min(pivots)
-        len_r_min = np.min([len(data[i][0,0,:])-pivots[i] for i in range(len(data))])
-        data = [data[i][:, :, pivots[i]-len_l_min:pivots[i]+len_r_min]
-                for i in range(len(data))]
-    return data
-
-
 # organize outcome of behavior data.
 def get_beh_outcomes(neural_trials):
     out_reward = 1 - np.isnan([neural_trials[i]['trial_reward'][0]
@@ -169,6 +138,19 @@ class plotter_VIPTD_G8_beh:
             autopct='%1.1f%%',
             wedgeprops={'linewidth': 1, 'edgecolor':'white'})
         ax.set_title('percentage of correctness')
+    
+    # choice for all completed trials.
+    def choice_percentage(self, ax):
+        l = np.sum(self.decision[1,:]==0)
+        r = np.sum(self.decision[1,:]==1)
+        ax.pie(
+            [l, r],
+            labels=['{} left'.format(l),
+                    '{} right'.format(r)],
+            colors=['#A4CB9E', '#EDA1A4'],
+            autopct='%1.1f%%',
+            wedgeprops={'linewidth': 1, 'edgecolor':'white'})
+        ax.set_title('percentage of choice')
     
     # psychometric function.
     def psych_func(self, ax):

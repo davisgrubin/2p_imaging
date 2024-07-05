@@ -7,7 +7,6 @@ import scipy.io as sio
 
 
 # read raw_voltages.h5.
-
 def read_raw_voltages(ops):
     try:
         f = h5py.File(
@@ -24,7 +23,6 @@ def read_raw_voltages(ops):
 
 
 # read masks.
-
 def read_masks(ops):
     f = h5py.File(os.path.join(ops['save_path0'], 'masks.h5'),'r')
     labels = np.array(f['labels'])
@@ -32,12 +30,12 @@ def read_masks(ops):
     mean_func = np.array(f['mean_func'])
     max_func = np.array(f['max_func'])
     mean_anat = np.array(f['mean_anat']) if ops['nchannels'] == 2 else None
+    masks_anat = np.array(f['masks_anat']) if ops['nchannels'] == 2 else None
     f.close()
-    return [labels, masks, mean_func, max_func, mean_anat]
+    return [labels, masks, mean_func, max_func, mean_anat, masks_anat]
 
 
 # read motion correction offsets.
-
 def read_move_offset(ops):
     f = h5py.File(os.path.join(ops['save_path0'], 'move_offset.h5'), 'r')
     xoff = np.array(f['xoff'])
@@ -47,7 +45,6 @@ def read_move_offset(ops):
 
 
 # read dff traces.
-
 def read_dff(ops):
     f = h5py.File(os.path.join(ops['save_path0'], 'dff.h5'), 'r')
     dff = np.array(f['dff'])
@@ -56,7 +53,6 @@ def read_dff(ops):
 
 
 # read trailized neural traces with stimulus alignment.
-
 def read_neural_trials(ops):
     f = h5py.File(
         os.path.join(ops['save_path0'], 'neural_trials.h5'),
@@ -70,8 +66,26 @@ def read_neural_trials(ops):
     return neural_trials
 
 
-# read bpod session data.
+# read significance test label results.
+def read_significance(ops):
+    f = h5py.File(
+        os.path.join(ops['save_path0'], 'significance.h5'),
+        'r')    
+    significance = {}
+    significance['r_stim_all']   = np.array(f['significance']['r_stim_all'])
+    significance['r_stim_onset'] = np.array(f['significance']['r_stim_onset'])
+    significance['r_stim_pre']   = np.array(f['significance']['r_stim_pre'])
+    significance['r_stim_post_first'] = np.array(f['significance']['r_stim_post_first'])
+    significance['r_stim_post_all']   = np.array(f['significance']['r_stim_post_all'])
+    significance['r_reward'] = np.array(f['significance']['r_reward'])
+    significance['r_punish'] = np.array(f['significance']['r_punish'])
+    significance['r_lick_all']      = np.array(f['significance']['r_lick_all'])
+    significance['r_lick_reaction'] = np.array(f['significance']['r_lick_reaction'])
+    significance['r_lick_decision'] = np.array(f['significance']['r_lick_decision'])
+    return significance
 
+
+# read bpod session data.
 def read_bpod_mat_data(ops):
     def _check_keys(d):
         for key in d:

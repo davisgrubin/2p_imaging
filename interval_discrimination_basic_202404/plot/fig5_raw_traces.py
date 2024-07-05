@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
 import numpy as np
+from plot.utils import get_sub_time_idx
+from plot.utils import get_roi_label_color
+from plot.utils import adjust_layout_example_trace
+from plot.utils import adjust_layout_raw_trace
 
 
 # rescale voltage recordings.
@@ -22,37 +26,34 @@ def get_img_time(
     return img_time
 
 
-# get subsequence index with given start and end.
-def get_sub_time_idx(
-        time,
-        start,
-        end
+# roi example traces.
+def plot_roi_example_traces(
+        ax,
+        dff, labels, vol_img_bin, vol_time,
+        roi_id
         ):
-    idx = np.where((time >= start) &(time <= end))[0]
-    return idx
-
-
-# adjust layout for raw traces.
-def adjust_layout_trace(ax):
-    ax.tick_params(tick1On=False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.set_xlabel('time (s)')
-    ax.legend(loc='upper left')
-     
-
+    max_ms = 100000
+    time_img = get_img_time(vol_time, vol_img_bin)
+    start_time = np.max(time_img)/4
+    time_img_idx = get_sub_time_idx(time_img, start_time, start_time+max_ms)
+    sub_time_img = time_img[time_img_idx]
+    sub_dff = dff[roi_id, time_img_idx]
+    _, _, color, _ = get_roi_label_color(labels, roi_id)
+    ax.plot(sub_time_img, sub_dff, color=color)
+    adjust_layout_example_trace(ax)
+    ax.set_xlim([np.min(sub_time_img), np.max(sub_time_img)])
+    
+    
 # plot example traces for ppc.
 def plot_VIPTD_G8_example_traces(
         ax,
-        dff, labels, vol_stim_bin, vol_img_bin, vol_time
+        dff, labels, vol_img_bin, vol_time
         ):
-    max_ms = 300000
+    max_ms = 100000
     num_exc = 8
     num_inh = 2
-    vol_stim = vol_stim_bin.copy()
-    vol_stim[vol_stim!=0] = 1
-    start_time = vol_time[vol_stim>0][5]
     time_img = get_img_time(vol_time, vol_img_bin)
+    start_time = np.max(time_img)/4
     time_img_idx = get_sub_time_idx(time_img, start_time, start_time+max_ms)
     sub_time_img = time_img[time_img_idx]
     sub_dff_exc  = dff[labels==-1, :]
@@ -63,21 +64,17 @@ def plot_VIPTD_G8_example_traces(
     color_label  = np.zeros(num_exc+num_inh, dtype='int32')
     color_label[num_exc:] = 1
     label = ['excitory', 'inhibitory']
-    color = ['#A4CB9E', '#EDA1A4']
+    _, _, c1, _ = get_roi_label_color([-1], 0)
+    _, _, c2, _ = get_roi_label_color([1], 0)
+    color = [c1, c2]
     scale = np.max(np.abs(sub_dff))*1.5
     for i in range(num_exc+num_inh):
         ax.plot(
             sub_time_img, sub_dff[i,:] + i * scale,
             color=color[color_label[i]],
             label=label[color_label[i]])
-    ax.tick_params(axis='y', tick1On=False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.set_yticks([])
-    ax.set_xlabel('time (ms)')
+    adjust_layout_example_trace(ax)
     ax.set_xlim([np.min(sub_time_img), np.max(sub_time_img)])
-    ax.set_title('example traces')
     handles, labels = ax.get_legend_handles_labels()
     handles = [handles[0], handles[-1]]
     labels = [labels[0], labels[-1]]
@@ -93,7 +90,8 @@ def plot_L7G8_example_traces(
     num_roi = 10
     vol_stim = vol_stim_bin.copy()
     vol_stim[vol_stim!=0] = 1
-    start_time = vol_time[vol_stim>0][5]
+    time_img = get_img_time(vol_time, vol_img_bin)
+    start_time = np.max(time_img)/4
     time_img = get_img_time(vol_time, vol_img_bin)
     time_img_idx = get_sub_time_idx(time_img, start_time, start_time+max_ms)
     sub_time_img = time_img[time_img_idx]
@@ -103,14 +101,8 @@ def plot_L7G8_example_traces(
         ax.plot(
             sub_time_img, sub_dff[i,:] + i * scale,
             color='#A4CB9E')
-    ax.tick_params(axis='y', tick1On=False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.set_yticks([])
-    ax.set_xlabel('time (ms)')
+    adjust_layout_example_trace(ax)
     ax.set_xlim([np.min(sub_time_img), np.max(sub_time_img)])
-    ax.set_title('example traces')
 
 
 # example traces for crbl.
@@ -122,7 +114,8 @@ def plot_VIPG8_example_traces(
     num_roi = 10
     vol_stim = vol_stim_bin.copy()
     vol_stim[vol_stim!=0] = 1
-    start_time = vol_time[vol_stim>0][5]
+    time_img = get_img_time(vol_time, vol_img_bin)
+    start_time = np.max(time_img)/4
     time_img = get_img_time(vol_time, vol_img_bin)
     time_img_idx = get_sub_time_idx(time_img, start_time, start_time+max_ms)
     sub_time_img = time_img[time_img_idx]
@@ -132,14 +125,8 @@ def plot_VIPG8_example_traces(
         ax.plot(
             sub_time_img, sub_dff[i,:] + i * scale,
             color='#EDA1A4')
-    ax.tick_params(axis='y', tick1On=False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.set_yticks([])
-    ax.set_xlabel('time (ms)')
+    adjust_layout_example_trace(ax)
     ax.set_xlim([np.min(sub_time_img), np.max(sub_time_img)])
-    ax.set_title('example traces')
     
 
 # ROI raw traces.
@@ -173,7 +160,7 @@ def plot_roi_raw_trace(
             color=color[int(labels[roi_id]+1)],
             label=category[int(labels[roi_id]+1)],
             lw=0.5)
-        adjust_layout_trace(axs[i])
+        adjust_layout_raw_trace(axs[i])
         axs[i].set_title('raw trace of ROI # '+ str(roi_id).zfill(4))
         axs[i].set_ylim([lower - 0.1*(upper-lower),
                            upper + 0.1*(upper-lower)])
