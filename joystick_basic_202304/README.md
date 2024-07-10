@@ -14,3 +14,6 @@
 - Added sinificance test.
 - Added quantification error bar plots.
 - Completed ROI plots.
+
+## 2024.07.10
+- Added significance reset function.

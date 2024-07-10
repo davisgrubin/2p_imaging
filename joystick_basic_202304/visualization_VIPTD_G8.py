@@ -34,6 +34,18 @@ def get_roi_sign(significance, roi_id):
         significance['r_lick'][roi_id]
     return r
 
+def reset_significance(significance):
+    sign = {}
+    sign['r_vis1']     = np.ones_like(significance['r_vis1'])
+    sign['r_press1']   = np.ones_like(significance['r_press1'])
+    sign['r_retract1'] = np.ones_like(significance['r_retract1'])
+    sign['r_vis2']     = np.ones_like(significance['r_vis2'])
+    sign['r_press2']   = np.ones_like(significance['r_press2'])
+    sign['r_reward']   = np.ones_like(significance['r_reward'])
+    sign['r_punish']   = np.ones_like(significance['r_punish'])
+    sign['r_lick']     = np.ones_like(significance['r_lick'])
+    return sign
+
 from plot.fig0_beh import plotter_all_beh
 from plot.fig1_mask import plotter_all_masks
 from plot.fig2_align_percept import plotter_VIPTD_G8_percept
@@ -279,6 +291,8 @@ def plot_js_VIPTD_G8(ops, session_data_name):
     neural_trials = read_neural_trials(ops)
     [xoff, yoff] = read_move_offset(ops)
     significance = read_significance(ops)
+    if RESET_SIGNIFICANCE:
+        significance = reset_significance(significance)
     print('Processing masks')
     plotter_masks = plotter_all_masks(
         labels, masks, mean_func, max_func, mean_anat, masks_anat)
@@ -313,7 +327,7 @@ def run(session_data_path):
     print('===============================================')
     print('============= trials segmentation =============')
     print('===============================================')
-    #Trialization.run(ops)
+    Trialization.run(ops)
     StatTest.run(ops)
     plot_js_VIPTD_G8(ops, session_data_name)
     print('===============================================')
@@ -321,8 +335,9 @@ def run(session_data_path):
     
     
 if __name__ == "__main__":
+    RESET_SIGNIFICANCE = False
     
-    session_data_path = 'C:/Users/yhuang887/Projects/joystick_basic_202304/results/FN16_P_20240604_js_t'
+    session_data_path = 'C:/Users/yhuang887/Projects/joystick_basic_202304/results/FN16_P_20240603_js_t'
     run(session_data_path)
 
     
