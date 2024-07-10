@@ -130,6 +130,11 @@ def process_vol(args):
             vol_pmt = df_vol[' Input 6'].to_numpy()
         else:
             vol_pmt = np.zeros_like(vol_time)
+        # AI7: PMT shutter.
+        if ' Input 7' in df_vol.columns.tolist():
+            vol_led = df_vol[' Input 7'].to_numpy()
+        else:
+            vol_led = np.zeros_like(vol_time)
         vol = {
             'vol_time'     : vol_time,
             'vol_start'    : vol_start,
@@ -138,7 +143,9 @@ def process_vol(args):
             'vol_img'      : vol_img,
             'vol_stim_aud' : vol_stim_aud,
             'vol_flir'     : vol_flir,
-            'vol_pmt'      : vol_pmt}
+            'vol_pmt'      : vol_pmt,
+            'vol_led'      : vol_led
+            }
         return vol
 
     # threshold the continuous voltage recordings to 01 series.

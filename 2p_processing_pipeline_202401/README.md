@@ -170,3 +170,6 @@ Results will be in ./Results
 
 ## 2024.06.24
 - Updated voltage recordings for 6 channels.
+
+## 2024.07.10
+- Added LED channel for voltage recordings.
