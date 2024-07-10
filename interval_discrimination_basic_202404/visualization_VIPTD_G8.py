@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from matplotlib.gridspec import GridSpec
-# fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+
 from modules import Trialization
 from modules import StatTest
 from modules.ReadResults import read_masks
@@ -24,38 +24,46 @@ def read_ops(session_data_path):
     return ops
 
 def get_roi_sign(significance, roi_id):
-    r = significance['r_stim_all'][roi_id] +\
-        significance['r_stim_onset'][roi_id] +\
-        significance['r_stim_pre'][roi_id] +\
-        significance['r_stim_post_first'][roi_id] +\
-        significance['r_stim_post_all'][roi_id] +\
+    r = significance['r_vis1'][roi_id] +\
+        significance['r_press1'][roi_id] +\
+        significance['r_retract1'][roi_id] +\
+        significance['r_vis2'][roi_id] +\
+        significance['r_press2'][roi_id] +\
         significance['r_reward'][roi_id] +\
         significance['r_punish'][roi_id] +\
-        significance['r_lick_all'][roi_id] +\
-        significance['r_lick_reaction'][roi_id] +\
-        significance['r_lick_decision'][roi_id]
+        significance['r_lick'][roi_id]
     return r
 
-from plot.fig0_beh import plotter_VIPTD_G8_beh
+def reset_significance(significance):
+    sign = {}
+    sign['r_vis1']     = np.ones_like(significance['r_vis1'])
+    sign['r_press1']   = np.ones_like(significance['r_press1'])
+    sign['r_retract1'] = np.ones_like(significance['r_retract1'])
+    sign['r_vis2']     = np.ones_like(significance['r_vis2'])
+    sign['r_press2']   = np.ones_like(significance['r_press2'])
+    sign['r_reward']   = np.ones_like(significance['r_reward'])
+    sign['r_punish']   = np.ones_like(significance['r_punish'])
+    sign['r_lick']     = np.ones_like(significance['r_lick'])
+    return sign
+
+from plot.fig0_beh import plotter_all_beh
 from plot.fig1_mask import plotter_all_masks
-from plot.fig2_align_percept import plotter_VIPTD_G8_align_perc
-from plot.fig3_align_beh import plotter_VIPTD_G8_align_beh
+from plot.fig2_align_percept import plotter_VIPTD_G8_percept
+from plot.fig3_align_motor import plotter_VIPTD_G8_motor
 from plot.fig5_raw_traces import plot_VIPTD_G8_example_traces
 from plot.fig5_raw_traces import plot_roi_example_traces
 from plot.fig5_raw_traces import plot_roi_raw_trace
 from plot.misc import plot_motion_offset_hist
 from plot.misc import plot_inh_exc_label_pc
-from plot.misc import plot_isi_distribution
 from plot.misc import plot_significance
 from plot.misc import plot_roi_significance
 
 
-def plot_2afc_VIPTD_G8(ops, session_data_name):
-
-    def plot_session_report():
-        print('Plotting session report')
-        fig = plt.figure(figsize=(77, 63))
-        gs = GridSpec(9, 11, figure=fig)
+def plot_js_VIPTD_G8(ops, session_data_name):
+    
+    def plot_session_report(session_data_name):
+        fig = plt.figure(figsize=(77, 70))
+        gs = GridSpec(10, 11, figure=fig)
         # masks.
         mask_ax01 = plt.subplot(gs[0:2, 0:2])
         mask_ax02 = plt.subplot(gs[2:4, 0:2])
@@ -74,106 +82,95 @@ def plot_2afc_VIPTD_G8(ops, session_data_name):
         plotter_masks.superimpose(mask_ax07, 'max')
         plotter_masks.shared_masks(mask_ax08)
         # behavior.
-        beh_ax01 = plt.subplot(gs[0, 10])
-        beh_ax02 = plt.subplot(gs[1, 10])
-        beh_ax03 = plt.subplot(gs[1, 9])
-        beh_ax04 = plt.subplot(gs[2, 9])
-        beh_ax05 = plt.subplot(gs[2, 10])
-        plotter_beh.outcomes_precentage(beh_ax01)
-        plotter_beh.correctness_precentage(beh_ax02)
-        plotter_beh.choice_percentage(beh_ax03)
-        plotter_beh.psych_func(beh_ax04)
-        plotter_beh.decision_correct(beh_ax05)
+        beh_ax01 = plt.subplot(gs[2, 9])
+        beh_ax02 = plt.subplot(gs[4, 0])
+        beh_ax03 = plt.subplot(gs[4, 1])
+        beh_ax04 = plt.subplot(gs[4, 2])
+        beh_ax05 = plt.subplot(gs[4, 3])
+        beh_ax06 = plt.subplot(gs[4, 4])
+        beh_ax07 = plt.subplot(gs[4, 5])
+        plotter_beh.outcome(beh_ax01)
+        plotter_beh.align_pos_vis1(beh_ax02)
+        plotter_beh.align_pos_press1(beh_ax03)
+        plotter_beh.align_pos_retract1(beh_ax04)
+        plotter_beh.align_pos_vis2(beh_ax05)
+        plotter_beh.align_pos_press2(beh_ax06)
+        plotter_beh.align_pos_outcome(beh_ax07)
+        # alignment.
+        vis1_ax01 = plt.subplot(gs[5, 0])
+        vis1_ax02 = plt.subplot(gs[6, 0])
+        vis1_ax03 = plt.subplot(gs[7:9, 0])
+        plotter_percept.vis1_outcome_exc(vis1_ax01)
+        plotter_percept.vis1_outcome_inh(vis1_ax02)
+        plotter_percept.vis1_heatmap_neuron(vis1_ax03)
+        press1_ax01 = plt.subplot(gs[5, 1])
+        press1_ax02 = plt.subplot(gs[6, 1])
+        press1_ax03 = plt.subplot(gs[7:9, 1])
+        plotter_motor.press1_exc(press1_ax01)
+        plotter_motor.press1_inh(press1_ax02)
+        plotter_motor.press1_heatmap_neuron(press1_ax03)
+        retract1_ax01 = plt.subplot(gs[5, 2])
+        retract1_ax02 = plt.subplot(gs[6, 2])
+        retract1_ax03 = plt.subplot(gs[7:9, 2])
+        plotter_motor.retract1_exc(retract1_ax01)
+        plotter_motor.retract1_inh(retract1_ax02)
+        plotter_motor.retract1_heatmap_neuron(retract1_ax03)
+        vis2_ax01 = plt.subplot(gs[5, 3])
+        vis2_ax02 = plt.subplot(gs[6, 3])
+        vis2_ax03 = plt.subplot(gs[7:9, 3])
+        plotter_percept.vis2_outcome_exc(vis2_ax01)
+        plotter_percept.vis2_outcome_inh(vis2_ax02)
+        plotter_percept.vis2_heatmap_neuron(vis2_ax03)
+        press2_ax01 = plt.subplot(gs[5, 4])
+        press2_ax02 = plt.subplot(gs[6, 4])
+        press2_ax03 = plt.subplot(gs[7:9, 4])
+        plotter_motor.press2_exc(press2_ax01)
+        plotter_motor.press2_inh(press2_ax02)
+        plotter_motor.press2_heatmap_neuron(press2_ax03)
+        outcome_ax01 = plt.subplot(gs[5, 5])
+        outcome_ax02 = plt.subplot(gs[6, 5])
+        outcome_ax03 = plt.subplot(gs[7:9, 5])
+        outcome_ax04 = plt.subplot(gs[5, 6])
+        outcome_ax05 = plt.subplot(gs[6, 6])
+        outcome_ax06 = plt.subplot(gs[7:9, 6])
+        plotter_percept.reward_exc(outcome_ax01)
+        plotter_percept.reward_inh(outcome_ax02)
+        plotter_percept.reward_heatmap_neuron(outcome_ax03)
+        plotter_percept.punish_exc(outcome_ax04)
+        plotter_percept.punish_inh(outcome_ax05)
+        plotter_percept.punish_heatmap_neuron(outcome_ax06)
+        lick_ax01 = plt.subplot(gs[5, 7])
+        lick_ax02 = plt.subplot(gs[6, 7])
+        lick_ax03 = plt.subplot(gs[7:9, 7])
+        plotter_motor.lick_exc(lick_ax01)
+        plotter_motor.lick_inh(lick_ax02)
+        plotter_motor.lick_heatmap_neuron(lick_ax03)
         # example traces.
-        example_ax = plt.subplot(gs[2:4, 8])
+        example_ax = plt.subplot(gs[0:3, 8])
         plot_VIPTD_G8_example_traces(
             example_ax, dff, labels, vol_img_bin, vol_time)
-        # perception alignment.
-        all_ax01 = plt.subplot(gs[4, 0])
-        all_ax02 = plt.subplot(gs[5, 0])
-        all_ax03 = plt.subplot(gs[6:8, 0])
-        plotter_align_perc.all_exc(all_ax01)
-        plotter_align_perc.all_inh(all_ax02)
-        plotter_align_perc.all_heatmap_neuron(all_ax03)
-        onset_ax01 = plt.subplot(gs[4, 1])
-        onset_ax02 = plt.subplot(gs[5, 1])
-        onset_ax03 = plt.subplot(gs[6:8, 1])
-        plotter_align_perc.onset_exc(onset_ax01)
-        plotter_align_perc.onset_inh(onset_ax02)
-        plotter_align_perc.onset_heatmap_neuron(onset_ax03)
-        pre_ax01 = plt.subplot(gs[4, 2])
-        pre_ax02 = plt.subplot(gs[5, 2])
-        pre_ax03 = plt.subplot(gs[6:8, 2])
-        plotter_align_perc.pre_exc(pre_ax01)
-        plotter_align_perc.pre_inh(pre_ax02)
-        plotter_align_perc.pre_heatmap_neuron(pre_ax03)
-        pert_ax01 = plt.subplot(gs[4, 3])
-        pert_ax02 = plt.subplot(gs[5, 3])
-        plotter_align_perc.pert_exc(pert_ax01)
-        plotter_align_perc.pert_inh(pert_ax02)
-        post_ax01 = plt.subplot(gs[4, 4])
-        post_ax02 = plt.subplot(gs[5, 4])
-        plotter_align_perc.post_isi_exc(post_ax01)
-        plotter_align_perc.post_isi_inh(post_ax02)
-        reward_ax01 = plt.subplot(gs[4, 5])
-        reward_ax02 = plt.subplot(gs[5, 5])
-        reward_ax03 = plt.subplot(gs[6:8, 5])
-        plotter_align_perc.reward_exc(reward_ax01)
-        plotter_align_perc.reward_inh(reward_ax02)
-        plotter_align_perc.reward_heatmap_neuron(reward_ax03)
-        punish_ax01 = plt.subplot(gs[4, 6])
-        punish_ax02 = plt.subplot(gs[5, 6])
-        punish_ax03 = plt.subplot(gs[6:8, 6])
-        plotter_align_perc.punish_exc(punish_ax01)
-        plotter_align_perc.punish_inh(punish_ax02)
-        plotter_align_perc.punish_heatmap_neuron(punish_ax03)
-        # behavior alignment.
-        lick_ax01 = plt.subplot(gs[4, 7])
-        lick_ax02 = plt.subplot(gs[5, 7])
-        lick_ax03 = plt.subplot(gs[6:8, 7])
-        plotter_align_beh.all_exc(lick_ax01)
-        plotter_align_beh.all_inh(lick_ax02)
-        plotter_align_beh.all_heatmap_neuron(lick_ax03)
-        reaction_ax01 = plt.subplot(gs[4, 8])
-        reaction_ax02 = plt.subplot(gs[5, 8])
-        reaction_ax03 = plt.subplot(gs[6:8, 8])
-        plotter_align_beh.reaction_exc(reaction_ax01)
-        plotter_align_beh.reaction_inh(reaction_ax02)
-        plotter_align_beh.reaction_heatmap_neuron(reaction_ax03)
-        decision_ax01 = plt.subplot(gs[4, 9])
-        decision_ax02 = plt.subplot(gs[5, 9])
-        decision_ax03 = plt.subplot(gs[6:8, 9])
-        plotter_align_beh.decision_exc(decision_ax01)
-        plotter_align_beh.decision_inh(decision_ax02)
-        plotter_align_beh.decision_heatmap_neuron(decision_ax03)
-        # significance.
-        sign_ax = plt.subplot(gs[3, 9:11])
-        plot_significance(sign_ax, significance)
         # offset.
-        offset_ax = plt.subplot(gs[0, 8])
+        offset_ax = plt.subplot(gs[0, 9])
         plot_motion_offset_hist(offset_ax, xoff, yoff)
         # labels.
-        label_ax = plt.subplot(gs[0, 9])
+        label_ax = plt.subplot(gs[1, 9])
         plot_inh_exc_label_pc(label_ax, labels)
-        # isi distribution.
-        isi_ax = plt.subplot(gs[1, 8])
-        plot_isi_distribution(isi_ax, neural_trials)
+        # significance.
+        sign_ax = plt.subplot(gs[3, 8:10])
+        plot_significance(sign_ax, significance)
         # save figure.
-        fig.set_size_inches(77, 63)
+        fig.set_size_inches(77, 70)
         fig.savefig(os.path.join(
-            ops['save_path0'], 'figures',
-            'session_report_{}.pdf'.format(session_data_name)),
+            ops['save_path0'], 'figures', session_data_name),
             dpi=300)
         plt.close()
-        print('Visualization for session report completed')
 
-    def plot_individual_roi():
-        print('Plotting roi report')
+    def plot_individual_roi(session_data_name):
         roi_report = fitz.open()
         for roi_id in tqdm(np.argsort(labels, kind='stable')):
             if get_roi_sign(significance, roi_id):
-                fig = plt.figure(figsize=(70, 35))
-                gs = GridSpec(5, 10, figure=fig)
+                fig = plt.figure(figsize=(56, 35))
+                gs = GridSpec(5, 8, figure=fig)
                 # masks.
                 mask_ax01 = plt.subplot(gs[0:2, 0:2])
                 mask_ax02 = plt.subplot(gs[0, 2])
@@ -185,64 +182,55 @@ def plot_2afc_VIPTD_G8(ops, session_data_name):
                 plotter_masks.roi_anat(mask_ax03, roi_id)
                 plotter_masks.roi_superimpose(mask_ax04, roi_id, 'max')
                 plotter_masks.roi_masks(mask_ax05, roi_id)
-                # perception alignments.
-                stim_all_ax01 = plt.subplot(gs[2, 0])
-                stim_all_ax02 = plt.subplot(gs[3, 0])
-                stim_all_ax03 = plt.subplot(gs[4, 0])
-                plotter_align_perc.roi_all(stim_all_ax01, roi_id)
-                plotter_align_perc.roi_all_box(stim_all_ax02, roi_id)
-                plotter_align_perc.roi_all_heatmap_trials(stim_all_ax03, roi_id)
-                stim_onset_ax01 = plt.subplot(gs[2, 1])
-                stim_onset_ax02 = plt.subplot(gs[3, 1])
-                stim_onset_ax03 = plt.subplot(gs[4, 1])
-                plotter_align_perc.roi_onset(stim_onset_ax01, roi_id)
-                plotter_align_perc.roi_onset_box(stim_onset_ax02, roi_id)
-                plotter_align_perc.roi_onset_heatmap_trials(stim_onset_ax03, roi_id)
-                stim_pre_ax01 = plt.subplot(gs[2, 2])
-                stim_pre_ax02 = plt.subplot(gs[3, 2])
-                stim_pre_ax03 = plt.subplot(gs[4, 2])
-                plotter_align_perc.roi_pre(stim_pre_ax01, roi_id)
-                plotter_align_perc.roi_pre_box(stim_pre_ax02, roi_id)
-                plotter_align_perc.roi_pre_heatmap_trials(stim_pre_ax03, roi_id)
-                stim_pert_ax01 = plt.subplot(gs[2, 3])
-                stim_pert_ax02 = plt.subplot(gs[3, 3])
-                stim_pert_ax03 = plt.subplot(gs[4, 3])
-                plotter_align_perc.roi_pert(stim_pert_ax01, roi_id)
-                plotter_align_perc.roi_pert_box(stim_pert_ax02, roi_id)
-                plotter_align_perc.roi_pert_heatmap_trials(stim_pert_ax03, roi_id)
-                stim_post_ax01 = plt.subplot(gs[2, 4])
-                plotter_align_perc.roi_post_isi(stim_post_ax01, roi_id)
+                # alignments.
+                vis1_ax01 = plt.subplot(gs[2, 0])
+                vis1_ax02 = plt.subplot(gs[3, 0])
+                vis1_ax03 = plt.subplot(gs[4, 0])
+                plotter_percept.roi_vis1_outcome(vis1_ax01, roi_id)
+                plotter_percept.roi_vis1_outcome_box(vis1_ax02, roi_id)
+                plotter_percept.roi_vis1_heatmap_trials(vis1_ax03, roi_id)
+                press1_ax01 = plt.subplot(gs[2, 1])
+                press1_ax02 = plt.subplot(gs[3, 1])
+                press1_ax03 = plt.subplot(gs[4, 1])
+                plotter_motor.roi_press1(press1_ax01, roi_id)
+                plotter_motor.roi_press1_box(press1_ax02, roi_id)
+                plotter_motor.roi_press1_heatmap_trials(press1_ax03, roi_id)
+                retract1_ax01 = plt.subplot(gs[2, 2])
+                retract1_ax02 = plt.subplot(gs[3, 2])
+                retract1_ax03 = plt.subplot(gs[4, 2])
+                plotter_motor.roi_retract1(retract1_ax01, roi_id)
+                plotter_motor.roi_retract1_box(retract1_ax02, roi_id)
+                plotter_motor.roi_retract1_heatmap_trials(retract1_ax03, roi_id)
+                vis2_ax01 = plt.subplot(gs[2, 3])
+                vis2_ax02 = plt.subplot(gs[3, 3])
+                vis2_ax03 = plt.subplot(gs[4, 3])
+                plotter_percept.roi_vis2_outcome(vis2_ax01, roi_id)
+                plotter_percept.roi_vis2_outcome_box(vis2_ax02, roi_id)
+                plotter_percept.roi_vis2_heatmap_trials(vis2_ax03, roi_id)
+                press2_ax01 = plt.subplot(gs[2, 4])
+                press2_ax02 = plt.subplot(gs[3, 4])
+                press2_ax03 = plt.subplot(gs[4, 4])
+                plotter_motor.roi_press2(press2_ax01, roi_id)
+                plotter_motor.roi_press2_box(press2_ax02, roi_id)
+                plotter_motor.roi_press2_heatmap_trials(press2_ax03, roi_id)
                 reward_ax01 = plt.subplot(gs[2, 5])
                 reward_ax02 = plt.subplot(gs[3, 5])
                 reward_ax03 = plt.subplot(gs[4, 5])
-                plotter_align_perc.roi_reward(reward_ax01, roi_id)
-                plotter_align_perc.roi_reward_box(reward_ax02, roi_id)
-                plotter_align_perc.roi_reward_heatmap_trials(reward_ax03, roi_id)
+                plotter_percept.roi_reward(reward_ax01, roi_id)
+                plotter_percept.roi_reward_box(reward_ax02, roi_id)
+                plotter_percept.roi_reward_heatmap_trials(reward_ax03, roi_id)
                 punish_ax01 = plt.subplot(gs[2, 6])
                 punish_ax02 = plt.subplot(gs[3, 6])
                 punish_ax03 = plt.subplot(gs[4, 6])
-                plotter_align_perc.roi_punish(punish_ax01, roi_id)
-                plotter_align_perc.roi_punish_box(punish_ax02, roi_id)
-                plotter_align_perc.roi_punish_heatmap_trials(punish_ax03, roi_id)
-                # behavior alignments.
-                lick_all_ax01 = plt.subplot(gs[2, 7])
-                lick_all_ax02 = plt.subplot(gs[3, 7])
-                lick_all_ax03 = plt.subplot(gs[4, 7])
-                plotter_align_beh.roi_all(lick_all_ax01, roi_id)
-                plotter_align_beh.roi_all_box(lick_all_ax02, roi_id)
-                plotter_align_beh.roi_all_heatmap_trials(lick_all_ax03, roi_id)
-                lick_reaction_ax01 = plt.subplot(gs[2, 8])
-                lick_reaction_ax02 = plt.subplot(gs[3, 8])
-                lick_reaction_ax03 = plt.subplot(gs[4, 8])
-                plotter_align_beh.roi_reaction(lick_reaction_ax01, roi_id)
-                plotter_align_beh.roi_reaction_box(lick_reaction_ax02, roi_id)
-                plotter_align_beh.roi_reaction_heatmap_trials(lick_reaction_ax03, roi_id)
-                lick_decision_ax01 = plt.subplot(gs[2, 9])
-                lick_decision_ax02 = plt.subplot(gs[3, 9])
-                lick_decision_ax03 = plt.subplot(gs[4, 9])
-                plotter_align_beh.roi_decision(lick_decision_ax01, roi_id)
-                plotter_align_beh.roi_decision_box(lick_decision_ax02, roi_id)
-                plotter_align_beh.roi_decision_heatmap_trials(lick_decision_ax03, roi_id)
+                plotter_percept.roi_punish(punish_ax01, roi_id)
+                plotter_percept.roi_punish_box(punish_ax02, roi_id)
+                plotter_percept.roi_punish_heatmap_trials(punish_ax03, roi_id)
+                lick_ax01 = plt.subplot(gs[2, 7])
+                lick_ax02 = plt.subplot(gs[3, 7])
+                lick_ax03 = plt.subplot(gs[4, 7])
+                plotter_motor.roi_lick(lick_ax01, roi_id)
+                plotter_motor.roi_lick_box(lick_ax02, roi_id)
+                plotter_motor.roi_lick_heatmap_trials(lick_ax03, roi_id)
                 # significance.
                 sign_ax = plt.subplot(gs[1, 2])
                 plot_roi_significance(sign_ax, significance, roi_id)
@@ -253,7 +241,7 @@ def plot_2afc_VIPTD_G8(ops, session_data_name):
                 fname = os.path.join(
                     ops['save_path0'], 'figures',
                     str(roi_id).zfill(4)+'.pdf')
-                fig.set_size_inches(70, 35)
+                fig.set_size_inches(56, 35)
                 fig.savefig(fname, dpi=300)
                 plt.close()
                 roi_fig = fitz.open(fname)
@@ -261,12 +249,9 @@ def plot_2afc_VIPTD_G8(ops, session_data_name):
                 roi_fig.close()
                 os.remove(fname)
         roi_report.save(
-            os.path.join(
-                ops['save_path0'], 'figures',
-                'roi_report_{}.pdf'.format(session_data_name)))
+            os.path.join(ops['save_path0'], 'figures', session_data_name))
         roi_report.close()
-
-
+    
     def plot_raw_traces():
         max_ms = 300000
         if not os.path.exists(os.path.join(
@@ -290,8 +275,7 @@ def plot_2afc_VIPTD_G8(ops, session_data_name):
                 str(roi_id).zfill(4)+'.pdf'),
                 dpi=300)
             plt.close()
-
-    # read data.
+    
     print('===============================================')
     print('============ reading saved results ============')
     print('===============================================')
@@ -307,32 +291,34 @@ def plot_2afc_VIPTD_G8(ops, session_data_name):
     neural_trials = read_neural_trials(ops)
     [xoff, yoff] = read_move_offset(ops)
     significance = read_significance(ops)
+    if RESET_SIGNIFICANCE:
+        significance = reset_significance(significance)
     print('Processing masks')
     plotter_masks = plotter_all_masks(
         labels, masks, mean_func, max_func, mean_anat, masks_anat)
     print('Processing behavior')
-    plotter_beh = plotter_VIPTD_G8_beh(
+    plotter_beh = plotter_all_beh(
         neural_trials)
-    print('Processing behavior alignment')
-    plotter_align_beh = plotter_VIPTD_G8_align_beh(
+    print('Processing perception')
+    plotter_percept = plotter_VIPTD_G8_percept(
         neural_trials, labels, significance)
-    print('Processing perception alignment')
-    plotter_align_perc = plotter_VIPTD_G8_align_perc(
+    print('Processing locomotion')
+    plotter_motor = plotter_VIPTD_G8_motor(
         neural_trials, labels, significance)
     print('===============================================')
-    print('============= plot session report =============')
+    print('====== plot session report with all ROIs ======')
     print('===============================================')
-    plot_session_report()
+    plot_session_report('session_report_{}.pdf'.format(session_data_name))
     print('===============================================')
     print('=============== plot roi report ===============')
     print('===============================================')
-    plot_individual_roi()
+    plot_individual_roi('roi_report_{}.pdf'.format(session_data_name))
     print('===============================================')
     print('=============== plot raw traces ===============')
     print('===============================================')
     #plot_raw_traces()
-
-
+    
+    
 def run(session_data_path):
     session_data_name = session_data_path.split('/')[-1]
     ops = read_ops(session_data_path)
@@ -341,14 +327,17 @@ def run(session_data_path):
     print('===============================================')
     print('============= trials segmentation =============')
     print('===============================================')
-    #Trialization.run(ops)
-    #StatTest.run(ops)
-    plot_2afc_VIPTD_G8(ops, session_data_name)
+    Trialization.run(ops)
+    StatTest.run(ops)
+    plot_js_VIPTD_G8(ops, session_data_name)
     print('===============================================')
     print('Processing {} completed'.format(session_data_name))
-
-
+    
+    
 if __name__ == "__main__":
-
-    session_data_path = 'C:/Users/yhuang887/Projects/interval_discrimination_basic_202404/results/FN14_P_20240530_2afc_t'
+    RESET_SIGNIFICANCE = False
+    
+    session_data_path = 'C:/Users/yhuang887/Projects/joystick_basic_202304/results/FN16_P_20240604_js_t'
     run(session_data_path)
+
+    
