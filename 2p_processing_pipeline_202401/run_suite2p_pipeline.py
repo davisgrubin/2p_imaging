@@ -102,9 +102,9 @@ def process_vol(args):
             vol_start = np.zeros_like(vol_time)
         # AI1: sync patch and photodiode (visual stimulus).
         if ' Input 1' in df_vol.columns.tolist():
-            vol_stim_vis = df_vol[' Input 1'].to_numpy()
+            vol_stim_bin = df_vol[' Input 1'].to_numpy()
         else:
-            vol_stim_vis = np.zeros_like(vol_time)
+            vol_stim_bin = np.zeros_like(vol_time)
         # AI2: HIFI BNC output.
         if ' Input 2' in df_vol.columns.tolist():
             vol_hifi = df_vol[' Input 2'].to_numpy()
@@ -138,7 +138,7 @@ def process_vol(args):
         vol = {
             'vol_time'     : vol_time,
             'vol_start'    : vol_start,
-            'vol_stim_vis' : vol_stim_vis,
+            'vol_stim_bin' : vol_stim_bin,
             'vol_hifi'     : vol_hifi,
             'vol_img'      : vol_img,
             'vol_stim_aud' : vol_stim_aud,
@@ -161,10 +161,12 @@ def process_vol(args):
     # convert all voltage recordings to binary series.
     def vol_to_binary(vol):
         vol['vol_start']    = thres_binary(vol['vol_start'],    1)
-        vol['vol_stim_vis'] = thres_binary(vol['vol_stim_vis'], 1)
+        vol['vol_stim_bin'] = thres_binary(vol['vol_stim_bin'], 1)
         vol['vol_hifi']     = thres_binary(vol['vol_hifi'],     0.5)
         vol['vol_img']      = thres_binary(vol['vol_img'],      1)
-        vol['vol_flir']     = thres_binary(vol['vol_flir'],     0.5)
+        vol['vol_pmt']      = thres_binary(vol['vol_pmt'],      1)
+        vol['vol_flir']     = thres_binary(vol['vol_flir'],     1)
+        vol['vol_led']      = thres_binary(vol['vol_led'],     1)
         return vol
 
     # save voltage data.
@@ -181,7 +183,7 @@ def process_vol(args):
         grp = f.create_group('raw')
         grp['vol_time']      = vol['vol_time']
         grp['vol_start_bin'] = vol['vol_start']
-        grp['vol_stim_bin']  = vol['vol_stim_vis']
+        grp['vol_stim_bin']  = vol['vol_stim_bin']
         grp['vol_hifi']      = vol['vol_hifi']
         grp['vol_img_bin']   = vol['vol_img']
         grp['vol_stim_aud']  = vol['vol_stim_aud']
