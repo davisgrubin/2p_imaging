@@ -189,6 +189,7 @@ def process_vol(args):
         grp['vol_stim_aud']  = vol['vol_stim_aud']
         grp['vol_flir']      = vol['vol_flir']
         grp['vol_pmt']       = vol['vol_pmt']
+        grp['vol_led']       = vol['vol_led']
         f.close()
 
     # run processing.
