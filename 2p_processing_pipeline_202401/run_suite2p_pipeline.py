@@ -182,10 +182,10 @@ def process_vol(args):
             args.save_path, 'raw_voltages.h5'), 'w')
         grp = f.create_group('raw')
         grp['vol_time']      = vol['vol_time']
-        grp['vol_start_bin'] = vol['vol_start']
+        grp['vol_start']     = vol['vol_start']
         grp['vol_stim_vis']  = vol['vol_stim_vis']
         grp['vol_hifi']      = vol['vol_hifi']
-        grp['vol_img_bin']   = vol['vol_img']
+        grp['vol_img']       = vol['vol_img']
         grp['vol_stim_aud']  = vol['vol_stim_aud']
         grp['vol_flir']      = vol['vol_flir']
         grp['vol_pmt']       = vol['vol_pmt']
