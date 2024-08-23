@@ -46,10 +46,10 @@ def reset_significant_roi(significance):
 
 from plot.fig0_beh import plotter_all_beh
 from plot.fig1_mask import plotter_all_masks
-from plot.fig2_align_percept import plotter_VIPG8_percept
-from plot.fig3_align_motor import plotter_VIPG8_motor
-from plot.fig4_model import plotter_VIPG8_model
-from plot.fig5_raw_traces import plot_VIPG8_example_traces
+from plot.fig2_align_percept import plotter_L7G8_percept
+from plot.fig3_align_motor import plotter_L7G8_motor
+from plot.fig4_model import plotter_L7G8_model
+from plot.fig5_raw_traces import plot_L7G8_example_traces
 from plot.fig5_raw_traces import plot_roi_example_traces
 from plot.fig5_raw_traces import plot_roi_raw_trace
 from plot.misc import plot_motion_offset_hist
@@ -58,7 +58,7 @@ from plot.misc import plot_significance
 from plot.misc import plot_roi_significance
 
 
-def plot_js_VIPG8(ops, session_data_name):
+def plot_js_L7G8(ops, session_data_name):
     
     def plot_session_report():
         fig = plt.figure(figsize=(77, 168))
@@ -228,7 +228,7 @@ def plot_js_VIPG8(ops, session_data_name):
         plotter_model.plot_block_tran_decode_long(model_ax04)
         # example traces.
         example_ax = plt.subplot(gs[0:3, 8])
-        plot_VIPG8_example_traces(
+        plot_L7G8_example_traces(
             example_ax, dff, labels, vol_img, vol_time)
         # offset.
         offset_ax = plt.subplot(gs[0, 9])
@@ -366,7 +366,7 @@ def plot_js_VIPG8(ops, session_data_name):
      masks,
      mean_func, max_func,
      mean_anat, masks_anat] = read_masks(ops)
-    labels = 1*np.ones_like(labels)
+    labels = -1*np.ones_like(labels)
     [vol_time, vol_start, vol_stim_vis, vol_img, 
      vol_hifi, vol_stim_aud, vol_flir,
      vol_pmt, vol_led] = read_raw_voltages(ops)
@@ -383,13 +383,13 @@ def plot_js_VIPG8(ops, session_data_name):
     plotter_beh = plotter_all_beh(
         neural_trials, cate_delay)
     print('Processing perception')
-    plotter_percept = plotter_VIPG8_percept(
+    plotter_percept = plotter_L7G8_percept(
         neural_trials, labels, significance, cate_delay)
     print('Processing locomotion')
-    plotter_motor = plotter_VIPG8_motor(
+    plotter_motor = plotter_L7G8_motor(
         neural_trials, labels, significance, cate_delay)
     print('Processing Modeling')
-    plotter_model = plotter_VIPG8_model(
+    plotter_model = plotter_L7G8_model(
         neural_trials, labels, significance, cate_delay)
     print('===============================================')
     print('============= plot session report =============')
@@ -413,19 +413,20 @@ def run(session_data_path):
     print('===============================================')
     print('============= trials segmentation =============')
     print('===============================================')
-    #Trialization.run(ops)
-    #StatTest.run(ops)
-    plot_js_VIPG8(ops, session_data_name)
+    Trialization.run(ops)
+    StatTest.run(ops)
+    plot_js_L7G8(ops, session_data_name)
     print('===============================================')
     print('Processing {} completed'.format(session_data_name))
     
     
 if __name__ == "__main__":
     reset_significance = False
-    cate_delay = 20
+    SELF_TIME = False
+    cate_delay = 40
     #delay = [neural_trials[str(i)]['trial_delay'] for i in range(len(neural_trials))]
     
-    session_data_path = 'C:/Users/yhuang887/Projects/joystick_basic_202304/results/VG01_P_20240611_js_DCNCHEMO_t'
+    session_data_path = 'C:/Users/yhuang887/Projects/joystick_basic_202304/results/LG07_CRBL_20240804_js_t'
     run(session_data_path)
 
     

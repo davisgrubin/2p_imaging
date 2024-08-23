@@ -45,12 +45,12 @@ def correct_time_img_center(time_img):
 def align_stim(
         vol_time,
         time_neuro,
-        vol_stim_bin,
+        vol_stim_vis,
         label_stim,
         ):
     # find the rising and falling time of stimulus.
     stim_time_up, stim_time_down = get_trigger_time(
-        vol_time, vol_stim_bin)
+        vol_time, vol_stim_vis)
     # avoid going up but not down again at the end.
     stim_time_up = stim_time_up[:len(stim_time_down)]
     # assign the start and end time to fluorescence frames.
@@ -74,9 +74,9 @@ def align_stim(
 
 def get_trial_start_end(
         vol_time,
-        vol_start_bin,
+        vol_start,
         ):
-    time_up, time_down = get_trigger_time(vol_time, vol_start_bin)
+    time_up, time_down = get_trigger_time(vol_time, vol_start)
     # find the impulse start signal.
     time_start = []
     for i in range(len(time_up)):
@@ -122,25 +122,40 @@ def trial_label(
         neural_trials,
         ):
     bpod_sess_data = read_bpod_mat_data(ops)
-    for i in range(len(neural_trials)):
+    for i in range(np.min([len(neural_trials), len(bpod_sess_data['trial_types'])])):
         neural_trials[str(i)]['trial_types'] = bpod_sess_data[
             'trial_types'][i]
+        neural_trials[str(i)]['trial_delay'] = bpod_sess_data[
+            'trial_delay'][i]
         neural_trials[str(i)]['trial_vis1'] = bpod_sess_data[
             'trial_vis1'][i] + neural_trials[str(i)]['vol_time'][0]
-        neural_trials[str(i)]['trial_press1'] = bpod_sess_data[
-            'trial_press1'][i] + neural_trials[str(i)]['vol_time'][0]
+        neural_trials[str(i)]['trial_push1'] = bpod_sess_data[
+            'trial_push1'][i] + neural_trials[str(i)]['vol_time'][0]
         neural_trials[str(i)]['trial_retract1'] = bpod_sess_data[
             'trial_retract1'][i] + neural_trials[str(i)]['vol_time'][0]
         neural_trials[str(i)]['trial_vis2'] = bpod_sess_data[
             'trial_vis2'][i] + neural_trials[str(i)]['vol_time'][0]
-        neural_trials[str(i)]['trial_press2'] = bpod_sess_data[
-            'trial_press2'][i] + neural_trials[str(i)]['vol_time'][0]
+        neural_trials[str(i)]['trial_wait2'] = bpod_sess_data[
+            'trial_wait2'][i] + neural_trials[str(i)]['vol_time'][0]
+        neural_trials[str(i)]['trial_push2'] = bpod_sess_data[
+            'trial_push2'][i] + neural_trials[str(i)]['vol_time'][0]
+        neural_trials[str(i)]['trial_retract2'] = bpod_sess_data[
+            'trial_retract2'][i] + neural_trials[str(i)]['vol_time'][0]
         neural_trials[str(i)]['trial_reward'] = bpod_sess_data[
             'trial_reward'][i] + neural_trials[str(i)]['vol_time'][0]
         neural_trials[str(i)]['trial_punish'] = bpod_sess_data[
             'trial_punish'][i] + neural_trials[str(i)]['vol_time'][0]
+        neural_trials[str(i)]['trial_no1stpush'] = bpod_sess_data[
+            'trial_no1stpush'][i] + neural_trials[str(i)]['vol_time'][0]
+        neural_trials[str(i)]['trial_no2ndpush'] = bpod_sess_data[
+            'trial_no2ndpush'][i] + neural_trials[str(i)]['vol_time'][0]
+        neural_trials[str(i)]['trial_early2ndpush'] = bpod_sess_data[
+            'trial_early2ndpush'][i] + neural_trials[str(i)]['vol_time'][0]
+        neural_trials[str(i)]['trial_iti'] = bpod_sess_data[
+            'trial_iti'][i] + neural_trials[str(i)]['vol_time'][0]
         neural_trials[str(i)]['trial_lick'] = bpod_sess_data[
-            'trial_lick'][i] + neural_trials[str(i)]['vol_time'][0]
+            'trial_lick'][i]
+        neural_trials[str(i)]['trial_lick'][0,:] += neural_trials[str(i)]['vol_time'][0]
         neural_trials[str(i)]['trial_js_pos'] = bpod_sess_data[
             'trial_js_pos'][i]
         neural_trials[str(i)]['trial_js_time'] = bpod_sess_data[
@@ -163,14 +178,17 @@ def save_trials(
     # ------ dff
     # ---- 2
     # ...
+    exclude_start = 20
+    exclude_end = 20
     f = h5py.File(
         os.path.join(ops['save_path0'], 'neural_trials.h5'),
         'w')
     grp = f.create_group('trial_id')
     for trial in range(len(neural_trials)):
-        trial_group = grp.create_group(str(trial))
-        for k in neural_trials[str(trial)].keys():
-            trial_group[k] = neural_trials[str(trial)][k]
+        if trial > exclude_start and trial < len(neural_trials)-exclude_end:
+            trial_group = grp.create_group(str(trial))
+            for k in neural_trials[str(trial)].keys():
+                trial_group[k] = neural_trials[str(trial)][k]
     f.close()
 
 
@@ -182,25 +200,23 @@ def run(ops):
     print('===============================================')
     print('Reading dff traces and voltage recordings')
     dff = read_dff(ops)
-    [vol_time,
-     vol_start_bin,
-     vol_stim_bin,
-     vol_img_bin] = read_raw_voltages(ops)
+    [vol_time, vol_start, vol_stim_vis, vol_img, 
+     _, _, _, _, _] = read_raw_voltages(ops)
     print('Correcting 2p camera trigger time')
     # signal trigger time stamps.
-    time_img, _   = get_trigger_time(vol_time, vol_img_bin)
+    time_img, _   = get_trigger_time(vol_time, vol_img)
     # correct imaging timing.
     time_neuro = correct_time_img_center(time_img)
     # stimulus alignment.
     print('Aligning stimulus to 2p frame')
-    stim = align_stim(vol_time, time_neuro, vol_stim_bin, vol_stim_bin)
+    stim = align_stim(vol_time, time_neuro, vol_stim_vis, vol_stim_vis)
     # trial segmentation.
     print('Segmenting trials')
-    start, end = get_trial_start_end(vol_time, vol_start_bin)
+    start, end = get_trial_start_end(vol_time, vol_start)
     neural_trials = trial_split(
         start, end,
         dff, stim, time_neuro,
-        vol_stim_bin, vol_time)
+        vol_stim_vis, vol_time)
     neural_trials = trial_label(ops, neural_trials)
     # save the final data.
     print('Saving trial data')

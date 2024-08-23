@@ -17,3 +17,14 @@
 
 ## 2024.07.10
 - Added significance reset function.
+
+## 2024.08.18
+- Separate short/long blocks.
+- Added outcome discrimination.
+- Separate punish trials for all plots.
+- Added block decoding results.
+- Added block transient decoding results.
+- Changed punish trial colors.
+- Added trial number handler.
+- Added null trial outcome for visual interruption.
+- Added whether add mask edges to channel projection images.

@@ -74,8 +74,8 @@ class plotter_all_masks:
         self.size = 128
         self.roi_row, self.roi_col = get_roi_range(self.size, masks)
         
-    # functional channel max projection.
-    def func(self, ax, img):
+    # functional channel.
+    def func(self, ax, img, with_mask=True):
         if img == 'mean':
             f = self.mean_func
             t = 'functional channel mean projection'
@@ -86,9 +86,10 @@ class plotter_all_masks:
             (f.shape[0], f.shape[1], 3), dtype='int32')
         func_img[:,:,1] = adjust_contrast(f)
         func_img = adjust_contrast(func_img)
-        x_all, y_all = np.where(find_boundaries(self.masks))
-        for x,y in zip(x_all, y_all):
-            func_img[x,y,:] = np.array([255,255,255])
+        if with_mask:
+            x_all, y_all = np.where(find_boundaries(self.masks))
+            for x,y in zip(x_all, y_all):
+                func_img[x,y,:] = np.array([255,255,255])
         ax.matshow(func_img)
         adjust_layout(ax)
         ax.set_title(t)
@@ -144,20 +145,21 @@ class plotter_all_masks:
         ax.set_title('functional and anatomical masks superimpose')
 
     # anatomy channel mean image.
-    def anat(self, ax):
+    def anat(self, ax, with_mask=True):
         anat_img = np.zeros(
             (self.mean_anat.shape[0], self.mean_anat.shape[1], 3), dtype='int32')
         anat_img[:,:,0] = adjust_contrast(self.mean_anat)
         anat_img = adjust_contrast(anat_img)
-        x_all, y_all = np.where(find_boundaries(self.masks))
-        for x,y in zip(x_all, y_all):
-            anat_img[x,y,:] = np.array([255,255,255])
-        x_all, y_all = np.where(find_boundaries(self.labeled_masks_img[:,:,0]))
-        for x,y in zip(x_all, y_all):
-            anat_img[x,y,:] = np.array([255,255,0])
-        x_all, y_all = np.where(find_boundaries(self.unsure_masks_img[:,:,0]))
-        for x,y in zip(x_all, y_all):
-            anat_img[x,y,:] = np.array([0,196,255])
+        if with_mask:
+            x_all, y_all = np.where(find_boundaries(self.masks))
+            for x,y in zip(x_all, y_all):
+                anat_img[x,y,:] = np.array([255,255,255])
+            x_all, y_all = np.where(find_boundaries(self.labeled_masks_img[:,:,0]))
+            for x,y in zip(x_all, y_all):
+                anat_img[x,y,:] = np.array([255,255,0])
+            x_all, y_all = np.where(find_boundaries(self.unsure_masks_img[:,:,0]))
+            for x,y in zip(x_all, y_all):
+                anat_img[x,y,:] = np.array([0,196,255])
         ax.matshow(anat_img)
         adjust_layout(ax)
         ax.set_title('anatomy channel mean image')
@@ -246,7 +248,7 @@ class plotter_all_masks:
         ax.set_title('ROI # {} location ({})'.format(str(roi_id).zfill(4), c))
     
     # ROI functional channel.
-    def roi_func(self, ax, roi_id, img):
+    def roi_func(self, ax, roi_id, img, with_mask=True):
         if img == 'mean':
             f = self.mean_func
             t = 'functional channel mean projection'
@@ -260,15 +262,16 @@ class plotter_all_masks:
         img = np.zeros((func_img.shape[0], func_img.shape[1], 3))
         img[:,:,1] = func_img
         img = adjust_contrast(img)
-        x_all, y_all = np.where(find_boundaries(roi_masks))
-        for x,y in zip(x_all, y_all):
-            img[x,y,:] = np.array([255,255,255])
+        if with_mask:
+            x_all, y_all = np.where(find_boundaries(roi_masks))
+            for x,y in zip(x_all, y_all):
+                img[x,y,:] = np.array([255,255,255])
         ax.matshow(img)
         adjust_layout(ax)
         ax.set_title(t)
     
     # ROI anatomical channel mean projection.
-    def roi_anat(self, ax, roi_id):
+    def roi_anat(self, ax, roi_id, with_mask=True):
         r = self.roi_row[roi_id]
         c = self.roi_col[roi_id]
         mean_anat_img = self.mean_anat[r:r+self.size, c:c+self.size]
@@ -276,15 +279,16 @@ class plotter_all_masks:
         img = np.zeros((mean_anat_img.shape[0], mean_anat_img.shape[1], 3))
         img[:,:,0] = mean_anat_img
         img = adjust_contrast(img)
-        x_all, y_all = np.where(find_boundaries(roi_masks))
-        for x,y in zip(x_all, y_all):
-            img[x,y,:] = np.array([255,255,255])
+        if with_mask:
+            x_all, y_all = np.where(find_boundaries(roi_masks))
+            for x,y in zip(x_all, y_all):
+                img[x,y,:] = np.array([255,255,255])
         ax.matshow(img)
         adjust_layout(ax)
         ax.set_title('anatomy channel mean image')
 
     # ROI channel image superimpose with max functional.
-    def roi_superimpose(self, ax, roi_id, img):
+    def roi_superimpose(self, ax, roi_id, img, with_mask=True):
         if img == 'mean':
             f = self.mean_func
         if img == 'max':
@@ -297,9 +301,10 @@ class plotter_all_masks:
         c = self.roi_col[roi_id]
         super_img = super_img[r:r+self.size, c:c+self.size, :]
         roi_masks = (self.masks[r:r+self.size, c:c+self.size]==(roi_id+1))*1
-        x_all, y_all = np.where(find_boundaries(roi_masks))
-        for x,y in zip(x_all, y_all):
-            super_img[x,y,:] = np.array([255,255,255])
+        if with_mask:
+            x_all, y_all = np.where(find_boundaries(roi_masks))
+            for x,y in zip(x_all, y_all):
+                super_img[x,y,:] = np.array([255,255,255])
         ax.matshow(super_img)
         adjust_layout(ax)
         ax.set_title('channel images superimpose')

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+from plot.utils import get_roi_label_color
 
 # fig, ax = plt.subplots(1, 1, figsize=(6, 6))
 
@@ -43,53 +44,46 @@ def plot_inh_exc_label_pc(ax, labels):
     ax.set_title('percentage of neuron labels')
 
 # significant neurons ratio.
-def plot_significance(ax, significance):
-    labels = ['vis1', 'press1', 'retract1',
-              'vis2', 'press2',
-              'reward', 'punish', 'lick']
-    respon = [
-        [np.sum(significance['r_vis1']==0), np.sum(significance['r_vis1']==1)],
-        [np.sum(significance['r_press1']==0), np.sum(significance['r_press1']==1)],
-        [np.sum(significance['r_retract1']==0), np.sum(significance['r_retract1']==1)],
-        [np.sum(significance['r_vis2']==0), np.sum(significance['r_vis2']==1)],
-        [np.sum(significance['r_press2']==0), np.sum(significance['r_press2']==1)],
-        [np.sum(significance['r_reward']==0), np.sum(significance['r_reward']==1)],
-        [np.sum(significance['r_punish']==0), np.sum(significance['r_punish']==1)],
-        [np.sum(significance['r_lick']==0), np.sum(significance['r_lick']==1)]]
-    for i in range(len(labels)):
+def plot_significance(ax, significance, labels):
+    width = 0.2
+    sig = ['vis', 'push', 'retract', 'wait',
+           'reward', 'punish', 'lick']
+    _, _, c_exc, _ = get_roi_label_color([-1], 0)
+    _, _, c_inh, _ = get_roi_label_color([1], 0)
+    for i in range(len(sig)):
+        r0_exc = np.sum((significance['r_'+sig[i]]==0)*(labels==-1))
+        r1_exc = np.sum((significance['r_'+sig[i]]==1)*(labels==-1))
+        r0_inh = np.sum((significance['r_'+sig[i]]==0)*(labels==1))
+        r1_inh = np.sum((significance['r_'+sig[i]]==1)*(labels==1))
         ax.bar(
-            i, respon[i][0]/(respon[i][0]+respon[i][1]),
+            i-width/2, r1_exc/(r0_exc+r1_exc),
             bottom=0,
-            edgecolor='white', width=0.25, color='#989A9C')
+            width=width, color=c_exc)
         ax.bar(
-            i, respon[i][1]/(respon[i][0]+respon[i][1]),
-            bottom=respon[i][0]/(respon[i][0]+respon[i][1]),
-            edgecolor='white', width=0.25, color='#F9C08A')
+            i+width/2, r1_inh/(r0_inh+r1_inh),
+            bottom=0,
+            width=width, color=c_inh)
     ax.set_title('percentage of neuron with significant window response')
     ax.tick_params(tick1On=False)
     ax.spines['left'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
     ax.yaxis.grid(True)
     ax.set_ylabel('percentage')
-    ax.set_xlim([-1,len(labels)+1])
-    ax.set_xticks(np.arange(len(labels)))
-    ax.set_xticklabels(labels, rotation='vertical')
-    ax.plot([], color='#F9C08A', label='Y')
-    ax.plot([], color='#989A9C', label='N')
+    ax.set_xlim([-1,len(sig)+1])
+    ax.set_ylim([0,1])
+    ax.set_xticks(np.arange(len(sig)))
+    ax.set_xticklabels(sig, rotation='vertical')
+    ax.plot([], color=c_exc, label='exc')
+    ax.plot([], color=c_inh, label='inh')
     ax.legend(loc='upper right')
-
 
 # roi significance label.
 def plot_roi_significance(ax, significance, roi_id):
-    labels = ['vis1', 'press1', 'retract1',
-              'vis2', 'press2',
+    labels = ['vis', 'push', 'retract', 'wait',
               'reward', 'punish', 'lick']
-    respon = [significance['r_vis1'][roi_id],
-              significance['r_press1'][roi_id],
-              significance['r_retract1'][roi_id],
-              significance['r_vis2'][roi_id],
-              significance['r_press2'][roi_id],
+    respon = [significance['r_vis'][roi_id],
+              significance['r_push'][roi_id],
+              significance['r_retract'][roi_id],
               significance['r_reward'][roi_id],
               significance['r_punish'][roi_id],
               significance['r_lick'][roi_id]]
@@ -110,3 +104,7 @@ def plot_roi_significance(ax, significance, roi_id):
     ax.plot([], color='#F9C08A', label='Y')
     ax.plot([], color='#989A9C', label='N')
     ax.legend(loc='upper right')
+    
+    
+    
+    
