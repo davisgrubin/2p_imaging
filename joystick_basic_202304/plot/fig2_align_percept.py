@@ -4,7 +4,7 @@ import numpy as np
 
 from modules.Alignment import get_stim_response
 from modules.Alignment import get_outcome_response
-from plot.utils import get_block_transient
+from plot.utils import get_block_epoch
 from plot.utils import get_trial_type
 from plot.utils import get_mean_sem
 from plot.utils import get_roi_label_color
@@ -31,11 +31,11 @@ class plotter_utils(utils):
          self.delay_vis2] = get_stim_response(
                 neural_trials, 'trial_vis2', self.l_frames_vis2, self.r_frames_vis2)
         [self.neu_seq_reward, self.neu_time_reward,
-         self.outcome_reward, _,
+         self.outcome_seq_reward, self.outcome_reward,
          self.delay_reward] = get_outcome_response(
                 neural_trials, 'trial_reward', self.l_frames_out, self.r_frames_out)
         [self.neu_seq_punish, self.neu_time_punish,
-         self.outcome_punish, self.punish_label,
+         self.outcome_seq_punish, self.outcome_punish,
          self.delay_punish] = get_outcome_response(
                 neural_trials, 'trial_punish', self.l_frames_out, self.r_frames_out)
         self.significance = significance
@@ -85,7 +85,7 @@ class plotter_utils(utils):
         upper = np.nanmax(neu_mean) + np.nanmax(neu_sem)
         lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
         ax.fill_between(
-            self.outcome_reward,
+            self.outcome_seq_reward,
             lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
             color='grey', alpha=0.15, step='mid')
         adjust_layout_neu(ax)
@@ -94,33 +94,27 @@ class plotter_utils(utils):
     
     def plot_punish(
             self, ax,
-            delay, block, s,
+            block, s,
             cate=None, roi_id=None):
-        if cate != None:
-            neu_cate = self.neu_seq_punish[:,(self.labels==cate)*s,:]
-            _, color1, color2, _ = get_roi_label_color([cate], 0)
-        if roi_id != None:
-            neu_cate = np.expand_dims(self.neu_seq_punish[:,roi_id,:], axis=1)
-            _, color1, color2, _ = get_roi_label_color(self.labels, roi_id)
-        idx = get_trial_type(self.cate_delay, delay, block)
-        neu1 = neu_cate[idx*(self.punish_label=='no1stpush'),:,:].copy()
-        neu2 = neu_cate[idx*(self.punish_label=='no2ndpush'),:,:].copy()
-        m = []
-        s = []
-        if np.size(neu1)>0:
-            neu1_mean, neu1_sem = get_mean_sem(neu1)
-            self.plot_mean_sem(ax, self.neu_time_punish, neu1_mean, neu1_sem, color1, 'no1stpush')
-            m.append(neu1_mean)
-            s.append(neu1_sem)
-        if np.size(neu2)>0:
-            neu2_mean, neu2_sem = get_mean_sem(neu2)
-            self.plot_mean_sem(ax, self.neu_time_punish, neu2_mean, neu2_sem, color2, 'no2ndpush')
-            m.append(neu2_mean)
-            s.append(neu2_sem)
-        upper = np.nanmax(m) + np.nanmax(s)
-        lower = np.nanmin(m) - np.nanmax(s)
+        if not np.isnan(np.sum(self.neu_seq_punish)):
+            if cate != None:
+                neu_cate = self.neu_seq_punish[:,(self.labels==cate)*s,:]
+            if roi_id != None:
+                neu_cate = np.expand_dims(self.neu_seq_punish[:,roi_id,:], axis=1)
+            idx = get_trial_type(self.cate_delay, self.delay_punish, block)
+            mean = []
+            sem = []
+            for i in [1,2,3]:
+                trial_idx = idx*(self.outcome_punish==i)
+                if len(trial_idx) >= self.min_num_trial:
+                    m, s = get_mean_sem(neu_cate[trial_idx,:,:])
+                    self.plot_mean_sem(ax, self.neu_time_punish, m, s, self.colors[i], self.states[i])
+                    mean.append(m)
+                    sem.append(s)
+            upper = np.nanmax(mean) + np.nanmax(sem)
+            lower = np.nanmin(mean) - np.nanmax(sem)
         ax.fill_between(
-            self.outcome_punish,
+            self.outcome_seq_punish,
             lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
             color='grey', alpha=0.15, step='mid')
         adjust_layout_neu(ax)
@@ -140,9 +134,13 @@ class plotter_utils(utils):
                 neu_cate = np.expand_dims(neu_seq[:,roi_id,:], axis=1)
                 _, color1, color2, _ = get_roi_label_color(self.labels, roi_id)
             idx = get_trial_type(self.cate_delay, delay, block)
-            trial_idx, block_tran = get_block_transient(idx)
-            i_ep1 = (block_tran==1) * trial_idx * idx * (outcome==0)
-            i_ep2 = (block_tran==0) * trial_idx * idx * (outcome==0)
+            trial_idx, block_tran = get_block_epoch(idx)
+            if np.sum(outcome==0) != 0:
+                i_ep1 = (block_tran==1) * trial_idx * idx * (outcome==0)
+                i_ep2 = (block_tran==0) * trial_idx * idx * (outcome==0)
+            else:
+                i_ep1 = (block_tran==1) * trial_idx * idx * (outcome>0)
+                i_ep2 = (block_tran==0) * trial_idx * idx * (outcome>0)
             m_ep1, s_ep1 = get_mean_sem(neu_cate[i_ep1,:,:])
             m_ep2, s_ep2 = get_mean_sem(neu_cate[i_ep2,:,:])
             if not np.isnan(np.sum(m_ep1)) and not np.isnan(np.sum(m_ep2)):
@@ -157,69 +155,69 @@ class plotter_utils(utils):
                 adjust_layout_neu(ax)
                 ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
     
-    # roi response to 1st stimulus with outcome.
+    # roi response to Vis1 with outcome.
     def roi_vis1_outcome(self, ax, roi_id):
         self.plot_stim_outcome(
             ax,
             self.neu_seq_vis1, self.neu_time_vis1,
             self.outcome_vis1, self.stim_seq_vis1,
             None, roi_id=roi_id)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('response to 1st vis stim')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('response to Vis1')
     
-    # roi response to 1st stimulus with outcome quantification.
+    # roi response to Vis1 with outcome quantification.
     def roi_vis1_outcome_box(self, ax, roi_id):
         neu_cate = np.expand_dims(self.neu_seq_vis1[:,roi_id,:], axis=1)
         neu_reward = neu_cate[self.outcome_vis1==1,:,:].copy()
         neu_punish = neu_cate[self.outcome_vis1==-1,:,:].copy()
         self.plot_win_mag_box(ax, neu_reward, self.neu_time_vis1, 'mediumseagreen', 0, -0.1)
         self.plot_win_mag_box(ax, neu_punish, self.neu_time_vis1, 'coral', 0, 0.1)
-        ax.set_title('response to 1st vis stim')
+        ax.set_title('response to Vis1')
         ax.plot([], color='mediumseagreen', label='reward')
         ax.plot([], color='coral', label='punish')
         ax.legend(loc='upper right')
     
-    # roi response to 1st stimulus with outcome single trial heatmap.
+    # roi response to Vis1 with outcome single trial heatmap.
     def roi_vis1_heatmap_trials(self, ax, roi_id):
         _, _, _, cmap = get_roi_label_color(self.labels, roi_id)
         self.plot_heatmap_trials(
             ax, self.neu_seq_vis1[:,roi_id,:], self.neu_time_vis1, cmap, norm=True)
-        ax.set_title('response to 1st vis stim')
+        ax.set_title('response to Vis1')
         
-    # roi response to 2nd stimulus with outcome.
+    # roi response to Vis2 with outcome.
     def roi_vis2_outcome(self, ax, roi_id):
         self.plot_stim_outcome(
             ax,
             self.neu_seq_vis2, self.neu_time_vis2,
             self.outcome_vis2, self.stim_seq_vis2,
             None, roi_id=roi_id)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('response to 2nd vis stim')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('response to Vis2')
     
-    # roi response to 2nd stimulus with outcome quantification.
+    # roi response to Vis2 with outcome quantification.
     def roi_vis2_outcome_box(self, ax, roi_id):
         neu_cate = np.expand_dims(self.neu_seq_vis2[:,roi_id,:], axis=1)
         neu_reward = neu_cate[self.outcome_vis2==1,:,:].copy()
         neu_punish = neu_cate[self.outcome_vis2==-1,:,:].copy()
         self.plot_win_mag_box(ax, neu_reward, self.neu_time_vis2, 'mediumseagreen', 0, -0.1)
         self.plot_win_mag_box(ax, neu_punish, self.neu_time_vis2, 'coral', 0, 0.1)
-        ax.set_title('response to 2nd vis stim')
+        ax.set_title('response to Vis2')
         ax.plot([], color='mediumseagreen', label='reward')
         ax.plot([], color='coral', label='punish')
         ax.legend(loc='upper right')
 
-    # roi response to 2nd stimulus with outcome single trial heatmap.
+    # roi response to Vis2 with outcome single trial heatmap.
     def roi_vis2_heatmap_trials(self, ax, roi_id):
         _, _, _, cmap = get_roi_label_color(self.labels, roi_id)
         self.plot_heatmap_trials(
             ax, self.neu_seq_vis2[:,roi_id,:], self.neu_time_vis2, cmap, norm=True)
-        ax.set_title('response to 2nd vis stim')
+        ax.set_title('response to Vis2')
     
     # roi response to reward.
     def roi_reward(self, ax, roi_id):
         self.plot_outcome(
             ax, self.neu_seq_reward, self.neu_time_reward, 
-            self.outcome_reward, None, roi_id=roi_id)
+            self.outcome_seq_reward, None, roi_id=roi_id)
         ax.set_xlabel('time since reward (ms)')
         ax.set_title('response to reward')
     
@@ -241,7 +239,7 @@ class plotter_utils(utils):
     def roi_punish(self, ax, roi_id):
         self.plot_outcome(
             ax, self.neu_seq_punish, self.neu_time_punish, 
-            self.outcome_punish, None, roi_id=roi_id)
+            self.outcome_seq_punish, None, roi_id=roi_id)
         ax.set_xlabel('time since punish (ms)')
         ax.set_title('response to punish')
 
@@ -282,7 +280,7 @@ class plotter_VIPTD_G8_percept(plotter_utils):
                 color='grey', alpha=0.15, step='mid')
             ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
             
-    # excitory response to 1st stimulus with outcome (short).
+    # excitory response to Vis1 with outcome (short).
     def short_vis1_outcome_exc(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -290,10 +288,10 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 0,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('excitory response to 1st vis stim')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('excitory response to Vis1')
     
-    # inhibitory response to 1st stimulus with outcome (short).
+    # inhibitory response to Vis1 with outcome (short).
     def short_vis1_outcome_inh(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -301,18 +299,18 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 0,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('inhibitory response to 1st vis stim')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('inhibitory response to Vis1')
     
-    # response to 1st stimulus heatmap average across trials (short).
+    # response to Vis1 heatmap average across trials (short).
     def short_vis1_heatmap_neuron(self, ax):
         idx = get_trial_type(self.cate_delay, self.delay_vis1, 0)
         self.plot_heatmap_neuron(
             ax, self.neu_seq_vis1[idx,:,:], self.neu_time_vis1, self.significance['r_vis'])
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('response to 1st vis stim')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('response to Vis1')
     
-    # excitory response to 2nd stimulus with outcome (short).
+    # excitory response to Vis2 with outcome (short).
     def short_vis2_outcome_exc(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -320,10 +318,10 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 0,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('excitory response to 2nd vis stim')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('excitory response to Vis2')
     
-    # inhibitory response to 2nd stimulus with outcome (short).
+    # inhibitory response to Vis2 with outcome (short).
     def short_vis2_outcome_inh(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -331,16 +329,16 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 0,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('inhibitory response to 2nd vis stim')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('inhibitory response to Vis2')
     
-    # response to 2nd stimulus heatmap average across trials (short).
+    # response to Vis2 heatmap average across trials (short).
     def short_vis2_heatmap_neuron(self, ax):
         idx = get_trial_type(self.cate_delay, self.delay_vis2, 0)
         self.plot_heatmap_neuron(
             ax, self.neu_seq_vis2[idx,:,:], self.neu_time_vis2, self.significance['r_vis'])
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('response to 2nd vis stim')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('response to Vis2')
     
     # excitory response to reward (short).
     def short_reward_exc(self, ax):
@@ -362,12 +360,12 @@ class plotter_VIPTD_G8_percept(plotter_utils):
     
     # excitory response to punish (short).
     def short_punish_exc(self, ax):
-        self.plot_punish(ax, self.delay_punish, 0, self.significance['r_punish'], cate=-1)
+        self.plot_punish(ax, 0, self.significance['r_punish'], cate=-1)
         ax.set_title('excitory response to punish')
     
     # inhibitory response to punish (short).
     def short_punish_inh(self, ax):
-        self.plot_punish(ax, self.delay_punish, 0, self.significance['r_punish'], cate=1)
+        self.plot_punish(ax, 0, self.significance['r_punish'], cate=1)
         ax.set_title('inhibitory response to punish')
     
     # response to punish heatmap average across trials (short).
@@ -376,9 +374,9 @@ class plotter_VIPTD_G8_percept(plotter_utils):
         self.plot_heatmap_neuron(
             ax, self.neu_seq_punish[idx,:,:], self.neu_time_punish, self.significance['r_punish'])
         ax.set_xlabel('time since punish (ms)')
-        ax.set_title('response to all punish')
+        ax.set_title('response to punish (all)')
     
-    # excitory response to 1st stimulus with epoch (short).
+    # excitory response to Vis1 with epoch (short).
     def short_epoch_vis1_exc(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -386,10 +384,10 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 0,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('excitory response to 1st vis stim (reward)')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('excitory response to Vis1 (reward)')
     
-    # inhibitory response to 1st stimulus with epoch (short).
+    # inhibitory response to Vis1 with epoch (short).
     def short_epoch_vis1_inh(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -397,10 +395,10 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 0,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('inhibitory response to 1st vis stim (reward)')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('inhibitory response to Vis1 (reward)')
     
-    # excitory response to 2nd stimulus with epoch (short).
+    # excitory response to Vis2 with epoch (short).
     def short_epoch_vis2_exc(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -408,10 +406,10 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 0,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('excitory response to 2nd vis stim (reward)')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('excitory response to Vis2 (reward)')
     
-    # inhibitory response to 2nd stimulus with epoch (short).
+    # inhibitory response to Vis2 with epoch (short).
     def short_epoch_vis2_inh(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -419,10 +417,54 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 0,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('inhibitory response to 2nd vis stim (reward)')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('inhibitory response to Vis2 (reward)')
     
-    # excitory response to 1st stimulus with outcome (long).
+    # excitory response to reward with epoch (short).
+    def short_epoch_reward_exc(self, ax):
+        self.plot_stim_epoch(
+            ax,
+            self.neu_seq_reward, self.neu_time_reward,
+            self.outcome_reward, self.outcome_seq_reward,
+            self.delay_reward, 0,
+            self.significance['r_reward'], cate=-1)
+        ax.set_xlabel('time since reward (ms)')
+        ax.set_title('excitory response to reward')
+    
+    # inhibitory response to reward with epoch (short).
+    def short_epoch_reward_inh(self, ax):
+        self.plot_stim_epoch(
+            ax,
+            self.neu_seq_reward, self.neu_time_reward,
+            self.outcome_reward, self.outcome_seq_reward,
+            self.delay_reward, 0,
+            self.significance['r_reward'], cate=1)
+        ax.set_xlabel('time since reward (ms)')
+        ax.set_title('inhibitory response to reward')
+    
+    # excitory response to punish with epoch (short).
+    def short_epoch_punish_exc(self, ax):
+        self.plot_stim_epoch(
+            ax,
+            self.neu_seq_punish, self.neu_time_punish,
+            self.outcome_punish, self.outcome_seq_punish,
+            self.delay_punish, 0,
+            self.significance['r_punish'], cate=-1)
+        ax.set_xlabel('time since punish (ms)')
+        ax.set_title('excitory response to punish (all)')
+    
+    # inhibitory response to punish with epoch (short).
+    def short_epoch_punish_inh(self, ax):
+        self.plot_stim_epoch(
+            ax,
+            self.neu_seq_punish, self.neu_time_punish,
+            self.outcome_punish, self.outcome_seq_punish,
+            self.delay_punish, 0,
+            self.significance['r_punish'], cate=1)
+        ax.set_xlabel('time since punish (ms)')
+        ax.set_title('inhibitory response to punish (all)')
+    
+    # excitory response to Vis1 with outcome (long).
     def long_vis1_outcome_exc(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -430,10 +472,10 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 1,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('excitory response to 1st vis stim')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('excitory response to Vis1')
     
-    # inhibitory response to 1st stimulus with outcome (long).
+    # inhibitory response to Vis1 with outcome (long).
     def long_vis1_outcome_inh(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -441,18 +483,18 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 1,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('inhibitory response to 1st vis stim')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('inhibitory response to Vis1')
     
-    # response to 1st stimulus heatmap average across trials (long).
+    # response to Vis1 heatmap average across trials (long).
     def long_vis1_heatmap_neuron(self, ax):
         idx = get_trial_type(self.cate_delay, self.delay_vis1, 1)
         self.plot_heatmap_neuron(
             ax, self.neu_seq_vis1[idx,:,:], self.neu_time_vis1, self.significance['r_vis'])
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('response to 1st vis stim')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('response to Vis1')
     
-    # excitory response to 2nd stimulus with outcome (long).
+    # excitory response to Vis2 with outcome (long).
     def long_vis2_outcome_exc(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -460,10 +502,10 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 1,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('excitory response to 2nd vis stim')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('excitory response to Vis2')
     
-    # inhibitory response to 2nd stimulus with outcome (long).
+    # inhibitory response to Vis2 with outcome (long).
     def long_vis2_outcome_inh(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -471,16 +513,16 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 1,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('inhibitory response to 2nd vis stim')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('inhibitory response to Vis2')
     
-    # response to 2nd stimulus heatmap average across trials (long).
+    # response to Vis2 heatmap average across trials (long).
     def long_vis2_heatmap_neuron(self, ax):
         idx = get_trial_type(self.cate_delay, self.delay_vis2, 1)
         self.plot_heatmap_neuron(
             ax, self.neu_seq_vis2[idx,:,:], self.neu_time_vis2, self.significance['r_vis'])
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('response to 2nd vis stim')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('response to Vis2')
     
     # excitory response to reward (long).
     def long_reward_exc(self, ax):
@@ -502,12 +544,12 @@ class plotter_VIPTD_G8_percept(plotter_utils):
     
     # excitory response to punish (long).
     def long_punish_exc(self, ax):
-        self.plot_punish(ax, self.delay_punish, 1, self.significance['r_punish'], cate=-1)
+        self.plot_punish(ax, 1, self.significance['r_punish'], cate=-1)
         ax.set_title('excitory response to punish')
     
     # inhibitory response to punish (long).
     def long_punish_inh(self, ax):
-        self.plot_punish(ax, self.delay_punish, 1, self.significance['r_punish'], cate=1)
+        self.plot_punish(ax, 1, self.significance['r_punish'], cate=1)
         ax.set_title('inhibitory response to punish')
     
     # response to punish heatmap average across trials (long).
@@ -518,7 +560,7 @@ class plotter_VIPTD_G8_percept(plotter_utils):
         ax.set_xlabel('time since punish (ms)')
         ax.set_title('response to all punish')
     
-    # excitory response to 1st stimulus with epoch (long).
+    # excitory response to Vis1 with epoch (long).
     def long_epoch_vis1_exc(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -526,10 +568,10 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 1,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('excitory response to 1st vis stim (reward)')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('excitory response to Vis1 (reward)')
     
-    # inhibitory response to 1st stimulus with epoch (long).
+    # inhibitory response to Vis1 with epoch (long).
     def long_epoch_vis1_inh(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -537,10 +579,10 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 1,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('inhibitory response to 1st vis stim (reward)')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('inhibitory response to Vis1 (reward)')
     
-    # excitory response to 2nd stimulus with epoch (long).
+    # excitory response to Vis2 with epoch (long).
     def long_epoch_vis2_exc(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -548,10 +590,10 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 1,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('excitory response to 2nd vis stim (reward)')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('excitory response to Vis2 (reward)')
     
-    # inhibitory response to 2nd stimulus with epoch (long).
+    # inhibitory response to Vis2 with epoch (long).
     def long_epoch_vis2_inh(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -559,55 +601,99 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 1,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('inhibitory response to 2nd vis stim (reward)')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('inhibitory response to Vis2 (reward)')
     
-    # response to 1st stimulus (short).
+    # excitory response to reward with epoch (long).
+    def long_epoch_reward_exc(self, ax):
+        self.plot_stim_epoch(
+            ax,
+            self.neu_seq_reward, self.neu_time_reward,
+            self.outcome_reward, self.outcome_seq_reward,
+            self.delay_reward, 1,
+            self.significance['r_reward'], cate=-1)
+        ax.set_xlabel('time since reward (ms)')
+        ax.set_title('excitory response to reward')
+    
+    # inhibitory response to reward with epoch (long).
+    def long_epoch_reward_inh(self, ax):
+        self.plot_stim_epoch(
+            ax,
+            self.neu_seq_reward, self.neu_time_reward,
+            self.outcome_reward, self.outcome_seq_reward,
+            self.delay_reward, 1,
+            self.significance['r_reward'], cate=1)
+        ax.set_xlabel('time since reward (ms)')
+        ax.set_title('inhibitory response to reward')
+
+    # excitory response to punish with epoch (long).
+    def long_epoch_punish_exc(self, ax):
+        self.plot_stim_epoch(
+            ax,
+            self.neu_seq_punish, self.neu_time_punish,
+            self.outcome_punish, self.outcome_seq_punish,
+            self.delay_punish, 1,
+            self.significance['r_punish'], cate=-1)
+        ax.set_xlabel('time since punish (ms)')
+        ax.set_title('excitory response to punish')
+    
+    # inhibitory response to punish with epoch (long).
+    def long_epoch_punish_inh(self, ax):
+        self.plot_stim_epoch(
+            ax,
+            self.neu_seq_punish, self.neu_time_punish,
+            self.outcome_punish, self.outcome_seq_punish,
+            self.delay_punish, 1,
+            self.significance['r_punish'], cate=1)
+        ax.set_xlabel('time since punish (ms)')
+        ax.set_title('inhibitory response to punish')
+        
+    # response to Vis1 (short).
     def short_exc_inh_vis1(self, ax):
         self.plot_exc_inh(
             ax,
             self.neu_seq_vis1, self.neu_time_vis1, self.stim_seq_vis1,
             self.delay_vis1, 0,
             self.significance['r_vis'])
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('response to 1st vis stim (short)')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('response to Vis1 (short)')
         
-    # response to 2nd stimulus (short).
+    # response to Vis2 (short).
     def short_exc_inh_vis2(self, ax):
         self.plot_exc_inh(
             ax,
             self.neu_seq_vis2, self.neu_time_vis2, self.stim_seq_vis2,
             self.delay_vis2, 0,
             self.significance['r_vis'])
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('response to 2nd vis stim (short)')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('response to Vis2 (short)')
     
-    # response to 1st stimulus (long).
+    # response to Vis1 (long).
     def long_exc_inh_vis1(self, ax):
         self.plot_exc_inh(
             ax,
             self.neu_seq_vis1, self.neu_time_vis1, self.stim_seq_vis1,
             self.delay_vis1, 1,
             self.significance['r_vis'])
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('response to 1st vis stim (long)')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('response to Vis1 (long)')
         
-    # response to 2nd stimulus (long).
+    # response to Vis2 (long).
     def long_exc_inh_vis2(self, ax):
         self.plot_exc_inh(
             ax,
             self.neu_seq_vis2, self.neu_time_vis2, self.stim_seq_vis2,
             self.delay_vis2, 1,
             self.significance['r_vis'])
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('response to 2nd vis stim (long)')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('response to Vis2 (long)')
         
         
 class plotter_L7G8_percept(plotter_utils):
     def __init__(self, neural_trials, labels, significance, cate_delay):
         super().__init__(neural_trials, labels, significance, cate_delay)
 
-    # excitory response to 1st stimulus with outcome (short).
+    # excitory response to Vis1 with outcome (short).
     def short_vis1_outcome(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -615,18 +701,18 @@ class plotter_L7G8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 0,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('excitory response to 1st vis stim')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('excitory response to Vis1')
     
-    # response to 1st stimulus heatmap average across trials (short).
+    # response to Vis1 heatmap average across trials (short).
     def short_vis1_heatmap_neuron(self, ax):
         idx = get_trial_type(self.cate_delay, self.delay_vis1, 0)
         self.plot_heatmap_neuron(
             ax, self.neu_seq_vis1[idx,:,:], self.neu_time_vis1, self.significance['r_vis'])
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('response to 1st vis stim')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('response to Vis1')
     
-    # excitory response to 2nd stimulus with outcome (short).
+    # excitory response to Vis2 with outcome (short).
     def short_vis2_outcome(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -634,16 +720,16 @@ class plotter_L7G8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 0,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('excitory response to 2nd vis stim')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('excitory response to Vis2')
     
-    # response to 2nd stimulus heatmap average across trials (short).
+    # response to Vis2 heatmap average across trials (short).
     def short_vis2_heatmap_neuron(self, ax):
         idx = get_trial_type(self.cate_delay, self.delay_vis2, 0)
         self.plot_heatmap_neuron(
             ax, self.neu_seq_vis2[idx,:,:], self.neu_time_vis2, self.significance['r_vis'])
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('response to 2nd vis stim')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('response to Vis2')
     
     # excitory response to reward (short).
     def short_reward(self, ax):
@@ -660,7 +746,7 @@ class plotter_L7G8_percept(plotter_utils):
     
     # excitory response to punish (short).
     def short_punish(self, ax):
-        self.plot_punish(ax, self.delay_punish, 0, self.significance['r_punish'], cate=-1)
+        self.plot_punish(ax, 0, self.significance['r_punish'], cate=-1)
         ax.set_title('excitory response to punish')
     
     # response to punish heatmap average across trials (short).
@@ -671,7 +757,7 @@ class plotter_L7G8_percept(plotter_utils):
         ax.set_xlabel('time since punish (ms)')
         ax.set_title('response to all punish')
     
-    # excitory response to 1st stimulus with epoch (short).
+    # excitory response to Vis1 with epoch (short).
     def short_epoch_vis1(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -679,10 +765,10 @@ class plotter_L7G8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 0,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('excitory response to 1st vis stim (reward)')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('excitory response to Vis1 (reward)')
     
-    # excitory response to 2nd stimulus with epoch (short).
+    # excitory response to Vis2 with epoch (short).
     def short_epoch_vis2(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -690,10 +776,10 @@ class plotter_L7G8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 0,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('excitory response to 2nd vis stim (reward)')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('excitory response to Vis2 (reward)')
     
-    # excitory response to 1st stimulus with outcome (long).
+    # excitory response to Vis1 with outcome (long).
     def long_vis1_outcome(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -701,18 +787,18 @@ class plotter_L7G8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 1,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('excitory response to 1st vis stim')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('excitory response to Vis1')
     
-    # response to 1st stimulus heatmap average across trials (long).
+    # response to Vis1 heatmap average across trials (long).
     def long_vis1_heatmap_neuron(self, ax):
         idx = get_trial_type(self.cate_delay, self.delay_vis1, 1)
         self.plot_heatmap_neuron(
             ax, self.neu_seq_vis1[idx,:,:], self.neu_time_vis1, self.significance['r_vis'])
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('response to 1st vis stim')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('response to Vis1')
     
-    # excitory response to 2nd stimulus with outcome (long).
+    # excitory response to Vis2 with outcome (long).
     def long_vis2_outcome(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -720,16 +806,16 @@ class plotter_L7G8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 1,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('excitory response to 2nd vis stim')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('excitory response to Vis2')
     
-    # response to 2nd stimulus heatmap average across trials (long).
+    # response to Vis2 heatmap average across trials (long).
     def long_vis2_heatmap_neuron(self, ax):
         idx = get_trial_type(self.cate_delay, self.delay_vis2, 1)
         self.plot_heatmap_neuron(
             ax, self.neu_seq_vis2[idx,:,:], self.neu_time_vis2, self.significance['r_vis'])
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('response to 2nd vis stim')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('response to Vis2')
     
     # excitory response to reward (long).
     def long_reward(self, ax):
@@ -746,7 +832,7 @@ class plotter_L7G8_percept(plotter_utils):
     
     # excitory response to punish (long).
     def long_punish(self, ax):
-        self.plot_punish(ax, self.delay_punish, 1, self.significance['r_punish'], cate=-1)
+        self.plot_punish(ax, 1, self.significance['r_punish'], cate=-1)
         ax.set_title('excitory response to punish')
     
     # response to punish heatmap average across trials (long).
@@ -757,7 +843,7 @@ class plotter_L7G8_percept(plotter_utils):
         ax.set_xlabel('time since punish (ms)')
         ax.set_title('response to all punish')
     
-    # excitory response to 1st stimulus with epoch (long).
+    # excitory response to Vis1 with epoch (long).
     def long_epoch_vis1(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -765,10 +851,10 @@ class plotter_L7G8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 1,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('excitory response to 1st vis stim (reward)')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('excitory response to Vis1 (reward)')
     
-    # excitory response to 2nd stimulus with epoch (long).
+    # excitory response to Vis2 with epoch (long).
     def long_epoch_vis2(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -776,15 +862,15 @@ class plotter_L7G8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 1,
             self.significance['r_vis'], cate=-1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('excitory response to 2nd vis stim (reward)')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('excitory response to Vis2 (reward)')
 
 
 class plotter_VIPG8_percept(plotter_utils):
     def __init__(self, neural_trials, labels, significance, cate_delay):
         super().__init__(neural_trials, labels, significance, cate_delay)
     
-    # inhibitory response to 1st stimulus with outcome (short).
+    # inhibitory response to Vis1 with outcome (short).
     def short_vis1_outcome(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -792,18 +878,18 @@ class plotter_VIPG8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 0,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('inhibitory response to 1st vis stim (short)')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('inhibitory response to Vis1 (short)')
     
-    # response to 1st stimulus heatmap average across trials (short).
+    # response to Vis1 heatmap average across trials (short).
     def short_vis1_heatmap_neuron(self, ax):
         idx = get_trial_type(self.cate_delay, self.delay_vis1, 0)
         self.plot_heatmap_neuron(
             ax, self.neu_seq_vis1[idx,:,:], self.neu_time_vis1, self.significance['r_vis'])
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('response to 1st vis stim (short)')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('response to Vis1 (short)')
 
-    # inhibitory response to 2nd stimulus with outcome (short).
+    # inhibitory response to Vis2 with outcome (short).
     def short_vis2_outcome(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -811,16 +897,16 @@ class plotter_VIPG8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 0,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('inhibitory response to 2nd vis stim (short)')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('inhibitory response to Vis2 (short)')
     
-    # response to 2nd stimulus heatmap average across trials (short).
+    # response to Vis2 heatmap average across trials (short).
     def short_vis2_heatmap_neuron(self, ax):
         idx = get_trial_type(self.cate_delay, self.delay_vis2, 0)
         self.plot_heatmap_neuron(
             ax, self.neu_seq_vis2[idx,:,:], self.neu_time_vis2, self.significance['r_vis'])
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('response to 2nd vis stim (short)')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('response to Vis2 (short)')
     
     # inhibitory response to reward (short).
     def short_reward(self, ax):
@@ -837,7 +923,7 @@ class plotter_VIPG8_percept(plotter_utils):
 
     # inhibitory response to punish (short).
     def short_punish(self, ax):
-        self.plot_punish(ax, self.delay_punish, 0, self.significance['r_punish'], cate=1)
+        self.plot_punish(ax, 0, self.significance['r_punish'], cate=1)
         ax.set_title('inhibitory response to punish (short)')
     
     # response to punish heatmap average across trials (short).
@@ -848,7 +934,7 @@ class plotter_VIPG8_percept(plotter_utils):
         ax.set_xlabel('time since punish (ms)')
         ax.set_title('response to all punish (short)')
     
-    # inhibitory response to 1st stimulus with epoch (short).
+    # inhibitory response to Vis1 with epoch (short).
     def short_epoch_vis1(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -856,10 +942,10 @@ class plotter_VIPG8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 0,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('inhibitory response to 1st vis stim (short) (reward)')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('inhibitory response to Vis1 (short) (reward)')
     
-    # inhibitory response to 2nd stimulus with epoch (short).
+    # inhibitory response to Vis2 with epoch (short).
     def short_epoch_vis2(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -867,10 +953,10 @@ class plotter_VIPG8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 0,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('inhibitory response to 2nd vis stim (short) (reward)')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('inhibitory response to Vis2 (short) (reward)')
     
-    # inhibitory response to 1st stimulus with outcome (long).
+    # inhibitory response to Vis1 with outcome (long).
     def long_vis1_outcome(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -878,18 +964,18 @@ class plotter_VIPG8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 1,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('inhibitory response to 1st vis stim (long)')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('inhibitory response to Vis1 (long)')
     
-    # response to 1st stimulus heatmap average across trials (long).
+    # response to Vis1 heatmap average across trials (long).
     def long_vis1_heatmap_neuron(self, ax):
         idx = get_trial_type(self.cate_delay, self.delay_vis1, 1)
         self.plot_heatmap_neuron(
             ax, self.neu_seq_vis1[idx,:,:], self.neu_time_vis1, self.significance['r_vis'])
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('response to 1st vis stim (long)')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('response to Vis1 (long)')
     
-    # inhibitory response to 2nd stimulus with outcome (long).
+    # inhibitory response to Vis2 with outcome (long).
     def long_vis2_outcome(self, ax):
         self.plot_stim_outcome(
             ax,
@@ -897,16 +983,16 @@ class plotter_VIPG8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 1,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('inhibitory response to 2nd vis stim (long)')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('inhibitory response to Vis2 (long)')
     
-    # response to 2nd stimulus heatmap average across trials (long).
+    # response to Vis2 heatmap average across trials (long).
     def long_vis2_heatmap_neuron(self, ax):
         idx = get_trial_type(self.cate_delay, self.delay_vis2, 1)
         self.plot_heatmap_neuron(
             ax, self.neu_seq_vis2[idx,:,:], self.neu_time_vis2, self.significance['r_vis'])
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('response to 2nd vis stim (long)')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('response to Vis2 (long)')
     
     # inhibitory response to reward (long).
     def long_reward(self, ax):
@@ -923,7 +1009,7 @@ class plotter_VIPG8_percept(plotter_utils):
 
     # inhibitory response to punish (long).
     def long_punish(self, ax):
-        self.plot_punish(ax, self.delay_punish, 1, self.significance['r_punish'], cate=1)
+        self.plot_punish(ax, 1, self.significance['r_punish'], cate=1)
         ax.set_title('inhibitory response to punish (long)')
     
     # response to punish heatmap average across trials (long).
@@ -934,7 +1020,7 @@ class plotter_VIPG8_percept(plotter_utils):
         ax.set_xlabel('time since punish (ms)')
         ax.set_title('response to all punish (long)')
     
-    # inhibitory response to 1st stimulus with epoch (long).
+    # inhibitory response to Vis1 with epoch (long).
     def long_epoch_vis1(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -942,10 +1028,10 @@ class plotter_VIPG8_percept(plotter_utils):
             self.outcome_vis1, self.stim_seq_vis1,
             self.delay_vis1, 1,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 1st stim (ms)')
-        ax.set_title('inhibitory response to 1st vis stim (long) (reward)')
+        ax.set_xlabel('time since Vis1 (ms)')
+        ax.set_title('inhibitory response to Vis1 (long) (reward)')
     
-    # inhibitory response to 2nd stimulus with epoch (long).
+    # inhibitory response to Vis2 with epoch (long).
     def long_epoch_vis2(self, ax):
         self.plot_stim_epoch(
             ax,
@@ -953,5 +1039,5 @@ class plotter_VIPG8_percept(plotter_utils):
             self.outcome_vis2, self.stim_seq_vis2,
             self.delay_vis2, 1,
             self.significance['r_vis'], cate=1)
-        ax.set_xlabel('time since 2nd stim (ms)')
-        ax.set_title('inhibitory response to 2nd vis stim (long) (reward)')
+        ax.set_xlabel('time since Vis2 (ms)')
+        ax.set_title('inhibitory response to Vis2 (long) (reward)')

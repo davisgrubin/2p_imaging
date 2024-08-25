@@ -18,7 +18,7 @@
 ## 2024.07.10
 - Added significance reset function.
 
-## 2024.08.18
+## 2024.08.22
 - Separate short/long blocks.
 - Added outcome discrimination.
 - Separate punish trials for all plots.
@@ -28,3 +28,11 @@
 - Added trial number handler.
 - Added null trial outcome for visual interruption.
 - Added whether add mask edges to channel projection images.
+
+## 2024.08.24
+- Separate reward and punish for joystick trajectories.
+- Separate punish for joystick trajectories.
+- Separate punish for punish alignment neural traces.
+- Optimized layout.
+- Improved figure titles.
+- Added epoch comparison for joystick trajectories.

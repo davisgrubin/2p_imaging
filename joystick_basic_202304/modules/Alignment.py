@@ -175,16 +175,11 @@ def get_outcome_response(
         neural_trials, state,
         l_frames, r_frames
         ):
-    states = [
-        'reward',
-        'no1stpush',
-        'no2ndpush',
-        'early2ndpush']
     # initialize list.
     neu_seq  = []
     neu_time = []
     outcome_seq = []
-    outcome_label = []
+    outcome = []
     delay = []
     # loop over trials.
     for trials in neural_trials.keys():
@@ -193,6 +188,7 @@ def get_outcome_response(
         time = neural_trials[trials]['time']
         time_outcome = neural_trials[trials][state]
         trial_delay = neural_trials[trials]['trial_delay']
+        trial_outcome = get_trial_outcome(neural_trials, trials)
         if not np.isnan(time_outcome[0]):
             idx = np.argmin(np.abs(time - time_outcome[0]))
             if idx > l_frames and idx < len(time)-r_frames:
@@ -206,16 +202,21 @@ def get_outcome_response(
                 # outcome timestamps.
                 outcome_seq.append(np.array(time_outcome).reshape(1,-1) - time_outcome[0])
                 # label.
-                for s in range(len(states)):
-                    if not np.isnan(neural_trials[trials]['trial_'+states[s]][0]):
-                        outcome_label.append(states[s])
+                outcome.append(trial_outcome)
                 # delay.
                 delay.append(trial_delay)
-    neu_seq, neu_time = align_neu_seq_utils(neu_seq, neu_time)
-    outcome_seq = np.median(np.concatenate(outcome_seq),axis=0)
-    outcome_label = np.array(outcome_label)
-    delay = np.array(delay)
-    return [neu_seq, neu_time, outcome_seq, outcome_label, delay]
+    if len(neu_seq) > 0:
+        neu_seq, neu_time = align_neu_seq_utils(neu_seq, neu_time)
+        outcome = np.array(outcome)
+        outcome_seq = np.median(np.concatenate(outcome_seq),axis=0)
+        delay = np.array(delay)
+    else:
+        neu_seq = np.array([[[np.nan]]])
+        neu_time = np.array([np.nan])
+        outcome = np.array([np.nan])
+        outcome_seq = np.array([np.nan, np.nan])
+        delay = np.array(np.nan)
+    return [neu_seq, neu_time, outcome_seq, outcome, delay]
 
 
 # extract pushing response around given state.

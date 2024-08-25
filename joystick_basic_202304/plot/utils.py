@@ -44,8 +44,8 @@ def get_trial_type(cate_delay, delay, block):
     idx = np.array(trial_type == block)
     return idx
 
-# find indice of block tranient.
-def get_block_transient(delay):
+# find indice of block epoch.
+def get_block_epoch(delay):
     partition = 4
     block_change = np.diff(delay, prepend=0)
     block_change[block_change!=0] = 1
@@ -170,8 +170,8 @@ class utils:
             'early2ndpush']
         self.colors = [
             'mediumseagreen',
-            '#FFA07A',
-            '#FF4500',
+            '#FFC300',
+            '#FF8D1A',
             '#8B0000']
         
     def plot_mean_sem(self, ax, t, m, s, c, l):

@@ -3,6 +3,7 @@
 import numpy as np
 from scipy.stats import sem
 from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import LeaveOneOut
 from sklearn.metrics import accuracy_score
@@ -11,7 +12,7 @@ from modules.Alignment import get_stim_response
 from modules.Alignment import get_outcome_response
 from modules.Alignment import get_motor_response
 from modules.Alignment import get_iti_response
-from plot.utils import get_block_transient
+from plot.utils import get_block_epoch
 from plot.utils import get_trial_type
 from plot.utils import get_roi_label_color
 from plot.utils import utils
@@ -23,7 +24,7 @@ class plotter_utils(utils):
         super().__init__(labels)
         
         self.l_frames = 5
-        self.r_frames = 35
+        self.r_frames = 15
         [self.neu_seq_vis1, _, _, _, self.delay_vis1] = get_stim_response(
                 neural_trials, 'trial_vis1', self.l_frames, self.r_frames)
         [self.neu_seq_vis2, _, _, _, self.delay_vis2] = get_stim_response(
@@ -100,7 +101,7 @@ class plotter_utils(utils):
         if chance:
             model = DummyClassifier(strategy="uniform")
         else:
-            model = SVC(kernel='linear')
+            model = LogisticRegression()#SVC(kernel='linear') 
         loo = LeaveOneOut()
         acc = []
         for train_index, val_index in loo.split(x):
@@ -173,13 +174,13 @@ class plotter_VIPTD_G8_model(plotter_utils):
         ax.set_xticklabels(self.state_all)
         ax.set_title('population block decoding accuracy')
     
-    def block_trainsient_decoding_population(self, ax, block_type):
+    def block_epoch_decoding_population(self, ax, block_type):
         _, _, c_exc, _ = get_roi_label_color([-1], 0)
         _, _, c_inh, _ = get_roi_label_color([1], 0)
         for i in range(len(self.state_all)):
             if not np.isnan(np.sum(self.neu_seq_all[i])):
-                # find valid trial indice and block transient indice.
-                trial_idx, block_tran = get_block_transient(self.delay_all[i])
+                # find valid trial indice and block epoch indice.
+                trial_idx, block_tran = get_block_epoch(self.delay_all[i])
                 if block_type == 'all':
                     idx = trial_idx
                 if block_type == 'short':
@@ -240,16 +241,16 @@ class plotter_VIPTD_G8_model(plotter_utils):
         ax.set_xticklabels(self.state_all)
     
     def plot_block_tran_decode_all(self, ax):
-        self.block_trainsient_decoding_population(ax, 'all')
-        ax.set_title('population block transient decoding accuracy (all)')
+        self.block_epoch_decoding_population(ax, 'all')
+        ax.set_title('population block epoch decoding accuracy (all)')
     
     def plot_block_tran_decode_short(self, ax):
-        self.block_trainsient_decoding_population(ax, 'short')
-        ax.set_title('population block transient decoding accuracy (short)')
+        self.block_epoch_decoding_population(ax, 'short')
+        ax.set_title('population block epoch decoding accuracy (short)')
     
     def plot_block_tran_decode_long(self, ax):
-        self.block_trainsient_decoding_population(ax, 'long')
-        ax.set_title('population block transient decoding accuracy (long)')
+        self.block_epoch_decoding_population(ax, 'long')
+        ax.set_title('population block epoch decoding accuracy (long)')
 
 
 class plotter_L7G8_model(plotter_utils):
@@ -289,12 +290,12 @@ class plotter_L7G8_model(plotter_utils):
         ax.set_xticklabels(self.state_all)
         ax.set_title('population block decoding accuracy')
     
-    def block_trainsient_decoding_population(self, ax, block_type):
+    def block_epoch_decoding_population(self, ax, block_type):
         _, _, c_exc, _ = get_roi_label_color([-1], 0)
         for i in range(len(self.state_all)):
             if not np.isnan(np.sum(self.neu_seq_all[i])):
-                # find valid trial indice and block transient indice.
-                trial_idx, block_tran = get_block_transient(self.delay_all[i])
+                # find valid trial indice and block epoch indice.
+                trial_idx, block_tran = get_block_epoch(self.delay_all[i])
                 if block_type == 'all':
                     idx = trial_idx
                 if block_type == 'short':
@@ -335,16 +336,16 @@ class plotter_L7G8_model(plotter_utils):
         ax.set_xticklabels(self.state_all)
     
     def plot_block_tran_decode_all(self, ax):
-        self.block_trainsient_decoding_population(ax, 'all')
-        ax.set_title('population block transient decoding accuracy (all)')
+        self.block_epoch_decoding_population(ax, 'all')
+        ax.set_title('population block epoch decoding accuracy (all)')
     
     def plot_block_tran_decode_short(self, ax):
-        self.block_trainsient_decoding_population(ax, 'short')
-        ax.set_title('population block transient decoding accuracy (short)')
+        self.block_epoch_decoding_population(ax, 'short')
+        ax.set_title('population block epoch decoding accuracy (short)')
     
     def plot_block_tran_decode_long(self, ax):
-        self.block_trainsient_decoding_population(ax, 'long')
-        ax.set_title('population block transient decoding accuracy (long)')
+        self.block_epoch_decoding_population(ax, 'long')
+        ax.set_title('population block epoch decoding accuracy (long)')
 
 
 class plotter_VIPG8_model(plotter_utils):
@@ -384,12 +385,12 @@ class plotter_VIPG8_model(plotter_utils):
         ax.set_xticklabels(self.state_all)
         ax.set_title('population block decoding accuracy')
     
-    def block_trainsient_decoding_population(self, ax, block_type):
+    def block_epoch_decoding_population(self, ax, block_type):
         _, _, c_inh, _ = get_roi_label_color([1], 0)
         for i in range(len(self.state_all)):
             if not np.isnan(np.sum(self.neu_seq_all[i])):
-                # find valid trial indice and block transient indice.
-                trial_idx, block_tran = get_block_transient(self.delay_all[i])
+                # find valid trial indice and block epoch indice.
+                trial_idx, block_tran = get_block_epoch(self.delay_all[i])
                 if block_type == 'all':
                     idx = trial_idx
                 if block_type == 'short':
@@ -430,13 +431,13 @@ class plotter_VIPG8_model(plotter_utils):
         ax.set_xticklabels(self.state_all)
     
     def plot_block_tran_decode_all(self, ax):
-        self.block_trainsient_decoding_population(ax, 'all')
-        ax.set_title('population block transient decoding accuracy (all)')
+        self.block_epoch_decoding_population(ax, 'all')
+        ax.set_title('population block epoch decoding accuracy (all)')
     
     def plot_block_tran_decode_short(self, ax):
-        self.block_trainsient_decoding_population(ax, 'short')
-        ax.set_title('population block transient decoding accuracy (short)')
+        self.block_epoch_decoding_population(ax, 'short')
+        ax.set_title('population block epoch decoding accuracy (short)')
     
     def plot_block_tran_decode_long(self, ax):
-        self.block_trainsient_decoding_population(ax, 'long')
-        ax.set_title('population block transient decoding accuracy (long)')
+        self.block_epoch_decoding_population(ax, 'long')
+        ax.set_title('population block epoch decoding accuracy (long)')
