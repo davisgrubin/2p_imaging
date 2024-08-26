@@ -70,7 +70,7 @@ def spike_detect(
     return spikes
 
 
-def run(ops, dff=dff):
+def run(ops, dff):
     print('===================================================')
     print('=============== Deconvolving Spikes ===============')
     print('===================================================')

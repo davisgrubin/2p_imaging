@@ -57,5 +57,5 @@ def run(ops, norm=True):
     save_dff(ops, dff)
 
     # de-convolution code
-    spikes = RawVoltageDeconv.run(ops)
+    spikes = SpikeDeconv.run(ops, dff)
     print(spikes)
