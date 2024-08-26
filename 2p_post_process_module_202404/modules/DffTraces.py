@@ -4,7 +4,7 @@ import os
 import h5py
 import numpy as np
 from scipy.ndimage import gaussian_filter
-from modules import RawVoltageDeconv
+from modules import SpikeDeconv
 
 # compute dff from raw fluorescence signals.
 
