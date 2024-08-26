@@ -4,26 +4,28 @@ import os
 import h5py
 import numpy as np
 from scipy.ndimage import gaussian_filter
-
+from modules import RawVoltageDeconv
 
 # compute dff from raw fluorescence signals.
+
 
 def get_dff(
         ops,
         fluo,
         neuropil,
         norm,
-        ):
+):
     # correct with neuropil signals.
     dff = fluo.copy() - ops['neucoeff']*neuropil
     # get baseline.
     f0 = gaussian_filter(dff, [0., ops['sig_baseline']])
     for j in range(dff.shape[0]):
         # baseline subtraction.
-        dff[j,:] = ( dff[j,:] - f0[j,:] ) / f0[j,:]
+        dff[j, :] = (dff[j, :] - f0[j, :]) / f0[j, :]
         if norm:
             # z score.
-            dff[j,:] = (dff[j,:] - np.mean(dff[j,:])) / (np.std(dff[j,:]) + 1e-5)
+            dff[j, :] = (dff[j, :] - np.mean(dff[j, :])) / \
+                (np.std(dff[j, :]) + 1e-5)
     return dff
 
 
@@ -34,8 +36,8 @@ def save_dff(ops, dff):
     f['dff'] = dff
     f.close()
 
-
 # main function to compute spikings.
+
 
 def run(ops, norm=True):
     print('===============================================')
@@ -50,6 +52,10 @@ def run(ops, norm=True):
         allow_pickle=True)
     print('Running baseline subtraction and normalization')
     dff = get_dff(ops, fluo, neuropil, norm)
+
     print('Results saved')
     save_dff(ops, dff)
 
+    # de-convolution code
+    spikes = RawVoltageDeconv.run(ops)
+    print(spikes)
