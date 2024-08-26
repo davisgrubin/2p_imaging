@@ -10,7 +10,7 @@
 #SBATCH --mail-user=anahri3@gatech.edu
 
 cd /storage/home/hcoda1/8/anahri3/2p_imaging/2p_post_process_module_202404
-conda activate suite2p
+
 python run_postprocess.py \
 --session_name 'FN15_P_omi_032124_w' \
 --range_skew '0,5' \

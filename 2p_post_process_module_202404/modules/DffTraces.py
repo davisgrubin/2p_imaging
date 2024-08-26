@@ -53,9 +53,11 @@ def run(ops, norm=True):
     print('Running baseline subtraction and normalization')
     dff = get_dff(ops, fluo, neuropil, norm)
 
+    # de-convolution code
+    spikes = SpikeDeconv.run(ops, dff)
+    
+    
     print('Results saved')
     save_dff(ops, dff)
 
-    # de-convolution code
-    spikes = SpikeDeconv.run(ops, dff)
     print(spikes)
