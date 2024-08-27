@@ -5,7 +5,8 @@ import h5py
 import numpy as np
 import scipy.io as sio
 from scipy.signal import find_peaks
-
+from scipy.signal import savgol_filter
+from scipy.interpolate import interp1d
 
 # read raw_voltages.h5.
 def read_raw_voltages(ops):
@@ -127,39 +128,49 @@ def read_bpod_mat_data(ops):
                 elem_list.append(sub_elem)
         return elem_list
     def get_push_onset(js_pos, js_time, start_time, end_time):
-        half_peak_value = 2.5
-        def find_half_peak_point(js_pos, peak_idx, direction):
-            if direction == 'after':
-                indices = range(peak_idx + 1, len(js_pos))
-            else:
-                indices = range(peak_idx - 1, -1, -1)
-            for i in indices:
-                if js_pos[i] <= half_peak_value:
-                    return i
-            return 0
-        def find_onethird_peak_point_before(js_pos, peak_idx):
-            onethird_peak_value = js_pos[peak_idx] * 0.4
+        def find_half_peak_point_before(velocity, peak_idx):
+            half_peak_value = 2.5
             for i in range(peak_idx - 1, -1, -1):
-                if js_pos[i] <= onethird_peak_value:
+                if velocity[i] <= half_peak_value:
                     return i
             return 0
-        if np.isnan(start_time) or np.isnan(end_time):
-            return np.array([np.nan])
+        def find_onethird_peak_point_before(velocity, peak_idx):
+            peak_value = velocity[peak_idx]
+            onethird_peak_value = peak_value * 0.4
+            for i in range(peak_idx - 1, -1, -1):
+                if velocity[i] <= onethird_peak_value:
+                    return i
+            return 0
+        def velocity_onset(js_pos, start, end):
+            start = max(0,start)
+            end = min(len(js_pos), end)
+            peaks,_ = find_peaks(js_pos[start:end],distance=65, height=5)
+            onset4velocity = []
+            if len(peaks) >= 1:
+                peaks = peaks + start
+            if len(peaks) == 0:
+                peaks = end
+                onset4velocity.append(find_onethird_peak_point_before(js_pos,peaks))
+                return onset4velocity
+            if len(peaks) >= 1:
+                peaks = np.hstack((peaks,end))
+                for i in range(0, len(peaks)):
+                    onset4velocity.append(find_onethird_peak_point_before(js_pos, peaks[i]))
+                return onset4velocity
+        interpolator = interp1d(js_time, js_pos, bounds_error=False)
+        new_time = np.arange(np.min(js_time), np.max(js_time), 1)
+        new_pos = interpolator(new_time)
+        idx_start = np.argmin(np.abs(new_time - start_time))
+        idx_end = np.argmin(np.abs(new_time - end_time))
+        new_pos = savgol_filter(new_pos, window_length=40, polyorder=3)
+        vel = np.gradient(new_pos, new_time)
+        vel = savgol_filter(vel, window_length=40, polyorder=1)
+        onset4velocity = velocity_onset(vel, idx_start, idx_end)
+        if onset4velocity[0] == 0:
+            push = np.array([np.nan])
         else:
-            start = np.argmin(np.abs(js_time - start_time))
-            end = np.argmin(np.abs(js_time - end_time))
-            peaks, _ = find_peaks(js_pos[start:end], distance=50, height=2)
-            peaks = peaks + start if len(peaks) >= 1 else np.array([end])
-            for i in range(len(peaks) - 1, 0, -1):
-                x1 = find_half_peak_point(js_pos, peaks[i-1], 'after')
-                x2 = find_half_peak_point(js_pos, peaks[i], 'before')
-                if (x2 - x1 <= 110) and np.all(js_pos[x1:x2] > -2):
-                    idx = find_onethird_peak_point_before(js_pos, peaks[i-1])
-                    t = np.array(js_time[idx]).reshape(-1) if idx!=0 else np.array([np.nan])
-                    return t
-            idx = find_onethird_peak_point_before(js_pos, peaks[-1])
-            t = np.array(js_time[idx]).reshape(-1) if idx!=0 else np.array([np.nan])
-            return t
+            push = np.array([new_time[onset4velocity[0]]])
+        return push
     def main():
         raw = sio.loadmat(
             os.path.join(ops['save_path0'], 'bpod_session_data.mat'),
@@ -185,26 +196,29 @@ def read_bpod_mat_data(ops):
         for i in range(raw['nTrials']):
             trial_states = raw['RawEvents']['Trial'][i]['States']
             trial_events = raw['RawEvents']['Trial'][i]['Events']
-            # 1st stim.
-            trial_vis1.append(1000*np.array(trial_states['VisualStimulus1']).reshape(-1))
-            # 1st push onset.
-            trial_push1.append(get_push_onset(
+            # push onset.
+            push1 = get_push_onset(
                 np.array(raw['EncoderData'][i]['Positions']).reshape(-1),
                 1000*np.array(raw['EncoderData'][i]['Times']).reshape(-1),
                 1000*np.array(trial_states['VisDetect1'][0]).reshape(-1),
-                1000*np.array(trial_states['LeverRetract1'][1]).reshape(-1)))
+                1000*np.array(trial_states['WaitForPress2'][0]).reshape(-1))
+            push2 = get_push_onset(
+                np.array(raw['EncoderData'][i]['Positions']).reshape(-1),
+                1000*np.array(raw['EncoderData'][i]['Times']).reshape(-1),
+                1000*np.array(trial_states['WaitForPress2'][0]).reshape(-1),
+                1000*np.array(trial_states['ITI'][0]).reshape(-1))
+            if np.isnan(push1):
+                push2 = np.array([np.nan])
+            trial_push1.append(push1)
+            trial_push2.append(push2)
+            # 1st stim.
+            trial_vis1.append(1000*np.array(trial_states['VisualStimulus1']).reshape(-1))
             # 1st retract.
             trial_retract1.append(1000*np.array(trial_states['LeverRetract1'][1]).reshape(-1))
             # 2nd stim.
             trial_vis2.append(1000*np.array(trial_states['VisualStimulus2']).reshape(-1))
             # wait for 2nd push.
             trial_wait2.append(1000*np.array(trial_states['WaitForPress2'][0]).reshape(-1))
-            # 2nd push window.
-            trial_push2.append(get_push_onset(
-                np.array(raw['EncoderData'][i]['Positions']).reshape(-1),
-                1000*np.array(raw['EncoderData'][i]['Times']).reshape(-1),
-                1000*np.array(trial_states['VisDetect1'][1]).reshape(-1),
-                1000*np.array(trial_states['ITI'][0]).reshape(-1)))
             # 2nd retract.
             trial_retract2.append(1000*np.array(trial_states['LeverRetract2'][0]).reshape(-1))
             # reward.

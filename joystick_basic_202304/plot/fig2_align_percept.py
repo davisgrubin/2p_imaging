@@ -65,9 +65,9 @@ class plotter_utils(utils):
             adjust_layout_neu(ax)
             ax.fill_between(
                 stim_seq,
-                lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+                lower, upper,
                 color='grey', alpha=0.15, step='mid', label='stim')
-            ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+            ax.set_ylim([lower, upper])
     
     def plot_reward(
             self, ax,
@@ -86,10 +86,10 @@ class plotter_utils(utils):
         lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
         ax.fill_between(
             self.outcome_seq_reward,
-            lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+            lower, upper,
             color='grey', alpha=0.15, step='mid')
         adjust_layout_neu(ax)
-        ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+        ax.set_ylim([lower, upper])
         ax.set_xlabel('time since reward (ms)')
     
     def plot_punish(
@@ -115,10 +115,10 @@ class plotter_utils(utils):
             lower = np.nanmin(mean) - np.nanmax(sem)
         ax.fill_between(
             self.outcome_seq_punish,
-            lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+            lower, upper,
             color='grey', alpha=0.15, step='mid')
         adjust_layout_neu(ax)
-        ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+        ax.set_ylim([lower, upper])
         ax.set_xlabel('time since punish (ms)')
     
     def plot_stim_epoch(
@@ -150,10 +150,10 @@ class plotter_utils(utils):
                 lower = np.nanmin([m_ep1, m_ep2]) - np.nanmax([s_ep1, s_ep2])
                 ax.fill_between(
                     stim_seq,
-                    lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+                    lower, upper,
                     color='grey', alpha=0.15, step='mid')
                 adjust_layout_neu(ax)
-                ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+                ax.set_ylim([lower, upper])
     
     # roi response to Vis1 with outcome.
     def roi_vis1_outcome(self, ax, roi_id):
@@ -276,9 +276,9 @@ class plotter_VIPTD_G8_percept(plotter_utils):
             adjust_layout_neu(ax)
             ax.fill_between(
                 stim_seq,
-                lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+                lower, upper,
                 color='grey', alpha=0.15, step='mid')
-            ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+            ax.set_ylim([lower, upper])
             
     # excitory response to Vis1 with outcome (short).
     def short_vis1_outcome_exc(self, ax):

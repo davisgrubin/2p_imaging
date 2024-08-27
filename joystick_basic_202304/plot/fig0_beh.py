@@ -62,7 +62,7 @@ class plotter_all_beh(utils):
         lower = -0.1
         adjust_layout_js(ax)
         ax.set_xlim([np.nanmin(neu_time), np.nanmax(neu_time)])
-        ax.set_ylim([lower, 1.1*upper])
+        ax.set_ylim([lower, upper])
     
     def plot_align_pos_epoch(
             self, ax,
@@ -91,7 +91,7 @@ class plotter_all_beh(utils):
         upper = np.nanmax([m_ep1, m_ep2]) + np.nanmax([s_ep1, s_ep2])
         upper = upper if not np.isnan(upper) else 0
         lower = -0.1
-        ax.set_ylim([lower, 1.1*upper])
+        ax.set_ylim([lower, upper])
         adjust_layout_js(ax)
         ax.set_xlim([np.nanmin(neu_time), np.nanmax(neu_time)])
         
@@ -223,7 +223,7 @@ class plotter_all_beh(utils):
             self.plot_mean_sem(ax, align_time, m, s, self.colors[0], 'reward')
             adjust_layout_js(ax)
             ax.set_xlim([np.nanmin(self.neu_time_motor), np.nanmax(self.neu_time_motor)])
-            ax.set_ylim([lower, upper + 0.1*(upper-lower)])
+            ax.set_ylim([lower, upper])
         ax.set_xlabel('time since Retract2 start (ms)')
         ax.set_title('Retract2 start aligned trajectories (short)')
     
@@ -245,7 +245,7 @@ class plotter_all_beh(utils):
         adjust_layout_js(ax)
         ax.set_xlabel('time since reward (ms)')
         ax.set_xlim([np.nanmin(self.neu_time_out), np.nanmax(self.neu_time_out)])
-        ax.set_ylim([lower, 1.1*upper])
+        ax.set_ylim([lower, upper])
         ax.set_title('reward aligned trajectories (short)')
     
     # trajectory aligned at punish (short).
@@ -272,7 +272,7 @@ class plotter_all_beh(utils):
             lower = -0.1
             adjust_layout_js(ax)
             ax.set_xlim([np.nanmin(self.neu_time_out), np.nanmax(self.neu_time_out)])
-            ax.set_ylim([lower, 1.1*upper])
+            ax.set_ylim([lower, upper])
         ax.set_xlabel('time since punish (ms)')
         ax.set_title('punish aligned trajectories (short)')
         
@@ -380,7 +380,7 @@ class plotter_all_beh(utils):
             upper = np.nanmax([m_ep1, m_ep2]) + np.nanmax([s_ep1, s_ep2])
             lower = np.nanmin([m_ep1, m_ep2]) - np.nanmax([s_ep1, s_ep2])
             lower = -0.1
-            ax.set_ylim([lower, 1.1*upper])
+            ax.set_ylim([lower, upper])
         adjust_layout_js(ax)
         ax.set_xlim([np.nanmin(self.neu_time_out), np.nanmax(self.neu_time_out)])
         ax.set_title('reward aligned trajectories (short)')
@@ -465,7 +465,7 @@ class plotter_all_beh(utils):
             self.plot_mean_sem(ax, align_time, m, s, self.colors[0], 'reward')
             adjust_layout_js(ax)
             ax.set_xlim([np.nanmin(self.neu_time_motor), np.nanmax(self.neu_time_motor)])
-            ax.set_ylim([lower, upper + 0.1*(upper-lower)])
+            ax.set_ylim([lower, upper])
         ax.set_xlabel('time since Retract2 (ms)')
         ax.set_title('Retract2 aligned trajectories (long)')
     
@@ -487,7 +487,7 @@ class plotter_all_beh(utils):
         adjust_layout_js(ax)
         ax.set_xlabel('time since reward (ms)')
         ax.set_xlim([np.nanmin(self.neu_time_out), np.nanmax(self.neu_time_out)])
-        ax.set_ylim([lower, 1.1*upper])
+        ax.set_ylim([lower, upper])
         ax.set_title('reward aligned trajectories (short)')
     
     # trajectory aligned at punish (long).
@@ -514,7 +514,7 @@ class plotter_all_beh(utils):
             lower = -0.1
             adjust_layout_js(ax)
             ax.set_xlim([np.nanmin(self.neu_time_out), np.nanmax(self.neu_time_out)])
-            ax.set_ylim([lower, 1.1*upper])
+            ax.set_ylim([lower, upper])
         ax.set_xlabel('time since punish (ms)')
         ax.set_title('punish aligned trajectories (long)')
 
@@ -622,7 +622,7 @@ class plotter_all_beh(utils):
             upper = np.nanmax([m_ep1, m_ep2]) + np.nanmax([s_ep1, s_ep2])
             lower = np.nanmin([m_ep1, m_ep2]) - np.nanmax([s_ep1, s_ep2])
             lower = -0.1
-            ax.set_ylim([lower, 1.1*upper])
+            ax.set_ylim([lower, upper])
         adjust_layout_js(ax)
         ax.set_xlim([np.nanmin(self.neu_time_out), np.nanmax(self.neu_time_out)])
         ax.set_title('reward aligned trajectories (long)')

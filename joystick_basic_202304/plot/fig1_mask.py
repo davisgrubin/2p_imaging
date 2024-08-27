@@ -171,7 +171,7 @@ class plotter_all_masks:
         ax.set_title('anatomy channel label masks')
 
     # superimpose image.
-    def superimpose(self, ax, img):
+    def superimpose(self, ax, img, with_mask=True):
         if img == 'mean':
             f = self.mean_func
         if img == 'max':
@@ -180,9 +180,10 @@ class plotter_all_masks:
         super_img[:,:,0] = adjust_contrast(self.mean_anat)
         super_img[:,:,1] = adjust_contrast(f)
         super_img = adjust_contrast(super_img)
-        x_all, y_all = np.where(find_boundaries(self.labeled_masks_img[:,:,0]))
-        for x,y in zip(x_all, y_all):
-            super_img[x,y,:] = np.array([255,255,255])
+        if with_mask:
+            x_all, y_all = np.where(find_boundaries(self.labeled_masks_img[:,:,0]))
+            for x,y in zip(x_all, y_all):
+                super_img[x,y,:] = np.array([255,255,255])
         ax.matshow(super_img)
         adjust_layout(ax)
         ax.set_title('channel images superimpose')

@@ -296,6 +296,7 @@ def get_iti_response(
     # initialize list.
     neu_seq  = []
     neu_time = []
+    outcome = []
     delay = []
     # loop over trials.
     for trials in neural_trials.keys():
@@ -303,6 +304,7 @@ def get_iti_response(
         fluo = neural_trials[trials]['dff']
         time = neural_trials[trials]['time']
         time_state = neural_trials[trials]['trial_iti']
+        trial_outcome = get_trial_outcome(neural_trials, trials)
         trial_delay = neural_trials[trials]['trial_delay']
         if np.isnan(np.sum(time_state)):
             continue
@@ -316,8 +318,11 @@ def get_iti_response(
                 # signal time stamps.
                 t = time[idx-l_frames : idx+r_frames] - time[idx]
                 neu_time.append(t)
+                # label.
+                outcome.append(trial_outcome)
                 # delay.
                 delay.append(trial_delay)
     neu_seq, neu_time = align_neu_seq_utils(neu_seq, neu_time)
+    outcome = np.array(outcome)
     delay = np.array(delay)
-    return [neu_seq, neu_time, delay]
+    return [neu_seq, neu_time, outcome, delay]

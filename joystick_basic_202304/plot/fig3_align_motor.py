@@ -52,7 +52,7 @@ class plotter_utils(utils):
             lower = np.min([mean_spont, mean_consume]) - np.max([sem_spont, sem_consume])
             ax.axvline(0, color='grey', lw=1, label='licking', linestyle='--')
             adjust_layout_neu(ax)
-            ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+            ax.set_ylim([lower, upper])
             ax.set_xlabel('time since licking (ms)')
     
     def plot_moto_outcome(
@@ -79,7 +79,7 @@ class plotter_utils(utils):
             lower = np.nanmin(mean) - np.nanmax(sem)
             ax.axvline(0, color='grey', lw=1, linestyle='--')
             adjust_layout_neu(ax)
-            ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+            ax.set_ylim([lower, upper])
     
     def plot_moto(
             self, ax,
@@ -100,7 +100,7 @@ class plotter_utils(utils):
             lower = np.min(neu_mean) - np.max(neu_sem)
             ax.axvline(0, color='grey', lw=1, linestyle='--')
             adjust_layout_neu(ax)
-            ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+            ax.set_ylim([lower, upper])
     
     def plot_exc_inh(self, ax, neu_seq, neu_time, delay, block, s):
         if not np.isnan(np.sum(neu_seq)):
@@ -116,7 +116,7 @@ class plotter_utils(utils):
             lower = np.nanmin([mean_exc, mean_inh]) - np.nanmax([sem_exc, sem_inh])
             adjust_layout_neu(ax)
             ax.axvline(0, color='grey', lw=1, linestyle='--')
-            ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+            ax.set_ylim([lower, upper])
     
     def plot_motor_epoch(
             self, ax,
@@ -142,7 +142,7 @@ class plotter_utils(utils):
             lower = np.nanmin([m_ep1, m_ep2]) - np.nanmax([s_ep1, s_ep2])
             ax.axvline(0, color='grey', lw=1, linestyle='--')
             adjust_layout_neu(ax)
-            ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+            ax.set_ylim([lower, upper])
         
     # roi response to PushOnset1.
     def roi_push1(self, ax, roi_id):
@@ -1350,8 +1350,8 @@ class plotter_VIPG8_motor(plotter_utils):
             self.delay_retract2, 1,
             self.significance['r_retract'], cate=1)
         ax.set_xlabel('time since Retract2 (ms)')
-        ax.set_title('response to Retract2 (long) (reward)')       
-        
+        ax.set_title('response to Retract2 (long) (reward)')
+
     # response to licking.
     def lick(self, ax):
         self.plot_lick(ax, self.significance['r_lick'], cate=1)

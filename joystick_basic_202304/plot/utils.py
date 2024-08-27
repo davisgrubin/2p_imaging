@@ -158,6 +158,19 @@ def adjust_layout_raw_trace(ax):
     ax.legend(loc='upper left')
     
 
+# adjust layout for decoding accuracy.
+def adjust_layout_decode_box(ax, state_all):
+    ax.legend(loc='upper right')
+    ax.tick_params(tick1On=False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.set_xlim([-0.5, len(state_all)+1])
+    ax.set_xlabel('state')
+    ax.set_ylabel('validation accuracy')
+    ax.set_xticks(np.arange(len(state_all)))
+    ax.set_xticklabels(state_all)
+
+
 class utils:
     
     def __init__(self, labels):
