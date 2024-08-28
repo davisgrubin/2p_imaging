@@ -4,6 +4,8 @@ from suite2p.extraction import oasis
 import h5py
 import os
 
+from .convolution import nonneg_conditioned_gaussian, convolve_with_template
+
 
 def read_raw_voltages(ops):
     # f = h5py.File(
@@ -48,7 +50,7 @@ def read_dff(ops):
     return dff
 
 
-def plot_for_neuron(timings, dff, spikes, neuron=5, num_deconvs=1):
+def plot_for_neuron(timings, dff, spikes, convolved_spikes, neuron=5, num_deconvs=1):
     """
     Plots DF/F and deconvolved spike data for a specific neuron.
 
@@ -60,22 +62,29 @@ def plot_for_neuron(timings, dff, spikes, neuron=5, num_deconvs=1):
         num_deconvs (int): Number of deconvolutions performed. Default is 1.
     """
     plt.figure(figsize=(30, 10))
-    fig, axs = plt.subplots(2, 1, figsize=(30, 10))
+    fig, axs = plt.subplots(3, 1, figsize=(30, 10))
+    fig.tight_layout(pad=10.0)
 
-    axs[0].plot(timings, spikes[neuron, :],
-                label='Deconv Spike', color='orange')
+    axs[0].plot(timings, convolved_spikes[neuron, :],
+                label='Convolved Spike', color='green')
     axs[0].set_xlabel('Time')
-    axs[0].set_ylabel('Deconv DF/F')
-    axs[0].set_title(f'{num_deconvs}-Deconvs DF/F -- Up-Time Plot')
+    axs[0].set_ylabel('Convolved DF/F Spikes')
+    axs[0].set_title('Convolved DF/F -- Up-Time Plot')
     axs[0].legend()
 
-    axs[1].plot(timings, dff[neuron, :], label='DF/F')
-    axs[1].set_xlabel('Time (ms)')
-    axs[1].set_ylabel('DF/F')
-    axs[1].set_title('DF/F -- Up-Time Plot')
+    axs[1].plot(timings, spikes[neuron, :],
+                label='Deconv Spike', color='orange')
+    axs[1].set_xlabel('Time')
+    axs[1].set_ylabel('Deconv DF/F')
+    axs[1].set_title('Deconv DF/F -- Up-Time Plot')
     axs[1].legend()
 
-    plt.title(f'Neuron-{neuron}_Plots')
+    axs[2].plot(timings, dff[neuron, :], label='DF/F')
+    axs[2].set_xlabel('Time (ms)')
+    axs[2].set_ylabel('DF/F')
+    axs[2].set_title('DF/F -- Up-Time Plot')
+    axs[2].legend()
+
     plt.savefig(f'neuron_{neuron}_plot.png')
 
     # print(len(x), spikes.shape)
@@ -100,7 +109,8 @@ def run(
         ops,
         dff,
         num_deconvs=1,
-        oasis_tau=10.0):
+        oasis_tau=10.0,
+        neurons=[5, 10, 100]):
 
     print('===================================================')
     print('=============== Deconvolving Spikes ===============')
@@ -112,13 +122,28 @@ def run(
     dff = read_dff(ops)
 
     spikes = dff
+    # deconvolve a certain number of times -- pretty much always just one time
     for _ in range(num_deconvs):
         spikes = spike_detect(ops, spikes, tau=oasis_tau)
 
     uptime, _ = get_trigger_time(vol_time, vol_img)
 
-    for i in range(10):
-        plot_for_neuron(timings=uptime, dff=dff, spikes=spikes,
-                        neuron=i, num_deconvs=num_deconvs)
+    print(f'here: {spikes.shape[1]}, {spikes.shape[1] // 25000}')
 
-    return spikes
+    print('===================================================')
+    print('=============== Convolving Spikes =================')
+    print('===================================================')
+
+    # perform convolution with right-half standard Gaussian distribution
+    template = nonneg_conditioned_gaussian(
+        size=(spikes.shape[1] // 15000), sigma=20)
+
+    convolved_spikes = convolve_with_template(
+        signal=spikes, template=template, neurons=neurons)
+
+    # plot for certain of neurons
+    for i in neurons:
+        plot_for_neuron(timings=uptime, dff=dff, spikes=spikes,
+                        convolved_spikes=convolved_spikes, neuron=i, num_deconvs=num_deconvs)
+
+    return convolved_spikes
