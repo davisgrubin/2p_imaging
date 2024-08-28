@@ -33,23 +33,31 @@ def get_qc_args(args):
 def read_ops(session_data_path):
     print('Processing {}'.format(session_data_path))
     ops = np.load(
-        os.path.join(session_data_path, 'suite2p', 'plane0','ops.npy'),
+        os.path.join(session_data_path, 'suite2p', 'plane0', 'ops.npy'),
         allow_pickle=True).item()
     ops['save_path0'] = os.path.join(session_data_path)
     return ops
 
 
 if __name__ == "__main__":
-    
+
     if COMMANDLINE_MODE:
-        parser = argparse.ArgumentParser(description='Do not forget the everlasting love from Yicong!')
-        parser.add_argument('--session_data_path', required=True, type=str, help='The name of folder to save suite2p results.')
-        parser.add_argument('--range_skew',        required=True, type=str, help='The range of skew for quality control.')
-        parser.add_argument('--max_connect',       required=True, type=str, help='The maximum number of connectivity for quality control.')
-        parser.add_argument('--range_footprint',   required=True, type=str, help='The range of footprint for quality control')
-        parser.add_argument('--max_aspect',        required=True, type=str, help='The maximum value of aspect ratio for quality control.')
-        parser.add_argument('--range_compact',     required=True, type=str, help='The range of compact for quality control.')
-        parser.add_argument('--diameter',          required=True, type=str, help='The diameter for cellpose on anatomical channel.')
+        parser = argparse.ArgumentParser(
+            description='Do not forget the everlasting love from Yicong!')
+        parser.add_argument('--session_data_path', required=True,
+                            type=str, help='The name of folder to save suite2p results.')
+        parser.add_argument('--range_skew',        required=True,
+                            type=str, help='The range of skew for quality control.')
+        parser.add_argument('--max_connect',       required=True, type=str,
+                            help='The maximum number of connectivity for quality control.')
+        parser.add_argument('--range_footprint',   required=True,
+                            type=str, help='The range of footprint for quality control')
+        parser.add_argument('--max_aspect',        required=True, type=str,
+                            help='The maximum value of aspect ratio for quality control.')
+        parser.add_argument('--range_compact',     required=True,
+                            type=str, help='The range of compact for quality control.')
+        parser.add_argument('--diameter',          required=True, type=str,
+                            help='The diameter for cellpose on anatomical channel.')
         args = parser.parse_args()
         [range_skew,
          max_connect,
@@ -58,13 +66,13 @@ if __name__ == "__main__":
          range_footprint] = get_qc_args(args)
         ops = read_ops(args.session_data_path)
     else:
-        session_data_path = 'C:/Users/yhuang887/Projects/interval_discrimination_basic_202404/results/FN14_P_20240530_2afc_t'
+        session_data_path = '/Users/aryanahri/desktop/FN16_P_20240626_js_t'
         ops = read_ops(session_data_path)
-        range_skew = [-5,5]
+        range_skew = [-5, 5]
         max_connect = 1
         max_aspect = 5
-        range_footprint = [1,2]
-        range_compact = [0,1.1]
+        range_footprint = [1, 2]
+        range_compact = [0, 1.1]
         diameter = 6
     '''
     QualControlDataIO.run(
