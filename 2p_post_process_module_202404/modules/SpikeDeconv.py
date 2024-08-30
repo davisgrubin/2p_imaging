@@ -136,7 +136,7 @@ def run(
 
     # perform convolution with right-half standard Gaussian distribution
     template = nonneg_conditioned_gaussian(
-        size=(spikes.shape[1] // 15000), sigma=20)
+        size=(spikes.shape[1] // 10000), sigma=20)
 
     convolved_spikes = convolve_with_template(
         signal=spikes, template=template, neurons=neurons)
