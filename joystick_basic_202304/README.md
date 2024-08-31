@@ -36,3 +36,15 @@
 - Optimized layout.
 - Improved figure titles.
 - Added epoch comparison for joystick trajectories.
+
+## 2024.08.27
+- Push onset detection code fixed.
+- Changed reward alignment position.
+- Changed motor alignement frames.
+
+## 2024.08.30
+- Decoding bug fixed.
+- Decoding plot colors changed.
+- Added push onset fig.
+- Added outcome percentage for decoding.
+- Completed roi plot.

@@ -84,14 +84,13 @@ def plot_roi_significance(ax, significance, roi_id):
     respon = [significance['r_vis'][roi_id],
               significance['r_push'][roi_id],
               significance['r_retract'][roi_id],
+              significance['r_wait'][roi_id],
               significance['r_reward'][roi_id],
               significance['r_punish'][roi_id],
               significance['r_lick'][roi_id]]
     for i in range(len(labels)):
         if respon[i]:
             ax.bar(i, 1, bottom=0, edgecolor='white', width=0.25, color='#F9C08A')
-        else:
-            ax.bar(i, 1, bottom=0, edgecolor='white', width=0.25, color='#989A9C')
     ax.set_title('window response significance test label')
     ax.tick_params(tick1On=False)
     ax.spines['left'].set_visible(False)
@@ -101,9 +100,6 @@ def plot_roi_significance(ax, significance, roi_id):
     ax.set_xlim([-1,len(labels)+1])
     ax.set_xticks(np.arange(len(labels)))
     ax.set_xticklabels(labels, rotation='vertical')
-    ax.plot([], color='#F9C08A', label='Y')
-    ax.plot([], color='#989A9C', label='N')
-    ax.legend(loc='upper right')
     
     
     

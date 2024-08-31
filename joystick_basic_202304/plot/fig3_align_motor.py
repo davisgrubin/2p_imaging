@@ -14,8 +14,8 @@ class plotter_utils(utils):
     
     def __init__(self, neural_trials, labels, significance, cate_delay):
         super().__init__(labels)
-        self.l_frames = 10
-        self.r_frames = 70
+        self.l_frames = 30
+        self.r_frames = 50
         [self.neu_seq_push1, self.neu_time_push1,
          self.outcome_push1, self.delay_push1] = get_motor_response(
             neural_trials, 'trial_push1', self.l_frames, self.r_frames)
@@ -102,22 +102,6 @@ class plotter_utils(utils):
             adjust_layout_neu(ax)
             ax.set_ylim([lower, upper])
     
-    def plot_exc_inh(self, ax, neu_seq, neu_time, delay, block, s):
-        if not np.isnan(np.sum(neu_seq)):
-            _, _, color_exc, _ = get_roi_label_color([-1], 0)
-            _, _, color_inh, _ = get_roi_label_color([1], 0)
-            idx = get_trial_type(self.cate_delay, delay, block)
-            neu_cate = neu_seq[idx,:,:].copy()
-            mean_exc, sem_exc = get_mean_sem(neu_cate[:,(self.labels==-1)*s,:])
-            mean_inh, sem_inh = get_mean_sem(neu_cate[:,(self.labels==1)*s,:])
-            self.plot_mean_sem(ax, neu_time, mean_exc, sem_exc, color_exc, 'exc')
-            self.plot_mean_sem(ax, neu_time, mean_inh, sem_inh, color_inh, 'inh')
-            upper = np.nanmax([mean_exc, mean_inh]) + np.nanmax([sem_exc, sem_inh])
-            lower = np.nanmin([mean_exc, mean_inh]) - np.nanmax([sem_exc, sem_inh])
-            adjust_layout_neu(ax)
-            ax.axvline(0, color='grey', lw=1, linestyle='--')
-            ax.set_ylim([lower, upper])
-    
     def plot_motor_epoch(
             self, ax,
             neu_seq, neu_time, outcome,
@@ -143,112 +127,346 @@ class plotter_utils(utils):
             ax.axvline(0, color='grey', lw=1, linestyle='--')
             adjust_layout_neu(ax)
             ax.set_ylim([lower, upper])
+    
+    def plot_push_onset(
+            self, ax,
+            s, cate=None, roi_id=None):
+        if cate != None:
+            neu_push1 = self.neu_seq_push1[:,(self.labels==cate)*s,:]
+            neu_push2 = self.neu_seq_push2[:,(self.labels==cate)*s,:]
+            _, _, color2, _ = get_roi_label_color([cate], 0)
+        if roi_id != None:
+            neu_push1 = np.expand_dims(self.neu_seq_push1[:,roi_id,:], axis=1)
+            neu_push2 = np.expand_dims(self.neu_seq_push2[:,roi_id,:], axis=1)
+            _, _, color2, _ = get_roi_label_color(self.labels, roi_id)
+        m_push1_all,    s_push1_all    = get_mean_sem(neu_push1[self.outcome_push1!=1,:,:])
+        m_push2_reward, s_push2_reward = get_mean_sem(neu_push2[self.outcome_push2==0,:,:])
+        m_push2_punish, s_push2_punish = get_mean_sem(neu_push2[self.outcome_push2==3,:,:])
+        ax.axvline(0, color='grey', lw=1, label='PushOnset', linestyle='--')
+        self.plot_mean_sem(
+            ax, self.neu_time_push1, m_push1_all, s_push1_all,
+            color2, 'PO1 all')
+        self.plot_mean_sem(
+            ax, self.neu_time_push2, m_push2_reward, s_push2_reward,
+            self.colors[0], 'PO2 reward')
+        self.plot_mean_sem(
+            ax, self.neu_time_push2, m_push2_punish, s_push2_punish,
+            self.colors[3], 'PO2 early')
+        upper = np.max([m_push1_all, m_push2_reward, m_push2_punish]) +\
+                np.max([s_push1_all, s_push2_reward, s_push2_punish])
+        lower = np.min([m_push1_all, m_push2_reward, m_push2_punish]) -\
+                np.max([s_push1_all, s_push2_reward, s_push2_punish])
+        adjust_layout_neu(ax)
+        ax.set_ylim([lower, upper])
         
-    # roi response to PushOnset1.
-    def roi_push1(self, ax, roi_id):
+    # roi response to PushOnset1 (short).
+    def roi_short_push1(self, ax, roi_id):
         self.plot_moto_outcome(
-            ax, self.neu_seq_push1, self.neu_time_push1,
-            self.outcome_push1, None, roi_id=roi_id)
-        ax.set_xlabel('time since 1st push window end (ms)')
-        ax.set_title('response to PushOnset1')
-        
-    # roi response to PushOnset1 quantification.
-    def roi_push1_box(self, ax, roi_id):
-        neu_cate = np.expand_dims(self.neu_seq_push1[:,roi_id,:], axis=1)
-        neu_reward = neu_cate[self.outcome_push1==1,:,:].copy()
-        neu_punish = neu_cate[self.outcome_push1==-1,:,:].copy()
-        self.plot_win_mag_box(ax, neu_reward, self.neu_time_push1, 'mediumseagreen', 0, -0.1)
-        self.plot_win_mag_box(ax, neu_punish, self.neu_time_push1, 'coral', 0, 0.1)
-        ax.set_title('response to PushOnset1')
-        ax.plot([], color='mediumseagreen', label='reward')
-        ax.plot([], color='coral', label='punish')
-        ax.legend(loc='upper right')
-        
-    # roi response to PushOnset1 single trial heatmap.
-    def roi_push1_heatmap_trials(self, ax, roi_id):
-        _, _, _, cmap = get_roi_label_color(self.labels, roi_id)
-        self.plot_heatmap_trials(
-            ax, self.neu_seq_push1[:,roi_id,:], self.neu_time_push1, cmap, norm=True)
-        ax.set_title('response to PushOnset1')
-        
-    # roi response to Retract1 end.
-    def roi_retract1(self, ax, roi_id):
+            ax, self.neu_seq_push1, self.neu_time_push1, self.outcome_push1,
+            self.delay_push1, 0, None, roi_id=roi_id)
+        ax.set_xlabel('time since PushOnset1 (ms)')
+        ax.set_title('response to PushOnset1 (short)')
+    
+    # roi response to Retract1 end (short).
+    def roi_short_retract1(self, ax, roi_id):
         self.plot_moto_outcome(
-            ax, self.neu_seq_retract1, self.neu_time_retract1,
-            self.outcome_retract1, None, roi_id=roi_id)
-        ax.set_xlabel('time since 1st retract (ms)')
-        ax.set_title('response to Retract1 end')
+            ax, self.neu_seq_retract1, self.neu_time_retract1, self.outcome_retract1,
+            self.delay_retract1, 0, None, roi_id=roi_id)
+        ax.set_xlabel('time since Retract1 end (ms)')
+        ax.set_title('response to Retract1 end (short)')
     
-    # roi response to Retract1 end quantification.
-    def roi_retract1_box(self, ax, roi_id):
-        neu_cate = np.expand_dims(self.neu_seq_retract1[:,roi_id,:], axis=1)
-        neu_reward = neu_cate[self.outcome_retract1==1,:,:].copy()
-        neu_punish = neu_cate[self.outcome_retract1==-1,:,:].copy()
-        self.plot_win_mag_box(ax, neu_reward, self.neu_time_retract1, 'mediumseagreen', 0, -0.1)
-        self.plot_win_mag_box(ax, neu_punish, self.neu_time_retract1, 'coral', 0, 0.1)
-        ax.set_title('response to Retract1 end')
-        ax.plot([], color='mediumseagreen', label='reward')
-        ax.plot([], color='coral', label='punish')
-        ax.legend(loc='upper right')
-    
-    # roi response to 2nd push single trial heatmap.
-    def roi_retract1_heatmap_trials(self, ax, roi_id):
-        _, _, _, cmap = get_roi_label_color(self.labels, roi_id)
-        self.plot_heatmap_trials(
-            ax, self.neu_seq_retract1[:,roi_id,:], self.neu_time_retract1, cmap, norm=True)
-        ax.set_title('response to Retract1 end')
-        
-    # roi response to 2nd push.
-    def roi_push2(self, ax, roi_id):
+    # roi response to WaitForPush2 start (short).
+    def roi_short_wait2(self, ax, roi_id):
         self.plot_moto_outcome(
-            ax, self.neu_seq_push2, self.neu_time_push2,
-            self.outcome_push2, None, roi_id=roi_id)
-        ax.set_xlabel('time since 2nd push window end (ms)')
-        ax.set_title('response to 2nd push')
+            ax, self.neu_seq_wait2, self.neu_time_wait2, self.outcome_wait2,
+            self.delay_wait2, 0, None, roi_id=roi_id)
+        ax.set_xlabel('time since WaitForPush2 start (ms)')
+        ax.set_title('response to WaitForPush2 start (short)')
+      
+    # roi response to PushOnset2 (short).
+    def roi_short_push2(self, ax, roi_id):
+        self.plot_moto_outcome(
+            ax, self.neu_seq_push2, self.neu_time_push2, self.outcome_push2,
+            self.delay_push2, 0, None, roi_id=roi_id)
+        ax.set_xlabel('time since PushOnset2 (ms)')
+        ax.set_title('response to PushOnset2 (short)')
     
-    # roi response to 2nd push quantification.
-    def roi_push2_box(self, ax, roi_id):
-        neu_cate = np.expand_dims(self.neu_seq_push2[:,roi_id,:], axis=1)
-        neu_reward = neu_cate[self.outcome_push2==1,:,:].copy()
-        neu_punish = neu_cate[self.outcome_push2==-1,:,:].copy()
-        self.plot_win_mag_box(ax, neu_reward, self.neu_time_push2, 'mediumseagreen', 0, -0.1)
-        self.plot_win_mag_box(ax, neu_punish, self.neu_time_push2, 'coral', 0, 0.1)
-        ax.set_title('response to 2nd push')
-        ax.plot([], color='mediumseagreen', label='reward')
-        ax.plot([], color='coral', label='punish')
-        ax.legend(loc='upper right')
+    # roi response to Retract2 (short).
+    def roi_short_retract2(self, ax, roi_id):
+        self.plot_moto(
+            ax, self.neu_seq_retract2, self.neu_time_retract2,
+            self.delay_retract2, 0, None, roi_id=roi_id)
+        ax.set_xlabel('time since Retract2 (ms)')
+        ax.set_title('response to Retract2 (short)')
     
-    # roi response to 2nd push single trial heatmap.
-    def roi_push2_heatmap_trials(self, ax, roi_id):
-        _, _, _, cmap = get_roi_label_color(self.labels, roi_id)
-        self.plot_heatmap_trials(
-            ax, self.neu_seq_push2[:,roi_id,:], self.neu_time_push2, cmap, norm=True)
-        ax.set_title('response to 2nd push')
+    # roi response to PushOnset1 (long).
+    def roi_long_push1(self, ax, roi_id):
+        self.plot_moto_outcome(
+            ax, self.neu_seq_push1, self.neu_time_push1, self.outcome_push1,
+            self.delay_push1, 0, None, roi_id=roi_id)
+        ax.set_xlabel('time since PushOnset1 (ms)')
+        ax.set_title('response to PushOnset1 (long)')
     
-    # roi response to lick.
+    # roi response to Retract1 end (long).
+    def roi_long_retract1(self, ax, roi_id):
+        self.plot_moto_outcome(
+            ax, self.neu_seq_retract1, self.neu_time_retract1, self.outcome_retract1,
+            self.delay_retract1, 0, None, roi_id=roi_id)
+        ax.set_xlabel('time since Retract1 end (ms)')
+        ax.set_title('response to Retract1 end (long)')
+    
+    # roi response to WaitForPush2 start (long).
+    def roi_long_wait2(self, ax, roi_id):
+        self.plot_moto_outcome(
+            ax, self.neu_seq_wait2, self.neu_time_wait2, self.outcome_wait2,
+            self.delay_wait2, 0, None, roi_id=roi_id)
+        ax.set_xlabel('time since WaitForPush2 start (ms)')
+        ax.set_title('response to WaitForPush2 start (long)')
+      
+    # roi response to PushOnset2 (long).
+    def roi_long_push2(self, ax, roi_id):
+        self.plot_moto_outcome(
+            ax, self.neu_seq_push2, self.neu_time_push2, self.outcome_push2,
+            self.delay_push2, 0, None, roi_id=roi_id)
+        ax.set_xlabel('time since PushOnset2 (ms)')
+        ax.set_title('response to PushOnset2 (long)')
+    
+    # roi response to Retract2 (long).
+    def roi_long_retract2(self, ax, roi_id):
+        self.plot_moto(
+            ax, self.neu_seq_retract2, self.neu_time_retract2,
+            self.delay_retract2, 0, None, roi_id=roi_id)
+        ax.set_xlabel('time since Retract2 (ms)')
+        ax.set_title('response to Retract2 (long)')
+    
+    # roi response to push osnet.
+    def roi_onset(self, ax, roi_id):
+        self.plot_push_onset(ax, None, roi_id=roi_id)
+        ax.set_xlabel('time since push onset (ms)')
+        ax.set_title('response to all push onset')
+    
+    # roi response to licking.
     def roi_lick(self, ax, roi_id):
         self.plot_lick(ax, None, roi_id=roi_id)
         ax.set_xlabel('time since lick (ms)')
         ax.set_title('response to lick')
     
-    # roi response to lick quantification.
-    def roi_lick_box(self, ax, roi_id):
-        _, _, color, _ = get_roi_label_color(self.labels, roi_id) 
-        neu_cate = np.expand_dims(self.neu_seq_lick[:,roi_id,:], axis=1)
-        self.plot_win_mag_box(ax, neu_cate, self.neu_time_lick, color, 0, 0)
-        ax.set_title('response to lick')
+    # roi response to PushOnset1 with epoch (short).
+    def roi_short_epoch_push1(self, ax, roi_id):
+        self.plot_motor_epoch(
+            ax,
+            self.neu_seq_push1, self.neu_time_push1, self.outcome_push1,
+            self.delay_push1, 0,
+            None, roi_id=roi_id)
+        ax.set_xlabel('time since PushOnset1 (ms)')
+        ax.set_title('response to PushOnset1 (reward)')
     
-    # roi response to lick single trial heatmap.
-    def roi_lick_heatmap_trials(self, ax, roi_id):
-        _, _, _, cmap = get_roi_label_color(self.labels, roi_id)
-        self.plot_heatmap_trials(
-            ax, self.neu_seq_lick[:,roi_id,:], self.neu_time_lick, cmap, norm=True)
-        ax.set_title('response to lick')
-       
+    # roi response to Retract1 end with epoch (short).
+    def roi_short_epoch_retract1(self, ax, roi_id):
+        self.plot_motor_epoch(
+            ax,
+            self.neu_seq_retract1, self.neu_time_retract1, self.outcome_retract1,
+            self.delay_retract1, 0,
+            None, roi_id=roi_id)
+        ax.set_xlabel('time since Retract1 end (ms)')
+        ax.set_title('response to Retract1 end (reward)')
+    
+    # roi response to WaitForPush2 start with epoch (short).
+    def roi_short_epoch_wait2(self, ax, roi_id):
+        self.plot_motor_epoch(
+            ax,
+            self.neu_seq_wait2, self.neu_time_wait2, self.outcome_wait2,
+            self.delay_wait2, 0,
+            None, roi_id=roi_id)
+        ax.set_xlabel('time since WaitForPush2 start (ms)')
+        ax.set_title('response to WaitForPush2 start (reward)')
+    
+    # roi response to PushOnset2 with epoch (short).
+    def roi_short_epoch_push2(self, ax, roi_id):
+        self.plot_motor_epoch(
+            ax,
+            self.neu_seq_push2, self.neu_time_push2, self.outcome_push2,
+            self.delay_push2, 0,
+            None, roi_id=roi_id)
+        ax.set_xlabel('time since PushOnset2 (ms)')
+        ax.set_title('response to PushOnset2 (reward)')
+    
+    # roi response to Retract2 with epoch (short).
+    def roi_short_epoch_retract2(self, ax, roi_id):
+        self.plot_motor_epoch(
+            ax,
+            self.neu_seq_retract2, self.neu_time_retract2, self.outcome_retract2,
+            self.delay_retract2, 0,
+            None, roi_id=roi_id)
+        ax.set_xlabel('time since Retract2 (ms)')
+        ax.set_title('response to Retract2 (reward)')
+    
+    # roi response to PushOnset1 with epoch (long).
+    def roi_long_epoch_push1(self, ax, roi_id):
+        self.plot_motor_epoch(
+            ax,
+            self.neu_seq_push1, self.neu_time_push1, self.outcome_push1,
+            self.delay_push1, 1,
+            None, roi_id=roi_id)
+        ax.set_xlabel('time since PushOnset1 (ms)')
+        ax.set_title('response to PushOnset1 (reward)')
+    
+    # roi response to Retract1 end with epoch (long).
+    def roi_long_epoch_retract1(self, ax, roi_id):
+        self.plot_motor_epoch(
+            ax,
+            self.neu_seq_retract1, self.neu_time_retract1, self.outcome_retract1,
+            self.delay_retract1, 1,
+            None, roi_id=roi_id)
+        ax.set_xlabel('time since Retract1 end (ms)')
+        ax.set_title('response to Retract1 end (reward)')
+    
+    # roi response to WaitForPush2 start with epoch (long).
+    def roi_long_epoch_wait2(self, ax, roi_id):
+        self.plot_motor_epoch(
+            ax,
+            self.neu_seq_wait2, self.neu_time_wait2, self.outcome_wait2,
+            self.delay_wait2, 1,
+            None, roi_id=roi_id)
+        ax.set_xlabel('time since WaitForPush2 start (ms)')
+        ax.set_title('response to WaitForPush2 start (reward)')
+    
+    # roi response to PushOnset2 with epoch (long).
+    def roi_long_epoch_push2(self, ax, roi_id):
+        self.plot_motor_epoch(
+            ax,
+            self.neu_seq_push2, self.neu_time_push2, self.outcome_push2,
+            self.delay_push2, 1,
+            None, roi_id=roi_id)
+        ax.set_xlabel('time since PushOnset2 (ms)')
+        ax.set_title('response to PushOnset2 (reward)')
+    
+    # roi response to Retract2 with epoch (long).
+    def roi_long_epoch_retract2(self, ax, roi_id):
+        self.plot_motor_epoch(
+            ax,
+            self.neu_seq_retract2, self.neu_time_retract2, self.outcome_retract2,
+            self.delay_retract2, 1,
+            None, roi_id=roi_id)
+        ax.set_xlabel('time since Retract2 (ms)')
+        ax.set_title('response to Retract2 (reward)')
+    
+    def all_roi_motor_align(self, axs, roi_id):
+        self.roi_short_push1(axs[0][0], roi_id)
+        self.roi_short_retract1(axs[0][1], roi_id)
+        self.roi_short_wait2(axs[0][2], roi_id)
+        self.roi_short_push2(axs[0][3], roi_id)
+        self.roi_short_retract2(axs[0][4], roi_id)
+        self.roi_long_push1(axs[1][0], roi_id)
+        self.roi_long_retract1(axs[1][1], roi_id)
+        self.roi_long_wait2(axs[1][2], roi_id)
+        self.roi_long_push2(axs[1][3], roi_id)
+        self.roi_long_retract2(axs[1][4], roi_id)
+        self.roi_onset(axs[2], roi_id)
+        self.roi_lick(axs[3], roi_id)
+    
+    def all_roi_epoch_motor_align(self, axs, roi_id):
+        self.roi_short_epoch_push1(axs[0][0], roi_id)
+        self.roi_short_epoch_retract1(axs[0][1], roi_id)
+        self.roi_short_epoch_wait2(axs[0][2], roi_id)
+        self.roi_short_epoch_push2(axs[0][3], roi_id)
+        self.roi_short_epoch_retract2(axs[0][4], roi_id)
+        self.roi_long_epoch_push1(axs[1][0], roi_id)
+        self.roi_long_epoch_retract1(axs[1][1], roi_id)
+        self.roi_long_epoch_wait2(axs[1][2], roi_id)
+        self.roi_long_epoch_push2(axs[1][3], roi_id)
+        self.roi_long_epoch_retract2(axs[1][4], roi_id)
+        
         
 class plotter_VIPTD_G8_motor(plotter_utils):
     def __init__(self, neural_trials, labels, significance, cate_delay):
         super().__init__(neural_trials, labels, significance, cate_delay)
+    
+    def plot_exc_inh(self, ax, neu_seq, neu_time, delay, block, s):
+        if not np.isnan(np.sum(neu_seq)):
+            _, _, color_exc, _ = get_roi_label_color([-1], 0)
+            _, _, color_inh, _ = get_roi_label_color([1], 0)
+            idx = get_trial_type(self.cate_delay, delay, block)
+            neu_cate = neu_seq[idx,:,:].copy()
+            mean_exc, sem_exc = get_mean_sem(neu_cate[:,(self.labels==-1)*s,:])
+            mean_inh, sem_inh = get_mean_sem(neu_cate[:,(self.labels==1)*s,:])
+            self.plot_mean_sem(ax, neu_time, mean_exc, sem_exc, color_exc, 'exc')
+            self.plot_mean_sem(ax, neu_time, mean_inh, sem_inh, color_inh, 'inh')
+            upper = np.nanmax([mean_exc, mean_inh]) + np.nanmax([sem_exc, sem_inh])
+            lower = np.nanmin([mean_exc, mean_inh]) - np.nanmax([sem_exc, sem_inh])
+            adjust_layout_neu(ax)
+            ax.axvline(0, color='grey', lw=1, linestyle='--')
+            ax.set_ylim([lower, upper])
+    
+    def all_short_motor_align_exc(self, axs):
+        self.short_push1_exc(axs[0])
+        self.short_retract1_exc(axs[1])
+        self.short_wait2_exc(axs[2])
+        self.short_push2_exc(axs[3])
+        self.short_retract2_exc(axs[4])
+    
+    def all_short_motor_align_inh(self, axs):
+        self.short_push1_inh(axs[0])
+        self.short_retract1_inh(axs[1])
+        self.short_wait2_inh(axs[2])
+        self.short_push2_inh(axs[3])
+        self.short_retract2_inh(axs[4])
+        
+    def all_short_motor_align_heatmap_neuron(self, axs):
+        self.short_push1_heatmap_neuron(axs[0])
+        self.short_retract1_heatmap_neuron(axs[1])
+        self.short_wait2_heatmap_neuron(axs[2])
+        self.short_push2_heatmap_neuron(axs[3])
+        self.short_retract2_heatmap_neuron(axs[4])
+    
+    def all_long_motor_align_exc(self, axs):
+        self.long_push1_exc(axs[0])
+        self.long_retract1_exc(axs[1])
+        self.long_wait2_exc(axs[2])
+        self.long_push2_exc(axs[3])
+        self.long_retract2_exc(axs[4])
+    
+    def all_long_motor_align_inh(self, axs):
+        self.long_push1_inh(axs[0])
+        self.long_retract1_inh(axs[1])
+        self.long_wait2_inh(axs[2])
+        self.long_push2_inh(axs[3])
+        self.long_retract2_inh(axs[4])
+        
+    def all_long_motor_align_heatmap_neuron(self, axs):
+        self.long_push1_heatmap_neuron(axs[0])
+        self.long_retract1_heatmap_neuron(axs[1])
+        self.long_wait2_heatmap_neuron(axs[2])
+        self.long_push2_heatmap_neuron(axs[3])
+        self.long_retract2_heatmap_neuron(axs[4])
+    
+    def all_short_epoch_motor_align_exc(self, axs):
+        self.short_epoch_push1_exc(axs[0])
+        self.short_epoch_retract1_exc(axs[1])
+        self.short_epoch_wait2_exc(axs[2])
+        self.short_epoch_push2_exc(axs[3])
+        self.short_epoch_retract2_exc(axs[4])
+    
+    def all_short_epoch_motor_align_inh(self, axs):
+        self.short_epoch_push1_inh(axs[0])
+        self.short_epoch_retract1_inh(axs[1])
+        self.short_epoch_wait2_inh(axs[2])
+        self.short_epoch_push2_inh(axs[3])
+        self.short_epoch_retract2_inh(axs[4])
+    
+    def all_long_epoch_motor_align_exc(self, axs):
+        self.long_epoch_push1_exc(axs[0])
+        self.long_epoch_retract1_exc(axs[1])
+        self.long_epoch_wait2_exc(axs[2])
+        self.long_epoch_push2_exc(axs[3])
+        self.long_epoch_retract2_exc(axs[4])
+    
+    def all_long_epoch_motor_align_inh(self, axs):
+        self.long_epoch_push1_inh(axs[0])
+        self.long_epoch_retract1_inh(axs[1])
+        self.long_epoch_wait2_inh(axs[2])
+        self.long_epoch_push2_inh(axs[3])
+        self.long_epoch_retract2_inh(axs[4])
     
     # excitory response to PushOnset1 (short).
     def short_push1_exc(self, ax):
@@ -258,7 +476,7 @@ class plotter_VIPTD_G8_motor(plotter_utils):
         ax.set_xlabel('time since PushOnset1 (ms)')
         ax.set_title('excitory response to PushOnset1')
     
-    # response to PushOnset1 (short).
+    # inhibitory response to PushOnset1 (short).
     def short_push1_inh(self, ax):
         self.plot_moto_outcome(
             ax, self.neu_seq_push1, self.neu_time_push1, self.outcome_push1,
@@ -688,7 +906,32 @@ class plotter_VIPTD_G8_motor(plotter_utils):
             self.delay_retract2, 1,
             self.significance['r_retract'], cate=1)
         ax.set_xlabel('time since Retract2 (ms)')
-        ax.set_title('inhibitory response to Retract2 (reward)')       
+        ax.set_title('inhibitory response to Retract2 (reward)')
+    
+    # excitory response to push osnet.
+    def onset_exc(self, ax):
+        self.plot_push_onset(ax, self.significance['r_push'], cate=-1)
+        ax.set_xlabel('time since push onset (ms)')
+        ax.set_title('excitory response to all push onset')
+    
+    # inhibitory response to push osnet.
+    def onset_inh(self, ax):
+        self.plot_push_onset(ax, self.significance['r_push'], cate=1)
+        ax.set_xlabel('time since push onset (ms)')
+        ax.set_title('inhibitory response to all push onset')
+    
+    # response to push osnet.
+    def onset_heatmap_neuron(self, axs):
+        neu_seq = [self.neu_seq_push1[self.outcome_push1!=1,:,:],
+                   self.neu_seq_push2[self.outcome_push2==0,:,:],
+                   self.neu_seq_push2[self.outcome_push2==3,:,:]]
+        for i in range(3):
+            self.plot_heatmap_neuron(
+                axs[i], neu_seq[i], self.neu_time_push1, self.significance['r_push'])
+            axs[i].set_xlabel('time since push onset (ms)')
+        axs[0].set_title('response to PO1 all')
+        axs[1].set_title('response to PO2 reward')
+        axs[2].set_title('response to PO2 early')
         
     # excitory response to licking.
     def lick_exc(self, ax):
@@ -830,7 +1073,7 @@ class plotter_L7G8_motor(plotter_utils):
         ax.set_xlabel('time since PushOnset1 (ms)')
         ax.set_title('response to PushOnset1')
     
-    # response to Retract1 end (short).
+    # response to PushOnset1 (short).
     def short_retract1(self, ax):
         self.plot_moto_outcome(
             ax, self.neu_seq_retract1, self.neu_time_retract1, self.outcome_retract1,
@@ -868,7 +1111,7 @@ class plotter_L7G8_motor(plotter_utils):
             ax, self.neu_seq_push2, self.neu_time_push2, self.outcome_push2,
             self.delay_push2, 0, self.significance['r_push'], cate=-1)
         ax.set_xlabel('time since PushOnset2 (ms)')
-        ax.set_title('response to PushOnset2 ')
+        ax.set_title('response to PushOnset2')
     
     # response to PushOnset2  heatmap average across trials (short).
     def short_push2_heatmap_neuron(self, ax):
@@ -878,7 +1121,7 @@ class plotter_L7G8_motor(plotter_utils):
         ax.set_xlabel('time since PushOnset2 (ms)')
         ax.set_title('response to PushOnset2 ')
     
-    # response to Retract2 (short).
+    # response to PushOnset2 (short).
     def short_retract2(self, ax):
         self.plot_moto(
             ax, self.neu_seq_retract2, self.neu_time_retract2,
@@ -932,7 +1175,7 @@ class plotter_L7G8_motor(plotter_utils):
             self.delay_push2, 0,
             self.significance['r_push'], cate=-1)
         ax.set_xlabel('time since PushOnset2 (ms)')
-        ax.set_title('response to 2nd push (reward)')
+        ax.set_title('response to PushOnset2 (reward)')
     
     # response to Retract2 with epoch (short).
     def short_epoch_retract2(self, ax):
@@ -942,7 +1185,7 @@ class plotter_L7G8_motor(plotter_utils):
             self.delay_retract2, 0,
             self.significance['r_retract'], cate=-1)
         ax.set_xlabel('time since Retract2 (ms)')
-        ax.set_title('response to Retract2 (reward)')
+        ax.set_title('response to Retract2 (reward)')       
     
     # response to PushOnset1 (long).
     def long_push1(self, ax):
@@ -960,7 +1203,7 @@ class plotter_L7G8_motor(plotter_utils):
         ax.set_xlabel('time since PushOnset1 (ms)')
         ax.set_title('response to PushOnset1')
     
-    # response to Retract1 end (long).
+    # response to PushOnset1 (long).
     def long_retract1(self, ax):
         self.plot_moto_outcome(
             ax, self.neu_seq_retract1, self.neu_time_retract1, self.outcome_retract1,
@@ -998,7 +1241,7 @@ class plotter_L7G8_motor(plotter_utils):
             ax, self.neu_seq_push2, self.neu_time_push2, self.outcome_push2,
             self.delay_push2, 1, self.significance['r_push'], cate=-1)
         ax.set_xlabel('time since PushOnset2 (ms)')
-        ax.set_title('response to PushOnset2 ')
+        ax.set_title('response to PushOnset2')
     
     # response to PushOnset2  heatmap average across trials (long).
     def long_push2_heatmap_neuron(self, ax):
@@ -1008,7 +1251,7 @@ class plotter_L7G8_motor(plotter_utils):
         ax.set_xlabel('time since PushOnset2 (ms)')
         ax.set_title('response to PushOnset2 ')
     
-    # response to Retract2 (long).
+    # response to PushOnset2 (long).
     def long_retract2(self, ax):
         self.plot_moto(
             ax, self.neu_seq_retract2, self.neu_time_retract2,
@@ -1062,7 +1305,7 @@ class plotter_L7G8_motor(plotter_utils):
             self.delay_push2, 1,
             self.significance['r_push'], cate=-1)
         ax.set_xlabel('time since PushOnset2 (ms)')
-        ax.set_title('response to 2nd push (reward)')
+        ax.set_title('response to PushOnset2 (reward)')
     
     # response to Retract2 with epoch (long).
     def long_epoch_retract2(self, ax):
@@ -1073,7 +1316,7 @@ class plotter_L7G8_motor(plotter_utils):
             self.significance['r_retract'], cate=-1)
         ax.set_xlabel('time since Retract2 (ms)')
         ax.set_title('response to Retract2 (reward)')
-    
+        
     # response to licking.
     def lick(self, ax):
         self.plot_lick(ax, self.significance['r_lick'], cate=-1)
@@ -1092,13 +1335,13 @@ class plotter_VIPG8_motor(plotter_utils):
     def __init__(self, neural_trials, labels, significance, cate_delay):
         super().__init__(neural_trials, labels, significance, cate_delay)
     
-    # inhibitory response to PushOnset1 (short).
+    # response to PushOnset1 (short).
     def short_push1(self, ax):
         self.plot_moto_outcome(
             ax, self.neu_seq_push1, self.neu_time_push1, self.outcome_push1,
             self.delay_push1, 0, self.significance['r_push'], cate=1)
         ax.set_xlabel('time since PushOnset1 (ms)')
-        ax.set_title('inhibitory response to PushOnset1 (short)')
+        ax.set_title('response to PushOnset1')
     
     # response to PushOnset1ing heatmap average across trials (short).
     def short_push1_heatmap_neuron(self, ax):
@@ -1106,15 +1349,15 @@ class plotter_VIPG8_motor(plotter_utils):
         self.plot_heatmap_neuron(
             ax, self.neu_seq_push1[idx,:,:], self.neu_time_push1, self.significance['r_push'])
         ax.set_xlabel('time since PushOnset1 (ms)')
-        ax.set_title('response to PushOnset1 (short)')
+        ax.set_title('response to PushOnset1')
     
-    # inhibitory response to PushOnset1 (short).
+    # response to PushOnset1 (short).
     def short_retract1(self, ax):
         self.plot_moto_outcome(
             ax, self.neu_seq_retract1, self.neu_time_retract1, self.outcome_retract1,
             self.delay_retract1, 0, self.significance['r_retract'], cate=1)
         ax.set_xlabel('time since Retract1 end (ms)')
-        ax.set_title('inhibitory response to Retract1 end (short)')
+        ax.set_title('response to Retract1 end')
     
     # response to Retract1 end heatmap average across trials (short).
     def short_retract1_heatmap_neuron(self, ax):
@@ -1122,15 +1365,15 @@ class plotter_VIPG8_motor(plotter_utils):
         self.plot_heatmap_neuron(
             ax, self.neu_seq_retract1[idx,:,:], self.neu_time_retract1, self.significance['r_retract'])
         ax.set_xlabel('time since Retract1 end (ms)')
-        ax.set_title('response to Retract1 end (short)')
+        ax.set_title('response to Retract1 end')
     
-    # inhibitory response to WaitForPush2 start (short).
+    # response to WaitForPush2 start (short).
     def short_wait2(self, ax):
         self.plot_moto_outcome(
             ax, self.neu_seq_wait2, self.neu_time_wait2, self.outcome_wait2,
             self.delay_wait2, 0, self.significance['r_wait'], cate=1)
         ax.set_xlabel('time since WaitForPush2 start (ms)')
-        ax.set_title('inhibitory response to WaitForPush2 start (short)')
+        ax.set_title('response to WaitForPush2 start')
     
     # response to WaitForPush2 start heatmap average across trials (short).
     def short_wait2_heatmap_neuron(self, ax):
@@ -1138,15 +1381,15 @@ class plotter_VIPG8_motor(plotter_utils):
         self.plot_heatmap_neuron(
             ax, self.neu_seq_wait2[idx,:,:], self.neu_time_wait2, self.significance['r_wait'])
         ax.set_xlabel('time since WaitForPush2 start (ms)')
-        ax.set_title('response to WaitForPush2 start (short)')
+        ax.set_title('response to WaitForPush2 start')
     
-    # inhibitory response to PushOnset2 (short).
+    # response to PushOnset2 (short).
     def short_push2(self, ax):
         self.plot_moto_outcome(
             ax, self.neu_seq_push2, self.neu_time_push2, self.outcome_push2,
             self.delay_push2, 0, self.significance['r_push'], cate=1)
         ax.set_xlabel('time since PushOnset2 (ms)')
-        ax.set_title('inhibitory response to PushOnset2 (short)')
+        ax.set_title('response to PushOnset2')
     
     # response to PushOnset2  heatmap average across trials (short).
     def short_push2_heatmap_neuron(self, ax):
@@ -1154,15 +1397,15 @@ class plotter_VIPG8_motor(plotter_utils):
         self.plot_heatmap_neuron(
             ax, self.neu_seq_push2[idx,:,:], self.neu_time_push2, self.significance['r_push'])
         ax.set_xlabel('time since PushOnset2 (ms)')
-        ax.set_title('response to PushOnset2  (short)')
+        ax.set_title('response to PushOnset2 ')
     
-    # inhibitory response to PushOnset2 (short).
+    # response to PushOnset2 (short).
     def short_retract2(self, ax):
         self.plot_moto(
             ax, self.neu_seq_retract2, self.neu_time_retract2,
             self.delay_retract2, 0, self.significance['r_retract'], cate=1)
         ax.set_xlabel('time since Retract2 (ms)')
-        ax.set_title('inhibitory response to Retract2 (short)')
+        ax.set_title('response to Retract2')
     
     # response to Retract2 heatmap average across trials (short).
     def short_retract2_heatmap_neuron(self, ax):
@@ -1170,9 +1413,9 @@ class plotter_VIPG8_motor(plotter_utils):
         self.plot_heatmap_neuron(
             ax, self.neu_seq_retract2[idx,:,:], self.neu_time_retract2, self.significance['r_retract'])
         ax.set_xlabel('time since Retract2 (ms)')
-        ax.set_title('response to Retract2 (short)')
+        ax.set_title('response to Retract2')
     
-    # inhibitory response to PushOnset1 with epoch (short).
+    # response to PushOnset1 with epoch (short).
     def short_epoch_push1(self, ax):
         self.plot_motor_epoch(
             ax,
@@ -1180,9 +1423,9 @@ class plotter_VIPG8_motor(plotter_utils):
             self.delay_push1, 0,
             self.significance['r_push'], cate=1)
         ax.set_xlabel('time since PushOnset1 (ms)')
-        ax.set_title('inhibitory response to PushOnset1 (short) (reward)')
+        ax.set_title('response to PushOnset1 (reward)')
     
-    # inhibitory response to Retract1 end with epoch (short).
+    # response to Retract1 end with epoch (short).
     def short_epoch_retract1(self, ax):
         self.plot_motor_epoch(
             ax,
@@ -1190,9 +1433,9 @@ class plotter_VIPG8_motor(plotter_utils):
             self.delay_retract1, 0,
             self.significance['r_retract'], cate=1)
         ax.set_xlabel('time since Retract1 end (ms)')
-        ax.set_title('inhibitory response to Retract1 end (short) (reward)')
+        ax.set_title('response to Retract1 end (reward)')
     
-    # inhibitory response to WaitForPush2 start with epoch (short).
+    # response to WaitForPush2 start with epoch (short).
     def short_epoch_wait2(self, ax):
         self.plot_motor_epoch(
             ax,
@@ -1200,9 +1443,9 @@ class plotter_VIPG8_motor(plotter_utils):
             self.delay_wait2, 0,
             self.significance['r_wait'], cate=1)
         ax.set_xlabel('time since WaitForPush2 start (ms)')
-        ax.set_title('inhibitory response to WaitForPush2 start (short) (reward)')
+        ax.set_title('response to WaitForPush2 start (reward)')
     
-    # inhibitory response to PushOnset2 with epoch (short).
+    # response to PushOnset2 with epoch (short).
     def short_epoch_push2(self, ax):
         self.plot_motor_epoch(
             ax,
@@ -1210,9 +1453,9 @@ class plotter_VIPG8_motor(plotter_utils):
             self.delay_push2, 0,
             self.significance['r_push'], cate=1)
         ax.set_xlabel('time since PushOnset2 (ms)')
-        ax.set_title('inhibitory response to PushOnset2 (short) (reward)')
+        ax.set_title('response to PushOnset2 (reward)')
     
-    # inhibitory response to Retract2 with epoch (short).
+    # response to Retract2 with epoch (short).
     def short_epoch_retract2(self, ax):
         self.plot_motor_epoch(
             ax,
@@ -1220,15 +1463,15 @@ class plotter_VIPG8_motor(plotter_utils):
             self.delay_retract2, 0,
             self.significance['r_retract'], cate=1)
         ax.set_xlabel('time since Retract2 (ms)')
-        ax.set_title('inhibitory response to Retract2 (short) (reward)')       
+        ax.set_title('response to Retract2 (reward)')       
     
-    # inhibitory response to PushOnset1 (long).
+    # response to PushOnset1 (long).
     def long_push1(self, ax):
         self.plot_moto_outcome(
             ax, self.neu_seq_push1, self.neu_time_push1, self.outcome_push1,
             self.delay_push1, 1, self.significance['r_push'], cate=1)
         ax.set_xlabel('time since PushOnset1 (ms)')
-        ax.set_title('inhibitory response to PushOnset1 (long)')
+        ax.set_title('response to PushOnset1')
     
     # response to PushOnset1ing heatmap average across trials (long).
     def long_push1_heatmap_neuron(self, ax):
@@ -1236,15 +1479,15 @@ class plotter_VIPG8_motor(plotter_utils):
         self.plot_heatmap_neuron(
             ax, self.neu_seq_push1[idx,:,:], self.neu_time_push1, self.significance['r_push'])
         ax.set_xlabel('time since PushOnset1 (ms)')
-        ax.set_title('response to PushOnset1 (long)')
+        ax.set_title('response to PushOnset1')
     
-    # inhibitory response to PushOnset1 (long).
+    # response to PushOnset1 (long).
     def long_retract1(self, ax):
         self.plot_moto_outcome(
             ax, self.neu_seq_retract1, self.neu_time_retract1, self.outcome_retract1,
             self.delay_retract1, 1, self.significance['r_retract'], cate=1)
         ax.set_xlabel('time since Retract1 end (ms)')
-        ax.set_title('inhibitory response to Retract1 end (long)')
+        ax.set_title('response to Retract1 end')
     
     # response to Retract1 end heatmap average across trials (long).
     def long_retract1_heatmap_neuron(self, ax):
@@ -1252,15 +1495,15 @@ class plotter_VIPG8_motor(plotter_utils):
         self.plot_heatmap_neuron(
             ax, self.neu_seq_retract1[idx,:,:], self.neu_time_retract1, self.significance['r_retract'])
         ax.set_xlabel('time since Retract1 end (ms)')
-        ax.set_title('response to Retract1 end (long)')
+        ax.set_title('response to Retract1 end')
     
-    # inhibitory response to WaitForPush2 start (long).
+    # response to WaitForPush2 start (long).
     def long_wait2(self, ax):
         self.plot_moto_outcome(
             ax, self.neu_seq_wait2, self.neu_time_wait2, self.outcome_wait2,
             self.delay_wait2, 1, self.significance['r_wait'], cate=1)
         ax.set_xlabel('time since WaitForPush2 start (ms)')
-        ax.set_title('inhibitory response to WaitForPush2 start (long)')
+        ax.set_title('response to WaitForPush2 start')
     
     # response to WaitForPush2 start heatmap average across trials (long).
     def long_wait2_heatmap_neuron(self, ax):
@@ -1268,15 +1511,15 @@ class plotter_VIPG8_motor(plotter_utils):
         self.plot_heatmap_neuron(
             ax, self.neu_seq_wait2[idx,:,:], self.neu_time_wait2, self.significance['r_wait'])
         ax.set_xlabel('time since WaitForPush2 start (ms)')
-        ax.set_title('response to WaitForPush2 start (long)')
+        ax.set_title('response to WaitForPush2 start')
     
-    # inhibitory response to PushOnset2 (long).
+    # response to PushOnset2 (long).
     def long_push2(self, ax):
         self.plot_moto_outcome(
             ax, self.neu_seq_push2, self.neu_time_push2, self.outcome_push2,
             self.delay_push2, 1, self.significance['r_push'], cate=1)
         ax.set_xlabel('time since PushOnset2 (ms)')
-        ax.set_title('inhibitory response to PushOnset2 (long)')
+        ax.set_title('response to PushOnset2')
     
     # response to PushOnset2  heatmap average across trials (long).
     def long_push2_heatmap_neuron(self, ax):
@@ -1284,7 +1527,7 @@ class plotter_VIPG8_motor(plotter_utils):
         self.plot_heatmap_neuron(
             ax, self.neu_seq_push2[idx,:,:], self.neu_time_push2, self.significance['r_push'])
         ax.set_xlabel('time since PushOnset2 (ms)')
-        ax.set_title('response to PushOnset2  (long)')
+        ax.set_title('response to PushOnset2 ')
     
     # response to PushOnset2 (long).
     def long_retract2(self, ax):
@@ -1292,7 +1535,7 @@ class plotter_VIPG8_motor(plotter_utils):
             ax, self.neu_seq_retract2, self.neu_time_retract2,
             self.delay_retract2, 1, self.significance['r_retract'], cate=1)
         ax.set_xlabel('time since Retract2 (ms)')
-        ax.set_title('response to Retract2 (long)')
+        ax.set_title('response to Retract2')
     
     # response to Retract2 heatmap average across trials (long).
     def long_retract2_heatmap_neuron(self, ax):
@@ -1300,7 +1543,7 @@ class plotter_VIPG8_motor(plotter_utils):
         self.plot_heatmap_neuron(
             ax, self.neu_seq_retract2[idx,:,:], self.neu_time_retract2, self.significance['r_retract'])
         ax.set_xlabel('time since Retract2 (ms)')
-        ax.set_title('response to Retract2 (long)')
+        ax.set_title('response to Retract2')
     
     # response to PushOnset1 with epoch (long).
     def long_epoch_push1(self, ax):
@@ -1310,7 +1553,7 @@ class plotter_VIPG8_motor(plotter_utils):
             self.delay_push1, 1,
             self.significance['r_push'], cate=1)
         ax.set_xlabel('time since PushOnset1 (ms)')
-        ax.set_title('response to PushOnset1 (long) (reward)')
+        ax.set_title('response to PushOnset1 (reward)')
     
     # response to Retract1 end with epoch (long).
     def long_epoch_retract1(self, ax):
@@ -1320,7 +1563,7 @@ class plotter_VIPG8_motor(plotter_utils):
             self.delay_retract1, 1,
             self.significance['r_retract'], cate=1)
         ax.set_xlabel('time since Retract1 end (ms)')
-        ax.set_title('response to Retract1 end (long) (reward)')
+        ax.set_title('response to Retract1 end (reward)')
     
     # response to WaitForPush2 start with epoch (long).
     def long_epoch_wait2(self, ax):
@@ -1330,7 +1573,7 @@ class plotter_VIPG8_motor(plotter_utils):
             self.delay_wait2, 1,
             self.significance['r_wait'], cate=1)
         ax.set_xlabel('time since WaitForPush2 start (ms)')
-        ax.set_title('response to WaitForPush2 start (long) (reward)')
+        ax.set_title('response to WaitForPush2 start (reward)')
     
     # response to PushOnset2 with epoch (long).
     def long_epoch_push2(self, ax):
@@ -1340,7 +1583,7 @@ class plotter_VIPG8_motor(plotter_utils):
             self.delay_push2, 1,
             self.significance['r_push'], cate=1)
         ax.set_xlabel('time since PushOnset2 (ms)')
-        ax.set_title('response to PushOnset2 (long) (reward)')
+        ax.set_title('response to PushOnset2 (reward)')
     
     # response to Retract2 with epoch (long).
     def long_epoch_retract2(self, ax):
@@ -1350,17 +1593,17 @@ class plotter_VIPG8_motor(plotter_utils):
             self.delay_retract2, 1,
             self.significance['r_retract'], cate=1)
         ax.set_xlabel('time since Retract2 (ms)')
-        ax.set_title('response to Retract2 (long) (reward)')
-
+        ax.set_title('response to Retract2 (reward)')       
+        
     # response to licking.
     def lick(self, ax):
         self.plot_lick(ax, self.significance['r_lick'], cate=1)
         ax.set_xlabel('time since lick (ms)')
-        ax.set_title('inhibitory response to lick (long)')
+        ax.set_title('response to lick')
     
     # response to licking heatmap average across trials.
     def lick_heatmap_neuron(self, ax):
         self.plot_heatmap_neuron(
             ax, self.neu_seq_lick, self.neu_time_lick, self.significance['r_lick'])
         ax.set_xlabel('time since lick (ms)')
-        ax.set_title('response to all lick (long)')
+        ax.set_title('response to all lick')

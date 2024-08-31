@@ -25,8 +25,8 @@ class plotter_all_beh(utils):
         self.r_frames_vis2 = 50
         self.l_frames_out = 30
         self.r_frames_out = 50
-        self.l_frames_motor = 10
-        self.r_frames_motor = 70
+        self.l_frames_motor = 30
+        self.r_frames_motor = 50
         [_, self.neu_time_vis1, _, _, _] = get_stim_response(
                 neural_trials, 'trial_vis1', self.l_frames_vis1, self.r_frames_vis1)
         [_, self.neu_time_vis2, _, _, _] = get_stim_response(
@@ -86,8 +86,8 @@ class plotter_all_beh(utils):
         s_ep1 = s_ep1[l_idx:r_idx]
         m_ep2 = m_ep2[l_idx:r_idx]
         s_ep2 = s_ep2[l_idx:r_idx]
-        self.plot_mean_sem(ax, align_time, m_ep1, s_ep1, self.colors[0], 'ep1')
-        self.plot_mean_sem(ax, align_time, m_ep2, s_ep2, 'grey', 'ep2')
+        self.plot_mean_sem(ax, align_time, m_ep1, s_ep1, 'grey', 'ep1')
+        self.plot_mean_sem(ax, align_time, m_ep2, s_ep2, self.colors[0], 'ep2')
         upper = np.nanmax([m_ep1, m_ep2]) + np.nanmax([s_ep1, s_ep2])
         upper = upper if not np.isnan(upper) else 0
         lower = -0.1
@@ -124,6 +124,48 @@ class plotter_all_beh(utils):
         ax.set_title('percentage of outcome for {} trials'.format(
             len(self.outcomes)))
     
+    def all_short_align(self, axs):
+        self.short_align_pos_vis1(axs[0])
+        self.short_align_pos_push1(axs[1])
+        self.short_align_pos_retract1(axs[2])
+        self.short_align_pos_vis2(axs[3])
+        self.short_align_pos_wait2(axs[4])
+        self.short_align_pos_push2(axs[5])
+        self.short_align_pos_reward(axs[6])
+        self.short_align_pos_punish(axs[7])
+        self.short_align_pos_retract2(axs[8])
+    
+    def all_long_align(self, axs):
+        self.long_align_pos_vis1(axs[0])
+        self.long_align_pos_push1(axs[1])
+        self.long_align_pos_retract1(axs[2])
+        self.long_align_pos_vis2(axs[3])
+        self.long_align_pos_wait2(axs[4])
+        self.long_align_pos_push2(axs[5])
+        self.long_align_pos_reward(axs[6])
+        self.long_align_pos_punish(axs[7])
+        self.long_align_pos_retract2(axs[8])
+    
+    def all_short_epoch(self, axs):
+        self.short_epoch_align_pos_vis1(axs[0])
+        self.short_epoch_align_pos_push1(axs[1])
+        self.short_epoch_align_pos_retract1(axs[2])
+        self.short_epoch_align_pos_vis2(axs[3])
+        self.short_epoch_align_pos_wait2(axs[4])
+        self.short_epoch_align_pos_push2(axs[5])
+        self.short_epoch_align_pos_reward(axs[6])
+        self.short_epoch_align_pos_retract2(axs[7])
+    
+    def all_long_epoch(self, axs):
+        self.long_epoch_align_pos_vis1(axs[0])
+        self.long_epoch_align_pos_push1(axs[1])
+        self.long_epoch_align_pos_retract1(axs[2])
+        self.long_epoch_align_pos_vis2(axs[3])
+        self.long_epoch_align_pos_wait2(axs[4])
+        self.long_epoch_align_pos_push2(axs[5])
+        self.long_epoch_align_pos_reward(axs[6])
+        self.long_epoch_align_pos_retract2(axs[7])
+    
     # delay curve.
     def delay_dist(self, ax):
         color = [self.colors[self.outcomes[i]] if self.outcomes[i]>=0 else 'white'
@@ -143,6 +185,38 @@ class plotter_all_beh(utils):
         ax.legend(loc='center right')
         ax.set_title('2nd push delay setting')
     
+    # all push onset.
+    def onset(self, ax):
+        [data_p1, time_p1, _, outcome_p1] = get_js_pos(self.neural_trials, 'trial_push1')
+        [data_p2, time_p2, _, outcome_p2] = get_js_pos(self.neural_trials, 'trial_push2')
+        ax.axvline(0, color='grey', lw=1, label='PushOnset', linestyle='--')
+        l_idx_1 = np.argmin(np.abs(time_p1 - self.neu_time_motor[0]))
+        r_idx_1 = np.argmin(np.abs(time_p1 - self.neu_time_motor[-1]))
+        l_idx_2 = np.argmin(np.abs(time_p2 - self.neu_time_motor[0]))
+        r_idx_2 = np.argmin(np.abs(time_p2 - self.neu_time_motor[-1]))
+        time_p1 = time_p1[l_idx_1:r_idx_1]
+        time_p2 = time_p2[l_idx_2:r_idx_2]
+        m_push1_all,    s_push1_all    = get_mean_sem(data_p1[outcome_p1!=1,:])
+        m_push2_reward, s_push2_reward = get_mean_sem(data_p2[outcome_p2==0,:])
+        m_push2_punish, s_push2_punish = get_mean_sem(data_p2[outcome_p2==3,:])
+        m_push1_all    = m_push1_all[l_idx_1:r_idx_1]
+        s_push1_all    = s_push1_all[l_idx_1:r_idx_1]
+        m_push2_reward = m_push2_reward[l_idx_2:r_idx_2]
+        s_push2_reward = s_push2_reward[l_idx_2:r_idx_2]
+        m_push2_punish = m_push2_punish[l_idx_2:r_idx_2]
+        s_push2_punish = s_push2_punish[l_idx_2:r_idx_2]
+        self.plot_mean_sem(ax, time_p1, m_push1_all,    s_push1_all,   'darkviolet',    'PO1 all')
+        self.plot_mean_sem(ax, time_p2, m_push2_reward, s_push2_reward, self.colors[0], 'PO2 reward')
+        self.plot_mean_sem(ax, time_p2, m_push2_punish, s_push2_punish, self.colors[3], 'PO2 early')
+        upper = np.max([m_push1_all, m_push2_reward, m_push2_punish]) +\
+                np.max([s_push1_all, s_push2_reward, s_push2_punish])
+        lower = -0.1
+        adjust_layout_js(ax)
+        ax.set_xlim([np.nanmin(self.neu_time_motor), np.nanmax(self.neu_time_motor)])
+        ax.set_ylim([lower, upper])
+        ax.set_xlabel('time since push onset (ms)')
+        ax.set_title('push onset aligned trajectories')
+        
     # trajectory aligned at Vis1 (short).
     def short_align_pos_vis1(self, ax):
         [align_data, align_time, trial_delay, outcome] = get_js_pos(self.neural_trials, 'trial_vis1')
@@ -374,6 +448,11 @@ class plotter_all_beh(utils):
         i_ep2 = (block_tran==0) * trial_idx * idx
         m_ep1, s_ep1 = get_mean_sem(align_data[i_ep1,:])
         m_ep2, s_ep2 = get_mean_sem(align_data[i_ep2,:])
+        m_ep1 = m_ep1[l_idx:r_idx]
+        s_ep1 = s_ep1[l_idx:r_idx]
+        m_ep2 = m_ep2[l_idx:r_idx]
+        s_ep2 = s_ep2[l_idx:r_idx]
+        ax.axvline(0, color='silver', lw=2, label='reward', linestyle='--')
         if not np.isnan(np.sum(m_ep1)) and not np.isnan(np.sum(m_ep2)):
             self.plot_mean_sem(ax, align_time, m_ep1, s_ep1, 'grey', 'ep1')
             self.plot_mean_sem(ax, align_time, m_ep2, s_ep2, self.colors[0], 'ep2')
@@ -607,7 +686,7 @@ class plotter_all_beh(utils):
     # trajectory aligned at reward with epoch (long).
     def long_epoch_align_pos_reward(self, ax):
         [align_data, align_time, trial_delay_reward, _] = get_js_pos(self.neural_trials, 'trial_reward')
-        idx = get_trial_type(self.cate_delay, trial_delay_reward, 1)
+        idx = get_trial_type(self.cate_delay, trial_delay_reward, 0)
         trial_idx, block_tran = get_block_epoch(idx)
         l_idx = np.argmin(np.abs(align_time - self.neu_time_out[0]))
         r_idx = np.argmin(np.abs(align_time - self.neu_time_out[-1]))
@@ -616,6 +695,11 @@ class plotter_all_beh(utils):
         i_ep2 = (block_tran==0) * trial_idx * idx
         m_ep1, s_ep1 = get_mean_sem(align_data[i_ep1,:])
         m_ep2, s_ep2 = get_mean_sem(align_data[i_ep2,:])
+        m_ep1 = m_ep1[l_idx:r_idx]
+        s_ep1 = s_ep1[l_idx:r_idx]
+        m_ep2 = m_ep2[l_idx:r_idx]
+        s_ep2 = s_ep2[l_idx:r_idx]
+        ax.axvline(0, color='silver', lw=2, label='reward', linestyle='--')
         if not np.isnan(np.sum(m_ep1)) and not np.isnan(np.sum(m_ep2)):
             self.plot_mean_sem(ax, align_time, m_ep1, s_ep1, 'grey', 'ep1')
             self.plot_mean_sem(ax, align_time, m_ep2, s_ep2, self.colors[0], 'ep2')

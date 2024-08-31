@@ -158,7 +158,7 @@ def read_bpod_mat_data(ops):
                     onset4velocity.append(find_onethird_peak_point_before(js_pos, peaks[i]))
                 return onset4velocity
         interpolator = interp1d(js_time, js_pos, bounds_error=False)
-        new_time = np.arange(np.min(js_time), np.max(js_time), 1)
+        new_time = np.arange(0, 60000, 1)
         new_pos = interpolator(new_time)
         idx_start = np.argmin(np.abs(new_time - start_time))
         idx_end = np.argmin(np.abs(new_time - end_time))
@@ -197,16 +197,23 @@ def read_bpod_mat_data(ops):
             trial_states = raw['RawEvents']['Trial'][i]['States']
             trial_events = raw['RawEvents']['Trial'][i]['Events']
             # push onset.
+            start = 1000*np.array(trial_states['VisDetect1'][0]).reshape(-1)
+            end = 1000*np.array(trial_states['LeverRetract1'][0]).reshape(-1)
             push1 = get_push_onset(
                 np.array(raw['EncoderData'][i]['Positions']).reshape(-1),
                 1000*np.array(raw['EncoderData'][i]['Times']).reshape(-1),
-                1000*np.array(trial_states['VisDetect1'][0]).reshape(-1),
-                1000*np.array(trial_states['WaitForPress2'][0]).reshape(-1))
+                start, end)
+            start = 1000*np.array(trial_states['WaitForPress2'][0]).reshape(-1)
+            if ('RotaryEncoder1_1' in trial_events.keys() and
+                np.size(trial_events['RotaryEncoder1_1'])>1
+                ):
+                end = 1000*np.array(trial_events['RotaryEncoder1_1'][1]).reshape(-1)
+            else:
+                end = np.array([np.nan])
             push2 = get_push_onset(
                 np.array(raw['EncoderData'][i]['Positions']).reshape(-1),
                 1000*np.array(raw['EncoderData'][i]['Times']).reshape(-1),
-                1000*np.array(trial_states['WaitForPress2'][0]).reshape(-1),
-                1000*np.array(trial_states['ITI'][0]).reshape(-1))
+                start, end)
             if np.isnan(push1):
                 push2 = np.array([np.nan])
             trial_push1.append(push1)
@@ -255,10 +262,15 @@ def read_bpod_mat_data(ops):
                         trial_delay.append(1000*raw['TrialSettings'][i]['GUI']['PressVisDelayShort_s'])
                     if raw['TrialTypes'][i] == 2:
                         trial_delay.append(1000*raw['TrialSettings'][i]['GUI']['PressVisDelayLong_s'])
-            # joystick position.
-            trial_js_pos.append(np.array(raw['EncoderData'][i]['Positions']).reshape(-1))
-            # joystick timestamps.
-            trial_js_time.append(1000*np.array(raw['EncoderData'][i]['Times']).reshape(-1))
+            # joystick trajectory.
+            js_pos = np.array(raw['EncoderData'][i]['Positions'])
+            js_time = 1000*np.array(raw['EncoderData'][i]['Times'])
+            if np.abs(js_pos[0]) > 0.9:
+                trial_js_pos.append(np.array([0,0,0,0,0]))
+                trial_js_time.append(np.array([0,1,2,3,4]))
+            else:
+                trial_js_pos.append(js_pos)
+                trial_js_time.append(js_time)
         bpod_sess_data = {
             'trial_types'        : np.array(raw['TrialTypes']),
             'trial_vis1'         : trial_vis1,

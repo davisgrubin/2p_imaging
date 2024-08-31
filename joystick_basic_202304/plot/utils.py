@@ -165,11 +165,24 @@ def adjust_layout_decode_box(ax, state_all):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.set_xlim([-0.5, len(state_all)+1])
-    ax.set_xlabel('state')
-    ax.set_ylabel('validation accuracy')
     ax.set_xticks(np.arange(len(state_all)))
     ax.set_xticklabels(state_all)
+    ax.set_ylabel('validation accuracy')
+    
 
+# adjust layout for decoding accuracy outcome percentage.
+def adjust_layout_decode_outcome_pc(ax, state_all):
+    ax.legend(loc='upper right')
+    ax.tick_params(tick1On=False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.yaxis.grid(True)
+    ax.set_xlim([-0.5, len(state_all)+1])
+    ax.set_xlabel('state')
+    ax.set_xticks(np.arange(len(state_all)))
+    ax.set_xticklabels(state_all)
+    ax.set_ylabel('outcome percentage in class')
+    
 
 class utils:
     
