@@ -134,30 +134,31 @@ class plotter_utils(utils):
         if cate != None:
             neu_push1 = self.neu_seq_push1[:,(self.labels==cate)*s,:]
             neu_push2 = self.neu_seq_push2[:,(self.labels==cate)*s,:]
-            _, _, color2, _ = get_roi_label_color([cate], 0)
+            _, color1, _, _ = get_roi_label_color([cate], 0)
         if roi_id != None:
             neu_push1 = np.expand_dims(self.neu_seq_push1[:,roi_id,:], axis=1)
             neu_push2 = np.expand_dims(self.neu_seq_push2[:,roi_id,:], axis=1)
-            _, _, color2, _ = get_roi_label_color(self.labels, roi_id)
-        m_push1_all,    s_push1_all    = get_mean_sem(neu_push1[self.outcome_push1!=1,:,:])
-        m_push2_reward, s_push2_reward = get_mean_sem(neu_push2[self.outcome_push2==0,:,:])
-        m_push2_punish, s_push2_punish = get_mean_sem(neu_push2[self.outcome_push2==3,:,:])
-        ax.axvline(0, color='grey', lw=1, label='PushOnset', linestyle='--')
-        self.plot_mean_sem(
-            ax, self.neu_time_push1, m_push1_all, s_push1_all,
-            color2, 'PO1 all')
-        self.plot_mean_sem(
-            ax, self.neu_time_push2, m_push2_reward, s_push2_reward,
-            self.colors[0], 'PO2 reward')
-        self.plot_mean_sem(
-            ax, self.neu_time_push2, m_push2_punish, s_push2_punish,
-            self.colors[3], 'PO2 early')
-        upper = np.max([m_push1_all, m_push2_reward, m_push2_punish]) +\
-                np.max([s_push1_all, s_push2_reward, s_push2_punish])
-        lower = np.min([m_push1_all, m_push2_reward, m_push2_punish]) -\
-                np.max([s_push1_all, s_push2_reward, s_push2_punish])
-        adjust_layout_neu(ax)
-        ax.set_ylim([lower, upper])
+            _, color1, _, _ = get_roi_label_color(self.labels, roi_id)
+        if not np.isnan(np.sum(neu_push1)) and not np.isnan(np.sum(neu_push2)):
+            m_push1_all,    s_push1_all    = get_mean_sem(neu_push1[self.outcome_push1!=1,:,:])
+            m_push2_reward, s_push2_reward = get_mean_sem(neu_push2[self.outcome_push2==0,:,:])
+            m_push2_punish, s_push2_punish = get_mean_sem(neu_push2[self.outcome_push2==3,:,:])
+            ax.axvline(0, color='grey', lw=1, label='PushOnset', linestyle='--')
+            self.plot_mean_sem(
+                ax, self.neu_time_push1, m_push1_all, s_push1_all,
+                color1, 'push1 all')
+            self.plot_mean_sem(
+                ax, self.neu_time_push2, m_push2_reward, s_push2_reward,
+                self.colors[0], 'push2 reward')
+            self.plot_mean_sem(
+                ax, self.neu_time_push2, m_push2_punish, s_push2_punish,
+                self.colors[3], 'push2 early')
+            upper = np.nanmax([m_push1_all, m_push2_reward, m_push2_punish]) +\
+                    np.nanmax([s_push1_all, s_push2_reward, s_push2_punish])
+            lower = np.nanmin([m_push1_all, m_push2_reward, m_push2_punish]) -\
+                    np.nanmax([s_push1_all, s_push2_reward, s_push2_punish])
+            adjust_layout_neu(ax)
+            ax.set_ylim([lower, upper])
         
     # roi response to PushOnset1 (short).
     def roi_short_push1(self, ax, roi_id):
@@ -1057,6 +1058,48 @@ class plotter_L7G8_motor(plotter_utils):
     def __init__(self, neural_trials, labels, significance, cate_delay):
         super().__init__(neural_trials, labels, significance, cate_delay)
     
+    def all_short_motor_align(self, axs):
+        self.short_push1(axs[0])
+        self.short_retract1(axs[1])
+        self.short_wait2(axs[2])
+        self.short_push2(axs[3])
+        self.short_retract2(axs[4])
+        
+    def all_short_motor_align_heatmap_neuron(self, axs):
+        self.short_push1_heatmap_neuron(axs[0])
+        self.short_retract1_heatmap_neuron(axs[1])
+        self.short_wait2_heatmap_neuron(axs[2])
+        self.short_push2_heatmap_neuron(axs[3])
+        self.short_retract2_heatmap_neuron(axs[4])
+    
+    def all_long_motor_align(self, axs):
+        self.long_push1(axs[0])
+        self.long_retract1(axs[1])
+        self.long_wait2(axs[2])
+        self.long_push2(axs[3])
+        self.long_retract2(axs[4])
+
+    def all_long_motor_align_heatmap_neuron(self, axs):
+        self.long_push1_heatmap_neuron(axs[0])
+        self.long_retract1_heatmap_neuron(axs[1])
+        self.long_wait2_heatmap_neuron(axs[2])
+        self.long_push2_heatmap_neuron(axs[3])
+        self.long_retract2_heatmap_neuron(axs[4])
+    
+    def all_short_epoch_motor_align(self, axs):
+        self.short_epoch_push1(axs[0])
+        self.short_epoch_retract1(axs[1])
+        self.short_epoch_wait2(axs[2])
+        self.short_epoch_push2(axs[3])
+        self.short_epoch_retract2(axs[4])
+
+    def all_long_epoch_motor_align(self, axs):
+        self.long_epoch_push1(axs[0])
+        self.long_epoch_retract1(axs[1])
+        self.long_epoch_wait2(axs[2])
+        self.long_epoch_push2(axs[3])
+        self.long_epoch_retract2(axs[4])
+
     # response to PushOnset1 (short).
     def short_push1(self, ax):
         self.plot_moto_outcome(
@@ -1335,6 +1378,48 @@ class plotter_VIPG8_motor(plotter_utils):
     def __init__(self, neural_trials, labels, significance, cate_delay):
         super().__init__(neural_trials, labels, significance, cate_delay)
     
+    def all_short_motor_align(self, axs):
+        self.short_push1(axs[0])
+        self.short_retract1(axs[1])
+        self.short_wait2(axs[2])
+        self.short_push2(axs[3])
+        self.short_retract2(axs[4])
+        
+    def all_short_motor_align_heatmap_neuron(self, axs):
+        self.short_push1_heatmap_neuron(axs[0])
+        self.short_retract1_heatmap_neuron(axs[1])
+        self.short_wait2_heatmap_neuron(axs[2])
+        self.short_push2_heatmap_neuron(axs[3])
+        self.short_retract2_heatmap_neuron(axs[4])
+    
+    def all_long_motor_align(self, axs):
+        self.long_push1(axs[0])
+        self.long_retract1(axs[1])
+        self.long_wait2(axs[2])
+        self.long_push2(axs[3])
+        self.long_retract2(axs[4])
+
+    def all_long_motor_align_heatmap_neuron(self, axs):
+        self.long_push1_heatmap_neuron(axs[0])
+        self.long_retract1_heatmap_neuron(axs[1])
+        self.long_wait2_heatmap_neuron(axs[2])
+        self.long_push2_heatmap_neuron(axs[3])
+        self.long_retract2_heatmap_neuron(axs[4])
+    
+    def all_short_epoch_motor_align(self, axs):
+        self.short_epoch_push1(axs[0])
+        self.short_epoch_retract1(axs[1])
+        self.short_epoch_wait2(axs[2])
+        self.short_epoch_push2(axs[3])
+        self.short_epoch_retract2(axs[4])
+
+    def all_long_epoch_motor_align(self, axs):
+        self.long_epoch_push1(axs[0])
+        self.long_epoch_retract1(axs[1])
+        self.long_epoch_wait2(axs[2])
+        self.long_epoch_push2(axs[3])
+        self.long_epoch_retract2(axs[4])
+    
     # response to PushOnset1 (short).
     def short_push1(self, ax):
         self.plot_moto_outcome(
@@ -1607,3 +1692,22 @@ class plotter_VIPG8_motor(plotter_utils):
             ax, self.neu_seq_lick, self.neu_time_lick, self.significance['r_lick'])
         ax.set_xlabel('time since lick (ms)')
         ax.set_title('response to all lick')
+    
+    # response to push osnet.
+    def onset(self, ax):
+        self.plot_push_onset(ax, self.significance['r_push'], cate=1)
+        ax.set_xlabel('time since push onset (ms)')
+        ax.set_title('response to all push onset')
+    
+    # response to push osnet.
+    def onset_heatmap_neuron(self, axs):
+        neu_seq = [self.neu_seq_push1[self.outcome_push1!=1,:,:],
+                   self.neu_seq_push2[self.outcome_push2==0,:,:],
+                   self.neu_seq_push2[self.outcome_push2==3,:,:]]
+        for i in range(3):
+            self.plot_heatmap_neuron(
+                axs[i], neu_seq[i], self.neu_time_push1, self.significance['r_push'])
+            axs[i].set_xlabel('time since push onset (ms)')
+        axs[0].set_title('response to PO1 all')
+        axs[1].set_title('response to PO2 reward')
+        axs[2].set_title('response to PO2 early')

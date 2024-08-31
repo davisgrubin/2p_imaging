@@ -61,173 +61,87 @@ from plot.misc import plot_roi_significance
 def plot_js_L7G8(ops, session_data_name):
     
     def plot_session_report():
-        fig = plt.figure(figsize=(77, 168))
-        gs = GridSpec(24, 11, figure=fig)
+        fig = plt.figure(figsize=(105, 175))
+        gs = GridSpec(25, 15, figure=fig)
         # masks.
         mask_ax01 = plt.subplot(gs[0:2, 0:2])
         mask_ax02 = plt.subplot(gs[0:2, 2:4])
         mask_ax03 = plt.subplot(gs[0:2, 4:6])
         mask_ax04 = plt.subplot(gs[0:2, 6:8])
-        plotter_masks.func(mask_ax01, 'mean', with_mask=False)
-        plotter_masks.func(mask_ax02, 'mean')
-        plotter_masks.func(mask_ax03, 'max')
-        plotter_masks.func_masks_color(mask_ax04)
+        plotter_masks.func(mask_ax01, 'mean')
+        plotter_masks.func(mask_ax02, 'max')
+        plotter_masks.func_masks_color(mask_ax03)
+        plotter_masks.func(mask_ax04, 'mean', with_mask=False)
         # behavior.
-        beh_misc_ax01 = plt.subplot(gs[2, 9:11])
-        beh_misc_ax02 = plt.subplot(gs[3, 10])
+        beh_misc_ax01 = plt.subplot(gs[5, 10:12])
+        beh_misc_ax02 = plt.subplot(gs[6, 10])
+        beh_js_short_axs = [plt.subplot(gs[3, i]) for i in range(9)]
+        beh_js_long_axs  = [plt.subplot(gs[9, i]) for i in range(9)]
+        beh_js_epoch_short_axs = [plt.subplot(gs[6, i]) for i in range(8)]
+        beh_js_epoch_long_axs  = [plt.subplot(gs[12, i]) for i in range(8)]
+        beh_js_onset_ax = plt.subplot(gs[15, 2])
         plotter_beh.delay_dist(beh_misc_ax01)
         plotter_beh.session_outcome(beh_misc_ax02)
-        beh_js_short_ax01 = plt.subplot(gs[2, 0])
-        beh_js_short_ax02 = plt.subplot(gs[2, 1])
-        beh_js_short_ax03 = plt.subplot(gs[2, 2])
-        beh_js_short_ax04 = plt.subplot(gs[2, 3])
-        beh_js_short_ax05 = plt.subplot(gs[2, 4])
-        beh_js_short_ax06 = plt.subplot(gs[2, 5])
-        beh_js_short_ax07 = plt.subplot(gs[2, 6])
-        beh_js_short_ax08 = plt.subplot(gs[2, 7])
-        plotter_beh.short_align_pos_vis1(beh_js_short_ax01)
-        plotter_beh.short_align_pos_push1(beh_js_short_ax02)
-        plotter_beh.short_align_pos_retract1(beh_js_short_ax03)
-        plotter_beh.short_align_pos_vis2(beh_js_short_ax04)
-        plotter_beh.short_align_pos_wait2(beh_js_short_ax05)
-        plotter_beh.short_align_pos_push2(beh_js_short_ax06)
-        plotter_beh.short_align_pos_retract2(beh_js_short_ax07)
-        plotter_beh.short_align_pos_outcome(beh_js_short_ax08)
-        beh_js_long_ax01 = plt.subplot(gs[6, 0])
-        beh_js_long_ax02 = plt.subplot(gs[6, 1])
-        beh_js_long_ax03 = plt.subplot(gs[6, 2])
-        beh_js_long_ax04 = plt.subplot(gs[6, 3])
-        beh_js_long_ax05 = plt.subplot(gs[6, 4])
-        beh_js_long_ax06 = plt.subplot(gs[6, 5])
-        beh_js_long_ax07 = plt.subplot(gs[6, 6])
-        beh_js_long_ax08 = plt.subplot(gs[6, 7])
-        plotter_beh.long_align_pos_vis1(beh_js_long_ax01)
-        plotter_beh.long_align_pos_push1(beh_js_long_ax02)
-        plotter_beh.long_align_pos_retract1(beh_js_long_ax03)
-        plotter_beh.long_align_pos_vis2(beh_js_long_ax04)
-        plotter_beh.long_align_pos_wait2(beh_js_long_ax05)
-        plotter_beh.long_align_pos_push2(beh_js_long_ax06)
-        plotter_beh.long_align_pos_retract2(beh_js_long_ax07)
-        plotter_beh.long_align_pos_outcome(beh_js_long_ax08)
+        plotter_beh.all_short_align(beh_js_short_axs)
+        plotter_beh.all_long_align(beh_js_long_axs)
+        plotter_beh.all_short_epoch(beh_js_epoch_short_axs)
+        plotter_beh.all_long_epoch(beh_js_epoch_long_axs)
+        plotter_beh.onset(beh_js_onset_ax)
         # short.
-        vis1_ax01 = plt.subplot(gs[3, 0])
-        vis1_ax02 = plt.subplot(gs[4, 0])
-        plotter_percept.short_vis1_outcome(vis1_ax01)
-        plotter_percept.short_vis1_heatmap_neuron(vis1_ax02)
-        push1_ax01 = plt.subplot(gs[3, 1])
-        push1_ax02 = plt.subplot(gs[4, 1])
-        plotter_motor.short_push1(push1_ax01)
-        plotter_motor.short_push1_heatmap_neuron(push1_ax02)
-        retract1_ax01 = plt.subplot(gs[3, 2])
-        retract1_ax02 = plt.subplot(gs[4, 2])
-        plotter_motor.short_retract1(retract1_ax01)
-        plotter_motor.short_retract1_heatmap_neuron(retract1_ax02)
-        vis2_ax01 = plt.subplot(gs[3, 3])
-        vis2_ax02 = plt.subplot(gs[4, 3])
-        plotter_percept.short_vis2_outcome(vis2_ax01)
-        plotter_percept.short_vis2_heatmap_neuron(vis2_ax02)
-        wait2_ax01 = plt.subplot(gs[3, 4])
-        wait2_ax02 = plt.subplot(gs[4, 4])
-        plotter_motor.short_wait2(wait2_ax01)
-        plotter_motor.short_wait2_heatmap_neuron(wait2_ax02)
-        push2_ax01 = plt.subplot(gs[3, 5])
-        push2_ax02 = plt.subplot(gs[4, 5])
-        plotter_motor.short_push2(push2_ax01)
-        plotter_motor.short_push2_heatmap_neuron(push2_ax02)
-        retract2_ax01 = plt.subplot(gs[3, 6])
-        retract2_ax02 = plt.subplot(gs[4, 6])
-        plotter_motor.short_retract2(retract2_ax01)
-        plotter_motor.short_retract2_heatmap_neuron(retract2_ax02)
-        outcome_ax01 = plt.subplot(gs[3, 7])
-        outcome_ax02 = plt.subplot(gs[4, 7])
-        outcome_ax03 = plt.subplot(gs[3, 8])
-        outcome_ax04 = plt.subplot(gs[4, 8])
-        plotter_percept.short_reward(outcome_ax01)
-        plotter_percept.short_reward_heatmap_neuron(outcome_ax02)
-        plotter_percept.short_punish(outcome_ax03)
-        plotter_percept.short_punish_heatmap_neuron(outcome_ax04)
+        percept_axs01 = [plt.subplot(gs[4, i]) for i in [0,3,6,7]]
+        percept_axs02 = [plt.subplot(gs[5, i]) for i in [0,3,6,7]]
+        plotter_percept.all_short_percept_align(percept_axs01)
+        plotter_percept.all_short_percept_align_heatmap_neuron(percept_axs02)
+        motor_axs01 = [plt.subplot(gs[4, i]) for i in [1,2,4,5,8]]
+        motor_axs02 = [plt.subplot(gs[5, i]) for i in [1,2,4,5,8]]
+        plotter_motor.all_short_motor_align(motor_axs01)
+        plotter_motor.all_short_motor_align_heatmap_neuron(motor_axs02)
         # long.
-        vis1_ax01 = plt.subplot(gs[7, 0])
-        vis1_ax02 = plt.subplot(gs[8, 0])
-        plotter_percept.long_vis1_outcome(vis1_ax01)
-        plotter_percept.long_vis1_heatmap_neuron(vis1_ax02)
-        push1_ax01 = plt.subplot(gs[7, 1])
-        push1_ax02 = plt.subplot(gs[8, 1])
-        plotter_motor.long_push1(push1_ax01)
-        plotter_motor.long_push1_heatmap_neuron(push1_ax02)
-        retract1_ax01 = plt.subplot(gs[7, 2])
-        retract1_ax02 = plt.subplot(gs[8, 2])
-        plotter_motor.long_retract1(retract1_ax01)
-        plotter_motor.long_retract1_heatmap_neuron(retract1_ax02)
-        vis2_ax01 = plt.subplot(gs[7, 3])
-        vis2_ax02 = plt.subplot(gs[8, 3])
-        plotter_percept.long_vis2_outcome(vis2_ax01)
-        plotter_percept.long_vis2_heatmap_neuron(vis2_ax02)
-        wait2_ax01 = plt.subplot(gs[7, 4])
-        wait2_ax02 = plt.subplot(gs[8, 4])
-        plotter_motor.long_wait2(wait2_ax01)
-        plotter_motor.long_wait2_heatmap_neuron(wait2_ax02)
-        push2_ax01 = plt.subplot(gs[7, 5])
-        push2_ax02 = plt.subplot(gs[8, 5])
-        plotter_motor.long_push2(push2_ax01)
-        plotter_motor.long_push2_heatmap_neuron(push2_ax02)
-        retract2_ax01 = plt.subplot(gs[7, 6])
-        retract2_ax02 = plt.subplot(gs[8, 6])
-        plotter_motor.long_retract2(retract2_ax01)
-        plotter_motor.long_retract2_heatmap_neuron(retract2_ax02)
-        outcome_ax01 = plt.subplot(gs[7, 7])
-        outcome_ax02 = plt.subplot(gs[8, 7])
-        outcome_ax03 = plt.subplot(gs[7, 8])
-        outcome_ax04 = plt.subplot(gs[8, 8])
-        plotter_percept.long_reward(outcome_ax01)
-        plotter_percept.long_reward_heatmap_neuron(outcome_ax02)
-        plotter_percept.long_punish(outcome_ax03)
-        plotter_percept.long_punish_heatmap_neuron(outcome_ax04)
+        percept_axs01 = [plt.subplot(gs[10, i]) for i in [0,3,6,7]]
+        percept_axs02 = [plt.subplot(gs[11, i]) for i in [0,3,6,7]]
+        plotter_percept.all_long_percept_align(percept_axs01)
+        plotter_percept.all_long_percept_align_heatmap_neuron(percept_axs02)
+        motor_axs01 = [plt.subplot(gs[10, i]) for i in [1,2,4,5,8]]
+        motor_axs02 = [plt.subplot(gs[11, i]) for i in [1,2,4,5,8]]
+        plotter_motor.all_long_motor_align(motor_axs01)
+        plotter_motor.all_long_motor_align_heatmap_neuron(motor_axs02)
         # epoch.
-        ep_short_ax01 = plt.subplot(gs[5, 0])
-        ep_short_ax03 = plt.subplot(gs[5, 1])
-        ep_short_ax05 = plt.subplot(gs[5, 2])
-        ep_short_ax07 = plt.subplot(gs[5, 3])
-        ep_short_ax09 = plt.subplot(gs[5, 4])
-        ep_short_ax11 = plt.subplot(gs[5, 5])
-        ep_short_ax13 = plt.subplot(gs[5, 6])
-        plotter_percept.short_epoch_vis1(ep_short_ax01)
-        plotter_motor.short_epoch_push1(ep_short_ax03)
-        plotter_motor.short_epoch_retract1(ep_short_ax05)
-        plotter_percept.short_epoch_vis2(ep_short_ax07)
-        plotter_motor.short_epoch_wait2(ep_short_ax09)
-        plotter_motor.short_epoch_push2(ep_short_ax11)
-        plotter_motor.short_epoch_retract2(ep_short_ax13)
-        ep_long_ax01 = plt.subplot(gs[9, 0])
-        ep_long_ax03 = plt.subplot(gs[9, 1])
-        ep_long_ax05 = plt.subplot(gs[9, 2])
-        ep_long_ax07 = plt.subplot(gs[9, 3])
-        ep_long_ax09 = plt.subplot(gs[9, 4])
-        ep_long_ax11 = plt.subplot(gs[9, 5])
-        ep_long_ax13 = plt.subplot(gs[9, 6])
-        plotter_percept.long_epoch_vis1(ep_long_ax01)
-        plotter_motor.long_epoch_push1(ep_long_ax03)
-        plotter_motor.long_epoch_retract1(ep_long_ax05)
-        plotter_percept.long_epoch_vis2(ep_long_ax07)
-        plotter_motor.long_epoch_wait2(ep_long_ax09)
-        plotter_motor.long_epoch_push2(ep_long_ax11)
-        plotter_motor.long_epoch_retract2(ep_long_ax13)
-        # lick
-        lick_ax01 = plt.subplot(gs[3, 9])
-        lick_ax02 = plt.subplot(gs[4, 9])
+        ep_short_axs01 = [plt.subplot(gs[7, i]) for i in [0,3,6]]
+        ep_short_axs02 = [plt.subplot(gs[7, i]) for i in [1,2,4,5,7]]
+        plotter_percept.all_short_epoch_percept_align(ep_short_axs01)
+        plotter_motor.all_short_epoch_motor_align(ep_short_axs02)
+        ep_long_axs01 = [plt.subplot(gs[13, i]) for i in [0,3,6]]
+        ep_long_axs02 = [plt.subplot(gs[13, i]) for i in [1,2,4,5,7]]
+        plotter_percept.all_long_epoch_percept_align(ep_long_axs01)
+        plotter_motor.all_long_epoch_motor_align(ep_long_axs02)
+        # push onset.
+        push_ax01 = plt.subplot(gs[15, 2])
+        push_ax02 = [plt.subplot(gs[15, i]) for i in [2,3,4]]
+        plotter_motor.onset(push_ax01)
+        plotter_motor.onset_heatmap_neuron(push_ax02)
+        # lick.
+        lick_ax01 = plt.subplot(gs[15, 6])
+        lick_ax02 = plt.subplot(gs[15, 7])
         plotter_motor.lick(lick_ax01)
         plotter_motor.lick_heatmap_neuron(lick_ax02)
         # model.
-        model_ax01 = plt.subplot(gs[10, 0:2])
-        model_ax02 = plt.subplot(gs[10, 2:4])
-        model_ax03 = plt.subplot(gs[10, 4:6])
-        model_ax04 = plt.subplot(gs[10, 6:8])
-        plotter_model.plot_block_type_population_decoding(model_ax01)
-        plotter_model.plot_block_tran_decode_all(model_ax02)
-        plotter_model.plot_block_tran_decode_short(model_ax03)
-        plotter_model.plot_block_tran_decode_long(model_ax04)
+        decode_axs = [[plt.subplot(gs[10, 10:12]), plt.subplot(gs[11, 10:12])],
+                      [plt.subplot(gs[12, 10:12]), plt.subplot(gs[13, 10:12])],
+                      [plt.subplot(gs[14, 10:12]), plt.subplot(gs[15, 10:12])],
+                      [plt.subplot(gs[16, 10:12]), plt.subplot(gs[17, 10:12])],
+                      [plt.subplot(gs[18, 10:12]), plt.subplot(gs[19, 10:12])],
+                      [plt.subplot(gs[20, 10:12]), plt.subplot(gs[21, 10:12])]]
+        model_axs07 = [plt.subplot(gs[10, i]) for i in [12,13,14]]
+        model_axs08 = [plt.subplot(gs[16, i]) for i in [12,13,14]]
+        model_axs09 = [plt.subplot(gs[11, i]) for i in [12,13,14]]
+        model_axs10 = [plt.subplot(gs[17, i]) for i in [12,13,14]]
+        plotter_model.all_decode(decode_axs)
+        plotter_model.block_type_population_pca(model_axs07)
+        plotter_model.block_tran_population_pca(model_axs08)
+        plotter_model.block_type_dynamics(model_axs09)
+        plotter_model.block_tran_dynamics(model_axs10)
         # example traces.
-        example_ax = plt.subplot(gs[0:3, 8])
+        example_ax = plt.subplot(gs[0:2, 8])
         plot_L7G8_example_traces(
             example_ax, dff, labels, vol_img, vol_time)
         # offset.
@@ -240,7 +154,7 @@ def plot_js_L7G8(ops, session_data_name):
         sign_ax = plt.subplot(gs[1, 9:11])
         plot_significance(sign_ax, significance, labels)
         # save figure.
-        fig.set_size_inches(77, 168)
+        fig.set_size_inches(105, 140)
         fig.savefig(os.path.join(
             ops['save_path0'], 'figures',
             'session_report_{}.pdf'.format(session_data_name)),
@@ -251,68 +165,32 @@ def plot_js_L7G8(ops, session_data_name):
         roi_report = fitz.open()
         for roi_id in tqdm(np.argsort(labels, kind='stable')):
             if get_roi_sign(significance, roi_id):
-                fig = plt.figure(figsize=(56, 35))
-                gs = GridSpec(5, 8, figure=fig)
+                fig = plt.figure(figsize=(70, 56))
+                gs = GridSpec(8, 10, figure=fig)
                 # masks.
                 mask_ax01 = plt.subplot(gs[0:2, 0:2])
                 mask_ax02 = plt.subplot(gs[0, 2])
                 mask_ax03 = plt.subplot(gs[0, 3])
                 mask_ax04 = plt.subplot(gs[0, 4])
-                mask_ax05 = plt.subplot(gs[0, 5])
-                plotter_masks.roi_loc_2chan(mask_ax01, roi_id, 'max')
+                plotter_masks.roi_loc_1chan(mask_ax01, roi_id, 'max')
                 plotter_masks.roi_func(mask_ax02, roi_id, 'max')
-                plotter_masks.roi_anat(mask_ax03, roi_id)
-                plotter_masks.roi_superimpose(mask_ax04, roi_id, 'max')
-                plotter_masks.roi_masks(mask_ax05, roi_id)
-                # alignments.
-                vis1_ax01 = plt.subplot(gs[2, 0])
-                vis1_ax02 = plt.subplot(gs[3, 0])
-                vis1_ax03 = plt.subplot(gs[4, 0])
-                plotter_percept.roi_vis1_outcome(vis1_ax01, roi_id)
-                plotter_percept.roi_vis1_outcome_box(vis1_ax02, roi_id)
-                plotter_percept.roi_vis1_heatmap_trials(vis1_ax03, roi_id)
-                push1_ax01 = plt.subplot(gs[2, 1])
-                push1_ax02 = plt.subplot(gs[3, 1])
-                push1_ax03 = plt.subplot(gs[4, 1])
-                plotter_motor.roi_push1(push1_ax01, roi_id)
-                plotter_motor.roi_push1_box(push1_ax02, roi_id)
-                plotter_motor.roi_push1_heatmap_trials(push1_ax03, roi_id)
-                retract1_ax01 = plt.subplot(gs[2, 2])
-                retract1_ax02 = plt.subplot(gs[3, 2])
-                retract1_ax03 = plt.subplot(gs[4, 2])
-                plotter_motor.roi_retract1(retract1_ax01, roi_id)
-                plotter_motor.roi_retract1_box(retract1_ax02, roi_id)
-                plotter_motor.roi_retract1_heatmap_trials(retract1_ax03, roi_id)
-                vis2_ax01 = plt.subplot(gs[2, 3])
-                vis2_ax02 = plt.subplot(gs[3, 3])
-                vis2_ax03 = plt.subplot(gs[4, 3])
-                plotter_percept.roi_vis2_outcome(vis2_ax01, roi_id)
-                plotter_percept.roi_vis2_outcome_box(vis2_ax02, roi_id)
-                plotter_percept.roi_vis2_heatmap_trials(vis2_ax03, roi_id)
-                push2_ax01 = plt.subplot(gs[2, 4])
-                push2_ax02 = plt.subplot(gs[3, 4])
-                push2_ax03 = plt.subplot(gs[4, 4])
-                plotter_motor.roi_push2(push2_ax01, roi_id)
-                plotter_motor.roi_push2_box(push2_ax02, roi_id)
-                plotter_motor.roi_push2_heatmap_trials(push2_ax03, roi_id)
-                reward_ax01 = plt.subplot(gs[2, 5])
-                reward_ax02 = plt.subplot(gs[3, 5])
-                reward_ax03 = plt.subplot(gs[4, 5])
-                plotter_percept.roi_reward(reward_ax01, roi_id)
-                plotter_percept.roi_reward_box(reward_ax02, roi_id)
-                plotter_percept.roi_reward_heatmap_trials(reward_ax03, roi_id)
-                punish_ax01 = plt.subplot(gs[2, 6])
-                punish_ax02 = plt.subplot(gs[3, 6])
-                punish_ax03 = plt.subplot(gs[4, 6])
-                plotter_percept.roi_punish(punish_ax01, roi_id)
-                plotter_percept.roi_punish_box(punish_ax02, roi_id)
-                plotter_percept.roi_punish_heatmap_trials(punish_ax03, roi_id)
-                lick_ax01 = plt.subplot(gs[2, 7])
-                lick_ax02 = plt.subplot(gs[3, 7])
-                lick_ax03 = plt.subplot(gs[4, 7])
-                plotter_motor.roi_lick(lick_ax01, roi_id)
-                plotter_motor.roi_lick_box(lick_ax02, roi_id)
-                plotter_motor.roi_lick_heatmap_trials(lick_ax03, roi_id)
+                plotter_masks.roi_func(mask_ax03, roi_id, 'mean')
+                plotter_masks.roi_masks(mask_ax04, roi_id)
+                # alignment.
+                percept_axs = [[plt.subplot(gs[2, i]) for i in [0,3,6,7]],
+                               [plt.subplot(gs[4, i]) for i in [0,3,6,7]]]
+                moto_axs = [[plt.subplot(gs[2, i]) for i in [1,2,4,5,8]],
+                            [plt.subplot(gs[4, i]) for i in [1,2,4,5,8]],
+                            plt.subplot(gs[1, 3]), plt.subplot(gs[1, 4])]
+                plotter_percept.all_roi_percept_align(percept_axs, roi_id)
+                plotter_motor.all_roi_motor_align(moto_axs, roi_id)
+                # epoch.
+                ep_percept_axs = [[plt.subplot(gs[3, i]) for i in [0,3,6]],
+                               [plt.subplot(gs[5, i]) for i in [0,3,6]]]
+                ep_moto_axs = [[plt.subplot(gs[3, i]) for i in [1,2,4,5,7]],
+                               [plt.subplot(gs[5, i]) for i in [1,2,4,5,7]]]
+                plotter_percept.all_roi_epoch_percept_align(ep_percept_axs, roi_id)
+                plotter_motor.all_roi_epoch_motor_align(ep_moto_axs, roi_id)
                 # significance.
                 sign_ax = plt.subplot(gs[1, 2])
                 plot_roi_significance(sign_ax, significance, roi_id)
@@ -323,7 +201,7 @@ def plot_js_L7G8(ops, session_data_name):
                 fname = os.path.join(
                     ops['save_path0'], 'figures',
                     str(roi_id).zfill(4)+'.pdf')
-                fig.set_size_inches(56, 35)
+                fig.set_size_inches(70, 56)
                 fig.savefig(fname, dpi=300)
                 plt.close()
                 roi_fig = fitz.open(fname)
@@ -398,7 +276,7 @@ def plot_js_L7G8(ops, session_data_name):
     print('===============================================')
     print('=============== plot roi report ===============')
     print('===============================================')
-    #plot_individual_roi()
+    plot_individual_roi()
     print('===============================================')
     print('=============== plot raw traces ===============')
     print('===============================================')
@@ -422,11 +300,10 @@ def run(session_data_path):
     
 if __name__ == "__main__":
     reset_significance = False
-    SELF_TIME = False
-    cate_delay = 40
+    cate_delay = 15
     #delay = [neural_trials[str(i)]['trial_delay'] for i in range(len(neural_trials))]
     
-    session_data_path = 'C:/Users/yhuang887/Projects/joystick_basic_202304/results/LG07_CRBL_20240804_js_t'
+    session_data_path = 'C:/Users/yhuang887/Projects/joystick_basic_202304/results/VG01_P_20240624_js_t'
     run(session_data_path)
 
     

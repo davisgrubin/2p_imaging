@@ -307,7 +307,7 @@ def plot_js_VIPTD_G8(ops, session_data_name):
     print('===============================================')
     print('============= plot session report =============')
     print('===============================================')
-    #plot_session_report()
+    plot_session_report()
     print('===============================================')
     print('=============== plot roi report ===============')
     print('===============================================')
@@ -326,8 +326,8 @@ def run(session_data_path):
     print('===============================================')
     print('============= trials segmentation =============')
     print('===============================================')
-    #Trialization.run(ops)
-    #StatTest.run(ops)
+    Trialization.run(ops)
+    StatTest.run(ops)
     plot_js_VIPTD_G8(ops, session_data_name)
     print('===============================================')
     print('Processing {} completed'.format(session_data_name))
@@ -338,7 +338,7 @@ if __name__ == "__main__":
     cate_delay = 15
     #delay = [neural_trials[str(i)]['trial_delay'] for i in range(len(neural_trials))]
     
-    session_data_path = 'C:/Users/yhuang887/Projects/joystick_basic_202304/results/FN16_P_20240701_js_t'
+    session_data_path = 'C:/Users/yhuang887/Projects/joystick_basic_202304/results/FN13_P_20240530_js_DCNCNO_t'
     run(session_data_path)
 
     

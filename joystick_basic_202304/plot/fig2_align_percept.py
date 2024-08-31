@@ -795,7 +795,35 @@ class plotter_VIPTD_G8_percept(plotter_utils):
 class plotter_L7G8_percept(plotter_utils):
     def __init__(self, neural_trials, labels, significance, cate_delay):
         super().__init__(neural_trials, labels, significance, cate_delay)
-
+    
+    def all_short_percept_align(self, axs):
+        self.short_vis1_outcome(axs[0])
+        self.short_vis2_outcome(axs[1])
+        self.short_reward(axs[2])
+        self.short_punish(axs[3])
+    
+    def all_short_percept_align_heatmap_neuron(self, axs):
+        self.short_vis1_heatmap_neuron(axs[0])
+        self.short_vis2_heatmap_neuron(axs[1])
+        self.short_reward_heatmap_neuron(axs[2])
+        self.short_punish_heatmap_neuron(axs[3])
+    
+    def all_long_percept_align_heatmap_neuron(self, axs):
+        self.long_vis1_heatmap_neuron(axs[0])
+        self.long_vis2_heatmap_neuron(axs[1])
+        self.long_reward_heatmap_neuron(axs[2])
+        self.long_punish_heatmap_neuron(axs[3])
+    
+    def all_short_epoch_percept_align(self, axs):
+        self.short_epoch_vis1(axs[0])
+        self.short_epoch_vis2(axs[1])
+        self.short_epoch_reward(axs[2])
+    
+    def all_long_epoch_percept_align(self, axs):
+        self.long_epoch_vis1(axs[0])
+        self.long_epoch_vis2(axs[1])
+        self.long_epoch_reward(axs[2])
+    
     # response to Vis1 with outcome (short).
     def short_vis1_outcome(self, ax):
         self.plot_stim_outcome(
@@ -1016,6 +1044,40 @@ class plotter_L7G8_percept(plotter_utils):
 class plotter_VIPG8_percept(plotter_utils):
     def __init__(self, neural_trials, labels, significance, cate_delay):
         super().__init__(neural_trials, labels, significance, cate_delay)
+
+    def all_short_percept_align(self, axs):
+        self.short_vis1_outcome(axs[0])
+        self.short_vis2_outcome(axs[1])
+        self.short_reward(axs[2])
+        self.short_punish(axs[3])
+    
+    def all_short_percept_align_heatmap_neuron(self, axs):
+        self.short_vis1_heatmap_neuron(axs[0])
+        self.short_vis2_heatmap_neuron(axs[1])
+        self.short_reward_heatmap_neuron(axs[2])
+        self.short_punish_heatmap_neuron(axs[3])
+
+    def all_long_percept_align(self, axs):
+        self.long_vis1_outcome(axs[0])
+        self.long_vis2_outcome(axs[1])
+        self.long_reward(axs[2])
+        self.long_punish(axs[3])
+    
+    def all_long_percept_align_heatmap_neuron(self, axs):
+        self.long_vis1_heatmap_neuron(axs[0])
+        self.long_vis2_heatmap_neuron(axs[1])
+        self.long_reward_heatmap_neuron(axs[2])
+        self.long_punish_heatmap_neuron(axs[3])
+
+    def all_short_epoch_percept_align(self, axs):
+        self.short_epoch_vis1(axs[0])
+        self.short_epoch_vis2(axs[1])
+        self.short_epoch_reward(axs[2])
+
+    def all_long_epoch_percept_align(self, axs):
+        self.long_epoch_vis1(axs[0])
+        self.long_epoch_vis2(axs[1])
+        self.long_epoch_reward(axs[2])
     
     # response to Vis1 with outcome (short).
     def short_vis1_outcome(self, ax):

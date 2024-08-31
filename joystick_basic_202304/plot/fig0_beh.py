@@ -205,11 +205,12 @@ class plotter_all_beh(utils):
         s_push2_reward = s_push2_reward[l_idx_2:r_idx_2]
         m_push2_punish = m_push2_punish[l_idx_2:r_idx_2]
         s_push2_punish = s_push2_punish[l_idx_2:r_idx_2]
-        self.plot_mean_sem(ax, time_p1, m_push1_all,    s_push1_all,   'darkviolet',    'PO1 all')
-        self.plot_mean_sem(ax, time_p2, m_push2_reward, s_push2_reward, self.colors[0], 'PO2 reward')
-        self.plot_mean_sem(ax, time_p2, m_push2_punish, s_push2_punish, self.colors[3], 'PO2 early')
-        upper = np.max([m_push1_all, m_push2_reward, m_push2_punish]) +\
-                np.max([s_push1_all, s_push2_reward, s_push2_punish])
+        self.plot_mean_sem(ax, time_p1, m_push1_all,    s_push1_all,   'grey',          'push1 all')
+        self.plot_mean_sem(ax, time_p2, m_push2_reward, s_push2_reward, self.colors[0], 'push2 reward')
+        self.plot_mean_sem(ax, time_p2, m_push2_punish, s_push2_punish, self.colors[3], 'push2 early')
+        upper = np.nanmax([m_push1_all, m_push2_reward, m_push2_punish]) +\
+                np.nanmax([s_push1_all, s_push2_reward, s_push2_punish])
+        upper = 0 if np.isnan(upper) else upper
         lower = -0.1
         adjust_layout_js(ax)
         ax.set_xlim([np.nanmin(self.neu_time_motor), np.nanmax(self.neu_time_motor)])
