@@ -48,3 +48,8 @@
 - Added push onset fig.
 - Added outcome percentage for decoding.
 - Completed roi plot.
+
+## 2024.09.01
+- Added class method for plotting one series of figs.
+- Rewritten plotting codes.
+- Finished visualization for VIPG8 and L7G8.

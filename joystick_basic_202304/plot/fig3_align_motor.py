@@ -1099,7 +1099,7 @@ class plotter_L7G8_motor(plotter_utils):
         self.long_epoch_wait2(axs[2])
         self.long_epoch_push2(axs[3])
         self.long_epoch_retract2(axs[4])
-
+    
     # response to PushOnset1 (short).
     def short_push1(self, ax):
         self.plot_moto_outcome(
@@ -1358,7 +1358,7 @@ class plotter_L7G8_motor(plotter_utils):
             self.delay_retract2, 1,
             self.significance['r_retract'], cate=-1)
         ax.set_xlabel('time since Retract2 (ms)')
-        ax.set_title('response to Retract2 (reward)')
+        ax.set_title('response to Retract2 (reward)')       
         
     # response to licking.
     def lick(self, ax):
@@ -1372,6 +1372,25 @@ class plotter_L7G8_motor(plotter_utils):
             ax, self.neu_seq_lick, self.neu_time_lick, self.significance['r_lick'])
         ax.set_xlabel('time since lick (ms)')
         ax.set_title('response to all lick')
+    
+    # response to push osnet.
+    def onset(self, ax):
+        self.plot_push_onset(ax, self.significance['r_push'], cate=-1)
+        ax.set_xlabel('time since push onset (ms)')
+        ax.set_title('response to all push onset')
+    
+    # response to push osnet.
+    def onset_heatmap_neuron(self, axs):
+        neu_seq = [self.neu_seq_push1[self.outcome_push1!=1,:,:],
+                   self.neu_seq_push2[self.outcome_push2==0,:,:],
+                   self.neu_seq_push2[self.outcome_push2==3,:,:]]
+        for i in range(3):
+            self.plot_heatmap_neuron(
+                axs[i], neu_seq[i], self.neu_time_push1, self.significance['r_push'])
+            axs[i].set_xlabel('time since push onset (ms)')
+        axs[0].set_title('response to PO1 all')
+        axs[1].set_title('response to PO2 reward')
+        axs[2].set_title('response to PO2 early')
 
 
 class plotter_VIPG8_motor(plotter_utils):
