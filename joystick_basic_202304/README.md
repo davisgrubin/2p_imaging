@@ -17,3 +17,39 @@
 
 ## 2024.07.10
 - Added significance reset function.
+
+## 2024.08.22
+- Separate short/long blocks.
+- Added outcome discrimination.
+- Separate punish trials for all plots.
+- Added block decoding results.
+- Added block transient decoding results.
+- Changed punish trial colors.
+- Added trial number handler.
+- Added null trial outcome for visual interruption.
+- Added whether add mask edges to channel projection images.
+
+## 2024.08.24
+- Separate reward and punish for joystick trajectories.
+- Separate punish for joystick trajectories.
+- Separate punish for punish alignment neural traces.
+- Optimized layout.
+- Improved figure titles.
+- Added epoch comparison for joystick trajectories.
+
+## 2024.08.27
+- Push onset detection code fixed.
+- Changed reward alignment position.
+- Changed motor alignement frames.
+
+## 2024.08.30
+- Decoding bug fixed.
+- Decoding plot colors changed.
+- Added push onset fig.
+- Added outcome percentage for decoding.
+- Completed roi plot.
+
+## 2024.09.01
+- Added class method for plotting one series of figs.
+- Rewritten plotting codes.
+- Finished visualization for VIPG8 and L7G8.
