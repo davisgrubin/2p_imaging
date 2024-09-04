@@ -1,10 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from suite2p.extraction import oasis
+from suite2p.extraction.dcnv import oasis
 import h5py
 import os
 
-from .convolution import nonneg_conditioned_gaussian, convolve_with_template
+from .convolution import denoise
 
 
 def read_raw_voltages(ops):
@@ -50,7 +50,7 @@ def read_dff(ops):
     return dff
 
 
-def plot_for_neuron(timings, dff, spikes, convolved_spikes, neuron=5, num_deconvs=1):
+def plot_for_neuron(timings, dff, spikes, baseline, convolved_spikes, neuron=5):
     """
     Plots DF/F and deconvolved spike data for a specific neuron.
 
@@ -65,7 +65,7 @@ def plot_for_neuron(timings, dff, spikes, convolved_spikes, neuron=5, num_deconv
     fig, axs = plt.subplots(3, 1, figsize=(30, 10))
     fig.tight_layout(pad=10.0)
 
-    axs[0].plot(timings, convolved_spikes[neuron, :],
+    axs[0].plot(timings, baseline[neuron] + convolved_spikes[neuron, :],
                 label='Convolved Spike', color='green')
     axs[0].set_xlabel('Time')
     axs[0].set_ylabel('Convolved DF/F Spikes')
@@ -95,20 +95,21 @@ def spike_detect(
         dff,
         tau=1.25
 ):
+
     # oasis for spike detection.
     spikes = oasis(
         F=dff,
         batch_size=ops['batch_size'],
         # tau=ops['tau'],
-        tau=1.0,
+        tau=tau,
         fs=ops['fs'])
+
     return spikes
 
 
 def run(
         ops,
         dff,
-        num_deconvs=1,
         oasis_tau=10.0,
         neurons=[5, 10, 100]):
 
@@ -116,34 +117,22 @@ def run(
     print('=============== Deconvolving Spikes ===============')
     print('===================================================')
 
+    print('fs: ', ops['fs'])
     metrics = read_raw_voltages(ops)
     vol_time = metrics[0]
     vol_img = metrics[3]
-    dff = read_dff(ops)
+    # dff = read_dff(ops)
 
-    spikes = dff
-    # deconvolve a certain number of times -- pretty much always just one time
-    for _ in range(num_deconvs):
-        spikes = spike_detect(ops, spikes, tau=oasis_tau)
-
+    spikes = spike_detect(ops, dff, tau=oasis_tau)
     uptime, _ = get_trigger_time(vol_time, vol_img)
 
-    print(f'here: {spikes.shape[1]}, {spikes.shape[1] // 25000}')
+    # smoothing
+    smoothed, baseline = denoise(dff, neurons=neurons)
+    print(smoothed.shape, baseline.shape)
 
-    print('===================================================')
-    print('=============== Convolving Spikes =================')
-    print('===================================================')
-
-    # perform convolution with right-half standard Gaussian distribution
-    template = nonneg_conditioned_gaussian(
-        size=(spikes.shape[1] // 10000), sigma=20)
-
-    convolved_spikes = convolve_with_template(
-        signal=spikes, template=template, neurons=neurons)
-
-    # plot for certain of neurons
+    # plot for certain neurons
     for i in neurons:
-        plot_for_neuron(timings=uptime, dff=dff, spikes=spikes,
-                        convolved_spikes=convolved_spikes, neuron=i, num_deconvs=num_deconvs)
+        plot_for_neuron(timings=uptime[1:], dff=dff[:, 1:], spikes=spikes[:, 1:], baseline=baseline,
+                        convolved_spikes=smoothed[:, 1:], neuron=i)
 
-    return convolved_spikes
+    return smoothed, spikes
