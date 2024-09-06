@@ -65,7 +65,7 @@ def plot_for_neuron(timings, dff, spikes, baseline, convolved_spikes, neuron=5):
     fig, axs = plt.subplots(3, 1, figsize=(30, 10))
     fig.tight_layout(pad=10.0)
 
-    axs[0].plot(timings, baseline[neuron] + convolved_spikes[neuron, :],
+    axs[0].plot(timings, baseline[neuron, :] + convolved_spikes[neuron, :],
                 label='Convolved Spike', color='green')
     axs[0].set_xlabel('Time')
     axs[0].set_ylabel('Convolved DF/F Spikes')
@@ -127,12 +127,12 @@ def run(
     uptime, _ = get_trigger_time(vol_time, vol_img)
 
     # smoothing
-    smoothed, baseline = denoise(dff, neurons=neurons)
-    print(smoothed.shape, baseline.shape)
+    smoothed = denoise(dff, neurons=neurons, kernel_size=1000, std_dev=333)
+    baseline = np.zeros_like(spikes)
 
     # plot for certain neurons
     for i in neurons:
-        plot_for_neuron(timings=uptime[1:], dff=dff[:, 1:], spikes=spikes[:, 1:], baseline=baseline,
-                        convolved_spikes=smoothed[:, 1:], neuron=i)
+        plot_for_neuron(timings=uptime, dff=dff, spikes=spikes, baseline=baseline,
+                        convolved_spikes=smoothed, neuron=i)
 
     return smoothed, spikes
