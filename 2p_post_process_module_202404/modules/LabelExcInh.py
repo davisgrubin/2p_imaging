@@ -21,7 +21,7 @@ def run_cellpose(
         ops, mean_anat,
         diameter,
         flow_threshold=0.5,
-        ):
+):
     if not os.path.exists(os.path.join(ops['save_path0'], 'cellpose')):
         os.makedirs(os.path.join(ops['save_path0'], 'cellpose'))
     tifffile.imwrite(
@@ -51,11 +51,11 @@ def get_mask(ops):
     x2 = ops['xrange'][1]
     y1 = ops['yrange'][0]
     y2 = ops['yrange'][1]
-    masks_func = masks_npy[y1:y2,x1:x2]
-    mean_func = ops['meanImg'][y1:y2,x1:x2]
+    masks_func = masks_npy[y1:y2, x1:x2]
+    mean_func = ops['meanImg'][y1:y2, x1:x2]
     max_func = ops['max_proj']
     if ops['nchannels'] == 2:
-        mean_anat = ops['meanImg_chan2'][y1:y2,x1:x2]
+        mean_anat = ops['meanImg_chan2'][y1:y2, x1:x2]
     else:
         mean_anat = None
     return masks_func, mean_func, max_func, mean_anat
@@ -66,21 +66,22 @@ def get_mask(ops):
 def get_label(
         masks_func, masks_anat,
         thres1=0.3, thres2=0.5,
-        ):
+):
     # reconstruct masks into 3d array.
     anat_roi_ids = np.unique(masks_anat)[1:]
-    masks_3d = np.zeros((len(anat_roi_ids), masks_anat.shape[0], masks_anat.shape[1]))
+    masks_3d = np.zeros(
+        (len(anat_roi_ids), masks_anat.shape[0], masks_anat.shape[1]))
     for i, roi_id in enumerate(anat_roi_ids):
         masks_3d[i] = (masks_anat == roi_id).astype(int)
-    masks_3d[masks_3d!=0] = 1
+    masks_3d[masks_3d != 0] = 1
     # compute relative overlaps coefficient for each functional roi.
     prob = []
     for i in tqdm(np.unique(masks_func)[1:]):
-        roi_masks = (masks_func==i).astype('int32')
+        roi_masks = (masks_func == i).astype('int32')
         roi_masks_tile = np.tile(
             np.expand_dims(roi_masks, 0),
-            (len(anat_roi_ids),1,1))
-        overlap = (roi_masks_tile * masks_3d).reshape(len(anat_roi_ids),-1)
+            (len(anat_roi_ids), 1, 1))
+        overlap = (roi_masks_tile * masks_3d).reshape(len(anat_roi_ids), -1)
         overlap = np.sum(overlap, axis=1)
         prob.append(np.max(overlap) / np.sum(roi_masks))
     # threshold probability to get label.
@@ -117,6 +118,7 @@ def run(ops, diameter):
     print('===============================================')
     print('Reading masks in functional channel')
     [masks_func, mean_func, max_func, mean_anat] = get_mask(ops)
+    # deal with data here
     if np.max(masks_func) == 0:
         raise ValueError('No masks found.')
     if ops['nchannels'] == 1:
@@ -124,13 +126,14 @@ def run(ops, diameter):
         labels = -1 * np.ones(int(np.max(masks_func))).astype('int32')
         save_masks(ops, masks_func, None, mean_func, max_func, None, labels)
     else:
+        # remove green from red channel here
         print('Running cellpose on anatomical channel mean image')
         print('Found diameter as {}'.format(diameter))
         masks_anat = run_cellpose(ops, mean_anat, diameter)
         print('Computing labels for each ROI')
         labels = get_label(masks_func, masks_anat)
         print('Found {} labeled ROIs out of {} in total'.format(
-            np.sum(labels==1), len(labels)))
+            np.sum(labels == 1), len(labels)))
         save_masks(
             ops,
             masks_func, masks_anat, mean_func,

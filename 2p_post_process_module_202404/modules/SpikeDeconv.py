@@ -13,19 +13,10 @@ def read_raw_voltages(ops):
     #     'r')
     with h5py.File(os.path.join(ops['save_path0'], 'raw_voltages.h5')) as f:
         vol_time = np.array(f['raw']['vol_time'])
-        vol_start = np.array(f['raw']['vol_start'])
-        vol_stim_vis = np.array(f['raw']['vol_stim_vis'])
-        vol_hifi = np.array(f['raw']['vol_hifi'])
         vol_img = np.array(f['raw']['vol_img'])
-        vol_stim_aud = np.array(f['raw']['vol_stim_aud'])
-        vol_flir = np.array(f['raw']['vol_flir'])
-        vol_pmt = np.array(f['raw']['vol_pmt'])
-        vol_led = np.array(f['raw']['vol_led'])
-
         f.close()
-    return [vol_time, vol_start, vol_stim_vis, vol_img,
-            vol_hifi, vol_stim_aud, vol_flir,
-            vol_pmt, vol_led]
+
+    return vol_time, vol_img
 
 
 def get_trigger_time(
@@ -62,28 +53,23 @@ def plot_for_neuron(timings, dff, spikes, baseline, convolved_spikes, neuron=5):
         num_deconvs (int): Number of deconvolutions performed. Default is 1.
     """
     plt.figure(figsize=(30, 10))
-    fig, axs = plt.subplots(3, 1, figsize=(30, 10))
+    fig, axs = plt.subplots(2, 1, figsize=(30, 10))
     fig.tight_layout(pad=10.0)
-
-    axs[0].plot(timings, baseline[neuron, :] + convolved_spikes[neuron, :],
-                label='Convolved Spike', color='green')
+    shift = len(timings) - len(spikes[neuron, :])
+    axs[0].plot(timings[shift:], spikes[neuron, :],
+                label='Inferred Spike', color='orange')
     axs[0].set_xlabel('Time')
-    axs[0].set_ylabel('Convolved DF/F Spikes')
-    axs[0].set_title('Convolved DF/F -- Up-Time Plot')
+    axs[0].set_ylabel('Inferred Spikes')
+    axs[0].set_title('Inferred Spikes -- Up-Time Plot')
     axs[0].legend()
 
-    axs[1].plot(timings, spikes[neuron, :],
-                label='Deconv Spike', color='orange')
-    axs[1].set_xlabel('Time')
-    axs[1].set_ylabel('Deconv DF/F')
-    axs[1].set_title('Deconv DF/F -- Up-Time Plot')
+    axs[1].plot(timings[shift:], dff[neuron, :], label='DF/F', alpha=0.5)
+    axs[1].plot(timings[shift:], 1e3 * convolved_spikes[neuron, :],
+                label='Convolved Spike', color='red', lw=3)
+    axs[1].set_xlabel('Time (ms)')
+    axs[1].set_ylabel('DF/F')
+    axs[1].set_title('DF/F & Smoothed Inferred -- Up-Time Plot')
     axs[1].legend()
-
-    axs[2].plot(timings, dff[neuron, :], label='DF/F')
-    axs[2].set_xlabel('Time (ms)')
-    axs[2].set_ylabel('DF/F')
-    axs[2].set_title('DF/F -- Up-Time Plot')
-    axs[2].legend()
 
     plt.savefig(f'neuron_{neuron}_plot.png')
 
@@ -120,14 +106,15 @@ def run(
     print('fs: ', ops['fs'])
     metrics = read_raw_voltages(ops)
     vol_time = metrics[0]
-    vol_img = metrics[3]
+    # vol_img = metrics[3]
+    vol_img = metrics[1]
     # dff = read_dff(ops)
 
     spikes = spike_detect(ops, dff, tau=oasis_tau)
     uptime, _ = get_trigger_time(vol_time, vol_img)
 
     # smoothing
-    smoothed = denoise(dff, neurons=neurons, kernel_size=1000, std_dev=333)
+    smoothed = denoise(spikes, neurons=neurons, kernel_size=1500, std_dev=330)
     baseline = np.zeros_like(spikes)
 
     # plot for certain neurons
