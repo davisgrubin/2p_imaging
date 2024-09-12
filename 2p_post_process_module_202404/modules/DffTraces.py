@@ -54,7 +54,7 @@ def run(ops, norm=True):
     dff = get_dff(ops, fluo, neuropil, norm)
 
     # de-convolution code
-    spikes = SpikeDeconv.run(ops, dff, oasis_tau=20)
+    smoothed, spikes = SpikeDeconv.run(ops, dff, oasis_tau=0.8)
 
     print('Results saved')
     save_dff(ops, dff)

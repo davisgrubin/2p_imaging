@@ -3,8 +3,7 @@
 import os
 import h5py
 import numpy as np
-from skimage.measure import label
-
+import skimage
 
 # read raw results from suite2p pipeline.
 
@@ -37,7 +36,7 @@ def get_metrics(ops, stat):
         # find a mask with one roi.
         m = masks.copy() * (masks == i)
         # find component number.
-        connect.append(np.max(label(m, connectivity=1)))
+        connect.append(np.max(skimage.measure.label(m, connectivity=1)))
     connect = np.array(connect)
     return skew, connect, aspect, compact, footprint
 

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from suite2p.extraction.dcnv import oasis
 import h5py
 import os
+from scipy.optimize import curve_fit
 
 from .convolution import denoise
 
@@ -56,6 +57,7 @@ def plot_for_neuron(timings, dff, spikes, baseline, convolved_spikes, neuron=5):
     fig, axs = plt.subplots(2, 1, figsize=(30, 10))
     fig.tight_layout(pad=10.0)
     shift = len(timings) - len(spikes[neuron, :])
+    axs[0].plot(timings[shift:], 0.5 * dff[neuron, :], label='DF/F', alpha=0.5)
     axs[0].plot(timings[shift:], spikes[neuron, :],
                 label='Inferred Spike', color='orange')
     axs[0].set_xlabel('Time')
@@ -63,34 +65,62 @@ def plot_for_neuron(timings, dff, spikes, baseline, convolved_spikes, neuron=5):
     axs[0].set_title('Inferred Spikes -- Up-Time Plot')
     axs[0].legend()
 
+    dff_mean = np.mean(dff[neuron, :])
+    smooth_mean = np.mean(convolved_spikes[neuron, :])
+
+    scale = 1 / (4 * smooth_mean)
+
     axs[1].plot(timings[shift:], dff[neuron, :], label='DF/F', alpha=0.5)
-    axs[1].plot(timings[shift:], 1e3 * convolved_spikes[neuron, :],
+    axs[1].plot(timings[shift:], scale * convolved_spikes[neuron, :],
                 label='Convolved Spike', color='red', lw=3)
     axs[1].set_xlabel('Time (ms)')
     axs[1].set_ylabel('DF/F')
     axs[1].set_title('DF/F & Smoothed Inferred -- Up-Time Plot')
     axs[1].legend()
 
-    plt.savefig(f'neuron_{neuron}_plot.png')
+    # plt.rcParams['savefig.dpi'] = 1000
+    plt.show()
+    # plt.savefig(f'neuron_{neuron}_plot.pdf')
 
     # print(len(x), spikes.shape)
 
 
-def spike_detect(
-        ops,
-        dff,
-        tau=1.25
-):
+def gaussian(x, A, mu, sigma):
+    return A * np.exp(-(x - mu)**2 / (2 * sigma**2))
 
-    # oasis for spike detection.
+def exponential(x, a):
+    return np.exp(-a * x)
+
+
+def spike_detect(ops, dff, tau=1.25):
     spikes = oasis(
         F=dff,
         batch_size=ops['batch_size'],
-        # tau=ops['tau'],
         tau=tau,
         fs=ops['fs'])
 
-    return spikes
+    # window_size = 51  # Adjust as needed
+    # half_window = window_size // 2
+    # all_taus = []
+
+    # for neuron in range(spikes.shape[0]):
+    #     spike_times = np.where(spikes[neuron] > 0)[0]
+    #     for spike_time in spike_times:
+    #         if spike_time - half_window >= 0 and spike_time + half_window < spikes.shape[1]:
+    #             x = np.arange(window_size)
+    #             y = dff[neuron, spike_time - half_window: spike_time + half_window + 1]
+    #             y = y - np.min(y)  # Shift to start from 0
+    #             try:
+    #                 popt, _ = curve_fit(exponential, x, y, p0=[tau], bounds=(0, np.inf))
+    #                 all_taus.append(1 / popt[0])  # Convert rate to time constant
+    #             except:
+    #                 pass  # Skip if curve_fit fails
+
+    # # Default to tau if no valid fits
+    # avg_tau = np.mean(all_taus) if all_taus else tau
+    # print(f'Average tau: {avg_tau}')
+    avg_tau = np.exp(-tau)
+    return spikes, avg_tau
 
 
 def run(
@@ -110,11 +140,12 @@ def run(
     vol_img = metrics[1]
     # dff = read_dff(ops)
 
-    spikes = spike_detect(ops, dff, tau=oasis_tau)
+    spikes, avg_sigma = spike_detect(ops, dff, tau=oasis_tau)
     uptime, _ = get_trigger_time(vol_time, vol_img)
 
     # smoothing
-    smoothed = denoise(spikes, neurons=neurons, kernel_size=1500, std_dev=330)
+    smoothed = denoise(spikes, kernel_size=350, std_dev=np.exp(-10 / oasis_tau), neurons=neurons)
+
     baseline = np.zeros_like(spikes)
 
     # plot for certain neurons

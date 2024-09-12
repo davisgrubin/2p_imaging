@@ -1,9 +1,8 @@
 import matplotlib.pyplot as plt
-import cvxpy as cp
 import numpy as np
 from scipy.signal import convolve
 from scipy.ndimage import gaussian_filter1d
-
+from scipy.signal import fftconvolve
 # Function to create the right-half Gaussian kernel
 
 
@@ -22,74 +21,47 @@ def right_half_gaussian_kernel(std_dev, kernel_size):
         The right-half of a Gaussian kernel.
     """
     x = np.linspace(
-        0, 5*std_dev, kernel_size)  # Range [0, 3*std_dev] for the right-half
+        0, 15*std_dev, kernel_size)  # Range [0, 3*std_dev] for the right-half
     gaussian_full = np.exp(-x**2 / (2 * std_dev**2))
     gaussian_right_half = gaussian_full / \
         gaussian_full.sum()  # Normalize to ensure sum = 1
 
     return gaussian_right_half
 
-# Updated denoise function using the right-half Gaussian
-
-# Updated denoise function using the right-half Gaussian
-
-
-def gaussian_kernel(std_dev, kernel_size):
+def exponential_kernel(a, b, kernel_size):
     """
-    Create a full Gaussian kernel.
+    Create an exponential kernel.
 
     Parameters:
-    std_dev : float
-        The standard deviation of the Gaussian kernel.
+    a : float
+        The decay constant of the exponential kernel.
     kernel_size : int
-        The size of the Gaussian kernel.
+        The size of the exponential kernel.
 
     Returns:
-    gaussian : numpy array
-        The full Gaussian kernel.
+    exponential_kernel : numpy array
+        The exponential kernel.
     """
-    x = np.linspace(-3*std_dev, 3*std_dev,
-                    kernel_size)  # Range [-3*std_dev, 3*std_dev] for a full Gaussian
-    gaussian_full = np.exp(-x**2 / (2 * std_dev**2))
-    gaussian_full /= gaussian_full.sum()  # Normalize to ensure sum = 1
-    return gaussian_full
+    x = np.linspace(0, 15 * a, kernel_size)
+    exponential_kernel = a * np.exp(-b * x)
+    
+    # exponential_kernel = exponential_kernel / exponential_kernel.sum()
+    return exponential_kernel
 
+def asymmetric_exp(x, tau_rise, tau_decay):
+    y = np.zeros_like(x)
+    y[x >= 0] = (1 - np.exp(-x[x >= 0] / tau_rise)) * np.exp(-x[x >= 0] / tau_decay)
+    return y
 
-def denoise(data, kernel_size, std_dev, neurons):
-    """
-    Apply right-half Gaussian convolution to the input data to smooth sharp spikes.
-
-    Parameters:
-    data : numpy array
-        The input signal data to be smoothed.
-    kernel_size : int
-        The size of the kernel window.
-    std_dev : float
-        The standard deviation of the Gaussian kernel.
-    neurons : list of ints
-        Indices of the neuron signals to be smoothed.
-
-    Returns:
-    smoothed_data : numpy array
-        The smoothed signal data after Gaussian convolution.
-    """
-    smoothed_data = np.zeros_like(data)
-
-    # Create the right-half Gaussian kernel
-    kernel = right_half_gaussian_kernel(std_dev, kernel_size)
-    # kernel = gaussian_kernel(std_dev=std_dev, kernel_size=kernel_size)
-
-    for n in neurons:
-        # Apply convolution using the right-half Gaussian kernel
-        # convolved_signal = convolve(data[n], kernel, mode='same')
-
-        # convolved_signal = gaussian_filter1d(
-        #     data[n], sigma=std_dev, truncate=(kernel_size / (2 * std_dev)))
-
-        convolved_signal = convolve(data[n], kernel, mode='same')
-        convolved_signal = np.roll(
-            convolved_signal, shift=int(kernel_size // 2))
-        # Clip negative values to zero (to prevent negative spikes in smoothed data)
-        smoothed_data[n] = np.clip(convolved_signal, 0, None)
-
-    return smoothed_data
+def denoise(spikes, kernel_size=1000, std_dev=1, neurons=None):
+    if neurons is None:
+        neurons = range(spikes.shape[0])
+    
+    x = np.arange(kernel_size)
+    kernel = right_half_gaussian_kernel(kernel_size=kernel_size, std_dev=std_dev)
+    
+    smoothed = np.zeros_like(spikes)
+    for i in neurons:
+        smoothed_signal = np.roll(fftconvolve(spikes[i], kernel, mode='same'), kernel_size//2)
+        smoothed[i] = smoothed_signal
+    return smoothed
