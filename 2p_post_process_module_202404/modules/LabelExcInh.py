@@ -129,6 +129,9 @@ def run(ops, diameter):
         # remove green from red channel here
         print('Running cellpose on anatomical channel mean image')
         print('Found diameter as {}'.format(diameter))
+        
+        # function to remove green from red channel
+        
         masks_anat = run_cellpose(ops, mean_anat, diameter)
         print('Computing labels for each ROI')
         labels = get_label(masks_func, masks_anat)

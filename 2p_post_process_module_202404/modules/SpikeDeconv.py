@@ -178,11 +178,9 @@ def run(
     smoothed = denoise(spikes, kernel_size=350,
                        std_dev=np.exp(-10 / oasis_tau), neurons=neurons)
 
-    baseline = np.zeros_like(spikes)
-
     # plot for certain neurons
     for i in neurons:
-        plot_for_neuron(timings=uptime, dff=dff, spikes=spikes, baseline=baseline,
+        plot_for_neuron(timings=uptime, dff=dff, spikes=spikes,
                         convolved_spikes=smoothed, neuron=i)
 
     return smoothed, spikes
