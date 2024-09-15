@@ -9,9 +9,25 @@ from .convolution import denoise
 
 
 def read_raw_voltages(ops):
-    # f = h5py.File(
-    #     os.path.join(ops['save_path0'], 'raw_voltages.h5'),
-    #     'r')
+    """
+    Reads raw voltage data from an HDF5 file.
+
+    This function opens the 'raw_voltages.h5' file located in the directory specified by ops['save_path0'],
+    and extracts the voltage time and image data.
+
+    Parameters:
+    ops (dict): A dictionary containing operation parameters, including the 'save_path0' key
+                which specifies the directory where the HDF5 file is located.
+
+    Returns:
+    tuple: A tuple containing two numpy arrays:
+        - vol_time (np.array): An array of voltage timestamps.
+        - vol_img (np.array): An array of voltage image data.
+
+    Raises:
+    FileNotFoundError: If the 'raw_voltages.h5' file is not found in the specified directory.
+    KeyError: If the required datasets 'vol_time' or 'vol_img' are not present in the HDF5 file.
+    """
     with h5py.File(os.path.join(ops['save_path0'], 'raw_voltages.h5')) as f:
         vol_time = np.array(f['raw']['vol_time'])
         vol_img = np.array(f['raw']['vol_img'])
@@ -24,6 +40,22 @@ def get_trigger_time(
         vol_time,
         vol_bin
 ):
+    """
+    Finds the trigger times from the voltage data.
+
+    This function calculates the time points when the voltage data transitions from 0 to 1 and from 1 to 0.
+    It uses the np.diff function to compute the first difference of the voltage data and then identifies the indices
+    where this difference changes from positive to negative (rising edge) and from negative to positive (falling edge).
+
+    Parameters:
+    vol_time (np.array): An array of voltage timestamps.
+    vol_bin (np.array): An array of binary voltage data.
+
+    Returns:
+    tuple: A tuple containing two numpy arrays:
+        - time_up (np.array): An array of time points when the voltage transitions from 0 to 1.
+        - time_down (np.array): An array of time points when the voltage transitions from 1 to 0.
+    """
     # find the edge with np.diff and correct it by preappend one 0.
     diff_vol = np.diff(vol_bin, prepend=0)
     idx_up = np.where(diff_vol == 1)[0]
@@ -36,13 +68,27 @@ def get_trigger_time(
 
 
 def read_dff(ops):
+    """
+    Reads DF/F data from an HDF5 file.
+
+    This function opens the 'dff.h5' file located in the directory specified by ops['save_path0'],
+    and extracts the DF/F data.
+
+    Parameters:
+    ops (dict): A dictionary containing operation parameters, including the 'save_path0' key
+                which specifies the directory where the HDF5 file is located.
+
+    Returns:
+    np.array: An array containing the DF/F data.
+    """
+
     f = h5py.File(os.path.join(ops['save_path0'], 'dff.h5'), 'r')
     dff = np.array(f['dff'])
     f.close()
     return dff
 
 
-def plot_for_neuron(timings, dff, spikes, baseline, convolved_spikes, neuron=5):
+def plot_for_neuron(timings, dff, spikes, convolved_spikes, neuron=5):
     """
     Plots DF/F and deconvolved spike data for a specific neuron.
 
@@ -52,6 +98,7 @@ def plot_for_neuron(timings, dff, spikes, baseline, convolved_spikes, neuron=5):
         spikes (np.array): Spike detection data array.
         neuron (int): Index of the neuron to plot. Default is 5.
         num_deconvs (int): Number of deconvolutions performed. Default is 1.
+        convolved_spikes (np.array): Convolved spikes data array.
     """
     plt.figure(figsize=(30, 10))
     fig, axs = plt.subplots(2, 1, figsize=(30, 10))
@@ -85,42 +132,26 @@ def plot_for_neuron(timings, dff, spikes, baseline, convolved_spikes, neuron=5):
     # print(len(x), spikes.shape)
 
 
-def gaussian(x, A, mu, sigma):
-    return A * np.exp(-(x - mu)**2 / (2 * sigma**2))
-
-def exponential(x, a):
-    return np.exp(-a * x)
-
-
 def spike_detect(ops, dff, tau=1.25):
+    """
+    Detects spikes in the DF/F data using the OASIS algorithm.
+
+    Args:
+        ops (dict): A dictionary containing operation parameters.
+        dff (np.array): DF/F data array.
+        tau (float, optional): Tau parameter for the OASIS algorithm. Defaults to 1.25.
+
+    Returns:
+        np.array: An array containing the detected spikes.
+    """
     spikes = oasis(
         F=dff,
         batch_size=ops['batch_size'],
         tau=tau,
         fs=ops['fs'])
 
-    # window_size = 51  # Adjust as needed
-    # half_window = window_size // 2
-    # all_taus = []
-
-    # for neuron in range(spikes.shape[0]):
-    #     spike_times = np.where(spikes[neuron] > 0)[0]
-    #     for spike_time in spike_times:
-    #         if spike_time - half_window >= 0 and spike_time + half_window < spikes.shape[1]:
-    #             x = np.arange(window_size)
-    #             y = dff[neuron, spike_time - half_window: spike_time + half_window + 1]
-    #             y = y - np.min(y)  # Shift to start from 0
-    #             try:
-    #                 popt, _ = curve_fit(exponential, x, y, p0=[tau], bounds=(0, np.inf))
-    #                 all_taus.append(1 / popt[0])  # Convert rate to time constant
-    #             except:
-    #                 pass  # Skip if curve_fit fails
-
-    # # Default to tau if no valid fits
-    # avg_tau = np.mean(all_taus) if all_taus else tau
-    # print(f'Average tau: {avg_tau}')
     avg_tau = np.exp(-tau)
-    return spikes, avg_tau
+    return spikes
 
 
 def run(
@@ -140,11 +171,12 @@ def run(
     vol_img = metrics[1]
     # dff = read_dff(ops)
 
-    spikes, avg_sigma = spike_detect(ops, dff, tau=oasis_tau)
+    spikes = spike_detect(ops, dff, tau=oasis_tau)
     uptime, _ = get_trigger_time(vol_time, vol_img)
 
     # smoothing
-    smoothed = denoise(spikes, kernel_size=350, std_dev=np.exp(-10 / oasis_tau), neurons=neurons)
+    smoothed = denoise(spikes, kernel_size=350,
+                       std_dev=np.exp(-10 / oasis_tau), neurons=neurons)
 
     baseline = np.zeros_like(spikes)
 
