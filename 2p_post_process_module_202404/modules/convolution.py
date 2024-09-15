@@ -28,6 +28,7 @@ def right_half_gaussian_kernel(std_dev, kernel_size):
 
     return gaussian_right_half
 
+
 def exponential_kernel(a, b, kernel_size):
     """
     Create an exponential kernel.
@@ -44,24 +45,46 @@ def exponential_kernel(a, b, kernel_size):
     """
     x = np.linspace(0, 15 * a, kernel_size)
     exponential_kernel = a * np.exp(-b * x)
-    
+
     # exponential_kernel = exponential_kernel / exponential_kernel.sum()
     return exponential_kernel
 
+
 def asymmetric_exp(x, tau_rise, tau_decay):
     y = np.zeros_like(x)
-    y[x >= 0] = (1 - np.exp(-x[x >= 0] / tau_rise)) * np.exp(-x[x >= 0] / tau_decay)
+    y[x >= 0] = (1 - np.exp(-x[x >= 0] / tau_rise)) * \
+        np.exp(-x[x >= 0] / tau_decay)
     return y
 
+
 def denoise(spikes, kernel_size=1000, std_dev=1, neurons=None):
+    """
+    Denoise the spikes using a half-Gaussian kernel.
+
+    Parameters:
+    spikes : numpy array
+        The spikes to denoise.
+    kernel_size : int
+        The size of the Gaussian kernel.
+    std_dev : float
+        The standard deviation of the Gaussian kernel.
+    neurons : list, optional
+        The indices of the neurons to denoise. If None, all neurons are denoised.
+
+    Returns:
+    denoised_spikes : numpy array
+        The denoised spikes.
+    """
     if neurons is None:
         neurons = range(spikes.shape[0])
-    
+
     x = np.arange(kernel_size)
-    kernel = right_half_gaussian_kernel(kernel_size=kernel_size, std_dev=std_dev)
-    
+    kernel = right_half_gaussian_kernel(
+        kernel_size=kernel_size, std_dev=std_dev)
+
     smoothed = np.zeros_like(spikes)
     for i in neurons:
-        smoothed_signal = np.roll(fftconvolve(spikes[i], kernel, mode='same'), kernel_size//2)
+        smoothed_signal = np.roll(fftconvolve(
+            spikes[i], kernel, mode='same'), kernel_size//2)
         smoothed[i] = smoothed_signal
     return smoothed
