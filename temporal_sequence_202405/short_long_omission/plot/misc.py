@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+from plot.utils import get_roi_label_color
 
 # fig, ax = plt.subplots(1, 1, figsize=(6, 6))
 
@@ -42,6 +43,58 @@ def plot_inh_exc_label_pc(ax, labels):
         wedgeprops={'linewidth': 1, 'edgecolor':'white'})
     ax.set_title('percentage of neuron labels')
 
+# significant neurons ratio.
+def plot_significance(ax, significance, labels):
+    width = 0.2
+    sig = ['normal', 'change', 'oddball']
+    _, _, c_exc, _ = get_roi_label_color([-1], 0)
+    _, _, c_inh, _ = get_roi_label_color([1], 0)
+    for i in range(len(sig)):
+        r0_exc = np.sum((significance['r_'+sig[i]]==0)*(labels==-1))
+        r1_exc = np.sum((significance['r_'+sig[i]]==1)*(labels==-1))
+        r0_inh = np.sum((significance['r_'+sig[i]]==0)*(labels==1))
+        r1_inh = np.sum((significance['r_'+sig[i]]==1)*(labels==1))
+        ax.bar(
+            i-width/2, r1_exc/(r0_exc+r1_exc),
+            bottom=0,
+            width=width, color=c_exc)
+        ax.bar(
+            i+width/2, r1_inh/(r0_inh+r1_inh),
+            bottom=0,
+            width=width, color=c_inh)
+    ax.set_title('percentage of neuron with significant window response')
+    ax.tick_params(tick1On=False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.set_ylabel('percentage')
+    ax.set_xlim([-1,len(sig)+1])
+    ax.set_ylim([0,1])
+    ax.set_xticks(np.arange(len(sig)))
+    ax.set_xticklabels(sig, rotation='vertical')
+    ax.plot([], color=c_exc, label='exc')
+    ax.plot([], color=c_inh, label='inh')
+    ax.legend(loc='upper right')
+
+# roi significance label.
+def plot_roi_significance(ax, significance, roi_id):
+    labels = ['normal', 'change', 'oddball']
+    respon = [significance['r_normal'][roi_id],
+              significance['r_change'][roi_id],
+              significance['r_oddball'][roi_id]]
+    for i in range(len(labels)):
+        if respon[i]:
+            ax.bar(i, 1, bottom=0, edgecolor='white', width=0.25, color='#F9C08A')
+    ax.set_title('window response significance test label')
+    ax.tick_params(tick1On=False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.set_yticks([])
+    ax.set_xlim([-1,len(labels)+1])
+    ax.set_xticks(np.arange(len(labels)))
+    ax.set_xticklabels(labels, rotation='vertical')
+
+    
 # isi distribution
 def plot_isi_distribution(ax, neural_trials):
     stim_labels = neural_trials['stim_labels']
