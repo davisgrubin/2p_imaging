@@ -7,9 +7,13 @@ import numpy as np
 from tqdm import tqdm
 from cellpose import models
 from cellpose import io
+import matplotlib.pyplot as plt
+from scipy.stats import linregress
 
+from .visualization_VIPTD_G8 import plot_js_VIPTD_G8
 
 # z score normalization.
+
 
 def normz(data):
     return (data - np.mean(data)) / (np.std(data) + 1e-5)
@@ -96,7 +100,7 @@ def get_label(
 
 # save channel img and masks results.
 
-def save_masks(ops, masks_func, masks_anat, mean_func, max_func, mean_anat, labels):
+def save_masks(ops, masks_func, masks_anat, masks_anat_corrected, mean_func, max_func, mean_anat, labels):
     f = h5py.File(
         os.path.join(ops['save_path0'], 'masks.h5'),
         'w')
@@ -107,10 +111,53 @@ def save_masks(ops, masks_func, masks_anat, mean_func, max_func, mean_anat, labe
     if ops['nchannels'] == 2:
         f['mean_anat'] = mean_anat
         f['masks_anat'] = masks_anat
+        f['masks_anat_corrected'] = masks_anat_corrected
     f.close()
 
 
+# function to remove green from red channel
+# uses linear regression to fit the green channel to the red channel
+
+def compute_offset_slope(mean_anat, mean_func, ops):
+    # check if slope and offset already computed
+    if os.path.exists(os.path.join(ops['save_path0'], 'slope_offset.npy')):
+        slope, offset = np.load(os.path.join(
+            ops['save_path0'], 'slope_offset.npy'))
+    else:
+        # compute slope and offset
+        # fit func = slope * anat + offset
+        print("mean_anat.shape: ", mean_anat.shape)
+        print("mean_func.shape: ", mean_func.shape)
+        # flatten the arrays
+        mean_anat_flat = mean_anat.flatten()
+        mean_func_flat = mean_func.flatten()
+        slope, offset, r_value, p_value, std_err = linregress(
+            mean_anat_flat, mean_func_flat)
+        # save slope and offset
+        f = h5py.File(
+            os.path.join(ops['save_path0'], 'masks.h5'),
+            'w')
+        f['slope'] = slope
+        f['offset'] = offset
+        f.close()
+    return slope, offset, r_value, p_value, std_err
+
+
+def remove_green_bleedthrough(offset, slope, mean_func, mean_anat):
+    # corrected functional channel = original functional channel - slope * original anatomical channel
+    mean_anat_new = mean_anat - slope * mean_func
+    return mean_anat_new
+
+
 # main function to use anatomical to label functional channel masks.
+
+
+# def create_rgb_image(image, color):
+#     rgb = np.zeros((*image.shape, 3))
+#     for i, c in enumerate(color):
+#         rgb[:, :, i] = image * c / np.max(image)
+#     return rgb
+
 
 def run(ops, diameter):
     print('===============================================')
@@ -129,17 +176,41 @@ def run(ops, diameter):
         # remove green from red channel here
         print('Running cellpose on anatomical channel mean image')
         print('Found diameter as {}'.format(diameter))
-        
+
         # function to remove green from red channel
-        
+        slope, offset, _, _, _ = compute_offset_slope(
+            mean_anat, mean_func, ops)
+
+        mean_anat_corrected = remove_green_bleedthrough(
+            offset, slope, mean_func, mean_anat)
+
         masks_anat = run_cellpose(ops, mean_anat, diameter)
+        masks_anat_corrected = run_cellpose(ops, mean_anat_corrected, diameter)
+
+        # visualize the corrected image against original green and red channel
+        # fig, ax = plt.subplots(1, 3, figsize=(15, 5))
+        # ax[0].imshow(create_rgb_image(mean_anat, [0, 1, 0]))
+        # ax[0].set_title('Original Anatomical Channel')
+        # ax[1].imshow(create_rgb_image(mean_func, [1, 0, 0]))
+        # ax[1].set_title('Original Functional Channel')
+        # ax[2].imshow(create_rgb_image(mean_func_corrected, [1, 0, 0]))
+        # ax[2].set_title('Corrected Functional Channel')
+        # plt.show()
+
+        mean_anat = mean_anat_corrected
+        masks_anat = masks_anat_corrected
+
         print('Computing labels for each ROI')
         labels = get_label(masks_func, masks_anat)
+
         print('Found {} labeled ROIs out of {} in total'.format(
             np.sum(labels == 1), len(labels)))
         save_masks(
             ops,
-            masks_func, masks_anat, mean_func,
+            masks_func, masks_anat, masks_anat_corrected, mean_func,
             max_func, mean_anat,
             labels)
+
+        plot_js_VIPTD_G8(ops, 'LabelExcInh')
+
         print('Masks results saved')
