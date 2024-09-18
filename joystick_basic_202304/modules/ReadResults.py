@@ -70,7 +70,8 @@ def read_dff(ops):
 
 
 # read trailized neural traces with stimulus alignment.
-def read_neural_trials(ops):
+def read_neural_trials(ops, cate_delay):
+    # read h5 file.
     f = h5py.File(
         os.path.join(ops['save_path0'], 'neural_trials.h5'),
         'r')
@@ -80,6 +81,30 @@ def read_neural_trials(ops):
         for data in f['trial_id'][trial].keys():
             neural_trials[trial][data] = np.array(f['trial_id'][trial][data])
     f.close()
+    partition = 4
+    # resort delay settings.
+    start = np.min(np.array([t for t in neural_trials.keys()]).astype('int32'))
+    end   = np.max(np.array([t for t in neural_trials.keys()]).astype('int32'))
+    trial_idx = np.arange(start, end+1)
+    trial_delay = np.array([neural_trials[str(t)]['trial_delay'] for t in trial_idx])
+    # mark short and long delay trials short:0 long:1.
+    trial_type = np.zeros_like(trial_delay)
+    trial_type[trial_delay>cate_delay] = 1
+    # mark epoch trials unvalid:-1 early:1 late:0
+    block_change = np.diff(trial_type, prepend=0)
+    block_change[block_change!=0] = 1
+    block_change[0] = 1
+    block_change[-1] = 1
+    block_change = np.where(block_change==1)[0]
+    block_epoch = np.zeros_like(trial_type)
+    for start, end in zip(block_change[:-1], block_change[1:]):
+        tran = start + (end - start) // partition
+        block_epoch[start:tran] = 1
+    block_epoch[:block_change[1]] = -1
+    # write into neural trials.
+    for i in range(len(trial_idx)):
+        neural_trials[str(trial_idx[i])]['trial_type'] = trial_type[i]
+        neural_trials[str(trial_idx[i])]['block_epoch'] = block_epoch[i]
     return neural_trials
 
 
@@ -89,13 +114,16 @@ def read_significance(ops):
         os.path.join(ops['save_path0'], 'significance.h5'),
         'r')
     significance = {}
-    significance['r_vis']     = np.array(f['significance']['r_vis'])
-    significance['r_push']    = np.array(f['significance']['r_push'])
-    significance['r_retract'] = np.array(f['significance']['r_retract'])
-    significance['r_wait']    = np.array(f['significance']['r_wait'])
-    significance['r_reward']  = np.array(f['significance']['r_reward'])
-    significance['r_punish']  = np.array(f['significance']['r_punish'])
-    significance['r_lick']    = np.array(f['significance']['r_lick'])
+    significance['r_vis1']     = np.array(f['significance']['r_vis1'])
+    significance['r_push1']    = np.array(f['significance']['r_push1'])
+    significance['r_retract1'] = np.array(f['significance']['r_retract1'])
+    significance['r_vis2']     = np.array(f['significance']['r_vis2'])
+    significance['r_push2']    = np.array(f['significance']['r_push2'])
+    significance['r_retract2'] = np.array(f['significance']['r_retract2'])
+    significance['r_wait']     = np.array(f['significance']['r_wait'])
+    significance['r_reward']   = np.array(f['significance']['r_reward'])
+    significance['r_punish']   = np.array(f['significance']['r_punish'])
+    significance['r_lick']     = np.array(f['significance']['r_lick'])
     return significance
 
 
@@ -265,7 +293,7 @@ def read_bpod_mat_data(ops):
             # joystick trajectory.
             js_pos = np.array(raw['EncoderData'][i]['Positions'])
             js_time = 1000*np.array(raw['EncoderData'][i]['Times'])
-            if np.abs(js_pos[0]) > 0.9:
+            if np.abs(js_pos[0]) > 0.9 or np.abs(js_time[0]) > 1e-5:
                 trial_js_pos.append(np.array([0,0,0,0,0]))
                 trial_js_time.append(np.array([0,1,2,3,4]))
             else:

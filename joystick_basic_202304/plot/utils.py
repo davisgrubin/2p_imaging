@@ -44,22 +44,6 @@ def get_trial_type(cate_delay, delay, block):
     idx = np.array(trial_type == block)
     return idx
 
-# find indice of block epoch.
-def get_block_epoch(delay):
-    partition = 4
-    block_change = np.diff(delay, prepend=0)
-    block_change[block_change!=0] = 1
-    block_change[0] = 1
-    block_change[-1] = 1
-    block_change = np.where(block_change==1)[0]
-    trial_idx = np.zeros_like(delay, dtype=bool)
-    trial_idx[block_change[1]:] = True
-    block_tran = np.zeros_like(delay)
-    for start, end in zip(block_change[:-1], block_change[1:]):
-        tran = start + (end - start) // partition
-        block_tran[start:tran] = 1
-    return trial_idx, block_tran
-
 # get trial outcomes.
 def get_trial_outcome(neural_trials):
     outcomes = []
@@ -119,7 +103,6 @@ def adjust_layout_js(ax):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.set_ylabel('joystick deflection (deg)')
-    ax.legend(loc='upper right')
     
 # adjust layout for grand average neural traces.
 def adjust_layout_neu(ax):
@@ -127,7 +110,6 @@ def adjust_layout_neu(ax):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.set_ylabel('df/f (z-scored)')
-    ax.legend(loc='upper right')
 
 # adjust layout for heatmap.
 def adjust_layout_heatmap(ax):
@@ -167,21 +149,20 @@ def adjust_layout_decode_box(ax, state_all):
     ax.set_xlim([-0.5, len(state_all)+1])
     ax.set_xticks(np.arange(len(state_all)))
     ax.set_xticklabels(state_all)
-    ax.set_ylabel('validation accuracy')
+    ax.set_ylabel('accuracy related to shuffle')
     
 
-# adjust layout for decoding accuracy outcome percentage.
+# adjust layout for decoding accuracy outcome fraction.
 def adjust_layout_decode_outcome_pc(ax, state_all):
     ax.legend(loc='upper right')
     ax.tick_params(tick1On=False)
     ax.spines['left'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.yaxis.grid(True)
     ax.set_xlim([-0.5, len(state_all)+1])
     ax.set_xlabel('state')
     ax.set_xticks(np.arange(len(state_all)))
     ax.set_xticklabels(state_all)
-    ax.set_ylabel('outcome percentage in class')
+    ax.set_ylabel('outcome fraction in class')
     
 
 class utils:

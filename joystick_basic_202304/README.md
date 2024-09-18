@@ -53,3 +53,15 @@
 - Added class method for plotting one series of figs.
 - Rewritten plotting codes.
 - Finished visualization for VIPG8 and L7G8.
+
+## 2024.09.09
+- Added trial type and block epoch labeling in when reading neural_trials.
+- Added trial type and block epoch in all alignment.
+
+## 2024.09.17
+- Separated two sets of significant response events.
+- Extended session report example traces range.
+- Removed decoding results from all neurons.
+- Changed reward and retract2 color same as reward.
+- Changed report naming based on significance.
+- Added short and long block pooling alignment.

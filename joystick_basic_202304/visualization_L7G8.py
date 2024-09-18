@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from matplotlib.gridspec import GridSpec
 
+import warnings
+warnings.filterwarnings("ignore")
+
 from modules import Trialization
 from modules import StatTest
 from modules.ReadResults import read_masks
@@ -24,9 +27,12 @@ def read_ops(session_data_path):
     return ops
 
 def get_roi_sign(significance, roi_id):
-    r = significance['r_vis'][roi_id] +\
-        significance['r_push'][roi_id] +\
-        significance['r_retract'][roi_id] +\
+    r = significance['r_vis1'][roi_id] +\
+        significance['r_push1'][roi_id] +\
+        significance['r_retract1'][roi_id] +\
+        significance['r_vis2'][roi_id] +\
+        significance['r_push2'][roi_id] +\
+        significance['r_retract2'][roi_id] +\
         significance['r_wait'][roi_id] +\
         significance['r_reward'][roi_id] +\
         significance['r_punish'][roi_id] +\
@@ -35,15 +41,17 @@ def get_roi_sign(significance, roi_id):
 
 def reset_significant_roi(significance):
     sign = {}
-    sign['r_vis']     = np.ones_like(significance['r_vis'])
-    sign['r_push']    = np.ones_like(significance['r_push'])
-    sign['r_retract'] = np.ones_like(significance['r_retract'])
-    sign['r_wait']    = np.ones_like(significance['r_wait'])
-    sign['r_reward']  = np.ones_like(significance['r_reward'])
-    sign['r_punish']  = np.ones_like(significance['r_punish'])
-    sign['r_lick']    = np.ones_like(significance['r_lick'])
+    sign['r_vis1']     = np.ones_like(significance['r_vis1'])
+    sign['r_push1']    = np.ones_like(significance['r_push1'])
+    sign['r_retract1'] = np.ones_like(significance['r_retract1'])
+    sign['r_vis2']     = np.ones_like(significance['r_vis2'])
+    sign['r_push2']    = np.ones_like(significance['r_push2'])
+    sign['r_retract2'] = np.ones_like(significance['r_retract2'])
+    sign['r_wait']     = np.ones_like(significance['r_wait'])
+    sign['r_reward']   = np.ones_like(significance['r_reward'])
+    sign['r_punish']   = np.ones_like(significance['r_punish'])
+    sign['r_lick']     = np.ones_like(significance['r_lick'])
     return sign
-
 from plot.fig0_beh import plotter_all_beh
 from plot.fig1_mask import plotter_all_masks
 from plot.fig2_align_percept import plotter_L7G8_percept
@@ -77,17 +85,27 @@ def plot_js_L7G8(ops, session_data_name):
         beh_misc_ax02 = plt.subplot(gs[6, 10])
         beh_js_short_axs = [plt.subplot(gs[3, i]) for i in range(9)]
         beh_js_long_axs  = [plt.subplot(gs[9, i]) for i in range(9)]
+        beh_js_both_axs  = [plt.subplot(gs[15, i]) for i in range(9)]
         beh_js_epoch_short_axs = [plt.subplot(gs[6, i]) for i in range(8)]
         beh_js_epoch_long_axs  = [plt.subplot(gs[12, i]) for i in range(8)]
-        beh_js_onset_ax = plt.subplot(gs[15, 2])
+        beh_js_onset_ax = plt.subplot(gs[15, 9])
+        print('Plotting behavior overview')
         plotter_beh.delay_dist(beh_misc_ax01)
         plotter_beh.session_outcome(beh_misc_ax02)
+        print('Plotting behavior alignment for short')
         plotter_beh.all_short_align(beh_js_short_axs)
+        print('Plotting behavior alignment for long')
         plotter_beh.all_long_align(beh_js_long_axs)
+        print('Plotting behavior alignment for both')
+        plotter_beh.all_both_align(beh_js_both_axs)
+        print('Plotting behavior alignment for short with epoch')
         plotter_beh.all_short_epoch(beh_js_epoch_short_axs)
+        print('Plotting behavior alignment for long with epoch')
         plotter_beh.all_long_epoch(beh_js_epoch_long_axs)
+        print('Plotting behavior alignment for all onset')
         plotter_beh.onset(beh_js_onset_ax)
         # short.
+        print('Plotting neural trace alignment for short')
         percept_axs01 = [plt.subplot(gs[4, i]) for i in [0,3,6,7]]
         percept_axs02 = [plt.subplot(gs[5, i]) for i in [0,3,6,7]]
         plotter_percept.all_short_percept_align(percept_axs01)
@@ -97,6 +115,7 @@ def plot_js_L7G8(ops, session_data_name):
         plotter_motor.all_short_motor_align(motor_axs01)
         plotter_motor.all_short_motor_align_heatmap_neuron(motor_axs02)
         # long.
+        print('Plotting neural trace alignment for long')
         percept_axs01 = [plt.subplot(gs[10, i]) for i in [0,3,6,7]]
         percept_axs02 = [plt.subplot(gs[11, i]) for i in [0,3,6,7]]
         plotter_percept.all_long_percept_align(percept_axs01)
@@ -106,6 +125,7 @@ def plot_js_L7G8(ops, session_data_name):
         plotter_motor.all_long_motor_align(motor_axs01)
         plotter_motor.all_long_motor_align_heatmap_neuron(motor_axs02)
         # epoch.
+        print('Plotting neural trace alignment for short with epoch')
         ep_short_axs01 = [plt.subplot(gs[7, i]) for i in [0,3,6]]
         ep_short_axs02 = [plt.subplot(gs[7, i]) for i in [1,2,4,5,7]]
         plotter_percept.all_short_epoch_percept_align(ep_short_axs01)
@@ -114,36 +134,53 @@ def plot_js_L7G8(ops, session_data_name):
         ep_long_axs02 = [plt.subplot(gs[13, i]) for i in [1,2,4,5,7]]
         plotter_percept.all_long_epoch_percept_align(ep_long_axs01)
         plotter_motor.all_long_epoch_motor_align(ep_long_axs02)
+        # both.
+        print('Plotting neural trace alignment for both')
+        percept_axs01 = [plt.subplot(gs[16, i]) for i in [0,3,6,7]]
+        percept_axs02 = [plt.subplot(gs[17, i]) for i in [0,3,6,7]]
+        plotter_percept.all_both_percept_align(percept_axs01)
+        plotter_percept.all_both_percept_align_heatmap_neuron(percept_axs02)
+        motor_axs01 = [plt.subplot(gs[16, i]) for i in [1,2,4,5,8]]
+        motor_axs02 = [plt.subplot(gs[17, i]) for i in [1,2,4,5,8]]
+        plotter_motor.all_both_motor_align(motor_axs01)
+        plotter_motor.all_both_motor_align_heatmap_neuron(motor_axs02)
         # push onset.
-        push_ax01 = plt.subplot(gs[15, 2])
-        push_ax02 = [plt.subplot(gs[15, i]) for i in [2,3,4]]
+        print('Plotting neural trace alignment for all onset')
+        push_ax01 = plt.subplot(gs[15, 9])
+        push_ax02 = [plt.subplot(gs[i, 9]) for i in [16,17,18]]
         plotter_motor.onset(push_ax01)
         plotter_motor.onset_heatmap_neuron(push_ax02)
         # lick.
-        lick_ax01 = plt.subplot(gs[15, 6])
-        lick_ax02 = plt.subplot(gs[15, 7])
+        print('Plotting neural trace alignment for lick')
+        lick_ax01 = plt.subplot(gs[15, 10])
+        lick_ax02 = plt.subplot(gs[16, 10])
         plotter_motor.lick(lick_ax01)
         plotter_motor.lick_heatmap_neuron(lick_ax02)
         # model.
-        decode_axs = [[plt.subplot(gs[10, 10:12]), plt.subplot(gs[11, 10:12])],
-                      [plt.subplot(gs[12, 10:12]), plt.subplot(gs[13, 10:12])],
-                      [plt.subplot(gs[14, 10:12]), plt.subplot(gs[15, 10:12])],
-                      [plt.subplot(gs[16, 10:12]), plt.subplot(gs[17, 10:12])],
-                      [plt.subplot(gs[18, 10:12]), plt.subplot(gs[19, 10:12])],
-                      [plt.subplot(gs[20, 10:12]), plt.subplot(gs[21, 10:12])]]
-        model_axs07 = [plt.subplot(gs[10, i]) for i in [12,13,14]]
-        model_axs08 = [plt.subplot(gs[16, i]) for i in [12,13,14]]
-        model_axs09 = [plt.subplot(gs[11, i]) for i in [12,13,14]]
-        model_axs10 = [plt.subplot(gs[17, i]) for i in [12,13,14]]
+        decode_axs = [[plt.subplot(gs[10, 12:14]), plt.subplot(gs[11, 12:14])],
+                      [plt.subplot(gs[12, 12:14]), plt.subplot(gs[13, 12:14])],
+                      [plt.subplot(gs[14, 12:14]), plt.subplot(gs[15, 12:14])],
+                      [plt.subplot(gs[16, 12:14]), plt.subplot(gs[17, 12:14])],
+                      [plt.subplot(gs[18, 12:14]), plt.subplot(gs[19, 12:14])],
+                      [plt.subplot(gs[20, 12:14]), plt.subplot(gs[21, 12:14])]]
+        model_axs07 = [plt.subplot(gs[10, i]) for i in [14]]
+        model_axs08 = [plt.subplot(gs[16, i]) for i in [14]]
+        model_axs09 = [plt.subplot(gs[11, i]) for i in [14]]
+        model_axs10 = [plt.subplot(gs[17, i]) for i in [14]]
+        print('Plotting decoding model')
         plotter_model.all_decode(decode_axs)
+        print('Plotting dimensionality reduction')
         plotter_model.block_type_population_pca(model_axs07)
-        plotter_model.block_tran_population_pca(model_axs08)
+        plotter_model.epoch_population_pca(model_axs08)
+        print('Plotting latent dynamics')
         plotter_model.block_type_dynamics(model_axs09)
-        plotter_model.block_tran_dynamics(model_axs10)
+        plotter_model.epoch_dynamics(model_axs10)
         # example traces.
+        print('Plotting example traces')
         example_ax = plt.subplot(gs[0:2, 8])
         plot_L7G8_example_traces(
             example_ax, dff, labels, vol_img, vol_time)
+        print('Plotting 2p misc results')
         # offset.
         offset_ax = plt.subplot(gs[0, 9])
         plot_motion_offset_hist(offset_ax, xoff, yoff)
@@ -151,13 +188,13 @@ def plot_js_L7G8(ops, session_data_name):
         label_ax = plt.subplot(gs[0, 10])
         plot_inh_exc_label_pc(label_ax, labels)
         # significance.
-        sign_ax = plt.subplot(gs[1, 9:11])
+        sign_ax = plt.subplot(gs[1, 9])
         plot_significance(sign_ax, significance, labels)
         # save figure.
         fig.set_size_inches(105, 140)
         fig.savefig(os.path.join(
             ops['save_path0'], 'figures',
-            'session_report_{}.pdf'.format(session_data_name)),
+            'session_report_{}_{}.pdf'.format(sig_tag, session_data_name)),
             dpi=300)
         plt.close()
 
@@ -210,7 +247,7 @@ def plot_js_L7G8(ops, session_data_name):
                 os.remove(fname)
         roi_report.save(os.path.join(
             ops['save_path0'], 'figures',
-            'roi_report_{}.pdf'.format(session_data_name)))
+            'roi_report_{}_{}.pdf'.format(sig_tag, session_data_name)))
         roi_report.close()
     
     def plot_raw_traces():
@@ -249,11 +286,13 @@ def plot_js_L7G8(ops, session_data_name):
      vol_hifi, vol_stim_aud, vol_flir,
      vol_pmt, vol_led] = read_raw_voltages(ops)
     dff = read_dff(ops)
-    neural_trials = read_neural_trials(ops)
+    neural_trials = read_neural_trials(ops, cate_delay)
     [xoff, yoff] = read_move_offset(ops)
     significance = read_significance(ops)
+    sig_tag = 'sig'
     if reset_significance:
         significance = reset_significant_roi(significance)
+        sig_tag = 'all'
     print('Processing masks')
     plotter_masks = plotter_all_masks(
         labels, masks, mean_func, max_func, mean_anat, masks_anat)
@@ -272,11 +311,11 @@ def plot_js_L7G8(ops, session_data_name):
     print('===============================================')
     print('============= plot session report =============')
     print('===============================================')
-    #plot_session_report()
+    plot_session_report()
     print('===============================================')
     print('=============== plot roi report ===============')
     print('===============================================')
-    plot_individual_roi()
+    #plot_individual_roi()
     print('===============================================')
     print('=============== plot raw traces ===============')
     print('===============================================')
@@ -292,18 +331,20 @@ def run(session_data_path):
     print('============= trials segmentation =============')
     print('===============================================')
     #Trialization.run(ops)
-    #StatTest.run(ops)
+    StatTest.run(ops, cate_delay)
     plot_js_L7G8(ops, session_data_name)
     print('===============================================')
     print('Processing {} completed'.format(session_data_name))
     
     
 if __name__ == "__main__":
-    reset_significance = False
     cate_delay = 80
     #delay = [neural_trials[str(i)]['trial_delay'] for i in range(len(neural_trials))]
     
     session_data_path = 'C:/Users/yhuang887/Projects/joystick_basic_202304/results/LG07_CRBL_20240807_js_t'
+    reset_significance = False
+    run(session_data_path)
+    reset_significance = True
     run(session_data_path)
 
     
