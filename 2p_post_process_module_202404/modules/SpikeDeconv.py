@@ -88,7 +88,7 @@ def read_dff(ops):
     return dff
 
 
-def plot_for_neuron(timings, dff, spikes, convolved_spikes, neuron=5):
+def plot_for_neuron(timings, dff, spikes, convolved_spikes, neuron=5, tau=1.25):
     """
     Plots DF/F and deconvolved spike data for a specific neuron.
 
@@ -109,7 +109,8 @@ def plot_for_neuron(timings, dff, spikes, convolved_spikes, neuron=5):
                 label='Inferred Spike', color='orange')
     axs[0].set_xlabel('Time')
     axs[0].set_ylabel('Inferred Spikes')
-    axs[0].set_title('Inferred Spikes -- Up-Time Plot')
+    axs[0].set_title(
+        f'Inferred Spikes -- Up-Time Plot for Neuron {neuron} with Tau={tau}')
     axs[0].legend()
 
     dff_mean = np.mean(dff[neuron, :])
@@ -122,14 +123,12 @@ def plot_for_neuron(timings, dff, spikes, convolved_spikes, neuron=5):
                 label='Convolved Spike', color='red', lw=3)
     axs[1].set_xlabel('Time (ms)')
     axs[1].set_ylabel('DF/F')
-    axs[1].set_title('DF/F & Smoothed Inferred -- Up-Time Plot')
+    axs[1].set_title('DF/F & Smoothed Inferred Spikes -- Up-Time Plot')
     axs[1].legend()
 
-    # plt.rcParams['savefig.dpi'] = 1000
+    plt.rcParams['savefig.dpi'] = 1000
+    plt.savefig(f'neuron_{neuron}__tau_{tau}_plot.pdf')
     plt.show()
-    # plt.savefig(f'neuron_{neuron}_plot.pdf')
-
-    # print(len(x), spikes.shape)
 
 
 def spike_detect(ops, dff, tau=1.25):
@@ -175,12 +174,12 @@ def run(
     uptime, _ = get_trigger_time(vol_time, vol_img)
 
     # smoothing
-    smoothed = denoise(spikes, kernel_size=350,
-                       std_dev=np.exp(-10 / oasis_tau), neurons=neurons)
+    smoothed = denoise(spikes, kernel_size=(200),
+                       std_dev=np.exp(-20 / oasis_tau), neurons=neurons)
 
     # plot for certain neurons
     for i in neurons:
         plot_for_neuron(timings=uptime, dff=dff, spikes=spikes,
-                        convolved_spikes=smoothed, neuron=i)
+                        convolved_spikes=smoothed, neuron=i, tau=oasis_tau)
 
     return smoothed, spikes

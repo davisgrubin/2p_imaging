@@ -9,8 +9,9 @@ from cellpose import models
 from cellpose import io
 import matplotlib.pyplot as plt
 from scipy.stats import linregress
+from skimage.segmentation import find_boundaries
 
-from .visualization_VIPTD_G8 import plot_js_VIPTD_G8
+# from .visualization_VIPTD_G8 import plot_js_VIPTD_G8
 
 # z score normalization.
 
@@ -132,7 +133,7 @@ def compute_offset_slope(mean_anat, mean_func, ops):
         mean_anat_flat = mean_anat.flatten()
         mean_func_flat = mean_func.flatten()
         slope, offset, r_value, p_value, std_err = linregress(
-            mean_anat_flat, mean_func_flat)
+            mean_func_flat, mean_anat_flat)
         # save slope and offset
         f = h5py.File(
             os.path.join(ops['save_path0'], 'masks.h5'),
@@ -145,9 +146,8 @@ def compute_offset_slope(mean_anat, mean_func, ops):
 
 def remove_green_bleedthrough(offset, slope, mean_func, mean_anat):
     # corrected functional channel = original functional channel - slope * original anatomical channel
-    mean_anat_new = mean_anat - slope * mean_func
+    mean_anat_new = mean_anat - (slope * mean_func)
     return mean_anat_new
-
 
 # main function to use anatomical to label functional channel masks.
 
@@ -157,6 +157,59 @@ def remove_green_bleedthrough(offset, slope, mean_func, mean_anat):
 #     for i, c in enumerate(color):
 #         rgb[:, :, i] = image * c / np.max(image)
 #     return rgb
+
+# adjust layout for masks plot.
+def adjust_layout(ax):
+    ax.tick_params(tick1On=False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+
+# label images with yellow and green.
+def get_labeled_masks_img(masks, labels, cate):
+    labeled_masks_img = np.zeros(
+        (masks.shape[0], masks.shape[1], 3), dtype='int32')
+    neuron_idx = np.where(labels == cate)[0] + 1
+    for i in neuron_idx:
+        neuron_mask = ((masks == i) * 255).astype('int32')
+        labeled_masks_img[:, :, 0] += neuron_mask
+    return labeled_masks_img
+
+# automatical adjustment of contrast.
+
+
+def adjust_contrast(org_img, lower_percentile=50, upper_percentile=99):
+    lower = np.percentile(org_img, lower_percentile)
+    upper = np.percentile(org_img, upper_percentile)
+    img = np.clip((org_img - lower) * 255 / (upper - lower), 0, 255)
+    img = img.astype('int32')
+    return img
+
+
+def anat(ax, mean_anat, masks, labeled_masks_img, unsure_masks_img, with_mask=True, title='anatomy channel mean image'):
+    anat_img = np.zeros(
+        (mean_anat.shape[0], mean_anat.shape[1], 3), dtype='int32')
+    anat_img[:, :, 0] = adjust_contrast(mean_anat)
+    anat_img = adjust_contrast(anat_img)
+    if with_mask:
+        x_all, y_all = np.where(find_boundaries(masks))
+        for x, y in zip(x_all, y_all):
+            anat_img[x, y, :] = np.array([255, 255, 255])
+        x_all, y_all = np.where(find_boundaries(
+            labeled_masks_img[:, :, 0]))
+        for x, y in zip(x_all, y_all):
+            anat_img[x, y, :] = np.array([255, 255, 0])
+        x_all, y_all = np.where(find_boundaries(
+            unsure_masks_img[:, :, 0]))
+        for x, y in zip(x_all, y_all):
+            anat_img[x, y, :] = np.array([0, 196, 255])
+    ax.matshow(anat_img)
+    adjust_layout(ax)
+    ax.set_title(f'{title}')
 
 
 def run(ops, diameter):
@@ -197,20 +250,46 @@ def run(ops, diameter):
         # ax[2].set_title('Corrected Functional Channel')
         # plt.show()
 
-        mean_anat = mean_anat_corrected
-        masks_anat = masks_anat_corrected
-
         print('Computing labels for each ROI')
         labels = get_label(masks_func, masks_anat)
 
+        print('Computing corrected labels for each ROI')
+        labels_corrected = get_label(masks_func, masks_anat_corrected)
+
+        labeled_masks_img_orig = get_labeled_masks_img(masks_anat, labels, 1)
+        labeled_masks_img_corr = get_labeled_masks_img(
+            masks_anat_corrected, labels_corrected, 1)
+
+        unsure_masks_img_orig = get_labeled_masks_img(masks_anat, labels, 0)
+        unsure_masks_img_corr = get_labeled_masks_img(
+            masks_anat_corrected, labels_corrected, 0)
+
+        fig, ax = plt.subplots(1, 4, figsize=(15, 5))
+        anat(ax[0], mean_anat, masks_anat, labeled_masks_img_orig,
+             unsure_masks_img_orig, with_mask=True, title='Original Anatomical Channel + Masks')
+        anat(ax[1], mean_anat_corrected, masks_anat_corrected, labeled_masks_img_corr,
+             unsure_masks_img_corr, with_mask=True, title='Corrected Anatomical Channel + Masks')
+
+        anat(ax[2], mean_anat, masks_anat, labeled_masks_img_orig,
+             unsure_masks_img_orig, with_mask=False, title='Original Anatomical Channel')
+
+        anat(ax[3], mean_anat_corrected, masks_anat_corrected, labeled_masks_img_corr,
+             unsure_masks_img_corr, with_mask=False, title='Corrected Anatomical Channel')
+
+        plt.rcParams['savefig.dpi'] = 1000
+        plt.savefig('bleedthrough_channel_comparison.pdf')
+        plt.show()
+
+        mean_anat = mean_anat_corrected
+        masks_anat = masks_anat_corrected
+
         print('Found {} labeled ROIs out of {} in total'.format(
             np.sum(labels == 1), len(labels)))
+
         save_masks(
             ops,
             masks_func, masks_anat, masks_anat_corrected, mean_func,
             max_func, mean_anat,
             labels)
-
-        plot_js_VIPTD_G8(ops, 'LabelExcInh')
 
         print('Masks results saved')

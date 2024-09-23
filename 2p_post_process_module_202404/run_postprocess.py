@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
     QualControlDataIO.run(
         ops,
-        range_skew, max_connect, max_aspect, range_compact, range_footprint)
+        range_skew, max_connect, max_aspect, range_compact, range_footprint, stat_file_names=['stat'])
 
     LabelExcInh.run(ops, diameter)
 
