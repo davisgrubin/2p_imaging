@@ -64,7 +64,7 @@ def run(
     print("DFF Results saved under name 'dff'")
 
     # deconvolution code
-    if len(taus > 1):
+    if len(taus) > 1:
         # code to perform a parameter search on tau
         tau_spike_dict = {}
         neurons = np.arange(dff.shape[0])
