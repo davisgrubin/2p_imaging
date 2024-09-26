@@ -284,7 +284,7 @@ def run(ops, diameter):
         # plot name with session data path
         plt.savefig(
             f'bleedthrough_channel_comparison_FN16_P_20240626_js_t.pdf')
-        plt.show()
+        # plt.show()
 
         mean_anat = mean_anat_corrected
         masks_anat = masks_anat_corrected

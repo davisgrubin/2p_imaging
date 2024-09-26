@@ -30,11 +30,10 @@ def get_dff(
     return dff
 
 
-# save dff traces results.
-
-def save_dff(ops, dff):
+# save results
+def save(ops, name, data):
     f = h5py.File(os.path.join(ops['save_path0'], 'dff.h5'), 'w')
-    f['dff'] = dff
+    f['name'] = data
     f.close()
 
 # main function to compute spikings.
@@ -43,8 +42,10 @@ def save_dff(ops, dff):
 def run(
         ops,
         norm=True,
-        plotting_neurons=[5],
-        taus=[0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50]):
+        plotting_neurons=[0],
+        taus=[0.35],
+        plot_with_smoothed=False,
+        plot_without_smoothed=False):
 
     print('===============================================')
     print('=========== dff trace normalization ===========')
@@ -59,17 +60,40 @@ def run(
     print('Running baseline subtraction and normalization')
     dff = get_dff(ops, fluo, neuropil, norm)
 
-    # de-convolution code
-    tau_spike_dict = {}
-    neurons = np.arange(dff.shape[0])
-    for tau in taus:
+    save(ops, 'dff', dff)
+    print("DFF Results saved under name 'dff'")
+
+    # deconvolution code
+    if len(taus > 1):
+        # code to perform a parameter search on tau
+        tau_spike_dict = {}
+        neurons = np.arange(dff.shape[0])
+        for tau in taus:
+            smoothed, spikes = SpikeDeconv.run(
+                ops,
+                dff,
+                oasis_tau=tau,
+                neurons=neurons,
+                plotting_neurons=plotting_neurons,
+                plot_with_smoothed=plot_with_smoothed,
+                plot_without_smoothed=plot_without_smoothed)
+            tau_spike_dict[tau] = spikes
+
+        # analyze_spike_traces(ops, dff, tau_spike_dict,
+        #                      neurons=np.arange(dff.shape[0]))
+    else:
+        # if we just specify one tau value
         smoothed, spikes = SpikeDeconv.run(
-            ops, dff, oasis_tau=tau, neurons=neurons, plotting_neurons=plotting_neurons)
-        tau_spike_dict[tau] = spikes
+            ops,
+            dff,
+            oasis_tau=tau,
+            neurons=neurons,
+            plotting_neurons=plotting_neurons,
+            plot_with_smoothed=plot_with_smoothed,
+            plot_without_smoothed=plot_without_smoothed)
 
-    analyze_spike_traces(ops, dff, tau_spike_dict,
-                         neurons=np.arange(dff.shape[0]))
+        save(ops, 'spikes', spikes)
+        print("Spike traces saved under name 'spikes'")
 
-    print('Results saved')
-    save_dff(ops, dff)
-    # TODO: write function to save spike traces and convolved traces
+        save(ops, 'smoothed', smoothed)
+        print("De-noised DFF data saved under name 'smoothed'")

@@ -88,7 +88,7 @@ def read_dff(ops):
     return dff
 
 
-def plot_for_neuron_without_smoothed(timings, dff, spikes, convolved_spikes, neuron=5, tau=1.25):
+def plot_for_neuron_without_smoothed(timings, dff, spikes, neuron=5, tau=1.25):
     """
     Produces a figure with three subplots: (top) de-convolved spike traces, (middle) original DFF,
                                            and (bottom) traces + original overlayed
@@ -99,7 +99,6 @@ def plot_for_neuron_without_smoothed(timings, dff, spikes, convolved_spikes, neu
         spikes (np.array): Spike detection data array.
         neuron (int): Index of the neuron to plot. Default is 5.
         num_deconvs (int): Number of deconvolutions performed. Default is 1.
-        convolved_spikes (np.array): Convolved spikes data array.
     """
     plt.figure(figsize=(30, 10))
     fig, axs = plt.subplots(3, 1, figsize=(30, 10))
@@ -137,10 +136,8 @@ def plot_for_neuron_without_smoothed(timings, dff, spikes, convolved_spikes, neu
     axs[2].set_title(f'Traces + Original')
     axs[2].legend()
 
-    # plt.figure(figsize=(30, 30))
-    plt.rcParams['savefig.dpi'] = 1500
+    plt.rcParams['savefig.dpi'] = 1000
     plt.savefig(f'plot_results/neuron_{neuron}__tau_{tau}_plot.pdf')
-    # plt.show()
 
 
 def plot_for_neuron_with_smoothed(timings, dff, spikes, convolved_spikes, neuron=5, tau=1.25):
@@ -213,7 +210,9 @@ def run(
         dff,
         oasis_tau=10.0,
         neurons=np.arange(100),
-        plotting_neurons=[5, 10, 100]):
+        plotting_neurons=[5, 10, 100],
+        plot_with_smoothed=False,
+        plot_without_smoothed=False):
 
     print('===================================================')
     print('=============== Deconvolving Spikes ===============')
@@ -221,9 +220,7 @@ def run(
 
     metrics = read_raw_voltages(ops)
     vol_time = metrics[0]
-    # vol_img = metrics[3]
     vol_img = metrics[1]
-    # dff = read_dff(ops)
 
     spikes = spike_detect(ops, dff, tau=oasis_tau)
     uptime, _ = get_trigger_time(vol_time, vol_img)
@@ -233,10 +230,13 @@ def run(
                        std_dev=np.exp(-20 / oasis_tau), neurons=neurons)
 
     # plot for certain neurons
-    for i in plotting_neurons:
-        # plot_for_neuron(timings=uptime, dff=dff, spikes=spikes,
-        #                 convolved_spikes=smoothed, neuron=i, tau=oasis_tau)
-        plot_for_neuron_without_smoothed(timings=uptime, dff=dff, spikes=spikes,
-                                         convolved_spikes=smoothed, neuron=i, tau=oasis_tau)
+    if plot_without_smoothed or plot_with_smoothed:
+        for i in plotting_neurons:
+            if plot_with_smoothed:
+                plot_for_neuron_with_smoothed(timings=uptime, dff=dff, spikes=spikes,
+                                              convolved_spikes=smoothed, neuron=i, tau=oasis_tau)
+            if plot_without_smoothed:
+                plot_for_neuron_without_smoothed(timings=uptime, dff=dff, spikes=spikes,
+                                                 convolved_spikes=smoothed, neuron=i, tau=oasis_tau)
 
     return smoothed, spikes
