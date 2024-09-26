@@ -42,7 +42,7 @@ def save(ops, name, data):
 def run(
         ops,
         norm=True,
-        plotting_neurons=[0],
+        plotting_neurons=[5],
         taus=[0.35],
         plot_with_smoothed=False,
         plot_without_smoothed=False):
@@ -79,10 +79,11 @@ def run(
                 plot_without_smoothed=plot_without_smoothed)
             tau_spike_dict[tau] = spikes
 
-        # analyze_spike_traces(ops, dff, tau_spike_dict,
-        #                      neurons=np.arange(dff.shape[0]))
+        analyze_spike_traces(ops, dff, tau_spike_dict,
+                             neurons=np.arange(dff.shape[0]))
     else:
         # if we just specify one tau value
+        neurons = np.arange(dff.shape[0])
         smoothed, spikes = SpikeDeconv.run(
             ops,
             dff,
