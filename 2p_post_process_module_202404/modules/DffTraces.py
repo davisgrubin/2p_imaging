@@ -6,6 +6,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter
 from modules import SpikeDeconv
 
+from .SpikeAnalysis import analyze_spike_traces
 # compute dff from raw fluorescence signals.
 
 
@@ -39,7 +40,12 @@ def save_dff(ops, dff):
 # main function to compute spikings.
 
 
-def run(ops, norm=True):
+def run(
+        ops,
+        norm=True,
+        plotting_neurons=[5],
+        taus=[0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50]):
+
     print('===============================================')
     print('=========== dff trace normalization ===========')
     print('===============================================')
@@ -54,7 +60,16 @@ def run(ops, norm=True):
     dff = get_dff(ops, fluo, neuropil, norm)
 
     # de-convolution code
-    smoothed, spikes = SpikeDeconv.run(ops, dff, oasis_tau=0.35)
+    tau_spike_dict = {}
+    neurons = np.arange(dff.shape[0])
+    for tau in taus:
+        smoothed, spikes = SpikeDeconv.run(
+            ops, dff, oasis_tau=tau, neurons=neurons, plotting_neurons=plotting_neurons)
+        tau_spike_dict[tau] = spikes
+
+    analyze_spike_traces(ops, dff, tau_spike_dict,
+                         neurons=np.arange(dff.shape[0]))
 
     print('Results saved')
     save_dff(ops, dff)
+    # TODO: write function to save spike traces and convolved traces

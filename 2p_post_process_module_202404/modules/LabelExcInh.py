@@ -265,19 +265,25 @@ def run(ops, diameter):
             masks_anat_corrected, labels_corrected, 0)
 
         fig, ax = plt.subplots(1, 4, figsize=(15, 5))
+        # pad between subplots
+        plt.subplots_adjust(wspace=0.1)
+
         anat(ax[0], mean_anat, masks_anat, labeled_masks_img_orig,
-             unsure_masks_img_orig, with_mask=True, title='Original Anatomical Channel + Masks')
+             unsure_masks_img_orig, with_mask=True, title='Original + Mask')
+
         anat(ax[1], mean_anat_corrected, masks_anat_corrected, labeled_masks_img_corr,
-             unsure_masks_img_corr, with_mask=True, title='Corrected Anatomical Channel + Masks')
+             unsure_masks_img_corr, with_mask=True, title='Corrected + Masks')
 
         anat(ax[2], mean_anat, masks_anat, labeled_masks_img_orig,
-             unsure_masks_img_orig, with_mask=False, title='Original Anatomical Channel')
+             unsure_masks_img_orig, with_mask=False, title='Original')
 
         anat(ax[3], mean_anat_corrected, masks_anat_corrected, labeled_masks_img_corr,
-             unsure_masks_img_corr, with_mask=False, title='Corrected Anatomical Channel')
+             unsure_masks_img_corr, with_mask=False, title='Corrected')
 
         plt.rcParams['savefig.dpi'] = 1000
-        plt.savefig('bleedthrough_channel_comparison.pdf')
+        # plot name with session data path
+        plt.savefig(
+            f'bleedthrough_channel_comparison_FN16_P_20240626_js_t.pdf')
         plt.show()
 
         mean_anat = mean_anat_corrected
