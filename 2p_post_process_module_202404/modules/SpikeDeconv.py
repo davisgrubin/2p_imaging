@@ -236,7 +236,7 @@ def run(
                 plot_for_neuron_with_smoothed(timings=uptime, dff=dff, spikes=spikes,
                                               convolved_spikes=smoothed, neuron=i, tau=oasis_tau)
             if plot_without_smoothed:
-                plot_for_neuron_without_smoothed(timings=uptime, dff=dff, spikes=spikes,
-                                                 convolved_spikes=smoothed, neuron=i, tau=oasis_tau)
+                plot_for_neuron_without_smoothed(
+                    timings=uptime, dff=dff, spikes=spikes, neuron=i, tau=oasis_tau)
 
     return smoothed, spikes
