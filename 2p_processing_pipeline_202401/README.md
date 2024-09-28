@@ -176,3 +176,6 @@ Results will be in ./Results
 
 ## 2024.07.26
 - Changed voltage channel names.
+
+## 2024.09.28
+- Added 2p stimulation voltage recording.
