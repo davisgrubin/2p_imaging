@@ -73,6 +73,7 @@ def get_js_pos(neural_trials, state):
                     for t in neural_trials.keys()]
     js_pos = [neural_trials[t]['trial_js_pos']
                     for t in neural_trials.keys()]
+    
     trial_type = np.array([neural_trials[t]['trial_type']
               for t in neural_trials.keys()])
     epoch = np.array([neural_trials[t]['block_epoch']
@@ -95,6 +96,7 @@ def get_js_pos(neural_trials, state):
         time_state = [
             neural_trials[t][state][0] - neural_trials[t]['vol_time'][0]
             for t in neural_trials.keys()]
+
     trial_type = np.array([trial_type[i]
                    for i in range(len(inter_time))
                    if not np.isnan(time_state)[i]])
@@ -104,6 +106,7 @@ def get_js_pos(neural_trials, state):
     outcome = np.array([outcome[i]
                    for i in range(len(inter_time))
                    if not np.isnan(time_state)[i]])
+
     zero_state = [np.argmin(np.abs(inter_time[i] - time_state[i]))
                   for i in range(len(inter_time))
                   if not np.isnan(time_state)[i]]
@@ -130,8 +133,7 @@ def get_js_pos(neural_trials, state):
 # extract response around given stimulus.
 def get_stim_response(
         neural_trials, state,
-        l_frames, r_frames
-        ):
+        l_frames, r_frames):
     # initialize list.
     neu_seq  = []
     neu_time = []
@@ -139,15 +141,18 @@ def get_stim_response(
     delay = []
     epoch = []
     outcome = []
+    delay = []
     # loop over trials.
     for trials in neural_trials.keys():
         # read trial data.
         fluo = neural_trials[trials]['dff']
         time = neural_trials[trials]['time']
         trial_vis = neural_trials[trials][state]
+        # trial_delay = neural_trials[trials]['trial_delay']
         trial_type = neural_trials[trials]['trial_type']
         trial_epoch = neural_trials[trials]['block_epoch']
         trial_outcome = get_trial_outcome(neural_trials, trials)
+        
         if not np.isnan(trial_vis[0]):
             idx = np.argmin(np.abs(time - trial_vis[0]))
             if idx > l_frames and idx < len(time)-r_frames:
@@ -163,8 +168,10 @@ def get_stim_response(
                 # outcome.
                 outcome.append(trial_outcome)
                 # delay.
+                # delay.append(trial_delay)
                 delay.append(trial_type)
                 epoch.append(trial_epoch)
+                
     if len(neu_seq) > 0:
         neu_seq, neu_time = align_neu_seq_utils(neu_seq, neu_time)
         outcome = np.array(outcome)
@@ -199,9 +206,13 @@ def get_outcome_response(
         fluo = neural_trials[trials]['dff']
         time = neural_trials[trials]['time']
         time_outcome = neural_trials[trials][state]
+
+        # trial_delay = neural_trials[trials]['trial_delay']
+
         trial_type = neural_trials[trials]['trial_type']
         trial_epoch = neural_trials[trials]['block_epoch']
         trial_outcome = get_trial_outcome(neural_trials, trials)
+        
         if not np.isnan(time_outcome[0]):
             idx = np.argmin(np.abs(time - time_outcome[0]))
             if idx > l_frames and idx < len(time)-r_frames:
@@ -217,14 +228,20 @@ def get_outcome_response(
                 # label.
                 outcome.append(trial_outcome)
                 # delay.
+                # delay.append(trial_delay)
+
                 delay.append(trial_type)
                 epoch.append(trial_epoch)
+
     if len(neu_seq) > 0:
         neu_seq, neu_time = align_neu_seq_utils(neu_seq, neu_time)
         outcome = np.array(outcome)
         outcome_seq = np.median(np.concatenate(outcome_seq),axis=0)
         delay = np.array(delay)
+
+
         epoch = np.array(epoch)
+
     else:
         neu_seq = np.array([[[np.nan]]])
         neu_time = np.array([np.nan])
@@ -232,8 +249,8 @@ def get_outcome_response(
         outcome_seq = np.array([np.nan, np.nan])
         delay = np.array(np.nan)
         epoch = np.array(np.nan)
+        
     return [neu_seq, neu_time, outcome_seq, outcome, delay, epoch]
-
 
 # extract pushing response around given state.
 def get_motor_response(
@@ -245,12 +262,14 @@ def get_motor_response(
     delay = []
     epoch = []
     outcome = []
+    delay = []
     # loop over trials.
     for trials in neural_trials.keys():
         # read trial data.
         fluo = neural_trials[trials]['dff']
         time = neural_trials[trials]['time']
         time_state = neural_trials[trials][state]
+        # trial_delay = neural_trials[trials]['trial_delay']
         trial_type = neural_trials[trials]['trial_type']
         trial_epoch = neural_trials[trials]['block_epoch']
         trial_outcome = get_trial_outcome(neural_trials, trials)
@@ -319,15 +338,20 @@ def get_iti_response(
     delay = []
     epoch = []
     outcome = []
+
     # loop over trials.
     for trials in neural_trials.keys():
         # read trial data.
         fluo = neural_trials[trials]['dff']
         time = neural_trials[trials]['time']
         time_state = neural_trials[trials]['trial_iti']
+
+        # trial_delay = neural_trials[trials]['trial_delay']
+
         trial_type = neural_trials[trials]['trial_type']
         trial_epoch = neural_trials[trials]['block_epoch']
         trial_outcome = get_trial_outcome(neural_trials, trials)
+
         if np.isnan(np.sum(time_state)):
             continue
         for i in range(np.size(time_state)):

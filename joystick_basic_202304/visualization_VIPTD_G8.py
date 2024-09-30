@@ -1,5 +1,17 @@
 #!/usr/bin/env python3
 
+from plot.fig0_beh import plotter_all_beh
+from plot.misc import plot_roi_significance
+from plot.misc import plot_significance
+from plot.misc import plot_inh_exc_label_pc
+from plot.misc import plot_motion_offset_hist
+from plot.fig5_raw_traces import plot_roi_raw_trace
+from plot.fig5_raw_traces import plot_roi_example_traces
+from plot.fig5_raw_traces import plot_VIPTD_G8_example_traces
+from plot.fig4_model import plotter_VIPTD_G8_model
+from plot.fig3_align_motor import plotter_VIPTD_G8_motor
+from plot.fig2_align_percept import plotter_VIPTD_G8_percept
+from plot.fig1_mask import plotter_all_masks
 import os
 import fitz
 import numpy as np
@@ -10,6 +22,7 @@ from matplotlib.gridspec import GridSpec
 import warnings
 warnings.filterwarnings("ignore")
 
+
 from modules import Trialization
 from modules import StatTest
 from modules.ReadResults import read_masks
@@ -18,15 +31,25 @@ from modules.ReadResults import read_dff
 from modules.ReadResults import read_neural_trials
 from modules.ReadResults import read_move_offset
 from modules.ReadResults import read_significance
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 
 def read_ops(session_data_path):
     ops = np.load(
-        os.path.join(session_data_path, 'suite2p', 'plane0','ops.npy'),
+        os.path.join(session_data_path, 'suite2p', 'plane0', 'ops.npy'),
         allow_pickle=True).item()
     ops['save_path0'] = os.path.join(session_data_path)
     return ops
 
+
 def get_roi_sign(significance, roi_id):
+
+#     r = significance['r_vis'][roi_id] +\
+#         significance['r_push'][roi_id] +\
+#         significance['r_retract'][roi_id] +\
+
     r = significance['r_vis1'][roi_id] +\
         significance['r_push1'][roi_id] +\
         significance['r_retract1'][roi_id] +\
@@ -38,6 +61,22 @@ def get_roi_sign(significance, roi_id):
         significance['r_punish'][roi_id] +\
         significance['r_lick'][roi_id]
     return r
+
+
+
+# def reset_significant_roi(significance):
+#     sign = {}
+#     sign['r_vis'] = np.ones_like(significance['r_vis'])
+#     sign['r_push'] = np.ones_like(significance['r_push'])
+#     sign['r_retract'] = np.ones_like(significance['r_retract'])
+#     sign['r_wait'] = np.ones_like(significance['r_wait'])
+#     sign['r_reward'] = np.ones_like(significance['r_reward'])
+#     sign['r_punish'] = np.ones_like(significance['r_punish'])
+#     sign['r_lick'] = np.ones_like(significance['r_lick'])
+#     return sign
+
+
+# def plot_js_VIPTD_G8(ops, session_data_name):
 
 def reset_significant_roi(significance):
     sign = {}
@@ -100,6 +139,29 @@ def plot_js_VIPTD_G8(ops, session_data_name):
         beh_misc_ax01 = plt.subplot(gs[5, 10:12])
         beh_misc_ax02 = plt.subplot(gs[6, 10])
         beh_js_short_axs = [plt.subplot(gs[5, i]) for i in range(9)]
+
+#         beh_js_long_axs = [plt.subplot(gs[14, i]) for i in range(9)]
+#         beh_js_epoch_short_axs = [plt.subplot(gs[10, i]) for i in range(8)]
+#         beh_js_epoch_long_axs = [plt.subplot(gs[19, i]) for i in range(8)]
+#         beh_js_onset_ax = plt.subplot(gs[23, 0])
+#         plotter_beh.delay_dist(beh_misc_ax01)
+#         plotter_beh.session_outcome(beh_misc_ax02)
+#         plotter_beh.all_short_align(beh_js_short_axs)
+#         plotter_beh.all_long_align(beh_js_long_axs)
+#         plotter_beh.all_short_epoch(beh_js_epoch_short_axs)
+#         plotter_beh.all_long_epoch(beh_js_epoch_long_axs)
+#         plotter_beh.onset(beh_js_onset_ax)
+#         # short.
+#         percept_axs01 = [plt.subplot(gs[6, i]) for i in [0, 3, 6, 7]]
+#         percept_axs02 = [plt.subplot(gs[7, i]) for i in [0, 3, 6, 7]]
+#         percept_axs03 = [plt.subplot(gs[8, i]) for i in [0, 3, 6, 7]]
+#         plotter_percept.all_short_percept_align_exc(percept_axs01)
+#         plotter_percept.all_short_percept_align_inh(percept_axs02)
+#         plotter_percept.all_short_percept_align_heatmap_neuron(percept_axs03)
+#         motor_axs01 = [plt.subplot(gs[6, i]) for i in [1, 2, 4, 5, 8]]
+#         motor_axs02 = [plt.subplot(gs[7, i]) for i in [1, 2, 4, 5, 8]]
+#         motor_axs03 = [plt.subplot(gs[8, i]) for i in [1, 2, 4, 5, 8]]
+
         beh_js_long_axs  = [plt.subplot(gs[14, i]) for i in range(9)]
         beh_js_both_axs  = [plt.subplot(gs[23, i]) for i in range(9)]
         beh_js_epoch_short_axs = [plt.subplot(gs[10, i]) for i in range(8)]
@@ -131,10 +193,44 @@ def plot_js_VIPTD_G8(ops, session_data_name):
         motor_axs01 = [plt.subplot(gs[6, i]) for i in [1,2,4,5,8]]
         motor_axs02 = [plt.subplot(gs[7, i]) for i in [1,2,4,5,8]]
         motor_axs03 = [plt.subplot(gs[8, i]) for i in [1,2,4,5,8]]
+
         plotter_motor.all_short_motor_align_exc(motor_axs01)
         plotter_motor.all_short_motor_align_inh(motor_axs02)
         plotter_motor.all_short_motor_align_heatmap_neuron(motor_axs03)
         # long.
+
+#         percept_axs01 = [plt.subplot(gs[15, i]) for i in [0, 3, 6, 7]]
+#         percept_axs02 = [plt.subplot(gs[16, i]) for i in [0, 3, 6, 7]]
+#         percept_axs03 = [plt.subplot(gs[17, i]) for i in [0, 3, 6, 7]]
+#         plotter_percept.all_long_percept_align_exc(percept_axs01)
+#         plotter_percept.all_long_percept_align_inh(percept_axs02)
+#         plotter_percept.all_long_percept_align_heatmap_neuron(percept_axs03)
+#         motor_axs01 = [plt.subplot(gs[15, i]) for i in [1, 2, 4, 5, 8]]
+#         motor_axs02 = [plt.subplot(gs[16, i]) for i in [1, 2, 4, 5, 8]]
+#         motor_axs03 = [plt.subplot(gs[17, i]) for i in [1, 2, 4, 5, 8]]
+#         plotter_motor.all_long_motor_align_exc(motor_axs01)
+#         plotter_motor.all_long_motor_align_inh(motor_axs02)
+#         plotter_motor.all_long_motor_align_heatmap_neuron(motor_axs03)
+#         # push onset.
+#         push_ax01 = plt.subplot(gs[24, 0])
+#         push_ax02 = plt.subplot(gs[25, 0])
+#         push_ax03 = [plt.subplot(gs[i, 1]) for i in [23, 24, 25]]
+#         plotter_motor.onset_exc(push_ax01)
+#         plotter_motor.onset_inh(push_ax02)
+#         plotter_motor.onset_heatmap_neuron(push_ax03)
+#         # lick.
+#         lick_ax01 = plt.subplot(gs[24, 7])
+#         lick_ax02 = plt.subplot(gs[25, 7])
+#         lick_ax03 = plt.subplot(gs[26, 7])
+#         plotter_motor.lick_exc(lick_ax01)
+#         plotter_motor.lick_inh(lick_ax02)
+#         plotter_motor.lick_heatmap_neuron(lick_ax03)
+#         # epoch.
+#         ep_short_axs01 = [plt.subplot(gs[11, i]) for i in [0, 3, 6]]
+#         ep_short_axs02 = [plt.subplot(gs[12, i]) for i in [0, 3, 6]]
+#         ep_short_axs03 = [plt.subplot(gs[11, i]) for i in [1, 2, 4, 5, 7]]
+#         ep_short_axs04 = [plt.subplot(gs[12, i]) for i in [1, 2, 4, 5, 7]]
+
         print('Plotting neural trace alignment for long')
         percept_axs01 = [plt.subplot(gs[15, i]) for i in [0,3,6,7]]
         percept_axs02 = [plt.subplot(gs[16, i]) for i in [0,3,6,7]]
@@ -154,19 +250,28 @@ def plot_js_VIPTD_G8(ops, session_data_name):
         ep_short_axs02 = [plt.subplot(gs[12, i]) for i in [0,3,6]]
         ep_short_axs03 = [plt.subplot(gs[11, i]) for i in [1,2,4,5,7]]
         ep_short_axs04 = [plt.subplot(gs[12, i]) for i in [1,2,4,5,7]]
+
         plotter_percept.all_short_epoch_percept_align_exc(ep_short_axs01)
         plotter_percept.all_short_epoch_percept_align_inh(ep_short_axs02)
         plotter_motor.all_short_epoch_motor_align_exc(ep_short_axs03)
         plotter_motor.all_short_epoch_motor_align_inh(ep_short_axs04)
+
+#         ep_long_axs01 = [plt.subplot(gs[20, i]) for i in [0, 3, 6]]
+#         ep_long_axs02 = [plt.subplot(gs[21, i]) for i in [0, 3, 6]]
+#         ep_long_axs03 = [plt.subplot(gs[20, i]) for i in [1, 2, 4, 5, 7]]
+#         ep_long_axs04 = [plt.subplot(gs[21, i]) for i in [1, 2, 4, 5, 7]]
+
         print('Plotting neural trace alignment for long with epoch')
         ep_long_axs01 = [plt.subplot(gs[20, i]) for i in [0,3,6]]
         ep_long_axs02 = [plt.subplot(gs[21, i]) for i in [0,3,6]]
         ep_long_axs03 = [plt.subplot(gs[20, i]) for i in [1,2,4,5,7]]
         ep_long_axs04 = [plt.subplot(gs[21, i]) for i in [1,2,4,5,7]]
+
         plotter_percept.all_long_epoch_percept_align_exc(ep_long_axs01)
         plotter_percept.all_long_epoch_percept_align_inh(ep_long_axs02)
         plotter_motor.all_long_epoch_motor_align_exc(ep_long_axs03)
         plotter_motor.all_long_epoch_motor_align_inh(ep_long_axs04)
+
         # both.
         print('Plotting neural trace alignment for both')
         percept_axs01 = [plt.subplot(gs[24, i]) for i in [0,3,6,7]]
@@ -197,6 +302,7 @@ def plot_js_VIPTD_G8(ops, session_data_name):
         plotter_motor.lick_exc(lick_ax01)
         plotter_motor.lick_inh(lick_ax02)
         plotter_motor.lick_heatmap_neuron(lick_ax03)
+
         # model.
         decode_axs = [[plt.subplot(gs[10, 10:12]), plt.subplot(gs[11, 10:12])],
                       [plt.subplot(gs[12, 10:12]), plt.subplot(gs[13, 10:12])],
@@ -204,6 +310,21 @@ def plot_js_VIPTD_G8(ops, session_data_name):
                       [plt.subplot(gs[16, 10:12]), plt.subplot(gs[17, 10:12])],
                       [plt.subplot(gs[18, 10:12]), plt.subplot(gs[19, 10:12])],
                       [plt.subplot(gs[20, 10:12]), plt.subplot(gs[21, 10:12])]]
+
+#         model_axs07 = [plt.subplot(gs[10, i]) for i in [12, 13, 14]]
+#         model_axs08 = [plt.subplot(gs[16, i]) for i in [12, 13, 14]]
+#         model_axs09 = [plt.subplot(gs[11, i]) for i in [12, 13, 14]]
+#         model_axs10 = [plt.subplot(gs[17, i]) for i in [12, 13, 14]]
+#         plotter_model.all_decode(decode_axs)
+#         plotter_model.block_type_population_pca(model_axs07)
+#         plotter_model.block_tran_population_pca(model_axs08)
+#         plotter_model.block_type_dynamics(model_axs09)
+#         plotter_model.block_tran_dynamics(model_axs10)
+#         # example traces.
+#         example_ax = plt.subplot(gs[0:4, 12])
+#         plot_VIPTD_G8_example_traces(
+#             example_ax, dff, labels, vol_img, vol_time)
+
         model_axs07 = [plt.subplot(gs[10, i]) for i in [12,13,14]]
         model_axs08 = [plt.subplot(gs[16, i]) for i in [12,13,14]]
         model_axs09 = [plt.subplot(gs[11, i]) for i in [12,13,14]]
@@ -222,6 +343,7 @@ def plot_js_VIPTD_G8(ops, session_data_name):
         plot_VIPTD_G8_example_traces(
             example_ax, dff, labels, vol_img, vol_time)
         print('Plotting 2p misc results')
+
         # offset.
         offset_ax = plt.subplot(gs[2, 10])
         plot_motion_offset_hist(offset_ax, xoff, yoff)
@@ -229,7 +351,11 @@ def plot_js_VIPTD_G8(ops, session_data_name):
         label_ax = plt.subplot(gs[2, 11])
         plot_inh_exc_label_pc(label_ax, labels)
         # significance.
+
+#         sign_ax = plt.subplot(gs[3, 10:12])
+
         sign_ax = plt.subplot(gs[3, 10])
+
         plot_significance(sign_ax, significance, labels)
         # save figure.
         fig.set_size_inches(105, 210)
@@ -257,25 +383,45 @@ def plot_js_VIPTD_G8(ops, session_data_name):
                 plotter_masks.roi_superimpose(mask_ax04, roi_id, 'max')
                 plotter_masks.roi_masks(mask_ax05, roi_id)
                 # alignment.
+
+#                 percept_axs = [[plt.subplot(gs[2, i]) for i in [0, 3, 6, 7]],
+#                                [plt.subplot(gs[4, i]) for i in [0, 3, 6, 7]]]
+#                 moto_axs = [[plt.subplot(gs[2, i]) for i in [1, 2, 4, 5, 8]],
+#                             [plt.subplot(gs[4, i]) for i in [1, 2, 4, 5, 8]],
+
                 percept_axs = [[plt.subplot(gs[2, i]) for i in [0,3,6,7]],
                                [plt.subplot(gs[4, i]) for i in [0,3,6,7]]]
                 moto_axs = [[plt.subplot(gs[2, i]) for i in [1,2,4,5,8]],
                             [plt.subplot(gs[4, i]) for i in [1,2,4,5,8]],
+
                             plt.subplot(gs[1, 3]), plt.subplot(gs[1, 4])]
                 plotter_percept.all_roi_percept_align(percept_axs, roi_id)
                 plotter_motor.all_roi_motor_align(moto_axs, roi_id)
                 # epoch.
+
+#                 ep_percept_axs = [[plt.subplot(gs[3, i]) for i in [0, 3, 6]],
+#                                   [plt.subplot(gs[5, i]) for i in [0, 3, 6]]]
+#                 ep_moto_axs = [[plt.subplot(gs[3, i]) for i in [1, 2, 4, 5, 7]],
+#                                [plt.subplot(gs[5, i]) for i in [1, 2, 4, 5, 7]]]
+#                 plotter_percept.all_roi_epoch_percept_align(
+#                     ep_percept_axs, roi_id)
+
                 ep_percept_axs = [[plt.subplot(gs[3, i]) for i in [0,3,6]],
                                [plt.subplot(gs[5, i]) for i in [0,3,6]]]
                 ep_moto_axs = [[plt.subplot(gs[3, i]) for i in [1,2,4,5,7]],
                                [plt.subplot(gs[5, i]) for i in [1,2,4,5,7]]]
                 plotter_percept.all_roi_epoch_percept_align(ep_percept_axs, roi_id)
+
                 plotter_motor.all_roi_epoch_motor_align(ep_moto_axs, roi_id)
                 # significance.
                 sign_ax = plt.subplot(gs[1, 2])
                 plot_roi_significance(sign_ax, significance, roi_id)
                 # example traces.
                 example_ax = plt.subplot(gs[0, 6:8])
+
+#                 plot_roi_example_traces(
+#                     example_ax, dff, labels, vol_img, vol_time, roi_id)
+
                 plot_roi_example_traces(example_ax, dff, labels, vol_img, vol_time, roi_id)
                 # save figure.
                 fname = os.path.join(
@@ -290,9 +436,12 @@ def plot_js_VIPTD_G8(ops, session_data_name):
                 os.remove(fname)
         roi_report.save(os.path.join(
             ops['save_path0'], 'figures',
+#             'roi_report_{}.pdf'.format(session_data_name)))
+#         roi_report.close()
+
             'roi_report_{}_{}.pdf'.format(sig_tag, session_data_name)))
         roi_report.close()
-    
+
     def plot_raw_traces():
         max_ms = 300000
         if not os.path.exists(os.path.join(
@@ -323,6 +472,9 @@ def plot_js_VIPTD_G8(ops, session_data_name):
     [labels,
      masks,
      mean_func, max_func,
+
+#      mean_anat, masks_anat, masks_anat_corrected] = read_masks(ops)
+
      mean_anat, masks_anat] = read_masks(ops)
     [vol_time, vol_start, vol_stim_vis, vol_img,
      vol_hifi, vol_stim_aud, vol_flir,
@@ -331,10 +483,15 @@ def plot_js_VIPTD_G8(ops, session_data_name):
     neural_trials = read_neural_trials(ops, cate_delay)
     [xoff, yoff] = read_move_offset(ops)
     significance = read_significance(ops)
+
+#     if reset_significance:
+#         significance = reset_significant_roi(significance)
+
     sig_tag = 'sig'
     if reset_significance:
         significance = reset_significant_roi(significance)
         sig_tag = 'all'
+
     print('Processing masks')
     plotter_masks = plotter_all_masks(
         labels, masks, mean_func, max_func, mean_anat, masks_anat)
@@ -361,17 +518,32 @@ def plot_js_VIPTD_G8(ops, session_data_name):
     print('===============================================')
     print('=============== plot raw traces ===============')
     print('===============================================')
-    #plot_raw_traces()
+    # plot_raw_traces()
 
 
 def run(session_data_path):
     session_data_name = session_data_path.split('/')[-1]
     ops = read_ops(session_data_path)
     print('===============================================')
-    print('Processing '+ session_data_name)
+    print('Processing ' + session_data_name)
     print('===============================================')
     print('============= trials segmentation =============')
     print('===============================================')
+
+#     Trialization.run(ops)
+#     StatTest.run(ops)
+#     plot_js_VIPTD_G8(ops, session_data_name)
+#     print('===============================================')
+#     print('Processing {} completed'.format(session_data_name))
+
+
+# if __name__ == "__main__":
+#     reset_significance = False
+#     cate_delay = 15
+#     # delay = [neural_trials[str(i)]['trial_delay'] for i in range(len(neural_trials))]
+
+#     session_data_path = 'C:/Users/yhuang887/Projects/joystick_basic_202304/results/FN13_P_20240530_js_DCNCNO_t'
+
     #Trialization.run(ops)
     StatTest.run(ops, cate_delay)
     plot_js_VIPTD_G8(ops, session_data_name)

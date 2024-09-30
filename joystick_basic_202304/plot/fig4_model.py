@@ -13,6 +13,10 @@ from modules.Alignment import get_outcome_response
 from modules.Alignment import get_motor_response
 from modules.Alignment import get_iti_response
 from plot.utils import get_frame_idx_from_time
+
+# from plot.utils import get_block_epoch
+# from plot.utils import get_trial_type
+
 from plot.utils import get_roi_label_color
 from plot.utils import utils
 from plot.utils import adjust_layout_decode_box
@@ -25,6 +29,25 @@ class plotter_utils(utils):
         super().__init__(labels)
 
         self.win = [0, 160]
+
+#         [self.neu_seq_vis1, neu_time, self.outcome_vis1, _, self.delay_vis1] = get_stim_response(
+#                 neural_trials, 'trial_vis1', 0, 50)
+#         [self.neu_seq_vis2, _, self.outcome_vis2, _, self.delay_vis2] = get_stim_response(
+#                 neural_trials, 'trial_vis2', 0, 50)
+#         [self.neu_seq_push1, _, self.outcome_push1, self.delay_push1] = get_motor_response(
+#             neural_trials, 'trial_push1', 0, 50)
+#         [self.neu_seq_retract1, _, self.outcome_retract1, self.delay_retract1] = get_motor_response(
+#             neural_trials, 'trial_retract1', 0, 50)
+#         [self.neu_seq_wait2, _, self.outcome_wait2, self.delay_wait2] = get_motor_response(
+#             neural_trials, 'trial_wait2', 0, 50)
+#         [self.neu_seq_push2, _, self.outcome_push2, self.delay_push2] = get_motor_response(
+#             neural_trials, 'trial_push2', 0, 50)
+#         [self.neu_seq_reward, _, _, self.outcome_reward, self.delay_reward] = get_outcome_response(
+#                 neural_trials, 'trial_reward', 0, 50)
+#         [self.neu_seq_retract2, _, self.outcome_retract2, self.delay_retract2] = get_motor_response(
+#             neural_trials, 'trial_retract2', 0, 50)
+#         [self.neu_seq_iti, _, self.outcome_iti, self.delay_iti] = get_iti_response(
+
         [self.neu_seq_vis1, neu_time, self.outcome_vis1, _,
          self.delay_vis1, self.epoch_vis1] = get_stim_response(
                 neural_trials, 'trial_vis1', 0, 50)
@@ -51,6 +74,7 @@ class plotter_utils(utils):
             neural_trials, 'trial_retract2', 0, 50)
         [self.neu_seq_iti, _, self.outcome_iti,
          self.delay_iti, self.epoch_iti] = get_iti_response(
+
                 neural_trials, 0, 50)
         self.significance = significance
         self.cate_delay = cate_delay
@@ -70,6 +94,17 @@ class plotter_utils(utils):
             'retract2',
             'iti']
         self.significance = [
+
+#             significance['r_vis'],
+#             significance['r_push'],
+#             significance['r_retract'],
+#             significance['r_vis'],
+#             significance['r_wait'],
+#             significance['r_push'],
+#             significance['r_reward'],
+#             significance['r_retract'],
+#             np.ones_like(significance['r_vis']),
+
             significance['r_vis1'],
             significance['r_push1'],
             significance['r_retract1'],
@@ -80,6 +115,7 @@ class plotter_utils(utils):
             significance['r_retract2'],
             np.ones_like(significance['r_vis1']),
             ]
+          
         self.neu_seq_all = [
             self.neu_seq_vis1[:,:,l_idx:r_idx],
             self.neu_seq_push1[:,:,l_idx:r_idx],
@@ -91,6 +127,17 @@ class plotter_utils(utils):
             self.neu_seq_retract2[:,:,l_idx:r_idx],
             self.neu_seq_iti[:,:,l_idx:r_idx]]
         self.delay_all = [
+
+#             get_trial_type(self.cate_delay, self.delay_vis1, 1).astype('int8'),
+#             get_trial_type(self.cate_delay, self.delay_push1, 1).astype('int8'),
+#             get_trial_type(self.cate_delay, self.delay_retract1, 1).astype('int8'),
+#             get_trial_type(self.cate_delay, self.delay_vis2, 1).astype('int8'),
+#             get_trial_type(self.cate_delay, self.delay_wait2, 1).astype('int8'),
+#             get_trial_type(self.cate_delay, self.delay_push2, 1).astype('int8'),
+#             get_trial_type(self.cate_delay, self.delay_reward, 1).astype('int8'),
+#             get_trial_type(self.cate_delay, self.delay_retract2, 1).astype('int8'),
+#             get_trial_type(self.cate_delay, self.delay_iti, 1).astype('int8')]
+
             self.delay_vis1,
             self.delay_push1,
             self.delay_retract1,
@@ -110,6 +157,7 @@ class plotter_utils(utils):
             self.epoch_reward,
             self.epoch_retract2,
             self.epoch_iti]
+
         self.outcome_all = [
             self.outcome_vis1,
             self.outcome_push1,
@@ -126,8 +174,15 @@ class plotter_utils(utils):
             x = x[outcome==0,:,:]
             y = y[outcome==0]
         x = np.mean(x, axis=2)
+
+#         if chance:
+#             model = DummyClassifier(strategy="uniform")
+#         else:
+#             model = SVC(kernel='linear')
+
         model_1 = SVC(kernel='linear')
         model_2 = DummyClassifier(strategy="uniform")
+
         try:
             loo = LeaveOneOut()
             acc = []
@@ -135,6 +190,10 @@ class plotter_utils(utils):
                 try:
                     x_train, x_val = x[train_index], x[val_index]
                     y_train, y_val = y[train_index], y[val_index]
+#                     model.fit(x_train, y_train)
+#                     y_pred = model.predict(x_val)
+#                     acc.append(accuracy_score(y_val, y_pred))
+
                     model_1.fit(x_train, y_train)
                     model_2.fit(x_train, y_train)
                     y_pred_1 = model_1.predict(x_val)
@@ -152,6 +211,7 @@ class plotter_utils(utils):
                 color=color,
                 alpha=1 if not chance else 0.5,
                 capsize=2, marker='o', linestyle='none',
+#                 markeredgecolor='white', markeredgewidth=1)
                 markeredgecolor='white', markeredgewidth=0)
         except:
             pass
@@ -249,15 +309,29 @@ class plotter_VIPTD_G8_model(plotter_utils):
         for i in range(len(self.state_all)):
             if not np.isnan(np.sum(self.neu_seq_all[i])):
                 # find valid trial indice and block epoch indice.
+
+#                 trial_idx, block_tran = get_block_epoch(self.delay_all[i])
+#                 if ep == 'all':
+#                     idx = trial_idx
+#                     reward_only = True
+#                 if ep == 'early':
+#                     idx = trial_idx * block_tran==0
+#                     reward_only = False
+#                 if ep == 'late':
+#                     idx = trial_idx * block_tran==1
+
                 if ep == 'all':
                     idx = self.epoch_all[i] != -1
                     reward_only = True
+        
                 if ep == 'early':
                     idx = self.epoch_all[i] == 1
                     reward_only = False
+                
                 if ep == 'late':
                     idx = self.epoch_all[i] == 0
                     reward_only = False
+                    
                 neu_seq = self.neu_seq_all[i][idx,:,:]
                 delay = self.delay_all[i][idx]
                 outcome = self.outcome_all[i][idx]
@@ -266,6 +340,19 @@ class plotter_VIPTD_G8_model(plotter_utils):
                 self.plot_pop_decode_box(
                     axs[0], x, delay, outcome, i + self.offset[0], c_exc,
                     reward_only=reward_only)
+
+#                 self.plot_pop_decode_box(
+#                     axs[0], x, delay, outcome, i + self.offset[0], c_exc,
+#                     chance=True, reward_only=reward_only)
+#                 # inhibitory.
+#                 x = neu_seq[:,(self.labels==1)*self.significance[i],:]
+#                 self.plot_pop_decode_box(
+#                     axs[0], x, delay, outcome, i + self.offset[1], c_inh,
+#                     reward_only=reward_only)
+#                 self.plot_pop_decode_box(
+#                     axs[0], x, delay, outcome, i + self.offset[1], c_inh,
+#                     chance=True, reward_only=reward_only)
+
                 # inhibitory.
                 x = neu_seq[:,(self.labels==1)*self.significance[i],:]
                 self.plot_pop_decode_box(
@@ -282,7 +369,12 @@ class plotter_VIPTD_G8_model(plotter_utils):
                 self.plot_class_outcome_pc(axs[1], delay, outcome, i, reward_only=reward_only)
         axs[0].plot([], color=c_exc, label='exc')
         axs[0].plot([], color=c_inh, label='inh')
+
+#         axs[0].plot([], color=self.c_all, label='all')
+#         axs[0].plot([], color=self.c_chance, alpha=0.5, label='shuffle')
+
         #axs[0].plot([], color=self.c_all, label='all')
+
         adjust_layout_decode_box(axs[0], self.state_all)
         axs[0].set_xlabel('state [{},{}] ms window'.format(self.win[0], self.win[1]))
         for i in range(len(self.states)):
@@ -295,6 +387,18 @@ class plotter_VIPTD_G8_model(plotter_utils):
         for i in range(len(self.state_all)):
             if not np.isnan(np.sum(self.neu_seq_all[i])):
                 # find valid trial indice and block epoch indice.
+
+#                 trial_idx, block_tran = get_block_epoch(self.delay_all[i])
+#                 if block_type == 'all':
+#                     idx = trial_idx
+#                 if block_type == 'short':
+#                     idx = trial_idx * self.delay_all[i]==0
+#                 if block_type == 'long':
+#                     idx = trial_idx * self.delay_all[i]==1
+#                 # take valid trials.
+#                 neu_seq = self.neu_seq_all[i][idx,:,:]
+#                 block_tran = block_tran[idx]
+
                 if block_type == 'all':
                     idx = self.delay_all[i] != -1
                 if block_type == 'short':
@@ -304,10 +408,37 @@ class plotter_VIPTD_G8_model(plotter_utils):
                 # take valid trials.
                 neu_seq = self.neu_seq_all[i][idx,:,:]
                 epoch = self.epoch_all[i][idx]
+
                 outcome = self.outcome_all[i][idx]
                 # excitory.
                 x = neu_seq[:,(self.labels==-1)*self.significance[i],:].copy()
                 self.plot_pop_decode_box(
+
+#                     axs[0], x, block_tran, outcome, i + self.offset[0], c_exc)
+#                 self.plot_pop_decode_box(
+#                     axs[0], x, block_tran, outcome, i + self.offset[0], c_exc,
+#                     chance=True)
+#                 # inhibitory.
+#                 x = neu_seq[:,(self.labels==1)*self.significance[i],:].copy()
+#                 self.plot_pop_decode_box(
+#                     axs[0], x, block_tran, outcome, i + self.offset[1], c_inh)
+#                 self.plot_pop_decode_box(
+#                     axs[0], x, block_tran, outcome, i + self.offset[1], c_inh,
+#                     chance=True)
+#                 # all.
+#                 x = neu_seq[:,self.significance[i],:].copy()
+#                 self.plot_pop_decode_box(
+#                     axs[0], x, block_tran, outcome, i + self.offset[2], self.c_all)
+#                 self.plot_pop_decode_box(
+#                     axs[0], x, block_tran, outcome, i + self.offset[2], self.c_all,
+#                     chance=True)
+#                 # outcome percentage.
+#                 self.plot_class_outcome_pc(axs[1], block_tran, outcome, i)
+#         axs[0].plot([], color=c_exc, label='exc')
+#         axs[0].plot([], color=c_inh, label='inh')
+#         axs[0].plot([], color=self.c_all, label='all')
+#         axs[0].plot([], color=self.c_chance, alpha=0.5, label='shuffle')
+
                     axs[0], x, epoch, outcome, i + self.offset[0], c_exc)
                 # inhibitory.
                 x = neu_seq[:,(self.labels==1)*self.significance[i],:].copy()
@@ -333,10 +464,17 @@ class plotter_VIPTD_G8_model(plotter_utils):
     def block_type_population_pca(self, axs):
         state = 4
         # find valid trial indice and block epoch indice.
+
+#         trial_idx, _ = get_block_epoch(self.delay_all[state])
+#         neu_seq = self.neu_seq_all[state][trial_idx,:,:]
+#         y = self.delay_all[state][trial_idx]
+#         outcome = self.outcome_all[state][trial_idx]
+
         idx = self.epoch_all[state] != -1
         neu_seq = self.neu_seq_all[state][idx,:,:]
         y = self.delay_all[state][idx]
         outcome = self.outcome_all[state][idx]
+
         # excitory.
         x = neu_seq[:,(self.labels==-1)*self.significance[state],:].copy()
         self.plot_state_pca(axs[0], x, y, outcome, ['short','long'], reward_only=True, cate=-1)
@@ -350,6 +488,25 @@ class plotter_VIPTD_G8_model(plotter_utils):
         self.plot_state_pca(axs[2], x, y, outcome, ['short','long'], reward_only=True, cate=0)
         axs[2].set_title('PCA of block decoding features at WaitForPush2 (reward) (all)')
     
+#     def block_tran_population_pca(self, axs):
+#         state = 4
+#         # find valid trial indice and block epoch indice.
+#         trial_idx, block_tran = get_block_epoch(self.delay_all[state])
+#         neu_seq = self.neu_seq_all[state][trial_idx,:,:]
+#         y = block_tran[trial_idx]
+#         outcome = self.outcome_all[state][trial_idx]
+#         # excitory.
+#         x = neu_seq[:,(self.labels==-1)*self.significance[state],:].copy()
+#         self.plot_state_pca(axs[0], x, y, outcome, ['ep1','ep2'], reward_only=True, cate=-1)
+#         axs[0].set_title('PCA of block epoch decoding features at WaitForPush2 (exc)')
+#         # inhibitory.
+#         x = neu_seq[:,(self.labels==1)*self.significance[state],:].copy()
+#         self.plot_state_pca(axs[1], x, y, outcome, ['ep1','ep2'], reward_only=True, cate=1)
+#         axs[1].set_title('PCA of block epoch decoding features at WaitForPush2 (inh)')
+#         # all.
+#         x = neu_seq[:,self.significance[state],:].copy()
+#         self.plot_state_pca(axs[2], x, y, outcome, ['ep1','ep2'], reward_only=True, cate=0)
+
     def epoch_population_pca(self, axs):
         state = 4
         # find valid trial indice and block epoch indice.
@@ -373,6 +530,44 @@ class plotter_VIPTD_G8_model(plotter_utils):
     def block_type_dynamics(self, axs):
         state = 4
         # find valid trial indice and block epoch indice.
+
+#         trial_idx, _ = get_block_epoch(self.delay_all[state])
+#         neu_seq = self.neu_seq_wait2[trial_idx,:,:]
+#         y = self.delay_all[state][trial_idx]
+#         outcome = self.outcome_all[state][trial_idx]
+#         # excitory.
+#         x = neu_seq[:,(self.labels==-1)*self.significance[state],:].copy()
+#         self.plot_low_dynamics(axs[0], x, y, outcome, ['short','long'], reward_only=True, cate=-1)
+#         axs[0].set_title('PCA dynamics since WaitForPush2 (exc)')
+#         # inhibitory.
+#         x = neu_seq[:,(self.labels==1)*self.significance[state],:].copy()
+#         self.plot_low_dynamics(axs[1], x, y, outcome, ['short','long'], reward_only=True, cate=1)
+#         axs[1].set_title('PCA dynamics since WaitForPush2 (inh)')
+#         # all.
+#         x = neu_seq[:,self.significance[state],:].copy()
+#         self.plot_low_dynamics(axs[2], x, y, outcome, ['short','long'], reward_only=True, cate=0)
+#         axs[2].set_title('PCA dynamics since WaitForPush2 (all)')
+    
+#     def block_tran_dynamics(self, axs):
+#         state = 4
+#         # find valid trial indice and block epoch indice.
+#         trial_idx, block_tran = get_block_epoch(self.delay_all[state])
+#         neu_seq = self.neu_seq_wait2[trial_idx,:,:]
+#         y = block_tran[trial_idx]
+#         outcome = self.outcome_all[state][trial_idx]
+#         # excitory.
+#         x = neu_seq[:,(self.labels==-1)*self.significance[state],:].copy()
+#         self.plot_low_dynamics(axs[0], x, y, outcome, ['ep1','ep2'], reward_only=True, cate=-1)
+#         axs[0].set_title('PCA dynamics since WaitForPush2 (exc)')
+#         # inhibitory.
+#         x = neu_seq[:,(self.labels==1)*self.significance[state],:].copy()
+#         self.plot_low_dynamics(axs[1], x, y, outcome, ['ep1','ep2'], reward_only=True, cate=1)
+#         axs[1].set_title('PCA dynamics since WaitForPush2 (inh)')
+#         # all.
+#         x = neu_seq[:,self.significance[state],:].copy()
+#         self.plot_low_dynamics(axs[2], x, y, outcome, ['ep1','ep2'], reward_only=True, cate=0)
+#         axs[2].set_title('PCA dynamics since WaitForPush2 (all)')
+        
         idx = self.epoch_all[state] != -1
         neu_seq = self.neu_seq_wait2[idx,:,:]
         y = self.delay_all[state][idx]
@@ -410,7 +605,6 @@ class plotter_VIPTD_G8_model(plotter_utils):
         self.plot_low_dynamics(axs[2], x, y, outcome, ['ep1','ep2'], cate=0)
         axs[2].set_title('PCA dynamics since WaitForPush2 (all)')
         
-        
 class plotter_L7G8_model(plotter_utils):
     def __init__(self, neural_trials, labels, significance, cate_delay):
         super().__init__(neural_trials, labels, significance, cate_delay)
@@ -420,6 +614,17 @@ class plotter_L7G8_model(plotter_utils):
         for i in range(len(self.state_all)):
             if not np.isnan(np.sum(self.neu_seq_all[i])):
                 # find valid trial indice and block epoch indice.
+
+#                 trial_idx, block_tran = get_block_epoch(self.delay_all[i])
+#                 if ep == 'all':
+#                     idx = trial_idx
+#                     reward_only = True
+#                 if ep == 'early':
+#                     idx = trial_idx * block_tran==0
+#                     reward_only = False
+#                 if ep == 'late':
+#                     idx = trial_idx * block_tran==1
+
                 if ep == 'all':
                     idx = self.epoch_all[i] != -1
                     reward_only = True
@@ -428,6 +633,7 @@ class plotter_L7G8_model(plotter_utils):
                     reward_only = False
                 if ep == 'late':
                     idx = self.epoch_all[i] == 0
+
                     reward_only = False
                 neu_seq = self.neu_seq_all[i][idx,:,:]
                 delay = self.delay_all[i][idx]
@@ -435,11 +641,23 @@ class plotter_L7G8_model(plotter_utils):
                 # excitory.
                 x = neu_seq[:,(self.labels==-1)*self.significance[i],:]
                 self.plot_pop_decode_box(
+
+#                     axs[0], x, delay, outcome, i + self.offset[0], c_exc,
+#                     reward_only=reward_only)
+#                 self.plot_pop_decode_box(
+#                     axs[0], x, delay, outcome, i + self.offset[0], c_exc,
+#                     chance=True, reward_only=reward_only)
+#                 # outcome percentage.
+#                 self.plot_class_outcome_pc(axs[1], delay, outcome, i, reward_only=reward_only)
+#         axs[0].plot([], color=c_exc, label='exc')
+#         axs[0].plot([], color=self.c_chance, alpha=0.5, label='shuffle')
+
                     axs[0], x, delay, outcome, i + self.offset[1], c_exc,
                     reward_only=reward_only)
                 # outcome percentage.
                 self.plot_class_outcome_pc(axs[1], delay, outcome, i, reward_only=reward_only)
         axs[0].plot([], color=c_exc, label='exc')
+
         adjust_layout_decode_box(axs[0], self.state_all)
         axs[0].set_xlabel('state [{},{}] ms window'.format(self.win[0], self.win[1]))
         for i in range(len(self.states)):
@@ -451,6 +669,18 @@ class plotter_L7G8_model(plotter_utils):
         for i in range(len(self.state_all)):
             if not np.isnan(np.sum(self.neu_seq_all[i])):
                 # find valid trial indice and block epoch indice.
+
+#                 trial_idx, block_tran = get_block_epoch(self.delay_all[i])
+#                 if block_type == 'all':
+#                     idx = trial_idx
+#                 if block_type == 'short':
+#                     idx = trial_idx * self.delay_all[i]==0
+#                 if block_type == 'long':
+#                     idx = trial_idx * self.delay_all[i]==1
+#                 # take valid trials.
+#                 neu_seq = self.neu_seq_all[i][idx,:,:]
+#                 block_tran = block_tran[idx]
+
                 if block_type == 'all':
                     idx = self.delay_all[i] != -1
                 if block_type == 'short':
@@ -460,10 +690,20 @@ class plotter_L7G8_model(plotter_utils):
                 # take valid trials.
                 neu_seq = self.neu_seq_all[i][idx,:,:]
                 epoch = self.epoch_all[i][idx]
+
                 outcome = self.outcome_all[i][idx]
                 # excitory.
                 x = neu_seq[:,(self.labels==-1)*self.significance[i],:].copy()
                 self.plot_pop_decode_box(
+#                     axs[0], x, block_tran, outcome, i + self.offset[0], c_exc)
+#                 self.plot_pop_decode_box(
+#                     axs[0], x, block_tran, outcome, i + self.offset[0], c_exc,
+#                     chance=True)
+#                 # outcome percentage.
+#                 self.plot_class_outcome_pc(axs[1], block_tran, outcome, i)
+#         axs[0].plot([], color=c_exc, label='exc')
+#         axs[0].plot([], color=self.c_chance, alpha=0.5, label='shuffle')
+
                     axs[0], x, epoch, outcome, i + self.offset[0], c_exc)
                 # outcome percentage.
                 self.plot_class_outcome_pc(axs[1], epoch, outcome, i)
@@ -476,6 +716,11 @@ class plotter_L7G8_model(plotter_utils):
     def block_type_population_pca(self, axs):
         state = 4
         # find valid trial indice and block epoch indice.
+#         trial_idx, _ = get_block_epoch(self.delay_all[state])
+#         neu_seq = self.neu_seq_all[state][trial_idx,:,:]
+#         y = self.delay_all[state][trial_idx]
+#         outcome = self.outcome_all[state][trial_idx]
+
         idx = self.epoch_all[state] != -1
         neu_seq = self.neu_seq_all[state][idx,:,:]
         y = self.delay_all[state][idx]
@@ -485,6 +730,18 @@ class plotter_L7G8_model(plotter_utils):
         self.plot_state_pca(axs[0], x, y, outcome, ['short','long'], reward_only=True, cate=-1)
         axs[0].set_title('PCA of block decoding features at WaitForPush2 (reward) (exc)')
     
+
+#     def block_tran_population_pca(self, axs):
+#         state = 4
+#         # find valid trial indice and block epoch indice.
+#         trial_idx, block_tran = get_block_epoch(self.delay_all[state])
+#         neu_seq = self.neu_seq_all[state][trial_idx,:,:]
+#         y = block_tran[trial_idx]
+#         outcome = self.outcome_all[state][trial_idx]
+#         # excitory.
+#         x = neu_seq[:,(self.labels==-1)*self.significance[state],:].copy()
+#         self.plot_state_pca(axs[0], x, y, outcome, ['ep1','ep2'], reward_only=True, cate=-1)
+
     def epoch_population_pca(self, axs):
         state = 4
         # find valid trial indice and block epoch indice.
@@ -495,11 +752,33 @@ class plotter_L7G8_model(plotter_utils):
         # excitory.
         x = neu_seq[:,(self.labels==-1)*self.significance[state],:].copy()
         self.plot_state_pca(axs[0], x, y, outcome, ['ep1','ep2'], cate=-1)
+
         axs[0].set_title('PCA of block epoch decoding features at WaitForPush2 (exc)')
     
     def block_type_dynamics(self, axs):
         state = 4
         # find valid trial indice and block epoch indice.
+
+#         trial_idx, _ = get_block_epoch(self.delay_all[state])
+#         neu_seq = self.neu_seq_wait2[trial_idx,:,:]
+#         y = self.delay_all[state][trial_idx]
+#         outcome = self.outcome_all[state][trial_idx]
+#         # excitory.
+#         x = neu_seq[:,(self.labels==-1)*self.significance[state],:].copy()
+#         self.plot_low_dynamics(axs[0], x, y, outcome, ['short','long'], reward_only=True, cate=-1)
+#         axs[0].set_title('PCA dynamics since WaitForPush2 (exc)')
+    
+#     def block_tran_dynamics(self, axs):
+#         state = 4
+#         # find valid trial indice and block epoch indice.
+#         trial_idx, block_tran = get_block_epoch(self.delay_all[state])
+#         neu_seq = self.neu_seq_wait2[trial_idx,:,:]
+#         y = block_tran[trial_idx]
+#         outcome = self.outcome_all[state][trial_idx]
+#         # excitory.
+#         x = neu_seq[:,(self.labels==-1)*self.significance[state],:].copy()
+#         self.plot_low_dynamics(axs[0], x, y, outcome, ['ep1','ep2'], reward_only=True, cate=-1)
+
         idx = self.epoch_all[state] != -1
         neu_seq = self.neu_seq_wait2[idx,:,:]
         y = self.delay_all[state][idx]
@@ -519,6 +798,7 @@ class plotter_L7G8_model(plotter_utils):
         # excitory.
         x = neu_seq[:,(self.labels==-1)*self.significance[state],:].copy()
         self.plot_low_dynamics(axs[0], x, y, outcome, ['ep1','ep2'], cate=-1)
+
         axs[0].set_title('PCA dynamics since WaitForPush2 (exc)')
        
 
@@ -531,6 +811,15 @@ class plotter_VIPG8_model(plotter_utils):
         for i in range(len(self.state_all)):
             if not np.isnan(np.sum(self.neu_seq_all[i])):
                 # find valid trial indice and block epoch indice.
+#                 trial_idx, block_tran = get_block_epoch(self.delay_all[i])
+#                 if ep == 'all':
+#                     idx = trial_idx
+#                     reward_only = True
+#                 if ep == 'early':
+#                     idx = trial_idx * block_tran==0
+#                     reward_only = False
+#                 if ep == 'late':
+#                     idx = trial_idx * block_tran==1
                 if ep == 'all':
                     idx = self.epoch_all[i] != -1
                     reward_only = True
@@ -540,6 +829,7 @@ class plotter_VIPG8_model(plotter_utils):
                 if ep == 'late':
                     idx = self.epoch_all[i] == 0
                     reward_only = False
+                    
                 neu_seq = self.neu_seq_all[i][idx,:,:]
                 delay = self.delay_all[i][idx]
                 outcome = self.outcome_all[i][idx]
@@ -548,9 +838,17 @@ class plotter_VIPG8_model(plotter_utils):
                 self.plot_pop_decode_box(
                     axs[0], x, delay, outcome, i + self.offset[1], c_inh,
                     reward_only=reward_only)
+#                 self.plot_pop_decode_box(
+#                     axs[0], x, delay, outcome, i + self.offset[1], c_inh,
+#                     chance=True, reward_only=reward_only)
+#                 # outcome percentage.
+#                 self.plot_class_outcome_pc(axs[1], delay, outcome, i, reward_only=reward_only)
+#         axs[0].plot([], color=c_inh, label='inh')
+#         axs[0].plot([], color=self.c_chance, alpha=0.5, label='shuffle')
                 # outcome percentage.
                 self.plot_class_outcome_pc(axs[1], delay, outcome, i, reward_only=reward_only)
         axs[0].plot([], color=c_inh, label='inh')
+      
         adjust_layout_decode_box(axs[0], self.state_all)
         axs[0].set_xlabel('state [{},{}] ms window'.format(self.win[0], self.win[1]))
         for i in range(len(self.states)):
@@ -562,6 +860,17 @@ class plotter_VIPG8_model(plotter_utils):
         for i in range(len(self.state_all)):
             if not np.isnan(np.sum(self.neu_seq_all[i])):
                 # find valid trial indice and block epoch indice.
+#                 trial_idx, block_tran = get_block_epoch(self.delay_all[i])
+#                 if block_type == 'all':
+#                     idx = trial_idx
+#                 if block_type == 'short':
+#                     idx = trial_idx * self.delay_all[i]==0
+#                 if block_type == 'long':
+#                     idx = trial_idx * self.delay_all[i]==1
+#                 # take valid trials.
+#                 neu_seq = self.neu_seq_all[i][idx,:,:]
+#                 block_tran = block_tran[idx]
+
                 if block_type == 'all':
                     idx = self.delay_all[i] != -1
                 if block_type == 'short':
@@ -575,6 +884,16 @@ class plotter_VIPG8_model(plotter_utils):
                 # inhibitory.
                 x = neu_seq[:,(self.labels==1)*self.significance[i],:].copy()
                 self.plot_pop_decode_box(
+
+#                     axs[0], x, block_tran, outcome, i + self.offset[1], c_inh)
+#                 self.plot_pop_decode_box(
+#                     axs[0], x, block_tran, outcome, i + self.offset[1], c_inh,
+#                     chance=True)
+#                 # outcome percentage.
+#                 self.plot_class_outcome_pc(axs[1], block_tran, outcome, i)
+#         axs[0].plot([], color=c_inh, label='inh')
+#         axs[0].plot([], color=self.c_chance, alpha=0.5, label='shuffle')
+
                     axs[0], x, epoch, outcome, i + self.offset[1], c_inh)
                 # outcome percentage.
                 self.plot_class_outcome_pc(axs[1], epoch, outcome, i)
@@ -587,6 +906,27 @@ class plotter_VIPG8_model(plotter_utils):
     def block_type_population_pca(self, axs):
         state = 4
         # find valid trial indice and block epoch indice.
+
+#         trial_idx, _ = get_block_epoch(self.delay_all[state])
+#         neu_seq = self.neu_seq_all[state][trial_idx,:,:]
+#         y = self.delay_all[state][trial_idx]
+#         outcome = self.outcome_all[state][trial_idx]
+#         # inhibitory.
+#         x = neu_seq[:,(self.labels==1)*self.significance[state],:].copy()
+#         self.plot_state_pca(axs[1], x, y, outcome, ['short','long'], reward_only=True, cate=1)
+#         axs[0].set_title('PCA of block decoding features at WaitForPush2 (reward) (inh)')
+
+#     def block_tran_population_pca(self, axs):
+#         state = 4
+#         # find valid trial indice and block epoch indice.
+#         trial_idx, block_tran = get_block_epoch(self.delay_all[state])
+#         neu_seq = self.neu_seq_all[state][trial_idx,:,:]
+#         y = block_tran[trial_idx]
+#         outcome = self.outcome_all[state][trial_idx]
+#         # inhibitory.
+#         x = neu_seq[:,(self.labels==1)*self.significance[state],:].copy()
+#         self.plot_state_pca(axs[1], x, y, outcome, ['ep1','ep2'], reward_only=True, cate=1)
+
         idx = self.epoch_all[state] != -1
         neu_seq = self.neu_seq_all[state][idx,:,:]
         y = self.delay_all[state][idx]
@@ -611,6 +951,27 @@ class plotter_VIPG8_model(plotter_utils):
     def block_type_dynamics(self, axs):
         state = 4
         # find valid trial indice and block epoch indice.
+
+#         trial_idx, _ = get_block_epoch(self.delay_all[state])
+#         neu_seq = self.neu_seq_wait2[trial_idx,:,:]
+#         y = self.delay_all[state][trial_idx]
+#         outcome = self.outcome_all[state][trial_idx]
+#         # inhibitory.
+#         x = neu_seq[:,(self.labels==1)*self.significance[state],:].copy()
+#         self.plot_low_dynamics(axs[1], x, y, outcome, ['short','long'], reward_only=True, cate=1)
+#         axs[0].set_title('PCA dynamics since WaitForPush2 (inh)')
+    
+#     def block_tran_dynamics(self, axs):
+#         state = 4
+#         # find valid trial indice and block epoch indice.
+#         trial_idx, block_tran = get_block_epoch(self.delay_all[state])
+#         neu_seq = self.neu_seq_wait2[trial_idx,:,:]
+#         y = block_tran[trial_idx]
+#         outcome = self.outcome_all[state][trial_idx]
+#         # inhibitory.
+#         x = neu_seq[:,(self.labels==1)*self.significance[state],:].copy()
+#         self.plot_low_dynamics(axs[1], x, y, outcome, ['ep1','ep2'], reward_only=True, cate=1)
+
         idx = self.epoch_all[state] != -1
         neu_seq = self.neu_seq_wait2[idx,:,:]
         y = self.delay_all[state][idx]

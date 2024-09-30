@@ -1,3 +1,5 @@
+import numpy as np
+
 # compute spike triggered average.
 def get_sta(
         dff,

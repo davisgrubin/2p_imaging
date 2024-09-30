@@ -53,6 +53,7 @@
 - Added class method for plotting one series of figs.
 - Rewritten plotting codes.
 - Finished visualization for VIPG8 and L7G8.
+- Finished visualization for VIPG8 and L7G8.
 
 ## 2024.09.09
 - Added trial type and block epoch labeling in when reading neural_trials.

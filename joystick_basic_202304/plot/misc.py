@@ -46,9 +46,13 @@ def plot_inh_exc_label_pc(ax, labels):
 # significant neurons ratio.
 def plot_significance(ax, significance, labels):
     width = 0.2
+
+#     sig = ['vis', 'push', 'retract', 'wait',
+
     sig = ['vis1', 'push1', 'retract1',
            'vis2', 'push2', 'retract2',
            'reward', 'punish', 'lick']
+  
     _, _, c_exc, _ = get_roi_label_color([-1], 0)
     _, _, c_inh, _ = get_roi_label_color([1], 0)
     for i in range(len(sig)):
@@ -64,11 +68,20 @@ def plot_significance(ax, significance, labels):
             i+width/2, r1_inh/(r0_inh+r1_inh),
             bottom=0,
             width=width, color=c_inh)
+
+#     ax.set_title('percentage of neuron with significant window response')
+#     ax.tick_params(tick1On=False)
+#     ax.spines['left'].set_visible(False)
+#     ax.spines['right'].set_visible(False)
+#     ax.yaxis.grid(True)
+#     ax.set_ylabel('percentage')
+
     ax.set_title('fraction of neuron with significant window response')
     ax.tick_params(tick1On=False)
     ax.spines['left'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.set_ylabel('fraction')
+
     ax.set_xlim([-1,len(sig)+1])
     ax.set_ylim([0,1])
     ax.set_xticks(np.arange(len(sig)))
@@ -79,6 +92,14 @@ def plot_significance(ax, significance, labels):
 
 # roi significance label.
 def plot_roi_significance(ax, significance, roi_id):
+
+#     labels = ['vis', 'push', 'retract', 'wait',
+#               'reward', 'punish', 'lick']
+#     respon = [significance['r_vis'][roi_id],
+#               significance['r_push'][roi_id],
+#               significance['r_retract'][roi_id],
+#               significance['r_wait'][roi_id],
+
     labels = ['vis1', 'push1', 'retract1',
               'vis2', 'push2', 'retract2', 
               'reward', 'punish', 'lick']
@@ -88,6 +109,7 @@ def plot_roi_significance(ax, significance, roi_id):
               significance['r_vis2'][roi_id],
               significance['r_push2'][roi_id],
               significance['r_retract2'][roi_id],
+
               significance['r_reward'][roi_id],
               significance['r_punish'][roi_id],
               significance['r_lick'][roi_id]]
