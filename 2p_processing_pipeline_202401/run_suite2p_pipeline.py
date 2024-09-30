@@ -135,6 +135,11 @@ def process_vol(args):
             vol_led = df_vol[' Input 7'].to_numpy()
         else:
             vol_led = np.zeros_like(vol_time)
+        # AI8: 2p stimulation.
+        if ' Input 8' in df_vol.columns.tolist():
+            vol_2p_stim = df_vol[' Input 8'].to_numpy()
+        else:
+            vol_2p_stim = np.zeros_like(vol_time)
         vol = {
             'vol_time'     : vol_time,
             'vol_start'    : vol_start,
@@ -144,7 +149,8 @@ def process_vol(args):
             'vol_stim_aud' : vol_stim_aud,
             'vol_flir'     : vol_flir,
             'vol_pmt'      : vol_pmt,
-            'vol_led'      : vol_led
+            'vol_led'      : vol_led,
+            'vol_2p_stim'  : vol_2p_stim,
             }
         return vol
 
@@ -190,6 +196,7 @@ def process_vol(args):
         grp['vol_flir']      = vol['vol_flir']
         grp['vol_pmt']       = vol['vol_pmt']
         grp['vol_led']       = vol['vol_led']
+        grp['vol_2p_stim']   = vol['vol_2p_stim']
         f.close()
 
     # run processing.

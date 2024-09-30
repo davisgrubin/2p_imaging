@@ -27,11 +27,11 @@ def read_raw_voltages(ops):
         vol_start = np.array(f['raw']['vol_start_bin'])
         vol_stim_vis = np.array(f['raw']['vol_stim_bin'])
         vol_img = np.array(f['raw']['vol_img_bin'])
-        vol_hifi = None
-        vol_stim_aud = None
-        vol_flir = None
-        vol_pmt = None
-        vol_led = None
+        vol_hifi = np.zeros_like(vol_time)
+        vol_stim_aud = np.zeros_like(vol_time)
+        vol_flir = np.zeros_like(vol_time)
+        vol_pmt = np.zeros_like(vol_time)
+        vol_led = np.zeros_like(vol_time)
     f.close()
     return [vol_time, vol_start, vol_stim_vis, vol_img, 
             vol_hifi, vol_stim_aud, vol_flir,
@@ -79,11 +79,14 @@ def read_neural_trials(ops):
         'r')
     neural_trials = dict()
     neural_trials['time'] = np.array(f['neural_trials']['time'])
-    neural_trials['stim'] = np.array(f['neural_trials']['stim'])
     neural_trials['dff'] = np.array(f['neural_trials']['dff'])
-    neural_trials['vol_stim'] = np.array(f['neural_trials']['vol_stim'])
-    neural_trials['vol_time'] = np.array(f['neural_trials']['vol_time'])
     neural_trials['stim_labels'] = np.array(f['neural_trials']['stim_labels'])
+    neural_trials['vol_time'] = np.array(f['neural_trials']['vol_time'])
+    neural_trials['vol_stim_vis'] = np.array(f['neural_trials']['vol_stim_vis'])
+    neural_trials['vol_stim_aud'] = np.array(f['neural_trials']['vol_stim_aud'])
+    neural_trials['vol_flir'] = np.array(f['neural_trials']['vol_flir'])
+    neural_trials['vol_pmt'] = np.array(f['neural_trials']['vol_pmt'])
+    neural_trials['vol_led'] = np.array(f['neural_trials']['vol_led'])
     f.close()
     return neural_trials
 

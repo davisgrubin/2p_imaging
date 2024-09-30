@@ -93,8 +93,8 @@ class plotter_all_masks:
         func_img = adjust_contrast(func_img)
         if with_mask:
             x_all, y_all = np.where(find_boundaries(self.masks))
-            for x, y in zip(x_all, y_all):
-                func_img[x, y, :] = np.array([255, 255, 255])
+            for x,y in zip(x_all, y_all):
+                func_img[x,y,:] = np.array([255,255,255])
         ax.matshow(func_img)
         adjust_layout(ax)
         ax.set_title(t)
@@ -160,16 +160,24 @@ class plotter_all_masks:
         anat_img = adjust_contrast(anat_img)
         if with_mask:
             x_all, y_all = np.where(find_boundaries(self.masks))
-            for x, y in zip(x_all, y_all):
-                anat_img[x, y, :] = np.array([255, 255, 255])
-            x_all, y_all = np.where(find_boundaries(
-                self.labeled_masks_img[:, :, 0]))
-            for x, y in zip(x_all, y_all):
-                anat_img[x, y, :] = np.array([255, 255, 0])
-            x_all, y_all = np.where(find_boundaries(
-                self.unsure_masks_img[:, :, 0]))
-            for x, y in zip(x_all, y_all):
-                anat_img[x, y, :] = np.array([0, 196, 255])
+#             for x, y in zip(x_all, y_all):
+#                 anat_img[x, y, :] = np.array([255, 255, 255])
+#             x_all, y_all = np.where(find_boundaries(
+#                 self.labeled_masks_img[:, :, 0]))
+#             for x, y in zip(x_all, y_all):
+#                 anat_img[x, y, :] = np.array([255, 255, 0])
+#             x_all, y_all = np.where(find_boundaries(
+#                 self.unsure_masks_img[:, :, 0]))
+#             for x, y in zip(x_all, y_all):
+#                 anat_img[x, y, :] = np.array([0, 196, 255])
+            for x,y in zip(x_all, y_all):
+                anat_img[x,y,:] = np.array([255,255,255])
+            x_all, y_all = np.where(find_boundaries(self.labeled_masks_img[:,:,0]))
+            for x,y in zip(x_all, y_all):
+                anat_img[x,y,:] = np.array([255,255,0])
+            x_all, y_all = np.where(find_boundaries(self.unsure_masks_img[:,:,0]))
+            for x,y in zip(x_all, y_all):
+                anat_img[x,y,:] = np.array([0,196,255])
         ax.matshow(anat_img)
         adjust_layout(ax)
         ax.set_title('anatomy channel mean image')
@@ -191,10 +199,16 @@ class plotter_all_masks:
         super_img[:, :, 1] = adjust_contrast(f)
         super_img = adjust_contrast(super_img)
         if with_mask:
-            x_all, y_all = np.where(find_boundaries(
-                self.labeled_masks_img[:, :, 0]))
-            for x, y in zip(x_all, y_all):
-                super_img[x, y, :] = np.array([255, 255, 255])
+
+#             x_all, y_all = np.where(find_boundaries(
+#                 self.labeled_masks_img[:, :, 0]))
+#             for x, y in zip(x_all, y_all):
+#                 super_img[x, y, :] = np.array([255, 255, 255])
+
+            x_all, y_all = np.where(find_boundaries(self.labeled_masks_img[:,:,0]))
+            for x,y in zip(x_all, y_all):
+                super_img[x,y,:] = np.array([255,255,255])
+
         ax.matshow(super_img)
         adjust_layout(ax)
         ax.set_title('channel images superimpose')
@@ -278,8 +292,8 @@ class plotter_all_masks:
         img = adjust_contrast(img)
         if with_mask:
             x_all, y_all = np.where(find_boundaries(roi_masks))
-            for x, y in zip(x_all, y_all):
-                img[x, y, :] = np.array([255, 255, 255])
+            for x,y in zip(x_all, y_all):
+                img[x,y,:] = np.array([255,255,255])
         ax.matshow(img)
         adjust_layout(ax)
         ax.set_title(t)
@@ -295,8 +309,13 @@ class plotter_all_masks:
         img = adjust_contrast(img)
         if with_mask:
             x_all, y_all = np.where(find_boundaries(roi_masks))
-            for x, y in zip(x_all, y_all):
-                img[x, y, :] = np.array([255, 255, 255])
+
+#             for x, y in zip(x_all, y_all):
+#                 img[x, y, :] = np.array([255, 255, 255])
+
+            for x,y in zip(x_all, y_all):
+                img[x,y,:] = np.array([255,255,255])
+
         ax.matshow(img)
         adjust_layout(ax)
         ax.set_title('anatomy channel mean image')
@@ -314,11 +333,19 @@ class plotter_all_masks:
         r = self.roi_row[roi_id]
         c = self.roi_col[roi_id]
         super_img = super_img[r:r+self.size, c:c+self.size, :]
-        roi_masks = (self.masks[r:r+self.size, c:c+self.size] == (roi_id+1))*1
+
+#         roi_masks = (self.masks[r:r+self.size, c:c+self.size] == (roi_id+1))*1
+#         if with_mask:
+#             x_all, y_all = np.where(find_boundaries(roi_masks))
+#             for x, y in zip(x_all, y_all):
+#                 super_img[x, y, :] = np.array([255, 255, 255])
+
+        roi_masks = (self.masks[r:r+self.size, c:c+self.size]==(roi_id+1))*1
         if with_mask:
             x_all, y_all = np.where(find_boundaries(roi_masks))
-            for x, y in zip(x_all, y_all):
-                super_img[x, y, :] = np.array([255, 255, 255])
+            for x,y in zip(x_all, y_all):
+                super_img[x,y,:] = np.array([255,255,255])
+
         ax.matshow(super_img)
         adjust_layout(ax)
         ax.set_title('channel images superimpose')

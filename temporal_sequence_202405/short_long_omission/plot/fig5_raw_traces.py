@@ -132,14 +132,14 @@ def plot_VIPG8_example_traces(
 # ROI raw traces.
 def plot_roi_raw_trace(
         axs, roi_id, max_ms,
-        labels, dff, vol_img_bin, vol_stim_bin, vol_time,
+        labels, dff,
+        vol_img, vol_stim_vis, vol_pmt, vol_led, vol_time,
         ):
-    time_img = get_img_time(vol_time, vol_img_bin)
+    time_img = get_img_time(vol_time, vol_img)
     upper = np.max(dff[roi_id, :])
     lower = np.min(dff[roi_id, :])
     color = ['seagreen', 'dodgerblue', 'coral']
     category = ['excitory', 'unsure', 'inhibitory']
-    grating_color = ['#989A9C', '#F7D08D', '#BF83A5', '#8684B0']
     for i in range(len(axs)):
         start = i * max_ms
         end   = (i+1) * max_ms
@@ -148,12 +148,13 @@ def plot_roi_raw_trace(
         sub_vol_time     = vol_time[sub_vol_time_idx]
         sub_time_img     = time_img[sub_time_img_idx]
         sub_dff          = dff[roi_id, sub_time_img_idx]
-        sub_vol_stim_bin = vol_stim_bin[sub_vol_time_idx]
-        axs[i].fill_between(
+        sub_vol_stim_bin = vol_stim_vis[sub_vol_time_idx]
+        axs[i].plot(
             sub_vol_time,
-            lower, upper,
-            where=(sub_vol_stim_bin!=0),
-            color=grating_color[0], step='mid', label='stim')
+            sub_vol_stim_bin,
+            color='grey',
+            label='vis',
+            lw=0.5)
         axs[i].plot(
             sub_time_img,
             sub_dff,

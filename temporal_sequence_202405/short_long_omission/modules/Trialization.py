@@ -59,8 +59,8 @@ def correct_time_img_center(time_img):
 
 # get stimulus sequence labels.
 
-def get_stim_labels(bpod_sess_data, vol_time, vol_stim_bin):
-    stim_time_up, stim_time_down = get_trigger_time(vol_time, vol_stim_bin)
+def get_stim_labels(bpod_sess_data, vol_time, vol_stim_vis):
+    stim_time_up, stim_time_down = get_trigger_time(vol_time, vol_stim_vis)
     stim_labels = np.zeros((len(stim_time_up), 7))
     # row 0: stim start.
     # row 1: stim end.
@@ -79,77 +79,13 @@ def get_stim_labels(bpod_sess_data, vol_time, vol_stim_bin):
     return stim_labels
 
 
-# align the stimulus sequence with fluorescence signal.
-
-def align_stim(
-        vol_time,
-        time_neuro,
-        vol_stim_bin,
-        bpod_sess_data,
-        ):
-    # find the rising and falling time of stimulus.
-    stim_time_up, stim_time_down = get_trigger_time(
-        vol_time, vol_stim_bin)
-    # avoid going up but not down again at the end.
-    stim_time_up = stim_time_up[:len(stim_time_down)]
-    # assign the start and end time to fluorescence frames.
-    stim_start = []
-    stim_end = []
-    for i in range(len(stim_time_up)):
-        # find the nearest frame that stimulus start or end.
-        stim_start.append(
-            np.argmin(np.abs(time_neuro - stim_time_up[i])))
-        stim_end.append(
-            np.argmin(np.abs(time_neuro - stim_time_down[i])))
-    # reconstruct stimulus sequence.
-    stim = np.zeros(len(time_neuro))
-    for i in range(len(stim_start)):
-        stim[stim_start[i]:stim_end[i]] = bpod_sess_data['img_seq_label'][i]
-    return stim
-
-
-# compute when shutter is closed.
-
-def get_pmt_close(vol_img, vol_pmt):
-    # compute 2p image triggered time.
-    diff_vol_img = np.diff(vol_img, prepend=0)
-    vol_img_idx_up = np.where(diff_vol_img == 1)[0]
-    # shutter is closed if vol_pmt == 1.
-    pmt_close = np.zeros_like(vol_img_idx_up)
-    pmt_close[vol_pmt[vol_img_idx_up] == 1] = 1
-    pmt_close = pmt_close.astype('bool')
-    return pmt_close
-    
-
-# interpolate dff when shutter is closed.
-
-def dff_interpolation(dff, vol_time, vol_img, vol_pmt):
-    plt.plot(vol_time, vol_led*2)
-    plt.plot(vol_time, vol_pmt*3)
-    plt.plot(vol_time, vol_img*4)
-    plt.plot(time_img, pmt_close)
-    plt.plot(time_img, dff[5,:])
-    win = 5
-    pmt_close = get_pmt_close(vol_img, vol_pmt)
-    for i, close in enumerate(pmt_close):
-        if close:
-            # find elements wihtin window.
-            neigh_idx = np.zeros_like(pmt_close).astype('bool')
-            neigh_idx[i-win:i+win+1] = True
-            # find elements where shutter is not closed.
-            neigh_idx = neigh_idx * np.logical_not(pmt_close)
-            # compute mean and replace.
-            dff[:,i] = np.mean(dff[:,neigh_idx], axis=1)
-    return dff
-
-
 # save trial neural data.
 
 def save_trials(
-        ops,
-        time_neuro, dff,
-        vol_stim, vol_time,
-        stim_labels
+        ops, time_neuro, dff, stim_labels,
+        vol_time, vol_stim_vis, 
+        vol_stim_aud, vol_flir,
+        vol_pmt, vol_led
         ):
     # file structure:
     # ops['save_path0'] / neural_trials.h5
@@ -164,12 +100,15 @@ def save_trials(
         os.path.join(ops['save_path0'], 'neural_trials.h5'),
         'w')
     grp = f.create_group('neural_trials')
-    grp['time'] = time_neuro
-    grp['dff'] = dff
-    grp['vol_stim'] = vol_stim
-    grp['vol_time'] = vol_time
-    grp['vol_time'] = vol_time
-    grp['stim_labels'] = stim_labels
+    grp['time']         = time_neuro
+    grp['dff']          = dff
+    grp['stim_labels']  = stim_labels
+    grp['vol_time']     = vol_time
+    grp['vol_stim_vis'] = vol_stim_vis
+    grp['vol_stim_aud'] = vol_stim_aud
+    grp['vol_flir']     = vol_flir
+    grp['vol_pmt']      = vol_pmt
+    grp['vol_led']      = vol_led
     f.close()
 
 
@@ -193,9 +132,13 @@ def run(ops):
     # correct imaging timing.
     time_neuro = correct_time_img_center(time_img)
     
-    # stimulus sequence labeling
+    # stimulus sequence labeling.
     stim_labels = get_stim_labels(bpod_sess_data, vol_time, vol_stim_vis)
-
+    
     # save the final data.
     print('Saving trial data')
-    save_trials(ops, time_neuro, dff, vol_stim_vis, vol_time, stim_labels)
+    save_trials(
+        ops, time_neuro, dff, stim_labels,
+        vol_time, vol_stim_vis, 
+        vol_stim_aud, vol_flir,
+        vol_pmt, vol_led)

@@ -66,13 +66,21 @@ if __name__ == "__main__":
          range_footprint] = get_qc_args(args)
         ops = read_ops(args.session_data_path)
     else:
-        session_data_path = '/Users/aryanahri/desktop/FN16_P_20240626_js_t'
+        session_data_path = 'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240712_seq1423_DCNOPTO_t'
         ops = read_ops(session_data_path)
-        range_skew = [-5, 5]
+        '''
+        range_skew = [1,2]
+        max_connect = 5
+        max_aspect = 55
+        range_footprint = [1,2]
+        range_compact = [1.2,5]
+        diameter = 6
+        '''
+        range_skew = [0.5,5]
         max_connect = 1
-        max_aspect = 5
-        range_footprint = [1, 2]
-        range_compact = [0, 1.1]
+        max_aspect = 1.2
+        range_footprint = [1,2]
+        range_compact = [0,1.04]
         diameter = 6
     '''
     QualControlDataIO.run(
@@ -86,4 +94,4 @@ if __name__ == "__main__":
 
     LabelExcInh.run(ops, diameter)
 
-    DffTraces.run(ops)
+    DffTraces.run(ops, correct_pmt=True)
