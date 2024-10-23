@@ -6,6 +6,19 @@ import numpy as np
 import scipy.io as sio
 
 
+# read ops.npy
+
+def read_ops(list_session_data_path):
+    list_ops = []
+    for session_data_path in list_session_data_path:
+        ops = np.load(
+            os.path.join(session_data_path, 'suite2p', 'plane0','ops.npy'),
+            allow_pickle=True).item()
+        ops['save_path0'] = os.path.join(session_data_path)
+        list_ops.append(ops)
+    return list_ops
+
+
 # read raw_voltages.h5.
 
 def read_raw_voltages(ops):
@@ -155,3 +168,54 @@ def read_bpod_mat_data(ops):
         'opto_types'       : opto_types,
         }
     return bpod_sess_data
+
+
+# retract all session results.
+
+def read_all(list_ops, sig_tag):
+    list_labels = []
+    list_masks = []
+    list_vol = []
+    list_dff = []
+    list_neural_trials = []
+    list_move_offset = []
+    list_significance = []
+    for ops in list_ops:
+        # masks.
+        [labels,
+         masks,
+         mean_func, max_func,
+         mean_anat, masks_anat] = read_masks(ops)
+        # voltages.
+        [vol_time, vol_start, vol_stim_vis, vol_img, 
+         vol_hifi, vol_stim_aud, vol_flir,
+         vol_pmt, vol_led] = read_raw_voltages(ops)
+        # dff.
+        dff = read_dff(ops)
+        # trials.
+        neural_trials = read_neural_trials(ops)
+        # movement offset.
+        [xoff, yoff] = read_move_offset(ops)
+        # significance.
+        significance = read_significance(ops)
+        if sig_tag == 'all':
+            significance['r_normal']  = np.ones_like(significance['r_normal']).astype('bool')
+            significance['r_change']  = np.ones_like(significance['r_change']).astype('bool')
+            significance['r_oddball'] = np.ones_like(significance['r_oddball']).astype('bool')
+        # append to list.
+        list_labels.append(labels)
+        list_masks.append(
+            [masks,
+             mean_func, max_func,
+             mean_anat, masks_anat])
+        list_vol.append(
+            [vol_time, vol_start, vol_stim_vis, vol_img, 
+             vol_hifi, vol_stim_aud, vol_flir,
+             vol_pmt, vol_led])
+        list_dff.append(dff)
+        list_neural_trials.append(neural_trials)
+        list_move_offset.append([xoff, yoff])
+        list_significance.append(significance)
+    return [list_labels, list_masks, list_vol, list_dff, 
+            list_neural_trials, list_move_offset, list_significance]
+        

@@ -781,130 +781,63 @@ class plotter_VIPTD_G8_align_odd(plotter_utils):
         isi_labels = ['0-600', '600-1200', '1200-1800', '1800-2400']
         self.plot_omi_post_isi_box(ax, self.idx_post_long, bins, isi_labels, cate=1)
         ax.set_title('inhibitory post omi stim response and proceeding isi (long)')
-        
-class plotter_VIPG8_align_odd(plotter_utils):
-    def __init__(self, neural_trials, labels):
-        super().__init__(neural_trials, labels)
-        self.labels = np.ones_like(labels)
-    
-    # response to pre omission stimulus.
-    def omi_normal_pre(self, ax):
-        self.plot_omi_normal_pre(ax, cate=1)
-        ax.set_title(
-            'response to pre omi stim of {} neurons'.format(
-            np.sum(self.labels==1)))
-    
-    # response to pre omission stimulus average across trial for short.
-    def omi_normal_pre_short_heatmap_neuron(self, ax):
-        idx = (self.stim_labels[:,2]==-1) * (self.stim_labels[:,3]==0)
-        neu_seq = self.neu_seq[idx,:,:]
-        self.plot_heatmap_neuron(ax, neu_seq)
-        ax.set_title('mean response to pre omi stim (short)')
-    
-    # response to pre omission stimulus average across trial for long.
-    def omi_normal_pre_long_heatmap_neuron(self, ax):
-        idx = (self.stim_labels[:,2]==-1) * (self.stim_labels[:,3]==1)
-        neu_seq = self.neu_seq[idx,:,:]
-        self.plot_heatmap_neuron(ax, neu_seq)
-        ax.set_title('mean response to pre omi stim (long)')
-    
-    # response to post omission stimulus.
-    def omi_normal_post(self, ax):
-        self.plot_omi_normal_post(ax, cate=1)
-        ax.set_title(
-            'response to post omi stim of {} neurons'.format(
-            np.sum(self.labels==1)))
-    
-    # response to post omission stimulus average across trial for short.
-    def omi_normal_post_short_heatmap_neuron(self, ax):
-        idx_post = np.diff(self.stim_labels[:,2]==-1, prepend=0)
-        idx_post[idx_post==1] = 0
-        idx_post[idx_post==-1] = 1
-        idx_post = idx_post.astype('bool')
-        idx = idx_post * (self.stim_labels[:,3]==0)
-        neu_seq = self.neu_seq[idx,:,:]
-        self.plot_heatmap_neuron(ax, neu_seq)
-        ax.set_title('mean response to post omi stim (short)')
-    
-    # response to post omission stimulus average across trial for long.
-    def omi_normal_post_long_heatmap_neuron(self, ax):
-        idx_post = np.diff(self.stim_labels[:,2]==-1, prepend=0)
-        idx_post[idx_post==1] = 0
-        idx_post[idx_post==-1] = 1
-        idx_post = idx_post.astype('bool')
-        idx = idx_post * (self.stim_labels[:,3]==1)
-        neu_seq = self.neu_seq[idx,:,:]
-        self.plot_heatmap_neuron(ax, neu_seq)
-        ax.set_title('mean response to post omi stim (long)')
-    
-    # omission response comparison between pre and post for short. 
-    def omi_normal_short(self, ax):
-        self.plot_omi_normal_shortlong(
-            ax, self.idx_pre_short, self.idx_post_short, cate=1)
-        ax.set_title('mean stim response around omi comparison (short)')
-    
-    # omission response comparison between pre and post for long. 
-    def omi_normal_long(self, ax):
-        self.plot_omi_normal_shortlong(
-            ax, self.idx_pre_long, self.idx_post_long, cate=1)
-        ax.set_title('mean stim response around omi comparison (long)')
-    
-    # response of quantification.
-    def omi_normal_box(self, ax):
-        self.plot_omi_normal_box(ax, cate=1)
-        ax.set_title(
-            'mean response comparison of {} neurons'.format(
-            np.sum(self.labels==1)))
-    
-    # response to short long context.
-    def omi_context(self, axs):
-        titles = [
-            'post omi stim response around img#1',
-            'post omi stim response around img#2',
-            'post omi stim response around img#3',
-            'post omi stim response around img#4']
-        for i in range(4):
-            self.plot_omi_context(axs[i], i+2, cate=1)
-            axs[i].set_title(titles[i])
-
-    # response to short long context quantification.
-    def omi_context_box(self, ax):
-        self.plot_omi_context_box(ax, cate=1)
-        ax.set_title('post omi stim response around different image')
 
 
 class plotter_L7G8_align_odd(plotter_utils):
-    def __init__(self, neural_trials, labels):
-        super().__init__(neural_trials, labels)
-        self.labels = -1*np.ones_like(labels)
+    def __init__(self, neural_trials, labels, significance):
+        super().__init__(neural_trials, labels, significance)
+    
+    def all_odd_normal(self, axs):
+        self.odd_normal_pre(axs[0])
+        self.odd_normal_post(axs[1])
+        self.odd_epoch_post_short(axs[3])
+        self.odd_epoch_post_long(axs[4])
     
     # response to pre omission stimulus.
-    def omi_normal_pre(self, ax):
-        self.plot_omi_normal_pre(ax, cate=-1)
-        ax.set_title(
-            'response to pre omi stim of {} ROIs'.format(
-            np.sum(self.labels==-1)))
-    
-    # response to pre omission stimulus average across trial for short.
-    def omi_normal_pre_short_heatmap_neuron(self, ax):
-        idx = (self.stim_labels[:,2]==-1) * (self.stim_labels[:,3]==0)
-        neu_seq = self.neu_seq[idx,:,:]
-        self.plot_heatmap_neuron(ax, neu_seq)
-        ax.set_title('mean response to pre omi stim (short)')
-    
-    # response to pre omission stimulus average across trial for long.
-    def omi_normal_pre_long_heatmap_neuron(self, ax):
-        idx = (self.stim_labels[:,2]==-1) * (self.stim_labels[:,3]==1)
-        neu_seq = self.neu_seq[idx,:,:]
-        self.plot_heatmap_neuron(ax, neu_seq)
-        ax.set_title('mean response to pre omi stim (long)')
+    def odd_normal_pre(self, ax):
+        self.plot_odd_normal_pre(ax, cate=-1)
+        ax.set_title('exitory response to pre omi stim')
     
     # response to post omission stimulus.
-    def omi_normal_post(self, ax):
-        self.plot_omi_normal_post(ax, cate=-1)
-        ax.set_title(
-            'response to post omi stim of {} ROIs'.format(
-            np.sum(self.labels==1)))
+    def odd_normal_post(self, ax):
+        self.plot_odd_normal_post(ax, cate=-1)
+        ax.set_title('response to post omi stim')
+
+    # response to post omission stimulus heatmap average across trial for short sorted by short.
+    def odd_normal_post_short_short_heatmap_neuron(self, ax):
+        idx_short = self.idx_post_short * pick_trial(self.stim_labels, None, [0], None, None, [0])
+        neu_short = self.neu_seq[idx_short,:,:].copy()
+        self.plot_heatmap_neuron(ax, neu_short, self.neu_time, neu_short)
+        ax.set_xlabel('time since post omi stim (ms)')
+        ax.set_title('response to post omi stim (short sorted by short)')
+    
+    # response to post omission stimulus heatmap average across trial for short sorted by long.
+    def odd_normal_post_short_long_heatmap_neuron(self, ax):
+        idx_short = self.idx_post_short * pick_trial(self.stim_labels, None, [0], None, None, [0])
+        idx_long  = self.idx_post_long  * pick_trial(self.stim_labels, None, [1], None, None, [0])
+        neu_short = self.neu_seq[idx_short,:,:].copy()
+        neu_long  = self.neu_seq[idx_long,:,:].copy()
+        self.plot_heatmap_neuron(ax, neu_short, self.neu_time, neu_long)
+        ax.set_xlabel('time since post omi stim (ms)')
+        ax.set_title('response to post omi stim (short sorted by long)')
+    
+    # response to post omission stimulus heatmap average across trial for long sorted by short.
+    def odd_normal_post_long_short_heatmap_neuron(self, ax):
+        idx_short = self.idx_post_short * pick_trial(self.stim_labels, None, [0], None, None, [0])
+        idx_long  = self.idx_post_long  * pick_trial(self.stim_labels, None, [1], None, None, [0])
+        neu_short = self.neu_seq[idx_short,:,:].copy()
+        neu_long  = self.neu_seq[idx_long,:,:].copy()
+        self.plot_heatmap_neuron(ax, neu_long, self.neu_time, neu_short)
+        ax.set_xlabel('time since post omi stim (ms)')
+        ax.set_title('response to post omi stim (long sorted by short)')
+    
+    # response to post omission stimulus heatmap average across trial for long sorted by long.
+    def odd_normal_post_long_long_heatmap_neuron(self, ax):
+        idx_long  = self.idx_post_long  * pick_trial(self.stim_labels, None, [1], None, None, [0])
+        neu_long  = self.neu_seq[idx_long,:,:].copy()
+        self.plot_heatmap_neuron(ax, neu_long, self.neu_time, neu_long)
+        ax.set_xlabel('time since post omi stim (ms)')
+        ax.set_title('response to post omi stim (long sorted by long)')
     
     # response to post omission stimulus average across trial for short.
     def omi_normal_post_short_heatmap_neuron(self, ax):
@@ -927,26 +860,60 @@ class plotter_L7G8_align_odd(plotter_utils):
         neu_seq = self.neu_seq[idx,:,:]
         self.plot_heatmap_neuron(ax, neu_seq)
         ax.set_title('mean response to post omi stim (long)')
+
+    # response to post omi stim across epoch for short.
+    def odd_epoch_post_short(self, ax):
+        colors = ['#969696', '#6BAED6', '#2171B5', '#504099']
+        self.plot_odd_epoch_post(ax, self.epoch_short, self.idx_post_short, colors, cate=-1)
+        ax.set_title(
+            'response across epoch (short)')
+    
+    # response to post omi stim across epoch for long.
+    def odd_epoch_post_long(self, ax):
+        colors = ['#969696', '#6BAED6', '#2171B5', '#504099']
+        self.plot_odd_epoch_post(ax, self.epoch_long, self.idx_post_long, colors, cate=-1)
+        ax.set_title('response across epoch (long)')
     
     # omission response comparison between pre and post for short. 
-    def omi_normal_short(self, ax):
-        self.plot_omi_normal_shortlong(
+    def odd_normal_short(self, ax):
+        self.plot_odd_normal_shortlong(
             ax, self.idx_pre_short, self.idx_post_short, cate=-1)
         ax.set_title('mean stim response around omi comparison (short)')
     
     # omission response comparison between pre and post for long. 
-    def omi_normal_long(self, ax):
-        self.plot_omi_normal_shortlong(
+    def odd_normal_long(self, ax):
+        self.plot_odd_normal_shortlong(
             ax, self.idx_pre_long, self.idx_post_long, cate=-1)
         ax.set_title('mean stim response around omi comparison (long)')
     
-    # response of quantification.
+    # response quantification.
     def omi_normal_box(self, ax):
         self.plot_omi_normal_box(ax, cate=-1)
-        ax.set_title(
-            'mean response comparison of {} neurons'.format(
-            np.sum(self.labels==1)))
+        ax.set_title('response comparison')
     
+    # response to post omi stim across epoch quantification.
+    def omi_epoch_post_box(self, ax):
+        self.plot_omi_epoch_post_box(ax, cate=-1)
+        ax.set_title('response on post omi stim across epoch')
+    
+    # response to post omi stim single trial heatmap for short.
+    def omi_post_short_heatmap_trials(self, ax):
+        neu_cate = self.neu_seq[:,self.labels==-1,:]
+        neu_cate = neu_cate[self.idx_post_short,:,:]
+        _, _, _, cmap = get_roi_label_color([-1], 0)
+        self.plot_heatmap_trials(ax, neu_cate, cmap)
+        ax.set_xlabel('time since post omi stim (ms)')
+        ax.set_title('single trial response to post omi stim (short)')
+    
+    # response to post omi stim single trial heatmap for short.
+    def omi_post_long_heatmap_trials(self, ax):
+        neu_cate = self.neu_seq[:,self.labels==-1,:]
+        neu_cate = neu_cate[self.idx_post_long,:,:]
+        _, _, _, cmap = get_roi_label_color([-1], 0)
+        self.plot_heatmap_trials(ax, neu_cate, cmap)
+        ax.set_xlabel('time since post omi stim (ms)')
+        ax.set_title('single trial response to post omi stim (long)')
+        
     # response to short long context.
     def omi_context(self, axs):
         titles = [
@@ -957,8 +924,42 @@ class plotter_L7G8_align_odd(plotter_utils):
         for i in range(4):
             self.plot_omi_context(axs[i], i+2, cate=-1)
             axs[i].set_title(titles[i])
-
+    
     # response to short long context quantification.
     def omi_context_box(self, ax):
         self.plot_omi_context_box(ax, cate=-1)
         ax.set_title('post omi stim response around different image')
+    
+    # response to post omi stim with proceeding isi for short.
+    def omi_post_isi_short(self, ax):
+        bins = [0, 600, 750, 900, 1500]
+        isi_labels = ['0-400', '400-800', '800-1200', '1200-1600']
+        colors = ['#969696', '#6BAED6', '#2171B5', '#504099']
+        self.plot_omi_post_isi(
+            ax, self.idx_post_short,
+            bins, isi_labels, colors, cate=-1)
+        ax.set_title('post omi stim response and proceeding isi (short)')
+    
+    # response to post omi stim with proceeding isi for short quantification.
+    def omi_post_isi_short_box(self, ax):
+        bins = [0, 600, 750, 900, 1500]
+        isi_labels = ['0-400', '400-800', '800-1200', '1200-1600']
+        self.plot_omi_post_isi_box(ax, self.idx_post_short, bins, isi_labels, cate=-1)
+        ax.set_title('post omi stim response and proceeding isi (short)')
+            
+    # response to post omi stim with proceeding isi for long.
+    def omi_post_isi_long(self, ax):
+        bins = [0, 600, 1200, 1800, 2400]
+        isi_labels = ['0-600', '600-1200', '1200-1800', '1800-2400']
+        colors = ['#969696', '#6BAED6', '#2171B5', '#504099']
+        self.plot_omi_post_isi(
+            ax, self.idx_post_long,
+            bins, isi_labels, colors, cate=-1)
+        ax.set_title('post omi stim response and proceeding isi (long)')
+    
+    # response to post omi stim with proceeding isi for long quantification.
+    def omi_post_isi_long_box(self, ax):
+        bins = [0, 600, 1200, 1800, 2400]
+        isi_labels = ['0-600', '600-1200', '1200-1800', '1800-2400']
+        self.plot_omi_post_isi_box(ax, self.idx_post_long, bins, isi_labels, cate=-1)
+        ax.set_title('post omi stim response and proceeding isi (long)')

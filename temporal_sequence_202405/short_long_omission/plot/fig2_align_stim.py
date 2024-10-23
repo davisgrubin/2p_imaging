@@ -325,7 +325,7 @@ class plotter_VIPTD_G8_align_stim(plotter_utils):
     def __init__(self, neural_trials, labels, significance):
         super().__init__(neural_trials, labels, significance)
     
-    def all_normal_exc(self, axs):
+    def all_normal(self, axs):
         self.normal_short_exc(axs[0])
         self.normal_short_exc_box(axs[1])
         self.normal_epoch_short_exc(axs[2])
@@ -367,7 +367,7 @@ class plotter_VIPTD_G8_align_stim(plotter_utils):
         self.change_prepost_inh(axs[0])
         self.change_prepost_inh_box(axs[1])
         
-    # excitory response to normal stimulus for short.
+    # response to normal stimulus for short.
     def normal_short_exc(self, ax):
         self.plot_normal(ax, 0, cate=-1)
         ax.set_title('excitory response to normal (short)')
@@ -556,68 +556,145 @@ class plotter_VIPTD_G8_align_stim(plotter_utils):
         ax.set_title('inhibitory response to pre & post change')
 
 class plotter_L7G8_align_stim(plotter_utils):
-    def __init__(self, neural_trials, labels):
-        super().__init__(neural_trials, labels)
-        self.labels = -1*np.ones_like(labels)
+    def __init__(self, neural_trials, labels, significance):
+        super().__init__(neural_trials, labels, significance)
+    
+    def all_normal(self, axs):
+        self.normal_short(axs[0])
+        self.normal_short_box(axs[1])
+        self.normal_epoch_short(axs[2])
+        self.normal_epoch_short_box(axs[3])
+        self.normal_long(axs[4])
+        self.normal_long_box(axs[5])
+        self.normal_epoch_long(axs[6])
+        self.normal_epoch_long_box(axs[7])
+    
+    def all_normal_heatmap(self, axs):
+        self.normal_short_short_heatmap_neuron(axs[0])
+        self.normal_short_long_heatmap_neuron(axs[1])
+        self.normal_long_short_heatmap_neuron(axs[2])
+        self.normal_long_long_heatmap_neuron(axs[3])
+    
+    def all_context(self, axs):
+        self.context(axs[0])
+        self.context_box(axs[1])
+    
+    def all_change(self, axs):
+        self.change_prepost(axs[0])
+        self.change_prepost_box(axs[1])
+    
+    # response to normal stimulus for short.
+    def normal_short(self, ax):
+        self.plot_normal(ax, 0, cate=-1)
+        ax.set_title('response to normal (short)')
         
-    # response to all stimulus.
-    def normal(self, ax):
-        self.plot_normal(ax, cate=-1)
-        ax.set_title('response to normal stimulus')
-    
-    # response to all stimulus quantification.
-    def normal_box(self, ax):
-        self.plot_normal_box(ax, cate=-1)
-        ax.set_title('response to normal stimulus')
-    
-    # response to image change in short block.
-    def change_short(self, ax):
-        self.plot_change(ax, 0, cate=-1)
-        ax.set_title('response to image change (short)')
-    
-    # response to image change in short block.
-    def change_long(self, ax):
-        self.plot_change(ax, 1, cate=-1)
-        ax.set_title('response to image change (long)')
-    
-    # response to image change quantification.
-    def change_box(self, ax):
-        self.plot_change_box(ax, cate=-1)
-        ax.set_title('response to image change')
+    # response to normal stimulus for long.
+    def normal_long(self, ax):
+        self.plot_normal(ax, 1, cate=-1)
+        ax.set_title('response to normal (long)')
+        
+    # response to normal stimulus for short quantification.
+    def normal_short_box(self, ax):
+        self.plot_normal_box(ax, 0, cate=-1)
+        ax.set_title('response to normal (short)')
+        
+    # response to normal stimulus for long quantification.
+    def normal_long_box(self, ax):
+        self.plot_normal_box(ax, 1, cate=-1)
+        ax.set_title('response to normal (long)')
 
-    # response to image change average across trial.
-    def change_heatmap_neuron(self, ax):
-        neu_seq = self.neu_seq[self.stim_labels[:,2]<-1,:,:]
-        self.plot_heatmap_neuron(ax, neu_seq, self.neu_time, neu_seq)
-        ax.set_title('mean response to image change')
+    # response to normal stimulus with epoch for short.
+    def normal_epoch_short(self, ax):
+        colors = ['#969696', '#6BAED6', '#2171B5', '#504099']
+        self.plot_normal_epoch(ax, self.epoch_short, 0, colors, cate=-1)
+        ax.set_title('response to normal with epoch (short)')
+    
+    # response to normal stimulus with epoch for long.
+    def normal_epoch_long(self, ax):
+        colors = ['#969696', '#6BAED6', '#2171B5', '#504099']
+        self.plot_normal_epoch(ax, self.epoch_long, 1, colors, cate=-1)
+        ax.set_title('response to normal with epoch (long)')
+    
+    # response to normal stimulus with epoch for short quantification.
+    def normal_epoch_short_box(self, ax):
+        colors = ['#969696', '#6BAED6', '#2171B5', '#504099']
+        self.plot_normal_epoch_box(ax, self.epoch_short, 0, colors, cate=-1)
+        ax.set_title('response to normal with epoch (short)')
+    
+    # response to normal stimulus with epoch for long quantification.
+    def normal_epoch_long_box(self, ax):
+        colors = ['#969696', '#6BAED6', '#2171B5', '#504099']
+        self.plot_normal_epoch_box(ax, self.epoch_long, 1, colors, cate=-1)
+        ax.set_title('response to normal with epoch (long)')
+    
+    # response to normal stimulus heatmap average across trials for short sorted from short.
+    def normal_short_short_heatmap_neuron(self, ax):
+        idx_short = pick_trial(self.stim_labels, [2,3,4,5], [0], None, None, [0])
+        neu_short = self.neu_seq[idx_short,:,:].copy()
+        self.plot_heatmap_neuron(
+            ax, neu_short, self.neu_time, neu_short,
+            self.significance['r_normal'])
+        ax.set_xlabel('time since stim (ms)')
+        ax.set_title('response to normal (short sorted by short)')
+
+    # response to normal stimulus heatmap average across trials for short sorted from short.
+    def normal_short_long_heatmap_neuron(self, ax):
+        idx_short = pick_trial(self.stim_labels, [2,3,4,5], [0], None, None, [0])
+        idx_long  = pick_trial(self.stim_labels, [2,3,4,5], [1], None, None, [0])
+        neu_short = self.neu_seq[idx_short,:,:].copy()
+        neu_long  = self.neu_seq[idx_long,:,:].copy()
+        self.plot_heatmap_neuron(
+            ax, neu_short, self.neu_time, neu_long,
+            self.significance['r_normal'])
+        ax.set_xlabel('time since stim (ms)')
+        ax.set_title('response to normal (short sorted by long)')
         
+    # response to normal stimulus heatmap average across trials for short sorted from short.
+    def normal_long_short_heatmap_neuron(self, ax):
+        idx_short = pick_trial(self.stim_labels, [2,3,4,5], [0], None, None, [0])
+        idx_long  = pick_trial(self.stim_labels, [2,3,4,5], [1], None, None, [0])
+        neu_short = self.neu_seq[idx_short,:,:].copy()
+        neu_long  = self.neu_seq[idx_long,:,:].copy()
+        self.plot_heatmap_neuron(
+            ax, neu_long, self.neu_time, neu_short,
+            self.significance['r_normal'])
+        ax.set_xlabel('time since stim (ms)')
+        ax.set_title('response to normal (long sorted by short)')
+        
+    # response to normal stimulus heatmap average across trials for long sorted from long.
+    def normal_long_long_heatmap_neuron(self, ax):
+        idx_long  = pick_trial(self.stim_labels, [2,3,4,5], [1], None, None, [0])
+        neu_long  = self.neu_seq[idx_long,:,:].copy()
+        self.plot_heatmap_neuron(
+            ax, neu_long, self.neu_time, neu_long,
+            self.significance['r_normal'])
+        ax.set_xlabel('time since stim (ms)')
+        ax.set_title('response to normal (long sorted by long)')
+    
     # response to short long context.
     def context(self, axs):
         titles = [
+            'response to all image',
             'response to img#1',
             'response to img#2',
             'response to img#3',
-            'response to img#4',
-            'response to all image']
+            'response to img#4']
+        img_id = [[2,3,4,5], [2], [3], [4], [5]]
         for i in range(5):
-            self.plot_context(axs[i], i+1, cate=-1)
+            self.plot_context(axs[i], img_id[i], cate=-1)
             axs[i].set_title(titles[i])
     
-    # response to short long context quantification
+    # response to short long context quantification.
     def context_box(self, ax):
         self.plot_context_box(ax, cate=-1)
-        ax.set_title('response to different image')
-        
-    # response to all stimulus average across trial for short.
-    def context_all_short_heatmap_neuron(self, ax):
-        idx = (self.stim_labels[:,2]>0) * (self.stim_labels[:,3]==0)
-        neu_seq = self.neu_seq[idx,:,:]
-        self.plot_heatmap_neuron(ax, neu_seq, self.neu_time, neu_seq)
-        ax.set_title('mean response to normal stimulus (short)')
+        ax.set_title('response to all image')
     
-    # response to all stimulus average across trial for long.
-    def context_all_long_heatmap_neuron(self, ax):
-        idx = (self.stim_labels[:,2]>0) * (self.stim_labels[:,3]==1)
-        neu_seq = self.neu_seq[idx,:,:]
-        self.plot_heatmap_neuron(ax, neu_seq, self.neu_time, neu_seq)
-        ax.set_title('mean response to normal stimulus (long)')
+    # response to image change for all images.
+    def change_prepost(self, ax):
+        self.plot_change_prepost(ax, cate=-1)
+        ax.set_title('response to pre & post change')
+    
+    # excitoryresponse to image change for all images quantification.
+    def change_prepost_exc_box(self, ax):
+        self.plot_change_prepost_box(ax, cate=-1)
+        ax.set_title('excitory response to pre & post change')

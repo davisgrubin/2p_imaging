@@ -92,9 +92,6 @@ def save_significance(
     f.close()
     
 def run(ops):
-    print('===============================================')
-    print('============== significance test ==============')
-    print('===============================================')
     print('Aligning neural population response')
     neural_trials = read_neural_trials(ops)
     stim_labels = neural_trials['stim_labels'][1:-1,:]

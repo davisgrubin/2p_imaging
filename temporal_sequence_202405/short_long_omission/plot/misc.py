@@ -5,6 +5,16 @@ from plot.utils import get_roi_label_color
 
 # fig, ax = plt.subplots(1, 1, figsize=(6, 6))
 
+# used session names.
+def plot_sess_name(ax, list_session_data_path):
+    names = [p.split('/')[-1] for p in list_session_data_path]
+    for i, name in enumerate(names):
+        ax.text(0, len(names)-i-1, name, ha='left', va='center', fontsize=12)
+    ax.set_axis_off()
+    ax.set_xlim(0, 1)
+    ax.set_ylim(-10, len(names))
+    ax.set_title('used sessions for alignment')
+    
 # motion correction offsets.
 def plot_motion_offset_hist(ax, xoff, yoff):
     center = np.arange(-5,6)
@@ -29,7 +39,8 @@ def plot_motion_offset_hist(ax, xoff, yoff):
     ax.set_title('motion correction offset distribution')
 
 # inhibitory/excitory labels.
-def plot_inh_exc_label_pc(ax, labels):
+def plot_inh_exc_label_pc(ax, list_labels):
+    labels = np.concatenate(list_labels)
     exc = np.sum(labels==-1)
     uns = np.sum(labels==0)
     inh = np.sum(labels==1)
@@ -44,8 +55,16 @@ def plot_inh_exc_label_pc(ax, labels):
     ax.set_title('percentage of neuron labels')
 
 # significant neurons ratio.
-def plot_significance(ax, significance, labels):
-    width = 0.2
+def plot_significance(ax, list_significance, list_labels):
+    labels = np.concatenate(list_labels)
+    significance = {}
+    significance['r_normal'] = np.concatenate(
+        [list_significance[i]['r_normal'] for i in range(len(list_significance))])
+    significance['r_change'] = np.concatenate(
+        [list_significance[i]['r_change'] for i in range(len(list_significance))])
+    significance['r_oddball'] = np.concatenate(
+        [list_significance[i]['r_oddball'] for i in range(len(list_significance))])
+    width = 0.1
     sig = ['normal', 'change', 'oddball']
     _, _, c_exc, _ = get_roi_label_color([-1], 0)
     _, _, c_inh, _ = get_roi_label_color([1], 0)

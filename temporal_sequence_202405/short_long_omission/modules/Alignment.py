@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
-
+from tqdm import tqdm
 
 # cut sequence into the same length as the shortest one given pivots.
 def trim_seq(
@@ -20,11 +20,10 @@ def trim_seq(
                 for i in range(len(data))]
     return data
 
-
 # extract response around stimulus.
 def get_stim_response(
         neural_trials,
-        l_frames, r_frames, vol=True,
+        l_frames, r_frames,
         ):
     stim_labels = neural_trials['stim_labels']
     dff = neural_trials['dff']
@@ -33,15 +32,15 @@ def get_stim_response(
     vol_led = neural_trials['vol_led']
     vol_time = neural_trials['vol_time']
     # initialize list.
-    neu_seq  = []
-    neu_time = []
-    stim_seq  = []
+    neu_seq    = []
+    neu_time   = []
+    stim_seq   = []
     stim_value = []
-    stim_time = []
-    led_value = []
-    pre_isi = []
+    stim_time  = []
+    led_value  = []
+    pre_isi    = []
     # loop over stimulus.
-    for stim_id in range(1, stim_labels.shape[0]-1):
+    for stim_id in tqdm(range(1, stim_labels.shape[0]-1)):
         idx = np.argmin(np.abs(time - stim_labels[stim_id,0]))
         if idx > l_frames and idx < len(time)-r_frames:
             # signal response.
@@ -52,13 +51,15 @@ def get_stim_response(
             t = time[idx-l_frames : idx+r_frames] - time[idx]
             neu_time.append(t)
             # voltage.
-            if vol:
-                vol_t_c = np.argmin(np.abs(vol_time - time[idx]))
-                vol_t_l = np.argmin(np.abs(vol_time - time[idx-l_frames]))
-                vol_t_r = np.argmin(np.abs(vol_time - time[idx+r_frames]))
-                stim_time.append(vol_time[vol_t_l:vol_t_r] - vol_time[vol_t_c])
-                stim_value.append(vol_stim[vol_t_l:vol_t_r])
-                led_value.append(vol_led[vol_t_l:vol_t_r])
+            #vol_t_c = np.argmin(np.abs(vol_time - time[idx]))
+            #vol_t_l = np.argmin(np.abs(vol_time - time[idx-l_frames]))
+            #vol_t_r = np.argmin(np.abs(vol_time - time[idx+r_frames]))
+            vol_t_c = np.searchsorted(vol_time, time[idx])
+            vol_t_l = np.searchsorted(vol_time, time[idx-l_frames])
+            vol_t_r = np.searchsorted(vol_time, time[idx+r_frames])
+            stim_time.append(vol_time[vol_t_l:vol_t_r] - vol_time[vol_t_c])
+            stim_value.append(vol_stim[vol_t_l:vol_t_r])
+            led_value.append(vol_led[vol_t_l:vol_t_r])
             stim_seq.append(np.array(
                 [[stim_labels[stim_id-1,0]-stim_labels[stim_id,0],
                  stim_labels[stim_id-1,1]-stim_labels[stim_id,0]],
@@ -74,23 +75,54 @@ def get_stim_response(
     neu_time = trim_seq(neu_time, neu_time_zero)
     neu_seq = trim_seq(neu_seq, neu_time_zero)
     # correct voltage data centering at zero.
-    stim_time_zero = [np.argmin(np.abs(sv)) for sv in stim_value] if vol else None
-    stim_time = trim_seq(stim_time, stim_time_zero) if vol else None
-    stim_value = trim_seq(stim_value, stim_time_zero) if vol else None
-    led_value = trim_seq(led_value, stim_time_zero) if vol else None
+    stim_time_zero = [np.argmin(np.abs(sv)) for sv in stim_value]
+    stim_time = trim_seq(stim_time, stim_time_zero)
+    stim_value = trim_seq(stim_value, stim_time_zero)
+    led_value = trim_seq(led_value, stim_time_zero)
     # concatenate results.
     neu_seq    = np.concatenate(neu_seq, axis=0)
     neu_time   = [nt.reshape(1,-1) for nt in neu_time]
     neu_time   = np.concatenate(neu_time, axis=0)
     stim_seq   = np.concatenate(stim_seq, axis=0)
-    stim_value = [sv.reshape(1,-1) for sv in stim_value] if vol else None
-    stim_value = np.concatenate(stim_value, axis=0) if vol else None
-    stim_time  = [st.reshape(1,-1) for st in stim_time] if vol else None
-    stim_time  = np.concatenate(stim_time, axis=0) if vol else None
-    led_value  = [lv.reshape(1,-1) for lv in led_value] if vol else None
-    led_value  = np.concatenate(led_value, axis=0) if vol else None
+    stim_value = [sv.reshape(1,-1) for sv in stim_value]
+    stim_value = np.concatenate(stim_value, axis=0)
+    stim_time  = [st.reshape(1,-1) for st in stim_time]
+    stim_time  = np.concatenate(stim_time, axis=0)
+    led_value  = [lv.reshape(1,-1) for lv in led_value]
+    led_value  = np.concatenate(led_value, axis=0)
     pre_isi    = np.concatenate(pre_isi, axis=0)
     # get mean time stamps.
     neu_time  = np.mean(neu_time, axis=0)
-    stim_time = np.mean(stim_time, axis=0) if vol else None
+    stim_time = np.mean(stim_time, axis=0)
     return [neu_seq, neu_time, stim_seq, stim_value, stim_time, led_value, pre_isi]
+
+# run alignment for all sessions
+def run(
+        list_neural_trials,
+        l_frames, r_frames
+        ):
+    list_neu_seq    = []
+    list_neu_time   = []
+    list_stim_seq   = []
+    list_stim_value = []
+    list_stim_time  = []
+    list_led_value  = []
+    list_pre_isi    = []
+    for neural_trials in list_neural_trials:
+        [neu_seq, neu_time,
+         stim_seq, stim_value, stim_time,
+         led_value, pre_isi
+         ] = get_stim_response(
+             neural_trials,
+             l_frames, r_frames)
+        list_neu_seq.append(neu_seq)
+        list_neu_time.append(neu_time)
+        list_stim_seq.append(stim_seq)
+        list_stim_value.append(stim_value)
+        list_stim_time.append(stim_time)
+        list_led_value.append(led_value)
+        list_pre_isi.append(pre_isi)
+    return [list_neu_seq, list_neu_time,
+            list_stim_seq, list_stim_value, list_stim_time,
+            list_led_value, list_pre_isi]
+

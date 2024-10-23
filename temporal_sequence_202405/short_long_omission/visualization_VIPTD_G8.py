@@ -9,20 +9,8 @@ from matplotlib.gridspec import GridSpec
 
 from modules import Trialization
 from modules import StatTest
-from modules.ReadResults import read_masks
-from modules.ReadResults import read_raw_voltages
-from modules.ReadResults import read_dff
-from modules.ReadResults import read_neural_trials
-from modules.ReadResults import read_move_offset
-from modules.ReadResults import read_significance
-RESET_SIGNIFICANCE = True
-
-def read_ops(session_data_path):
-    ops = np.load(
-        os.path.join(session_data_path, 'suite2p', 'plane0','ops.npy'),
-        allow_pickle=True).item()
-    ops['save_path0'] = os.path.join(session_data_path)
-    return ops
+from modules.ReadResults import read_ops
+from modules.ReadResults import read_all
 
 def get_roi_sign(significance, roi_id):
     r = significance['r_normal'][roi_id] +\
@@ -30,18 +18,12 @@ def get_roi_sign(significance, roi_id):
         significance['r_oddball'][roi_id]
     return r
 
-def reset_significance(significance):
-    sign = {}
-    sign['r_normal'] = np.ones_like(['r_normal']).astype('bool')
-    sign['r_change'] = np.ones_like(['r_change']).astype('bool')
-    sign['r_oddball'] = np.ones_like(['r_oddball']).astype('bool')
-    return sign
-
 from plot.fig1_mask import plotter_all_masks
 from plot.fig2_align_stim import plotter_VIPTD_G8_align_stim
 from plot.fig3_align_odd import plotter_VIPTD_G8_align_odd
 from plot.fig5_raw_traces import plot_VIPTD_G8_example_traces
 from plot.fig5_raw_traces import plot_roi_raw_trace
+from plot.misc import plot_sess_name
 from plot.misc import plot_motion_offset_hist
 from plot.misc import plot_inh_exc_label_pc
 from plot.misc import plot_isi_distribution
@@ -53,7 +35,7 @@ from plot.misc import plot_oddball_distribution
 from plot.misc import plot_significance
 from plot.misc import plot_roi_significance
 
-def plot_odd_VIPTD_G8(ops, session_data_name):
+def run(list_session_data_path, sig_tag):
     
     def plot_session_report():
         fig = plt.figure(figsize=(140, 140))
@@ -169,40 +151,42 @@ def plot_odd_VIPTD_G8(ops, session_data_name):
         print('Plotting example traces')
         example_ax = plt.subplot(gs[0:4, 12])
         plot_VIPTD_G8_example_traces(
-            example_ax, dff, labels, vol_img, vol_time)
+            example_ax, list_dff[0], list_labels[0], list_vol[0][3], list_vol[0][0])
         print('Plotting stimulus types')
         # isi distribution.
         isi_ax = plt.subplot(gs[0, 14])
-        plot_isi_distribution(isi_ax, neural_trials)
+        plot_isi_distribution(isi_ax, list_neural_trials[0])
         # stimulus types.
         type_ax01 = plt.subplot(gs[0, 15])
         type_ax02 = plt.subplot(gs[1, 14])
         type_ax03 = plt.subplot(gs[1, 15])
         type_ax04 = plt.subplot(gs[2, 14])
         type_ax05 = plt.subplot(gs[2, 15])
-        plot_stim_type(type_ax01, neural_trials)
-        plot_normal_type(type_ax02, neural_trials)
-        plot_fix_jitter_type(type_ax03, neural_trials)
-        plot_oddball_type(type_ax04, neural_trials)
-        plot_oddball_distribution(type_ax05, neural_trials)
+        plot_stim_type(type_ax01, list_neural_trials[0])
+        plot_normal_type(type_ax02, list_neural_trials[0])
+        plot_fix_jitter_type(type_ax03, list_neural_trials[0])
+        plot_oddball_type(type_ax04, list_neural_trials[0])
+        plot_oddball_distribution(type_ax05, list_neural_trials[0])
         print('Plotting 2p misc results')
         # offset.
         offset_ax = plt.subplot(gs[2, 10:12])
-        plot_motion_offset_hist(offset_ax, xoff, yoff)
+        plot_motion_offset_hist(offset_ax, list_dff[0], list_dff[1])
         # labels.
         label_ax = plt.subplot(gs[3, 10])
-        plot_inh_exc_label_pc(label_ax, labels)
+        plot_inh_exc_label_pc(label_ax, list_labels)
         # significance.
         sign_ax = plt.subplot(gs[3, 11])
-        plot_significance(sign_ax, significance, labels)
+        plot_significance(sign_ax, list_significance, list_labels)
         # save figure.
         fig.set_size_inches(140, 140)
         fig.savefig(os.path.join(
             ops['save_path0'], 'figures',
-            'session_report_{}.pdf'.format(session_data_name)),
+            'session_report_{}_{}.pdf'.format(
+                sig_tag,
+                list_session_data_path[0].split('/')[-1])),
             dpi=300)
         plt.close()
-
+    '''
     def plot_individual_roi():
         roi_report = fitz.open()
         for roi_id in tqdm(np.argsort(labels, kind='stable')[:2]):
@@ -260,35 +244,52 @@ def plot_odd_VIPTD_G8(ops, session_data_name):
                 str(roi_id).zfill(4)+'.pdf'),
                 dpi=300)
             plt.close()
+    '''
     
+    # main
+    print('===============================================')
+    print('============ Start Processing Data ============')
+    print('===============================================')
+    print('Processing {} sessions'.format(len(list_session_data_path)))
+    for session_data_path in list_session_data_path:
+        print(session_data_path.split('/')[-1])
+    print('Reading ops.npy')
+    list_ops = read_ops(list_session_data_path)
+    print('===============================================')
+    print('============= trials segmentation =============')
+    print('===============================================')
+    for ops in list_ops:
+        Trialization.run(ops)
+    print('===============================================')
+    print('============== significance test ==============')
+    print('===============================================')
+    for ops in list_ops:
+        StatTest.run(ops)
     print('===============================================')
     print('============ reading saved results ============')
     print('===============================================')
-    [labels,
-     masks,
-     mean_func, max_func,
-     mean_anat, masks_anat] = read_masks(ops)
-    [vol_time, vol_start, vol_stim_vis, vol_img, 
-     vol_hifi, vol_stim_aud, vol_flir,
-     vol_pmt, vol_led] = read_raw_voltages(ops)
-    dff = read_dff(ops)
-    neural_trials = read_neural_trials(ops)
-    [xoff, yoff] = read_move_offset(ops)
-    significance = read_significance(ops)
-    if RESET_SIGNIFICANCE:
-        significance = reset_significance(significance)
-    print('Processing masks')
+    [list_labels, list_masks, list_vol, list_dff, 
+     list_neural_trials, list_move_offset, list_significance
+     ] = read_all(list_ops, sig_tag)
+    print('Preparing masks')
     plotter_masks = plotter_all_masks(
-        labels, masks, mean_func, max_func, mean_anat, masks_anat)
+        list_labels[0],
+        list_masks[0][0],
+        list_masks[0][1],
+        list_masks[0][2],
+        list_masks[0][3],
+        list_masks[0][4])
     print('===============================================')
     print('====== plot session report with all ROIs ======')
     print('===============================================')
-    print('Processing stimulus alignments')
+    print('Preparing stimulus alignments')
     plotter_align_stim = plotter_VIPTD_G8_align_stim(
         neural_trials, labels, significance)
-    print('Processing omission alignments')
+    print('Preparing omission alignments')
     plotter_align_odd = plotter_VIPTD_G8_align_odd(
         neural_trials, labels, significance)
+    print('Preparing misc results')
+    
     plot_session_report()
     print('===============================================')
     print('=============== plot roi report ===============')
@@ -298,35 +299,16 @@ def plot_odd_VIPTD_G8(ops, session_data_name):
     print('=============== plot raw traces ===============')
     print('===============================================')
     #plot_raw_traces()
-    
-    
-def run(session_data_path):
-    session_data_name = session_data_path.split('/')[-1]
-    ops = read_ops(session_data_path)
     print('===============================================')
-    print('Processing '+ session_data_name)
-    print('===============================================')
-    print('============= trials segmentation =============')
-    print('===============================================')
-    Trialization.run(ops)
-    StatTest.run(ops)
-    plot_odd_VIPTD_G8(ops, session_data_name)
-    print('===============================================')
-    print('Processing {} completed'.format(session_data_name))
-    
-    
+    print('Processing completed')
+
 if __name__ == "__main__":
-    
-    session_data_path = 'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20240821_seq1421_t'
-    run(session_data_path)
-    '''
-    for session_data_path in [
-        'C:/Users/yhuang887/Projects/passive_omission_202304/results/FN15_P_20240412_omi_t',
-        'C:/Users/yhuang887/Projects/passive_omission_202304/results/FN16_P_20240410_omi_t',
-        'C:/Users/yhuang887/Projects/passive_omission_202304/results/FN16_P_20240413_omi_t'
-        ]:
-        run(session_data_path)
-    '''
-
-
-    
+    sig_tag = 'sig'
+    list_session_data_path = [
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20240813_seq1421_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20240818_seq1421_t'
+        ]
+    list_session_data_path = [
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20240813_seq1421_t',
+        ]
+    run(list_session_data_path, sig_tag)

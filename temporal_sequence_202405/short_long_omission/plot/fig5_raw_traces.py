@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import random
 from plot.utils import get_sub_time_idx
 from plot.utils import get_roi_label_color
 from plot.utils import adjust_layout_example_trace
@@ -49,7 +50,7 @@ def plot_VIPTD_G8_example_traces(
         ax,
         dff, labels, vol_img_bin, vol_time
         ):
-    max_ms = 100000
+    max_ms = 300000
     num_exc = 8
     num_inh = 2
     time_img = get_img_time(vol_time, vol_img_bin)
@@ -57,9 +58,19 @@ def plot_VIPTD_G8_example_traces(
     time_img_idx = get_sub_time_idx(time_img, start_time, start_time+max_ms)
     sub_time_img = time_img[time_img_idx]
     sub_dff_exc  = dff[labels==-1, :]
-    sub_dff_exc  = sub_dff_exc[:np.min([num_exc, sub_dff_exc.shape[0]]), time_img_idx]
+    num_exc = num_exc if num_exc < sub_dff_exc.shape[0] else sub_dff_exc.shape[0]
+    dff_idx_exc  = np.isin(
+        np.arange(sub_dff_exc.shape[0]),
+        random.sample(range(sub_dff_exc.shape[0]), num_exc))
+    sub_dff_exc  = sub_dff_exc[dff_idx_exc, :]
+    sub_dff_exc  = sub_dff_exc[:, time_img_idx]
     sub_dff_inh  = dff[labels==-1, :]
-    sub_dff_inh  = sub_dff_inh[:np.min([num_inh, sub_dff_inh.shape[0]]), time_img_idx]
+    num_inh = num_inh if num_inh < sub_dff_inh.shape[0] else sub_dff_inh.shape[0]
+    dff_idx_inh  = np.isin(
+        np.arange(sub_dff_inh.shape[0]),
+        random.sample(range(sub_dff_inh.shape[0]), num_inh))
+    sub_dff_inh  = sub_dff_inh[dff_idx_inh, :]
+    sub_dff_inh  = sub_dff_inh[:, time_img_idx]
     sub_dff = np.concatenate((sub_dff_exc, sub_dff_inh), axis=0)
     color_label  = np.zeros(num_exc+num_inh, dtype='int32')
     color_label[num_exc:] = 1
@@ -86,8 +97,12 @@ def plot_L7G8_example_traces(
         ax,
         dff, vol_stim_bin, vol_img_bin, vol_time
         ):
-    max_ms = 30000
+    max_ms = 60000
     num_roi = 10
+    num_roi = num_roi if num_roi < dff.shape[0] else dff.shape[0]
+    dff_idx  = np.isin(
+        np.arange(dff.shape[0]),
+        random.sample(range(dff.shape[0]), num_roi))
     vol_stim = vol_stim_bin.copy()
     vol_stim[vol_stim!=0] = 1
     time_img = get_img_time(vol_time, vol_img_bin)
@@ -95,7 +110,8 @@ def plot_L7G8_example_traces(
     time_img = get_img_time(vol_time, vol_img_bin)
     time_img_idx = get_sub_time_idx(time_img, start_time, start_time+max_ms)
     sub_time_img = time_img[time_img_idx]
-    sub_dff = dff[:np.min([num_roi, dff.shape[0]]), time_img_idx]
+    sub_dff = dff[dff_idx, :]
+    sub_dff = sub_dff[:, time_img_idx]
     scale = np.max(np.abs(sub_dff))*1.5
     for i in range(num_roi):
         ax.plot(
