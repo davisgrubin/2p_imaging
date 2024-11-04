@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from modules.Alignment import run_get_stim_response
 from plot.utils import get_mean_sem
@@ -21,7 +20,7 @@ class plotter_utils(utils):
             self,
             list_neural_trials, list_labels, list_significance
             ):
-        timescale = 0.5
+        timescale = 1.0
         self.n_sess = len(list_neural_trials)
         self.l_frames = int(250*timescale)
         self.r_frames = int(250*timescale)
