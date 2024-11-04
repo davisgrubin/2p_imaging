@@ -145,7 +145,7 @@ def run(list_session_data_path, sig_tag):
         print('Plotting 2p misc results')
         # offset.
         offset_ax = plt.subplot(gs[2, 10:12])
-        plot_motion_offset_hist(offset_ax, list_dff[0], list_dff[1])
+        plot_motion_offset_hist(offset_ax, list_move_offset)
         # labels.
         label_ax = plt.subplot(gs[3, 10])
         plot_inh_exc_label_pc(label_ax, list_labels)
@@ -294,10 +294,12 @@ if __name__ == "__main__":
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240613_seq2420_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240617_seq2420_t',
         ]
+    list_session_data_path = [
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT01_P_20240606_seq1420_t',
+        ]
     '''
     list_session_data_path = [
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240605_seq1420_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240606_seq1420_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT01_P_20240606_seq1420_t',
         ]
     run(list_session_data_path, 'sig')
     run(list_session_data_path, 'all')

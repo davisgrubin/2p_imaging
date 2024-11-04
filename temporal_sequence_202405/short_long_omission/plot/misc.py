@@ -16,7 +16,9 @@ def plot_sess_name(ax, list_session_data_path):
     ax.set_title('used sessions for alignment')
 
 # motion correction offsets.
-def plot_motion_offset_hist(ax, xoff, yoff):
+def plot_motion_offset_hist(ax, list_move_offset):
+    xoff = np.concatenate([l[0] for l in list_move_offset])
+    yoff = np.concatenate([l[1] for l in list_move_offset])
     center = np.arange(-5,6)
     width = 0.25
     for c in center:

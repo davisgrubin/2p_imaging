@@ -56,9 +56,9 @@
 - Now plot_inh_exc_label_pc gives the total number in the title.
 - Now get_multi_sess_neu_trial_average can return single trial response for multi session setting.
 - Now get_odd_stim_prepost_idx always excludes the last element in idx_pre.
-- Replaced all np.m
+- Replaced all np function with the nan version.
 - Completed modifying plot_odd_post_isi to cross session setting.
 - Completed modifying plot_odd_post_isi_box to cross session setting.
 - Added timescale in case the session interval settings are different.
-
+- Now plot_motion_offset_hist plots offsets across sessions.
 

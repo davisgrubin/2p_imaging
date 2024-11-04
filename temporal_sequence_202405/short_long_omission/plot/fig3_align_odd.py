@@ -20,7 +20,7 @@ class plotter_utils(utils):
             self,
             list_neural_trials, list_labels, list_significance
             ):
-        timescale = 1.0
+        timescale = 0.5
         self.n_sess = len(list_neural_trials)
         self.l_frames = int(250*timescale)
         self.r_frames = int(250*timescale)
