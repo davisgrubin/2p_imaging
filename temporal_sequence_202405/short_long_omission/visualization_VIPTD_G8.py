@@ -31,15 +31,14 @@ from plot.misc import plot_stim_type
 from plot.misc import plot_normal_type
 from plot.misc import plot_fix_jitter_type
 from plot.misc import plot_oddball_type
-from plot.misc import plot_oddball_distribution
 from plot.misc import plot_significance
 from plot.misc import plot_roi_significance
 
 def run(list_session_data_path, sig_tag):
-    
+
     def plot_session_report():
-        fig = plt.figure(figsize=(140, 140))
-        gs = GridSpec(20, 20, figure=fig)
+        fig = plt.figure(figsize=(140, 210))
+        gs = GridSpec(30, 20, figure=fig)
         # masks.
         print('Plotting masks')
         mask_ax01 = plt.subplot(gs[0:2, 0:2])
@@ -66,87 +65,63 @@ def run(list_session_data_path, sig_tag):
         plotter_masks.superimpose(mask_ax11, 'max', with_mask=False)
         # normal alignment.
         print('Plotting normal alignment')
-        normal_axs01 = [plt.subplot(gs[5, i]) for i in range(8)]
-        normal_axs02 = [plt.subplot(gs[6, i]) for i in range(8)]
-        normal_axs03 = [plt.subplot(gs[7, i]) for i in range(4)]
-        plotter_align_stim.all_normal_exc(normal_axs01)
-        plotter_align_stim.all_normal_inh(normal_axs02)
-        #plotter_align_stim.all_normal_heatmap(normal_axs03)
-        context_ax01 = [[plt.subplot(gs[8, i]) for i in range(5)], plt.subplot(gs[8, 5])]
-        context_ax02 = [[plt.subplot(gs[9, i]) for i in range(5)], plt.subplot(gs[9, 5])]
-        plotter_align_stim.all_context_exc(context_ax01)
-        plotter_align_stim.all_context_inh(context_ax02)
+        normal_axs01 = [plt.subplot(gs[5, i]) for i in range(4)]
+        normal_axs02 = [plt.subplot(gs[6, i]) for i in range(4)]
+        normal_axs03 = [plt.subplot(gs[5:7, i+4]) for i in range(4)]
+        plotter_align_stim.normal_exc(normal_axs01)
+        plotter_align_stim.normal_inh(normal_axs02)
+        plotter_align_stim.normal_heatmap(normal_axs03)
+        context_ax01 = [plt.subplot(gs[7, i]) for i in range(6)]
+        context_ax02 = [plt.subplot(gs[8, i]) for i in range(6)]
+        plotter_align_stim.context_exc(context_ax01)
+        plotter_align_stim.context_inh(context_ax02)
+        epoch_ax01 = [plt.subplot(gs[5, i+10]) for i in range(4)]
+        epoch_ax02 = [plt.subplot(gs[6, i+10]) for i in range(4)]
+        plotter_align_stim.epoch_exc(epoch_ax01)
+        plotter_align_stim.epoch_inh(epoch_ax02)
         # change alignment.
         print('Plotting change alignment')
-        change_axs01 = [plt.subplot(gs[5, 9]), plt.subplot(gs[5, 10])]
-        change_axs02 = [plt.subplot(gs[6, 9]), plt.subplot(gs[6, 10])]
-        plotter_align_stim.all_change_exc(change_axs01)
-        plotter_align_stim.all_change_inh(change_axs02)
+        change_axs01 = [plt.subplot(gs[7, i+6]) for i in range(2)]
+        change_axs02 = [plt.subplot(gs[8, i+6]) for i in range(2)]
+        plotter_align_stim.change_exc(change_axs01)
+        plotter_align_stim.change_inh(change_axs02)
         # oddball alignment.
         print('Plotting oddball alignment')
         odd_normal_axs01 = [
-            plt.subplot(gs[11, 0:2]), plt.subplot(gs[11, 2:4]),  plt.subplot(gs[11, 4:6]),
-            plt.subplot(gs[11, 6:8]), plt.subplot(gs[11, 8:10]), plt.subplot(gs[11, 10:12])]
+            plt.subplot(gs[11, 0:2]), plt.subplot(gs[11, 2:4]), plt.subplot(gs[11, 4]),
+            plt.subplot(gs[11, 5]), plt.subplot(gs[11, 6])]
         odd_normal_axs02 = [
-            plt.subplot(gs[12, 0:2]), plt.subplot(gs[12, 2:4]),  plt.subplot(gs[12, 4:6]),
-            plt.subplot(gs[12, 6:8]), plt.subplot(gs[12, 8:10]), plt.subplot(gs[12, 10:12])]
-        plotter_align_odd.all_odd_normal_exc(odd_normal_axs01)
-        plotter_align_odd.all_odd_normal_inh(odd_normal_axs02)
-        '''
-        # omission alignment.
-        omi_normal_ax01 = plt.subplot(gs[9, 0])
-        omi_normal_ax02 = plt.subplot(gs[10, 0])
-        omi_normal_ax03 = plt.subplot(gs[9:11, 1])
-        omi_normal_ax04 = plt.subplot(gs[9:11, 2])
-        omi_normal_ax05 = plt.subplot(gs[9, 3])
-        omi_normal_ax06 = plt.subplot(gs[10, 3])
-        omi_normal_ax07 = plt.subplot(gs[9:11, 4])
-        omi_normal_ax08 = plt.subplot(gs[9:11, 5])
-        omi_normal_ax09 = plt.subplot(gs[11, 0])
-        omi_normal_ax10 = plt.subplot(gs[11, 1])
-        omi_normal_ax11 = plt.subplot(gs[12, 0])
-        omi_normal_ax12 = plt.subplot(gs[12, 1])
-        omi_normal_ax15 = plt.subplot(gs[8, 5])
-        omi_normal_ax16 = plt.subplot(gs[8, 6])
-        #plotter_align_omi.omi_normal_pre_exc(omi_normal_ax01)
-        #plotter_align_omi.omi_normal_pre_inh(omi_normal_ax02)
-        #plotter_align_omi.omi_normal_pre_short_heatmap_neuron(omi_normal_ax03)
-        #plotter_align_omi.omi_normal_pre_long_heatmap_neuron(omi_normal_ax04)
-        #plotter_align_omi.omi_normal_post_exc(omi_normal_ax05)
-        #plotter_align_omi.omi_normal_post_inh(omi_normal_ax06)
-        #plotter_align_omi.omi_normal_post_short_heatmap_neuron(omi_normal_ax07)
-        #plotter_align_omi.omi_normal_post_long_heatmap_neuron(omi_normal_ax08)
-        #plotter_align_omi.omi_normal_exc_short(omi_normal_ax09)
-        #plotter_align_omi.omi_normal_exc_long(omi_normal_ax10)
-        #plotter_align_omi.omi_normal_inh_short(omi_normal_ax11)
-        #plotter_align_omi.omi_normal_inh_long(omi_normal_ax12)
-        #plotter_align_omi.omi_isi_short(omi_normal_ax15)
-        #plotter_align_omi.omi_isi_long(omi_normal_ax16)
-        #omi_epoch_ax01 = plt.subplot(gs[9, 6])
-        #omi_epoch_ax02 = plt.subplot(gs[9, 7])
-        #omi_epoch_ax03 = plt.subplot(gs[10, 6])
-        #omi_epoch_ax04 = plt.subplot(gs[10, 7])
-        #omi_epoch_ax05 = plt.subplot(gs[9, 8:10])
-        #omi_epoch_ax06 = plt.subplot(gs[10, 8:10])
-        #plotter_align_omi.omi_epoch_post_exc_short(omi_epoch_ax01)
-        #plotter_align_omi.omi_epoch_post_exc_long(omi_epoch_ax02)
-        #plotter_align_omi.omi_epoch_post_inh_short(omi_epoch_ax03)
-        #plotter_align_omi.omi_epoch_post_inh_long(omi_epoch_ax04)
-        #plotter_align_omi.omi_epoch_post_exc_box(omi_epoch_ax05)
-        #plotter_align_omi.omi_epoch_post_inh_box(omi_epoch_ax06)
-        #omi_context_ax01 = [plt.subplot(gs[11, i+3]) for i in range(4)]
-        #omi_context_ax02 = [plt.subplot(gs[12, i+3]) for i in range(4)]
-        #plotter_align_omi.omi_context_exc(omi_context_ax01)
-        #plotter_align_omi.omi_context_inh(omi_context_ax02)
-        #omi_jitter_ax01 = plt.subplot(gs[11, 9])
-        #omi_jitter_ax03 = plt.subplot(gs[11, 11])
-        #omi_jitter_ax05 = plt.subplot(gs[12, 9])
-        #omi_jitter_ax07 = plt.subplot(gs[12, 11])
-        #plotter_align_omi.omi_post_isi_exc_short(omi_jitter_ax01)
-        #plotter_align_omi.omi_post_isi_exc_long(omi_jitter_ax03)
-        #plotter_align_omi.omi_post_isi_inh_short(omi_jitter_ax05)
-        #plotter_align_omi.omi_post_isi_inh_long(omi_jitter_ax07)
-        '''
+            plt.subplot(gs[12, 0:2]), plt.subplot(gs[12, 2:4]), plt.subplot(gs[12, 4]),
+            plt.subplot(gs[12, 5]), plt.subplot(gs[12, 6])]
+        odd_normal_axs03 = [plt.subplot(gs[11:13, i+7]) for i in range(4)]
+        plotter_align_odd.odd_normal_exc(odd_normal_axs01)
+        plotter_align_odd.odd_normal_inh(odd_normal_axs02)
+        plotter_align_odd.odd_normal_post_heatmap_neuron(odd_normal_axs03)
+        odd_context_axs01 = [
+            plt.subplot(gs[13, i:i+2]) for i in [0,2,4,6]] + [
+            plt.subplot(gs[13, i+8]) for i in range(2)]
+        odd_context_axs02 = [
+            plt.subplot(gs[14, i:i+2]) for i in [0,2,4,6]] + [
+            plt.subplot(gs[14, i+8]) for i in range(2)]
+        plotter_align_odd.odd_context_exc(odd_context_axs01)
+        plotter_align_odd.odd_context_inh(odd_context_axs02)
+        odd_epoch_axs01 = [
+            plt.subplot(gs[17, 0:2]), plt.subplot(gs[17, 2]),
+            plt.subplot(gs[17, 3:5]), plt.subplot(gs[17, 5])]
+        odd_epoch_axs02 = [
+            plt.subplot(gs[18, 0:2]), plt.subplot(gs[18, 2]),
+            plt.subplot(gs[18, 3:5]), plt.subplot(gs[18, 5])]
+        plotter_align_odd.odd_epoch_exc(odd_epoch_axs01)
+        plotter_align_odd.odd_epoch_inh(odd_epoch_axs02)
+        odd_isi_axs01 = [
+            plt.subplot(gs[17, 8:10]), plt.subplot(gs[17, 10]),
+            plt.subplot(gs[17, 11:13]), plt.subplot(gs[17, 13])]
+        odd_isi_axs02 = [
+            plt.subplot(gs[18, 8:10]), plt.subplot(gs[18, 10]),
+            plt.subplot(gs[18, 11:13]), plt.subplot(gs[18, 13])]
+        plotter_align_odd.odd_isi_exc(odd_isi_axs01)
+        plotter_align_odd.odd_isi_inh(odd_isi_axs02)
+        
         # example traces.
         print('Plotting example traces')
         example_ax = plt.subplot(gs[0:4, 12])
@@ -154,19 +129,19 @@ def run(list_session_data_path, sig_tag):
             example_ax, list_dff[0], list_labels[0], list_vol[0][3], list_vol[0][0])
         print('Plotting stimulus types')
         # isi distribution.
-        isi_ax = plt.subplot(gs[0, 14])
-        plot_isi_distribution(isi_ax, list_neural_trials[0])
+        isi_ax01 = plt.subplot(gs[0, 14])
+        isi_ax02 = plt.subplot(gs[0, 15])
+        plot_isi_distribution(isi_ax01, list_neural_trials)
+        plotter_align_odd.plot_pre_odd_isi_distribution(isi_ax02)
         # stimulus types.
-        type_ax01 = plt.subplot(gs[0, 15])
-        type_ax02 = plt.subplot(gs[1, 14])
-        type_ax03 = plt.subplot(gs[1, 15])
-        type_ax04 = plt.subplot(gs[2, 14])
-        type_ax05 = plt.subplot(gs[2, 15])
-        plot_stim_type(type_ax01, list_neural_trials[0])
-        plot_normal_type(type_ax02, list_neural_trials[0])
-        plot_fix_jitter_type(type_ax03, list_neural_trials[0])
-        plot_oddball_type(type_ax04, list_neural_trials[0])
-        plot_oddball_distribution(type_ax05, list_neural_trials[0])
+        type_ax01 = plt.subplot(gs[1, 14])
+        type_ax02 = plt.subplot(gs[1, 15])
+        type_ax03 = plt.subplot(gs[2, 14])
+        type_ax04 = plt.subplot(gs[2, 15])
+        plot_stim_type(type_ax01, list_neural_trials)
+        plot_normal_type(type_ax02, list_neural_trials)
+        plot_fix_jitter_type(type_ax03, list_neural_trials)
+        plot_oddball_type(type_ax04, list_neural_trials)
         print('Plotting 2p misc results')
         # offset.
         offset_ax = plt.subplot(gs[2, 10:12])
@@ -177,10 +152,13 @@ def run(list_session_data_path, sig_tag):
         # significance.
         sign_ax = plt.subplot(gs[3, 11])
         plot_significance(sign_ax, list_significance, list_labels)
+        # used sessions.
+        sess_ax = plt.subplot(gs[3, 14])
+        plot_sess_name(sess_ax, list_session_data_path)
         # save figure.
-        fig.set_size_inches(140, 140)
+        fig.set_size_inches(140, 210)
         fig.savefig(os.path.join(
-            ops['save_path0'], 'figures',
+            list_ops[0]['save_path0'], 'figures',
             'session_report_{}_{}.pdf'.format(
                 sig_tag,
                 list_session_data_path[0].split('/')[-1])),
@@ -203,7 +181,7 @@ def run(list_session_data_path, sig_tag):
             plotter_masks.roi_anat(mask_ax03, roi_id)
             plotter_masks.roi_superimpose(mask_ax04, roi_id, 'max')
             plotter_masks.roi_masks(mask_ax05, roi_id)
-            
+
             # save figure.
             fname = os.path.join(
                 ops['save_path0'], 'figures',
@@ -219,7 +197,7 @@ def run(list_session_data_path, sig_tag):
             os.path.join(ops['save_path0'], 'figures', 'roi_report_{}.pdf'.format(
             session_data_name)))
         roi_report.close()
-    
+
     def plot_raw_traces():
         max_ms = 300000
         if not os.path.exists(os.path.join(
@@ -245,7 +223,7 @@ def run(list_session_data_path, sig_tag):
                 dpi=300)
             plt.close()
     '''
-    
+
     # main
     print('===============================================')
     print('============ Start Processing Data ============')
@@ -268,7 +246,7 @@ def run(list_session_data_path, sig_tag):
     print('===============================================')
     print('============ reading saved results ============')
     print('===============================================')
-    [list_labels, list_masks, list_vol, list_dff, 
+    [list_labels, list_masks, list_vol, list_dff,
      list_neural_trials, list_move_offset, list_significance
      ] = read_all(list_ops, sig_tag)
     print('Preparing masks')
@@ -279,17 +257,14 @@ def run(list_session_data_path, sig_tag):
         list_masks[0][2],
         list_masks[0][3],
         list_masks[0][4])
-    print('===============================================')
-    print('====== plot session report with all ROIs ======')
-    print('===============================================')
     print('Preparing stimulus alignments')
     plotter_align_stim = plotter_VIPTD_G8_align_stim(
-        neural_trials, labels, significance)
+        list_neural_trials, list_labels, list_significance)
     print('Preparing omission alignments')
     plotter_align_odd = plotter_VIPTD_G8_align_odd(
-        neural_trials, labels, significance)
+        list_neural_trials, list_labels, list_significance)
     print('Preparing misc results')
-    
+
     plot_session_report()
     print('===============================================')
     print('=============== plot roi report ===============')
@@ -303,12 +278,26 @@ def run(list_session_data_path, sig_tag):
     print('Processing completed')
 
 if __name__ == "__main__":
-    sig_tag = 'sig'
+    '''
     list_session_data_path = [
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20240813_seq1421_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20240818_seq1421_t'
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20240818_seq1421_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20240821_seq1421_t',
         ]
     list_session_data_path = [
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20240813_seq1421_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240605_seq1420_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240606_seq1420_t',
         ]
-    run(list_session_data_path, sig_tag)
+    list_session_data_path = [
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240611_seq1420_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240612_seq2420_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240613_seq2420_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240617_seq2420_t',
+        ]
+    '''
+    list_session_data_path = [
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240605_seq1420_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240606_seq1420_t',
+        ]
+    run(list_session_data_path, 'sig')
+    run(list_session_data_path, 'all')
