@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import random
 from plot.utils import get_sub_time_idx
 from plot.utils import get_roi_label_color
 from plot.utils import adjust_layout_example_trace
@@ -49,7 +50,7 @@ def plot_VIPTD_G8_example_traces(
         ax,
         dff, labels, vol_img_bin, vol_time
         ):
-    max_ms = 100000
+    max_ms = 300000
     num_exc = 8
     num_inh = 2
     time_img = get_img_time(vol_time, vol_img_bin)
@@ -57,9 +58,19 @@ def plot_VIPTD_G8_example_traces(
     time_img_idx = get_sub_time_idx(time_img, start_time, start_time+max_ms)
     sub_time_img = time_img[time_img_idx]
     sub_dff_exc  = dff[labels==-1, :]
-    sub_dff_exc  = sub_dff_exc[:np.min([num_exc, sub_dff_exc.shape[0]]), time_img_idx]
+    num_exc = num_exc if num_exc < sub_dff_exc.shape[0] else sub_dff_exc.shape[0]
+    dff_idx_exc  = np.isin(
+        np.arange(sub_dff_exc.shape[0]),
+        random.sample(range(sub_dff_exc.shape[0]), num_exc))
+    sub_dff_exc  = sub_dff_exc[dff_idx_exc, :]
+    sub_dff_exc  = sub_dff_exc[:, time_img_idx]
     sub_dff_inh  = dff[labels==-1, :]
-    sub_dff_inh  = sub_dff_inh[:np.min([num_inh, sub_dff_inh.shape[0]]), time_img_idx]
+    num_inh = num_inh if num_inh < sub_dff_inh.shape[0] else sub_dff_inh.shape[0]
+    dff_idx_inh  = np.isin(
+        np.arange(sub_dff_inh.shape[0]),
+        random.sample(range(sub_dff_inh.shape[0]), num_inh))
+    sub_dff_inh  = sub_dff_inh[dff_idx_inh, :]
+    sub_dff_inh  = sub_dff_inh[:, time_img_idx]
     sub_dff = np.concatenate((sub_dff_exc, sub_dff_inh), axis=0)
     color_label  = np.zeros(num_exc+num_inh, dtype='int32')
     color_label[num_exc:] = 1
@@ -86,8 +97,12 @@ def plot_L7G8_example_traces(
         ax,
         dff, vol_stim_bin, vol_img_bin, vol_time
         ):
-    max_ms = 30000
+    max_ms = 60000
     num_roi = 10
+    num_roi = num_roi if num_roi < dff.shape[0] else dff.shape[0]
+    dff_idx  = np.isin(
+        np.arange(dff.shape[0]),
+        random.sample(range(dff.shape[0]), num_roi))
     vol_stim = vol_stim_bin.copy()
     vol_stim[vol_stim!=0] = 1
     time_img = get_img_time(vol_time, vol_img_bin)
@@ -95,7 +110,8 @@ def plot_L7G8_example_traces(
     time_img = get_img_time(vol_time, vol_img_bin)
     time_img_idx = get_sub_time_idx(time_img, start_time, start_time+max_ms)
     sub_time_img = time_img[time_img_idx]
-    sub_dff = dff[:np.min([num_roi, dff.shape[0]]), time_img_idx]
+    sub_dff = dff[dff_idx, :]
+    sub_dff = sub_dff[:, time_img_idx]
     scale = np.max(np.abs(sub_dff))*1.5
     for i in range(num_roi):
         ax.plot(
@@ -132,14 +148,14 @@ def plot_VIPG8_example_traces(
 # ROI raw traces.
 def plot_roi_raw_trace(
         axs, roi_id, max_ms,
-        labels, dff, vol_img_bin, vol_stim_bin, vol_time,
+        labels, dff,
+        vol_img, vol_stim_vis, vol_pmt, vol_led, vol_time,
         ):
-    time_img = get_img_time(vol_time, vol_img_bin)
+    time_img = get_img_time(vol_time, vol_img)
     upper = np.max(dff[roi_id, :])
     lower = np.min(dff[roi_id, :])
     color = ['seagreen', 'dodgerblue', 'coral']
     category = ['excitory', 'unsure', 'inhibitory']
-    grating_color = ['#989A9C', '#F7D08D', '#BF83A5', '#8684B0']
     for i in range(len(axs)):
         start = i * max_ms
         end   = (i+1) * max_ms
@@ -148,12 +164,13 @@ def plot_roi_raw_trace(
         sub_vol_time     = vol_time[sub_vol_time_idx]
         sub_time_img     = time_img[sub_time_img_idx]
         sub_dff          = dff[roi_id, sub_time_img_idx]
-        sub_vol_stim_bin = vol_stim_bin[sub_vol_time_idx]
-        axs[i].fill_between(
+        sub_vol_stim_bin = vol_stim_vis[sub_vol_time_idx]
+        axs[i].plot(
             sub_vol_time,
-            lower, upper,
-            where=(sub_vol_stim_bin!=0),
-            color=grating_color[0], step='mid', label='stim')
+            sub_vol_stim_bin,
+            color='grey',
+            label='vis',
+            lw=0.5)
         axs[i].plot(
             sub_time_img,
             sub_dff,

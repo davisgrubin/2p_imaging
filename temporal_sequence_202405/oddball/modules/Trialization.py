@@ -7,11 +7,24 @@ import numpy as np
 from modules.ReadResults import read_raw_voltages
 from modules.ReadResults import read_dff
 from modules.ReadResults import read_bpod_mat_data
-INTERPOLATE = True
 
+# remove trial start trigger voltage impulse.
+def remove_start_impulse(vol_time, vol_stim_bin):
+    min_duration = 100
+    changes = np.diff(vol_stim_bin.astype(int))
+    start_indices = np.where(changes == 1)[0] + 1
+    end_indices = np.where(changes == -1)[0] + 1
+    if vol_stim_bin[0] == 1:
+        start_indices = np.insert(start_indices, 0, 0)
+    if vol_stim_bin[-1] == 1:
+        end_indices = np.append(end_indices, len(vol_stim_bin))
+    for start, end in zip(start_indices, end_indices):
+        duration = vol_time[end-1] - vol_time[start]
+        if duration < min_duration:
+            vol_stim_bin[start:end] = 0
+    return vol_stim_bin
 
 # detect the rising edge and falling edge of binary series.
-
 def get_trigger_time(
         vol_time,
         vol_bin
@@ -26,9 +39,7 @@ def get_trigger_time(
     time_down = vol_time[idx_down]
     return time_up, time_down
 
-
 # correct the fluorescence signal timing.
-
 def correct_time_img_center(time_img):
     # find the frame internal.
     diff_time_img = np.diff(time_img, append=0)
@@ -40,11 +51,9 @@ def correct_time_img_center(time_img):
     time_neuro = time_img + diff_time_img
     return time_neuro
 
-
 # get stimulus sequence labels.
-
-def get_stim_labels(bpod_sess_data, vol_time, vol_stim_bin):
-    stim_time_up, stim_time_down = get_trigger_time(vol_time, vol_stim_bin)
+def get_stim_labels(bpod_sess_data, vol_time, vol_stim_vis):
+    stim_time_up, stim_time_down = get_trigger_time(vol_time, vol_stim_vis)
     stim_labels = np.zeros((len(stim_time_up), 7))
     # row 0: stim start.
     # row 1: stim end.
@@ -62,61 +71,58 @@ def get_stim_labels(bpod_sess_data, vol_time, vol_stim_bin):
     stim_labels[:,6] = bpod_sess_data['opto_types']
     return stim_labels
 
-
 # save trial neural data.
-
 def save_trials(
-        ops,
-        time_neuro, dff,
-        vol_stim_vis, vol_time,
-        stim_labels
+        ops, time_neuro, dff, stim_labels,
+        vol_time, vol_stim_vis, 
+        vol_stim_aud, vol_flir,
+        vol_pmt, vol_led
         ):
     # file structure:
     # ops['save_path0'] / neural_trials.h5
     # ---- time
     # ---- stim
     # ---- dff
-    # ---- vol_stim_vis
+    # ---- vol_stim
     # ---- vol_time
     # ---- stim_labels
     # ...
-    f = h5py.File(
-        os.path.join(ops['save_path0'], 'neural_trials.h5'),
-        'w')
+    h5_path = os.path.join(ops['save_path0'], 'neural_trials.h5')
+    if os.path.exists(h5_path):
+        os.remove(h5_path)
+    f = h5py.File(h5_path, 'w')
     grp = f.create_group('neural_trials')
-    grp['time'] = time_neuro
-    grp['dff'] = dff
+    grp['time']         = time_neuro
+    grp['dff']          = dff
+    grp['stim_labels']  = stim_labels
+    grp['vol_time']     = vol_time
     grp['vol_stim_vis'] = vol_stim_vis
-    grp['vol_time'] = vol_time
-    grp['stim_labels'] = stim_labels
+    grp['vol_stim_aud'] = vol_stim_aud
+    grp['vol_flir']     = vol_flir
+    grp['vol_pmt']      = vol_pmt
+    grp['vol_led']      = vol_led
     f.close()
 
-
 # main function for trialization
-
 def run(ops):
-    print('===============================================')
-    print('=============== trial alignment ===============')
-    print('===============================================')
     print('Reading dff traces and voltage recordings')
     dff = read_dff(ops)
     [vol_time, vol_start, vol_stim_vis, vol_img, 
      vol_hifi, vol_stim_aud, vol_flir,
      vol_pmt, vol_led] = read_raw_voltages(ops)
+    vol_stim_vis = remove_start_impulse(vol_time, vol_stim_vis)
     bpod_sess_data = read_bpod_mat_data(ops)
-
     print('Correcting 2p camera trigger time')
     # signal trigger time stamps.
     time_img, _   = get_trigger_time(vol_time, vol_img)
     # correct imaging timing.
     time_neuro = correct_time_img_center(time_img)
-    
-    print('Processing stimulus labels')
-    # stimulus sequence labeling
+    # stimulus sequence labeling.
     stim_labels = get_stim_labels(bpod_sess_data, vol_time, vol_stim_vis)
-    
-    
     # save the final data.
     print('Saving trial data')
-    save_trials(ops, time_neuro, dff, vol_stim_vis, vol_time, stim_labels)
-
+    save_trials(
+        ops, time_neuro, dff, stim_labels,
+        vol_time, vol_stim_vis, 
+        vol_stim_aud, vol_flir,
+        vol_pmt, vol_led)
