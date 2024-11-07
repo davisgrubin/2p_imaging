@@ -62,3 +62,12 @@
 - Added timescale in case the session interval settings are different.
 - Now plot_motion_offset_hist plots offsets across sessions.
 
+## 2024.11.07
+- Rewritten all figures.
+- Now plot_normal receives normal types and plots response averaged across stimulus.
+- Now plot_normal receives fix_jitter to separate response.
+- Now neu_time is the mean of all sessions.
+- Now stim_value is computed with interpolation.
+- Now plot_heatmap_neuron excludes nan values.
+- Now get_multi_sess_neu_trial_average also processes proceeding isi.
+- Now get_epoch_idx only computes early and late epoch.

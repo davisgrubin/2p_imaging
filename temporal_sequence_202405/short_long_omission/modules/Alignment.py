@@ -98,6 +98,7 @@ def run_get_stim_response(
         list_neural_trials,
         l_frames, r_frames
         ):
+    # run alignment for each session.
     list_neu_seq    = []
     list_neu_time   = []
     list_stim_seq   = []
@@ -119,7 +120,28 @@ def run_get_stim_response(
         list_stim_time.append(stim_time)
         list_led_value.append(led_value)
         list_pre_isi.append(pre_isi)
-    return [list_neu_seq, list_neu_time,
-            list_stim_seq, list_stim_value, list_stim_time,
+    # combine neu_time.
+    neu_time = np.nanmean(np.concatenate([nt.reshape(1,-1) for nt in list_neu_time]),axis=0)
+    # combine stim_time.
+    st_min  = int(np.nanmin(np.concatenate(list_stim_time)))
+    st_max  = int(np.nanmax(np.concatenate(list_stim_time)))
+    st_rate = np.nanmean(np.concatenate([np.diff(st) for st in list_stim_time]))
+    stim_time = np.arange(st_min, st_max, st_rate)
+    # interpolate stim_value on the common stim_time.
+    list_stim_value = [
+        np.apply_along_axis(
+            lambda row: np.interp(stim_time, list_stim_time[i], row), 
+            axis=1, 
+            arr=list_stim_value[i])
+        for i in range(len(list_stim_value))]
+    # interpolate led_value on the common led_time.
+    list_led_value = [
+        np.apply_along_axis(
+            lambda row: np.interp(stim_time, list_stim_time[i], row), 
+            axis=1, 
+            arr=list_led_value[i])
+        for i in range(len(list_led_value))]
+    return [list_neu_seq, neu_time,
+            list_stim_seq, list_stim_value, stim_time,
             list_led_value, list_pre_isi]
 

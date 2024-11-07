@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from matplotlib.gridspec import GridSpec
 
+import warnings
+warnings.filterwarnings("ignore")
+
 from modules import Trialization
 from modules import StatTest
 from modules.ReadResults import read_ops
@@ -63,65 +66,48 @@ def run(list_session_data_path, sig_tag):
         plotter_masks.func(mask_ax09, 'max', with_mask=False)
         plotter_masks.anat(mask_ax10, with_mask=False)
         plotter_masks.superimpose(mask_ax11, 'max', with_mask=False)
-        # normal alignment.
+        # normal.
         print('Plotting normal alignment')
-        normal_axs01 = [plt.subplot(gs[5, i]) for i in range(4)]
-        normal_axs02 = [plt.subplot(gs[6, i]) for i in range(4)]
-        normal_axs03 = [plt.subplot(gs[5:7, i+4]) for i in range(4)]
+        normal_axs01 = [plt.subplot(gs[5, i]) for i in range(8)]
+        normal_axs02 = [plt.subplot(gs[6, i]) for i in range(8)]
+        normal_axs03 = [plt.subplot(gs[7:9, i]) for i in range(8)]
         plotter_align_stim.normal_exc(normal_axs01)
         plotter_align_stim.normal_inh(normal_axs02)
         plotter_align_stim.normal_heatmap(normal_axs03)
-        context_ax01 = [plt.subplot(gs[7, i]) for i in range(6)]
-        context_ax02 = [plt.subplot(gs[8, i]) for i in range(6)]
-        plotter_align_stim.context_exc(context_ax01)
-        plotter_align_stim.context_inh(context_ax02)
-        epoch_ax01 = [plt.subplot(gs[5, i+10]) for i in range(4)]
-        epoch_ax02 = [plt.subplot(gs[6, i+10]) for i in range(4)]
-        plotter_align_stim.epoch_exc(epoch_ax01)
-        plotter_align_stim.epoch_inh(epoch_ax02)
-        # change alignment.
-        print('Plotting change alignment')
-        change_axs01 = [plt.subplot(gs[7, i+6]) for i in range(2)]
-        change_axs02 = [plt.subplot(gs[8, i+6]) for i in range(2)]
-        plotter_align_stim.change_exc(change_axs01)
-        plotter_align_stim.change_inh(change_axs02)
-        # oddball alignment.
+        # oddball.
         print('Plotting oddball alignment')
         odd_normal_axs01 = [
-            plt.subplot(gs[11, 0:2]), plt.subplot(gs[11, 2:4]), plt.subplot(gs[11, 4]),
-            plt.subplot(gs[11, 5]), plt.subplot(gs[11, 6])]
+            plt.subplot(gs[10, 0:2]), plt.subplot(gs[10, 2:4]),  plt.subplot(gs[10, 4:6]),
+            plt.subplot(gs[10, 6:8]), plt.subplot(gs[10, 8:10]), plt.subplot(gs[10, 10:12])]
         odd_normal_axs02 = [
-            plt.subplot(gs[12, 0:2]), plt.subplot(gs[12, 2:4]), plt.subplot(gs[12, 4]),
-            plt.subplot(gs[12, 5]), plt.subplot(gs[12, 6])]
-        odd_normal_axs03 = [plt.subplot(gs[11:13, i+7]) for i in range(4)]
+            plt.subplot(gs[11, 0:2]), plt.subplot(gs[11, 2:4]),  plt.subplot(gs[11, 4:6]),
+            plt.subplot(gs[11, 6:8]), plt.subplot(gs[11, 8:10]), plt.subplot(gs[11, 10:12])]
+        odd_normal_axs03 = [plt.subplot(gs[12:14, i]) for i in [0,1,2,3,6,7,8,9]]
         plotter_align_odd.odd_normal_exc(odd_normal_axs01)
         plotter_align_odd.odd_normal_inh(odd_normal_axs02)
-        plotter_align_odd.odd_normal_post_heatmap_neuron(odd_normal_axs03)
-        odd_context_axs01 = [
-            plt.subplot(gs[13, i:i+2]) for i in [0,2,4,6]] + [
-            plt.subplot(gs[13, i+8]) for i in range(2)]
-        odd_context_axs02 = [
-            plt.subplot(gs[14, i:i+2]) for i in [0,2,4,6]] + [
-            plt.subplot(gs[14, i+8]) for i in range(2)]
-        plotter_align_odd.odd_context_exc(odd_context_axs01)
-        plotter_align_odd.odd_context_inh(odd_context_axs02)
-        odd_epoch_axs01 = [
-            plt.subplot(gs[17, 0:2]), plt.subplot(gs[17, 2]),
-            plt.subplot(gs[17, 3:5]), plt.subplot(gs[17, 5])]
-        odd_epoch_axs02 = [
-            plt.subplot(gs[18, 0:2]), plt.subplot(gs[18, 2]),
-            plt.subplot(gs[18, 3:5]), plt.subplot(gs[18, 5])]
-        plotter_align_odd.odd_epoch_exc(odd_epoch_axs01)
-        plotter_align_odd.odd_epoch_inh(odd_epoch_axs02)
-        odd_isi_axs01 = [
-            plt.subplot(gs[17, 8:10]), plt.subplot(gs[17, 10]),
-            plt.subplot(gs[17, 11:13]), plt.subplot(gs[17, 13])]
-        odd_isi_axs02 = [
-            plt.subplot(gs[18, 8:10]), plt.subplot(gs[18, 10]),
-            plt.subplot(gs[18, 11:13]), plt.subplot(gs[18, 13])]
-        plotter_align_odd.odd_isi_exc(odd_isi_axs01)
-        plotter_align_odd.odd_isi_inh(odd_isi_axs02)
-        
+        plotter_align_odd.odd_normal_heatmap(odd_normal_axs03)
+        # proceeding isi.
+        isi_normal_axs01 = [plt.subplot(gs[15, 0]), plt.subplot(gs[15, 1])]
+        isi_normal_axs02 = [plt.subplot(gs[16, 0]), plt.subplot(gs[16, 1])]
+        plotter_align_stim.normal_isi_exc(isi_normal_axs01)
+        plotter_align_stim.normal_isi_inh(isi_normal_axs02)
+        isi_odd_axs01 = [plt.subplot(gs[15, 2:4]), plt.subplot(gs[15, 4:6])]
+        isi_odd_axs02 = [plt.subplot(gs[16, 2:4]), plt.subplot(gs[16, 4:6])]
+        plotter_align_odd.odd_isi_exc(isi_odd_axs01)
+        plotter_align_odd.odd_isi_inh(isi_odd_axs02)
+        # epoch.
+        epoch_normal_axs01 = [plt.subplot(gs[18, 0]), plt.subplot(gs[18, 1]),
+                              plt.subplot(gs[19, 0]), plt.subplot(gs[19, 1])]
+        epoch_normal_axs02 = [plt.subplot(gs[20, 0]), plt.subplot(gs[20, 1]),
+                              plt.subplot(gs[21, 0]), plt.subplot(gs[21, 1])]
+        plotter_align_stim.normal_epoch_exc(epoch_normal_axs01)
+        plotter_align_stim.normal_epoch_inh(epoch_normal_axs02)
+        epoch_normal_axs01 = [plt.subplot(gs[18, 2:4]), plt.subplot(gs[18, 4:6]),
+                              plt.subplot(gs[19, 2:4]), plt.subplot(gs[19, 4:6])]
+        epoch_normal_axs02 = [plt.subplot(gs[20, 2:4]), plt.subplot(gs[20, 4:6]),
+                              plt.subplot(gs[21, 2:4]), plt.subplot(gs[21, 4:6])]
+        plotter_align_odd.odd_epoch_exc(epoch_normal_axs01)
+        plotter_align_odd.odd_epoch_inh(epoch_normal_axs02)
         # example traces.
         print('Plotting example traces')
         example_ax = plt.subplot(gs[0:4, 12])
@@ -299,7 +285,16 @@ if __name__ == "__main__":
         ]
     '''
     list_session_data_path = [
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT01_P_20240606_seq1420_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240611_seq1420_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240612_seq2420_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240613_seq2420_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240617_seq2420_t',
         ]
-    run(list_session_data_path, 'sig')
+    #run(list_session_data_path, 'sig')
     run(list_session_data_path, 'all')
+    '''
+    list_ops = read_ops(list_session_data_path)
+    [list_labels, list_masks, list_vol, list_dff,
+     list_neural_trials, list_move_offset, list_significance
+     ] = read_all(list_ops, 'all')
+    '''

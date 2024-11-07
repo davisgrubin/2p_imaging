@@ -280,7 +280,7 @@ def run(session_data_path):
     
 if __name__ == "__main__":
     
-    session_data_path = 'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VG01_P_20240525_seq1420_DCNCNO_t'
+    session_data_path = 'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VG01_P_20240603_js_t'
     run(session_data_path)
     '''
     for session_data_path in [

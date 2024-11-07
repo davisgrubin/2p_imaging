@@ -8,11 +8,14 @@ from tqdm import tqdm
 from matplotlib.gridspec import GridSpec
 
 from modules import Trialization
+from modules import StatTest
 from modules.ReadResults import read_masks
 from modules.ReadResults import read_raw_voltages
 from modules.ReadResults import read_dff
 from modules.ReadResults import read_neural_trials
 from modules.ReadResults import read_move_offset
+from modules.ReadResults import read_significance
+RESET_SIGNIFICANCE = False
 
 def read_ops(session_data_path):
     ops = np.load(
@@ -21,196 +24,175 @@ def read_ops(session_data_path):
     ops['save_path0'] = os.path.join(session_data_path)
     return ops
 
+def get_roi_sign(significance, roi_id):
+    r = significance['r_normal'][roi_id] +\
+        significance['r_change'][roi_id] +\
+        significance['r_oddball'][roi_id]
+    return r
+
+def reset_significance(significance):
+    sign = {}
+    sign['r_normal'] = np.ones_like(['r_normal']).astype('bool')
+    sign['r_change'] = np.ones_like(['r_change']).astype('bool')
+    sign['r_oddball'] = np.ones_like(['r_oddball']).astype('bool')
+    return sign
 
 from plot.fig1_mask import plotter_all_masks
 from plot.fig2_align_stim import plotter_L7G8_align_stim
-from plot.fig3_align_omi import plotter_L7G8_align_omi
-#from plot.fig4_spike import plotter_L7G8_spike
+from plot.fig3_align_odd import plotter_L7G8_align_odd
 from plot.fig5_raw_traces import plot_L7G8_example_traces
-#from plot.fig5_raw_traces import plot_roi_raw_trace
+from plot.fig5_raw_traces import plot_roi_raw_trace
 from plot.misc import plot_motion_offset_hist
+from plot.misc import plot_inh_exc_label_pc
 from plot.misc import plot_isi_distribution
 from plot.misc import plot_stim_type
 from plot.misc import plot_normal_type
 from plot.misc import plot_fix_jitter_type
 from plot.misc import plot_oddball_type
 from plot.misc import plot_oddball_distribution
+from plot.misc import plot_significance
+from plot.misc import plot_roi_significance
 
-def plot_omi_L7G8(ops):
+def plot_odd_L7G8(ops, session_data_name):
     
-    # read data.
-    print('===============================================')
-    print('============ reading saved results ============')
-    print('===============================================')
-    [labels,
-     masks,
-     mean_func, max_func,
-     mean_anat] = read_masks(ops)
-    [vol_time,
-     vol_start_bin,
-     vol_stim_bin,
-     vol_img_bin] = read_raw_voltages(ops)
-    dff = read_dff(ops)
-    neural_trials = read_neural_trials(ops)
-    [xoff, yoff] = read_move_offset(ops)
-    
-    print('Processing masks')
-    plotter_masks = plotter_all_masks(
-        labels, masks, mean_func, max_func, mean_anat)
-    print('Processing stimulus alignments')
-    plotter_align_stim = plotter_L7G8_align_stim(
-        neural_trials, labels)
-    print('Processing omission alignments')
-    plotter_align_omi = plotter_L7G8_align_omi(
-        neural_trials, labels)
-
     def plot_session_report():
-        print('Plotting session report')
-        fig = plt.figure(figsize=(63, 63))
-        gs = GridSpec(9, 9, figure=fig)
+        fig = plt.figure(figsize=(140, 140))
+        gs = GridSpec(20, 20, figure=fig)
         # masks.
+        print('Plotting masks')
         mask_ax01 = plt.subplot(gs[0:2, 0:2])
         mask_ax02 = plt.subplot(gs[0:2, 2:4])
         mask_ax03 = plt.subplot(gs[0:2, 4:6])
+        mask_ax04 = plt.subplot(gs[0:2, 6:8])
         plotter_masks.func(mask_ax01, 'mean')
         plotter_masks.func(mask_ax02, 'max')
         plotter_masks.func_masks_color(mask_ax03)
-        # stimulus alignment.
-        normal_ax01 = plt.subplot(gs[2, 0])
-        normal_ax02 = plt.subplot(gs[2, 1])
-        plotter_align_stim.normal(normal_ax01)
-        plotter_align_stim.normal_box(normal_ax02)
-        change_ax01 = plt.subplot(gs[2, 2])
-        change_ax02 = plt.subplot(gs[2, 3])
-        change_ax03 = plt.subplot(gs[2, 4])
-        change_ax04 = plt.subplot(gs[2, 5])
-        plotter_align_stim.change_short(change_ax01)
-        plotter_align_stim.change_long(change_ax02)
-        plotter_align_stim.change_box(change_ax03)
-        plotter_align_stim.change_heatmap_neuron(change_ax04)
-        context_ax01 = [plt.subplot(gs[3, i]) for i in range(5)]
-        context_ax02 = plt.subplot(gs[3, 5:7])
-        context_ax03 = plt.subplot(gs[3, 7])
-        context_ax04 = plt.subplot(gs[3, 8])
-        plotter_align_stim.context(context_ax01)
-        plotter_align_stim.context_box(context_ax02)
-        plotter_align_stim.context_all_short_heatmap_neuron(context_ax03)
-        plotter_align_stim.context_all_long_heatmap_neuron(context_ax04)
+        plotter_masks.func(mask_ax04, 'mean', with_mask=False)
+        '''
+        # normal alignment.
+        print('Plotting normal alignment')
+        normal_axs01 = [plt.subplot(gs[5, i]) for i in range(8)]
+        normal_axs02 = [plt.subplot(gs[6, i]) for i in range(8)]
+        normal_axs03 = [plt.subplot(gs[7, i]) for i in range(4)]
+        plotter_align_stim.all_normal(normal_axs01)
+        #plotter_align_stim.all_normal_heatmap(normal_axs03)
+        context_ax01 = [[plt.subplot(gs[8, i]) for i in range(5)], plt.subplot(gs[8, 5])]
+        context_ax02 = [[plt.subplot(gs[9, i]) for i in range(5)], plt.subplot(gs[9, 5])]
+        plotter_align_stim.all_context(context_ax01)
+        # change alignment.
+        print('Plotting change alignment')
+        change_axs01 = [plt.subplot(gs[5, 9]), plt.subplot(gs[5, 10])]
+        change_axs02 = [plt.subplot(gs[6, 9]), plt.subplot(gs[6, 10])]
+        plotter_align_stim.all_change(change_axs01)
+        # oddball alignment.
+        print('Plotting oddball alignment')
+        odd_normal_axs01 = [
+            plt.subplot(gs[11, 0:2]), plt.subplot(gs[11, 2:4]),  plt.subplot(gs[11, 4:6]),
+            plt.subplot(gs[11, 6:8]), plt.subplot(gs[11, 8:10]), plt.subplot(gs[11, 10:12])]
+        odd_normal_axs02 = [
+            plt.subplot(gs[12, 0:2]), plt.subplot(gs[12, 2:4]),  plt.subplot(gs[12, 4:6]),
+            plt.subplot(gs[12, 6:8]), plt.subplot(gs[12, 8:10]), plt.subplot(gs[12, 10:12])]
+        plotter_align_odd.all_odd_normal(odd_normal_axs01)
+
         # omission alignment.
-        omi_normal_ax01 = plt.subplot(gs[4, 0])
-        omi_normal_ax02 = plt.subplot(gs[4, 1])
-        omi_normal_ax03 = plt.subplot(gs[4, 2])
-        omi_normal_ax04 = plt.subplot(gs[4, 3])
-        omi_normal_ax05 = plt.subplot(gs[4, 4])
-        omi_normal_ax06 = plt.subplot(gs[4, 5])
-        omi_normal_ax07 = plt.subplot(gs[5, 0])
-        omi_normal_ax08 = plt.subplot(gs[5, 1])
-        omi_normal_ax09 = plt.subplot(gs[5, 2])
-        plotter_align_omi.omi_normal_pre(omi_normal_ax01)
-        plotter_align_omi.omi_normal_pre_short_heatmap_neuron(omi_normal_ax02)
-        plotter_align_omi.omi_normal_pre_long_heatmap_neuron(omi_normal_ax03)
-        plotter_align_omi.omi_normal_post(omi_normal_ax04)
-        plotter_align_omi.omi_normal_post_short_heatmap_neuron(omi_normal_ax05)
-        plotter_align_omi.omi_normal_post_long_heatmap_neuron(omi_normal_ax06)
-        plotter_align_omi.omi_normal_short(omi_normal_ax07)
-        plotter_align_omi.omi_normal_long(omi_normal_ax08)
-        plotter_align_omi.omi_normal_box(omi_normal_ax09)
-        omi_context_ax01 = [plt.subplot(gs[5, i+3]) for i in range(4)]
-        omi_context_ax02 = plt.subplot(gs[5, 7:9])
-        plotter_align_omi.omi_context(omi_context_ax01)
-        plotter_align_omi.omi_context_box(omi_context_ax02)
+        omi_normal_ax01 = plt.subplot(gs[9, 0])
+        omi_normal_ax02 = plt.subplot(gs[10, 0])
+        omi_normal_ax03 = plt.subplot(gs[9:11, 1])
+        omi_normal_ax04 = plt.subplot(gs[9:11, 2])
+        omi_normal_ax05 = plt.subplot(gs[9, 3])
+        omi_normal_ax06 = plt.subplot(gs[10, 3])
+        omi_normal_ax07 = plt.subplot(gs[9:11, 4])
+        omi_normal_ax08 = plt.subplot(gs[9:11, 5])
+        omi_normal_ax09 = plt.subplot(gs[11, 0])
+        omi_normal_ax10 = plt.subplot(gs[11, 1])
+        omi_normal_ax11 = plt.subplot(gs[12, 0])
+        omi_normal_ax12 = plt.subplot(gs[12, 1])
+        omi_normal_ax15 = plt.subplot(gs[8, 5])
+        omi_normal_ax16 = plt.subplot(gs[8, 6])
+        #plotter_align_omi.omi_normal_pre(omi_normal_ax01)
+        #plotter_align_omi.omi_normal_pre_short_heatmap_neuron(omi_normal_ax03)
+        #plotter_align_omi.omi_normal_pre_long_heatmap_neuron(omi_normal_ax04)
+        #plotter_align_omi.omi_normal_post(omi_normal_ax05)
+        #plotter_align_omi.omi_normal_post_short_heatmap_neuron(omi_normal_ax07)
+        #plotter_align_omi.omi_normal_post_long_heatmap_neuron(omi_normal_ax08)
+        #plotter_align_omi.omi_normal_short(omi_normal_ax09)
+        #plotter_align_omi.omi_normal_long(omi_normal_ax10)
+        #plotter_align_omi.omi_isi_short(omi_normal_ax15)
+        #plotter_align_omi.omi_isi_long(omi_normal_ax16)
+        #omi_epoch_ax01 = plt.subplot(gs[9, 6])
+        #omi_epoch_ax02 = plt.subplot(gs[9, 7])
+        #omi_epoch_ax03 = plt.subplot(gs[10, 6])
+        #omi_epoch_ax04 = plt.subplot(gs[10, 7])
+        #omi_epoch_ax05 = plt.subplot(gs[9, 8:10])
+        #omi_epoch_ax06 = plt.subplot(gs[10, 8:10])
+        #plotter_align_omi.omi_epoch_post_short(omi_epoch_ax01)
+        #plotter_align_omi.omi_epoch_post_long(omi_epoch_ax02)
+        #plotter_align_omi.omi_epoch_post_box(omi_epoch_ax05)
+        #omi_context_ax01 = [plt.subplot(gs[11, i+3]) for i in range(4)]
+        #omi_context_ax02 = [plt.subplot(gs[12, i+3]) for i in range(4)]
+        #plotter_align_omi.omi_context(omi_context_ax01)
+        #omi_jitter_ax01 = plt.subplot(gs[11, 9])
+        #omi_jitter_ax03 = plt.subplot(gs[11, 11])
+        #omi_jitter_ax05 = plt.subplot(gs[12, 9])
+        #omi_jitter_ax07 = plt.subplot(gs[12, 11])
+        #plotter_align_omi.omi_post_isi_short(omi_jitter_ax01)
+        #plotter_align_omi.omi_post_isi_long(omi_jitter_ax03)
+        '''
         # example traces.
-        example_ax = plt.subplot(gs[1:3, 8])
+        print('Plotting example traces')
+        example_ax = plt.subplot(gs[0:4, 12:14])
         plot_L7G8_example_traces(
-            example_ax, dff, labels, vol_img_bin, vol_time)
-        # offset.
-        offset_ax = plt.subplot(gs[0, 6])
-        plot_motion_offset_hist(offset_ax, xoff, yoff)
+            example_ax, dff, labels, vol_img, vol_time)
+        print('Plotting stimulus types')
         # isi distribution.
-        isi_ax = plt.subplot(gs[0, 7])
+        isi_ax = plt.subplot(gs[0, 14])
         plot_isi_distribution(isi_ax, neural_trials)
         # stimulus types.
-        type_ax01 = plt.subplot(gs[0, 8])
-        type_ax02 = plt.subplot(gs[1, 6])
-        type_ax03 = plt.subplot(gs[1, 7])
-        type_ax04 = plt.subplot(gs[2, 6])
-        type_ax05 = plt.subplot(gs[2, 7])
+        type_ax01 = plt.subplot(gs[0, 15])
+        type_ax02 = plt.subplot(gs[1, 14])
+        type_ax03 = plt.subplot(gs[1, 15])
+        type_ax04 = plt.subplot(gs[2, 14])
+        type_ax05 = plt.subplot(gs[2, 15])
         plot_stim_type(type_ax01, neural_trials)
         plot_normal_type(type_ax02, neural_trials)
         plot_fix_jitter_type(type_ax03, neural_trials)
         plot_oddball_type(type_ax04, neural_trials)
         plot_oddball_distribution(type_ax05, neural_trials)
+        print('Plotting 2p misc results')
+        # offset.
+        offset_ax = plt.subplot(gs[2, 10:12])
+        plot_motion_offset_hist(offset_ax, xoff, yoff)
+        # labels.
+        label_ax = plt.subplot(gs[3, 10])
+        plot_inh_exc_label_pc(label_ax, labels)
+        # significance.
+        sign_ax = plt.subplot(gs[3, 11])
+        plot_significance(sign_ax, significance, labels)
         # save figure.
-        fig.set_size_inches(63, 63)
+        fig.set_size_inches(140, 140)
         fig.savefig(os.path.join(
-            ops['save_path0'], 'figures', 'session_report.pdf'),
+            ops['save_path0'], 'figures',
+            'session_report_{}.pdf'.format(session_data_name)),
             dpi=300)
         plt.close()
-        print('Visualization for session report completed')
 
     def plot_individual_roi():
-        print('Plotting roi report')
         roi_report = fitz.open()
-        for roi_id in tqdm(np.argsort(labels, kind='stable')):
+        for roi_id in tqdm(np.argsort(labels, kind='stable')[:2]):
             fig = plt.figure(figsize=(56, 35))
             gs = GridSpec(5, 8, figure=fig)
             # masks.
             mask_ax01 = plt.subplot(gs[0:2, 0:2])
             mask_ax02 = plt.subplot(gs[0, 2])
             mask_ax03 = plt.subplot(gs[0, 3])
-            mask_ax04 = plt.subplot(gs[1, 3])
-            plotter_masks.roi_loc_1chan(mask_ax01, roi_id, 'mean')
-            plotter_masks.roi_func(mask_ax02, roi_id, 'mean')
-            plotter_masks.roi_func(mask_ax03, roi_id, 'max')
-            plotter_masks.roi_masks(mask_ax04, roi_id)
-            # stimulus alignment.
-            normal_ax01 = plt.subplot(gs[0, 4])
-            normal_ax02 = plt.subplot(gs[0, 5:7])
-            normal_ax03 = plt.subplot(gs[0, 7])
-            plotter_align_stim.roi_normal(normal_ax01, roi_id)
-            plotter_align_stim.roi_normal_box(normal_ax02, roi_id)
-            plotter_align_stim.roi_normal_heatmap_trials(normal_ax03, roi_id)
-            change_ax01 = plt.subplot(gs[1, 4])
-            change_ax02 = plt.subplot(gs[1, 5])
-            change_ax03 = plt.subplot(gs[1, 6])
-            change_ax04 = plt.subplot(gs[1, 7])
-            plotter_align_stim.roi_change_short(change_ax01, roi_id)
-            plotter_align_stim.roi_change_long(change_ax02, roi_id)
-            plotter_align_stim.roi_change_box(change_ax03, roi_id)
-            plotter_align_stim.roi_change_heatmap_trials(change_ax04, roi_id)
-            context_ax01 = plt.subplot(gs[2, 0])
-            context_ax02 = plt.subplot(gs[2, 1])
-            context_ax03 = plt.subplot(gs[2, 2])
-            context_ax04 = [plt.subplot(gs[2, i+3]) for i in range(4)]
-            context_ax05 = plt.subplot(gs[2, 7:9])
-            plotter_align_stim.roi_context_all(context_ax01, roi_id)
-            plotter_align_stim.roi_context_all_short_heatmap_trial(context_ax02, roi_id)
-            plotter_align_stim.roi_context_all_long_heatmap_trial(context_ax03, roi_id)
-            plotter_align_stim.roi_context_individual(context_ax04, roi_id)
-            plotter_align_stim.roi_context_box(context_ax05, roi_id)
-            # omission alignment.
-            omi_normal_ax01 = plt.subplot(gs[3, 0:2])
-            omi_normal_ax02 = plt.subplot(gs[3, 2:4])
-            omi_normal_ax03 = plt.subplot(gs[4, 0])
-            omi_normal_ax04 = plt.subplot(gs[4, 1])
-            omi_normal_ax05 = plt.subplot(gs[4, 2])
-            omi_normal_ax06 = plt.subplot(gs[3, 4])
-            omi_normal_ax07 = plt.subplot(gs[3, 5])
-            omi_normal_ax08 = plt.subplot(gs[3, 6])
-            omi_normal_ax09 = plt.subplot(gs[3, 7])
-            plotter_align_omi.roi_omi_normal_pre(omi_normal_ax01, roi_id)
-            plotter_align_omi.roi_omi_normal_post(omi_normal_ax02, roi_id)
-            plotter_align_omi.roi_omi_normal_short(omi_normal_ax03, roi_id)
-            plotter_align_omi.roi_omi_normal_long(omi_normal_ax04, roi_id)
-            plotter_align_omi.roi_omi_normal_box(omi_normal_ax05, roi_id)
-            plotter_align_omi.roi_omi_isi_short(omi_normal_ax06, roi_id)
-            plotter_align_omi.roi_omi_isi_long(omi_normal_ax07, roi_id)
-            plotter_align_omi.roi_omi_isi_post_short(omi_normal_ax08, roi_id)
-            plotter_align_omi.roi_omi_isi_post_long(omi_normal_ax09, roi_id)
-            omi_context_ax01 = [plt.subplot(gs[4, i+3]) for i in range(4)]
-            omi_context_ax02 = plt.subplot(gs[4, 7])
-            plotter_align_omi.roi_omi_context(omi_context_ax01, roi_id)
-            plotter_align_omi.roi_omi_context_box(omi_context_ax02, roi_id)
+            mask_ax04 = plt.subplot(gs[1, 2])
+            mask_ax05 = plt.subplot(gs[1, 3])
+            plotter_masks.roi_loc_2chan(mask_ax01, roi_id, 'max')
+            plotter_masks.roi_func(mask_ax02, roi_id, 'max')
+            plotter_masks.roi_anat(mask_ax03, roi_id)
+            plotter_masks.roi_superimpose(mask_ax04, roi_id, 'max')
+            plotter_masks.roi_masks(mask_ax05, roi_id)
+            
             # save figure.
             fname = os.path.join(
                 ops['save_path0'], 'figures',
@@ -222,7 +204,9 @@ def plot_omi_L7G8(ops):
             roi_report.insert_pdf(roi_fig)
             roi_fig.close()
             os.remove(fname)
-        roi_report.save(os.path.join(ops['save_path0'], 'figures', 'roi_report.pdf'))
+        roi_report.save(
+            os.path.join(ops['save_path0'], 'figures', 'roi_report_{}.pdf'.format(
+            session_data_name)))
         roi_report.close()
     
     def plot_raw_traces():
@@ -235,13 +219,14 @@ def plot_omi_L7G8(ops):
             trace_num_fig = 1
         else:
             trace_num_fig = int(np.max(vol_time)/max_ms)
-        for roi_id in tqdm(range(len(labels))):
-            fig, axs = plt.subplots(trace_num_fig, 1, figsize=(5, 5))
+        for roi_id in [50,55,60,65,70]:
+            fig, axs = plt.subplots(trace_num_fig, 1, figsize=(max_ms/5000, trace_num_fig*4))
             plt.subplots_adjust(hspace=0.6)
             plot_roi_raw_trace(
                 axs, roi_id, max_ms,
-                labels, dff, vol_img_bin, vol_stim_bin, vol_time)
-            fig.set_size_inches(max_ms/5000, trace_num_fig*2)
+                labels, dff,
+                vol_img, vol_stim_vis, vol_led, vol_time)
+            fig.set_size_inches(max_ms/2500, trace_num_fig*4)
             fig.tight_layout()
             fig.savefig(os.path.join(
                 ops['save_path0'], 'figures', 'raw_traces',
@@ -250,13 +235,39 @@ def plot_omi_L7G8(ops):
             plt.close()
     
     print('===============================================')
-    print('============= plot session report =============')
+    print('============ reading saved results ============')
     print('===============================================')
+    [labels,
+     masks,
+     mean_func, max_func,
+     mean_anat, masks_anat] = read_masks(ops)
+    labels = -1*np.ones_like(labels)
+    [vol_time, vol_start, vol_stim_vis, vol_img, 
+     vol_hifi, vol_stim_aud, vol_flir,
+     vol_pmt, vol_led] = read_raw_voltages(ops)
+    dff = read_dff(ops)
+    neural_trials = read_neural_trials(ops)
+    [xoff, yoff] = read_move_offset(ops)
+    significance = read_significance(ops)
+    if RESET_SIGNIFICANCE:
+        significance = reset_significance(significance)
+    print('Processing masks')
+    plotter_masks = plotter_all_masks(
+        labels, masks, mean_func, max_func, mean_anat, masks_anat)
+    print('===============================================')
+    print('====== plot session report with all ROIs ======')
+    print('===============================================')
+    print('Processing stimulus alignments')
+    #plotter_align_stim = plotter_L7G8_align_stim(
+    #    neural_trials, labels, significance)
+    print('Processing omission alignments')
+    #plotter_align_odd = plotter_L7G8_align_odd(
+    #    neural_trials, labels, significance)
     plot_session_report()
     print('===============================================')
     print('=============== plot roi report ===============')
     print('===============================================')
-    plot_individual_roi()
+    #plot_individual_roi()
     print('===============================================')
     print('=============== plot raw traces ===============')
     print('===============================================')
@@ -271,15 +282,16 @@ def run(session_data_path):
     print('===============================================')
     print('============= trials segmentation =============')
     print('===============================================')
-    #Trialization.run(ops)
-    plot_omi_L7G8(ops)
+    Trialization.run(ops)
+    StatTest.run(ops)
+    plot_odd_L7G8(ops, session_data_name)
     print('===============================================')
     print('Processing {} completed'.format(session_data_name))
     
     
 if __name__ == "__main__":
     
-    session_data_path = 'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/LG04_C_20240603_seq1420_t'
+    session_data_path = 'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/LG07_CRBL_20240801_seq1421_t'
     run(session_data_path)
     '''
     for session_data_path in [
