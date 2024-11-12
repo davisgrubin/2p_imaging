@@ -9,20 +9,26 @@ from modules.ReadResults import read_dff
 from modules.ReadResults import read_bpod_mat_data
 
 # remove trial start trigger voltage impulse.
-def remove_start_impulse(vol_time, vol_stim_bin):
+def remove_start_impulse(vol_time, vol_stim_vis):
     min_duration = 100
-    changes = np.diff(vol_stim_bin.astype(int))
+    changes = np.diff(vol_stim_vis.astype(int))
     start_indices = np.where(changes == 1)[0] + 1
     end_indices = np.where(changes == -1)[0] + 1
-    if vol_stim_bin[0] == 1:
+    if vol_stim_vis[0] == 1:
         start_indices = np.insert(start_indices, 0, 0)
-    if vol_stim_bin[-1] == 1:
-        end_indices = np.append(end_indices, len(vol_stim_bin))
+    if vol_stim_vis[-1] == 1:
+        end_indices = np.append(end_indices, len(vol_stim_vis))
     for start, end in zip(start_indices, end_indices):
         duration = vol_time[end-1] - vol_time[start]
         if duration < min_duration:
-            vol_stim_bin[start:end] = 0
-    return vol_stim_bin
+            vol_stim_vis[start:end] = 0
+    return vol_stim_vis
+
+# correct beginning vol_stim_vis if not start from 0.
+def correct_vol_start(vol_stim_vis):
+    if vol_stim_vis[0] == 1:
+        vol_stim_vis[:np.where(vol_stim_vis==0)[0][0]] = 0
+    return vol_stim_vis
 
 # detect the rising edge and falling edge of binary series.
 def get_trigger_time(
@@ -103,7 +109,7 @@ def save_trials(
     grp['vol_led']      = vol_led
     f.close()
 
-# main function for trialization
+# main function for trialization.
 def run(ops):
     print('Reading dff traces and voltage recordings')
     dff = read_dff(ops)
@@ -111,6 +117,7 @@ def run(ops):
      vol_hifi, vol_stim_aud, vol_flir,
      vol_pmt, vol_led] = read_raw_voltages(ops)
     vol_stim_vis = remove_start_impulse(vol_time, vol_stim_vis)
+    vol_stim_vis = correct_vol_start(vol_stim_vis)
     bpod_sess_data = read_bpod_mat_data(ops)
     print('Correcting 2p camera trigger time')
     # signal trigger time stamps.

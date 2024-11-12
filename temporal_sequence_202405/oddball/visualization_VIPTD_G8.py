@@ -65,6 +65,12 @@ def run(list_session_data_path, sig_tag):
         plotter_masks.superimpose(mask_ax11, 'max', with_mask=False)
         # normal alignment.
         print('Plotting normal alignment')
+        normal_axs01 = [plt.subplot(gs[5, 0])]
+        normal_axs02 = [plt.subplot(gs[6, 0])]
+        normal_axs03 = [plt.subplot(gs[5:7, 1])]
+        plotter_align_stim.normal_exc(normal_axs01)
+        plotter_align_stim.normal_inh(normal_axs02)
+        plotter_align_stim.normal_heatmap(normal_axs03)
         # oddball alignment.
         print('Plotting oddball alignment')
         odd_normal_axs01 = [
@@ -253,3 +259,9 @@ if __name__ == "__main__":
         ]
     #run(list_session_data_path, 'sig')
     run(list_session_data_path, 'all')
+    '''
+    list_ops = read_ops(list_session_data_path)
+    [list_labels, list_masks, list_vol, list_dff,
+     list_neural_trials, list_move_offset, list_significance
+     ] = read_all(list_ops, 'all')
+    '''
