@@ -71,3 +71,14 @@
 - Now plot_heatmap_neuron excludes nan values.
 - Now get_multi_sess_neu_trial_average also processes proceeding isi.
 - Now get_epoch_idx only computes early and late epoch.
+
+## 2024.11.11
+- Adjusted heatmap positions.
+- Now preceeding isi is devided only by the mean into 2 bins.
+- Changed color coding for epochs.
+- Added super init for plotter_utils.
+- Now win_sort in plot_heatmap_neuron is an input parameter.
+- Added \n to titles.
+- Now get_stim_response uses np.searchsorted to find alignement points.
+- Now get_stim_response can align traces on expected isi.
+- Now get_stim_response returns a dict of results.

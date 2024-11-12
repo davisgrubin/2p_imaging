@@ -255,35 +255,13 @@ def adjust_layout_raw_trace(ax):
     ax.set_xlabel('time (s)')
     ax.legend(loc='upper left')
 
-# adjust layout for decoding accuracy.
-def adjust_layout_decode_box(ax, state_all):
-    ax.legend(loc='upper right')
-    ax.tick_params(tick1On=False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.set_xlim([-0.5, len(state_all)+1])
-    ax.set_xticks(np.arange(len(state_all)))
-    ax.set_xticklabels(state_all)
-    ax.set_ylabel('validation accuracy')
-
-# adjust layout for decoding accuracy outcome percentage.
-def adjust_layout_decode_outcome_pc(ax, state_all):
-    ax.legend(loc='upper right')
-    ax.tick_params(tick1On=False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.yaxis.grid(True)
-    ax.set_xlim([-0.5, len(state_all)+1])
-    ax.set_xlabel('state')
-    ax.set_xticks(np.arange(len(state_all)))
-    ax.set_xticklabels(state_all)
-    ax.set_ylabel('outcome percentage in class')
-
 
 class utils:
 
     def __init__(self):
         self.min_num_trial = 5
+        self.color_isi = ['blue','red']
+        self.color_epoch = ['mediumseagreen', 'coral']
 
     def plot_mean_sem(self, ax, t, m, s, c, l, a=1.0):
         ax.plot(t, m, color=c, label=l, alpha=a)
@@ -295,9 +273,10 @@ class utils:
         v = rescale(v, u, l)
         ax.plot(st, v, color=c, lw=0.5, linestyle=':')
 
-    def plot_heatmap_neuron(self, ax, neu_seq, neu_time, neu_seq_sort, labels, s, colorbar=False):
+    def plot_heatmap_neuron(
+            self, ax, neu_seq, neu_time, neu_seq_sort,
+            win_sort, labels, s, colorbar=False):
         win_conv = 5
-        win_sort = [-1000,1000]
         if len(neu_seq) > 0:
             _, _, _, cmap_exc = get_roi_label_color([-1], 0)
             _, _, _, cmap_inh = get_roi_label_color([1], 0)

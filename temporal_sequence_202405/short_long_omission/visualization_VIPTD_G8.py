@@ -68,44 +68,50 @@ def run(list_session_data_path, sig_tag):
         plotter_masks.superimpose(mask_ax11, 'max', with_mask=False)
         # normal.
         print('Plotting normal alignment')
-        normal_axs01 = [plt.subplot(gs[5, i]) for i in range(8)]
-        normal_axs02 = [plt.subplot(gs[6, i]) for i in range(8)]
-        normal_axs03 = [plt.subplot(gs[7:9, i]) for i in range(8)]
+        normal_axs01 = [plt.subplot(gs[5, i]) for i in range(4)] + [plt.subplot(gs[7, i]) for i in range(4)]
+        normal_axs02 = [plt.subplot(gs[6, i]) for i in range(4)] + [plt.subplot(gs[8, i]) for i in range(4)]
+        normal_axs03 = [plt.subplot(gs[5:7, i+4]) for i in range(4)] + [plt.subplot(gs[7:9, i+4]) for i in range(4)]
         plotter_align_stim.normal_exc(normal_axs01)
         plotter_align_stim.normal_inh(normal_axs02)
         plotter_align_stim.normal_heatmap(normal_axs03)
         # oddball.
         print('Plotting oddball alignment')
         odd_normal_axs01 = [
-            plt.subplot(gs[10, 0:2]), plt.subplot(gs[10, 2:4]),  plt.subplot(gs[10, 4:6]),
-            plt.subplot(gs[10, 6:8]), plt.subplot(gs[10, 8:10]), plt.subplot(gs[10, 10:12])]
+            plt.subplot(gs[10, 0:2]), plt.subplot(gs[10, 2:4]), plt.subplot(gs[10, 4:6]),
+            plt.subplot(gs[12, 0:2]), plt.subplot(gs[12, 2:4]), plt.subplot(gs[12, 4:6])]
         odd_normal_axs02 = [
-            plt.subplot(gs[11, 0:2]), plt.subplot(gs[11, 2:4]),  plt.subplot(gs[11, 4:6]),
-            plt.subplot(gs[11, 6:8]), plt.subplot(gs[11, 8:10]), plt.subplot(gs[11, 10:12])]
-        odd_normal_axs03 = [plt.subplot(gs[12:14, i]) for i in [0,1,2,3,6,7,8,9]]
+            plt.subplot(gs[11, 0:2]), plt.subplot(gs[11, 2:4]), plt.subplot(gs[11, 4:6]),
+            plt.subplot(gs[13, 0:2]), plt.subplot(gs[13, 2:4]), plt.subplot(gs[13, 4:6])]
+        odd_normal_axs03 = [
+            plt.subplot(gs[10:12, 6]), plt.subplot(gs[10:12, 7]),
+            plt.subplot(gs[10:12, 8]), plt.subplot(gs[10:12, 9]),
+            plt.subplot(gs[12:14, 6]), plt.subplot(gs[12:14, 7]),
+            plt.subplot(gs[12:14, 8]), plt.subplot(gs[12:14, 9])]
         plotter_align_odd.odd_normal_exc(odd_normal_axs01)
         plotter_align_odd.odd_normal_inh(odd_normal_axs02)
         plotter_align_odd.odd_normal_heatmap(odd_normal_axs03)
         # proceeding isi.
-        isi_normal_axs01 = [plt.subplot(gs[15, 0]), plt.subplot(gs[15, 1])]
-        isi_normal_axs02 = [plt.subplot(gs[16, 0]), plt.subplot(gs[16, 1])]
+        isi_normal_axs01 = [plt.subplot(gs[15, i]) for i in range(5)]
+        isi_normal_axs02 = [plt.subplot(gs[16, i]) for i in range(5)]
         plotter_align_stim.normal_isi_exc(isi_normal_axs01)
         plotter_align_stim.normal_isi_inh(isi_normal_axs02)
-        isi_odd_axs01 = [plt.subplot(gs[15, 2:4]), plt.subplot(gs[15, 4:6])]
-        isi_odd_axs02 = [plt.subplot(gs[16, 2:4]), plt.subplot(gs[16, 4:6])]
+        isi_odd_axs01 = [plt.subplot(gs[17, 0:2]), plt.subplot(gs[17, 2:4]), plt.subplot(gs[17, 4:6]),
+                         plt.subplot(gs[17, 6]), plt.subplot(gs[17, 7])]
+        isi_odd_axs02 = [plt.subplot(gs[18, 0:2]), plt.subplot(gs[18, 2:4]), plt.subplot(gs[18, 4:6]),
+                         plt.subplot(gs[18, 6]), plt.subplot(gs[18, 7])]
         plotter_align_odd.odd_isi_exc(isi_odd_axs01)
         plotter_align_odd.odd_isi_inh(isi_odd_axs02)
         # epoch.
-        epoch_normal_axs01 = [plt.subplot(gs[18, 0]), plt.subplot(gs[18, 1]),
-                              plt.subplot(gs[19, 0]), plt.subplot(gs[19, 1])]
-        epoch_normal_axs02 = [plt.subplot(gs[20, 0]), plt.subplot(gs[20, 1]),
-                              plt.subplot(gs[21, 0]), plt.subplot(gs[21, 1])]
+        epoch_normal_axs01 = [plt.subplot(gs[20, 0]), plt.subplot(gs[20, 1]),
+                              plt.subplot(gs[22, 0]), plt.subplot(gs[22, 1])]
+        epoch_normal_axs02 = [plt.subplot(gs[21, 0]), plt.subplot(gs[21, 1]),
+                              plt.subplot(gs[23, 0]), plt.subplot(gs[23, 1])]
         plotter_align_stim.normal_epoch_exc(epoch_normal_axs01)
         plotter_align_stim.normal_epoch_inh(epoch_normal_axs02)
-        epoch_normal_axs01 = [plt.subplot(gs[18, 2:4]), plt.subplot(gs[18, 4:6]),
-                              plt.subplot(gs[19, 2:4]), plt.subplot(gs[19, 4:6])]
-        epoch_normal_axs02 = [plt.subplot(gs[20, 2:4]), plt.subplot(gs[20, 4:6]),
-                              plt.subplot(gs[21, 2:4]), plt.subplot(gs[21, 4:6])]
+        epoch_normal_axs01 = [plt.subplot(gs[20, 2:4]), plt.subplot(gs[20, 4:6]),
+                              plt.subplot(gs[22, 2:4]), plt.subplot(gs[22, 4:6])]
+        epoch_normal_axs02 = [plt.subplot(gs[21, 2:4]), plt.subplot(gs[21, 4:6]),
+                              plt.subplot(gs[23, 2:4]), plt.subplot(gs[23, 4:6])]
         plotter_align_odd.odd_epoch_exc(epoch_normal_axs01)
         plotter_align_odd.odd_epoch_inh(epoch_normal_axs02)
         # example traces.
