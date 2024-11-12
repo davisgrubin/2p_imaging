@@ -8,12 +8,11 @@ from plot.utils import get_mean_sem
 from plot.utils import get_multi_sess_neu_trial_average
 from plot.utils import get_roi_label_color
 from plot.utils import get_epoch_idx
-from plot.utils import get_change_prepost_idx
-from plot.utils import pick_trial
+from plot.utils import get_expect_time
 from plot.utils import adjust_layout_neu
 from plot.utils import utils
 
-# fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+# fig, ax = plt.subplots(1, 1, figsize=(6, 6))
 
 class plotter_utils(utils):
 
@@ -21,407 +20,245 @@ class plotter_utils(utils):
             self,
             list_neural_trials, list_labels, list_significance
             ):
+        super().__init__()
         timescale = 1.0
         self.n_sess = len(list_neural_trials)
-        self.l_frames = int(50*timescale)
+        self.l_frames = int(80*timescale)
         self.r_frames = int(100*timescale)
         self.list_stim_labels = [
             nt['stim_labels'][1:-1,:] for nt in list_neural_trials]
         self.list_stim_labels = [
             exclude_post_odd_stim(sl) for sl in self.list_stim_labels]
         self.list_labels = list_labels
-        self.list_epoch = [
-            get_epoch_idx(sl) for sl in self.list_stim_labels]
-        self.epoch = [[self.list_epoch[n][0][e] for n in range(self.n_sess)] for e in range(4)]
-        [self.list_neu_seq, self.list_neu_time,
-         self.list_stim_seq, self.list_stim_value, self.list_stim_time,
-         _, _] = run_get_stim_response(
-                list_neural_trials, self.l_frames, self.r_frames)
+        self.expect = np.array([
+            np.mean([get_expect_time(sl)[0] for sl in self.list_stim_labels]),
+            np.mean([get_expect_time(sl)[1] for sl in self.list_stim_labels])])
+        self.epoch_early = [get_epoch_idx(sl)[0] for sl in self.list_stim_labels]
+        self.epoch_late  = [get_epoch_idx(sl)[1] for sl in self.list_stim_labels]
+        self.alignment = run_get_stim_response(
+                list_neural_trials, self.l_frames, self.r_frames, expected='none')
+        self.alignment_local = run_get_stim_response(
+                list_neural_trials, self.l_frames, self.r_frames, expected='local')
         self.list_significance = list_significance
 
-    def plot_normal(self, ax, normal, cate=None, roi_id=None):
-        colors = ['royalblue', 'mediumseagreen', 'violet', 'coral']
-        lbl = ['img#1', 'img#2', 'img#3', 'img#4']
-        if cate != None:
-            neu_cate = [
-                self.list_neu_seq[i][:,(self.list_labels[i]==cate)*self.list_significance[i]['r_normal'],:]
-                for i in range(self.n_sess)]
-        if roi_id != None:
-            neu_cate = [np.expand_dims(self.list_neu_seq[0][:,roi_id,:], axis=1)]
-        neu_mean = []
-        neu_sem = []
-        for i in [2,3,4,5]:
-            neu, _ = get_multi_sess_neu_trial_average(
-                self.list_stim_labels, neu_cate,
-                trial_param=[[i], [normal], None, None, [0]])
-            m, s = get_mean_sem(neu)
-            neu_mean.append(m)
-            neu_sem.append(s)
-        upper = np.nanmax(neu_mean) + np.nanmax(neu_sem)
-        lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
-        idx = pick_trial(self.list_stim_labels[0], [2,3,4,5], [normal], None, None, [0])
-        stim = np.mean(self.list_stim_seq[0][idx,1,:],axis=0)
-        ax.fill_between(
-            stim,
-            lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-            color='gold', alpha=0.15, step='mid', label='stim')
-        self.plot_vol(
-            ax, self.list_stim_time[0], self.list_stim_value[0][idx,:],
-            'gold', upper, lower)
-        for i in range(4):
-            self.plot_mean_sem(
-                ax, self.list_neu_time[0], neu_mean[i], neu_sem[i],
-                colors[i], lbl[i])
-        adjust_layout_neu(ax)
-        ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
-        ax.set_xlabel('time since stim (ms)')
-
-    def plot_normal_box(self, ax, normal, cate=None, roi_id=None):
-        win_base = [-1000,0]
-        colors = ['royalblue', 'mediumseagreen', 'violet', 'coral', 'grey']
-        lbl = ['img#1', 'img#2', 'img#3', 'img#4', 'all']
-        offsets = [0.0, 0.1, 0.2, 0.3, 0.4]
-        if cate != None:
-            neu_cate = [
-                self.list_neu_seq[i][:,(self.list_labels[i]==cate)*self.list_significance[i]['r_normal'],:]
-                for i in range(self.n_sess)]
-        if roi_id != None:
-            neu_cate = [np.expand_dims(self.list_neu_seq[0][:,roi_id,:], axis=1)]
-        neu = []
-        for i in [2,3,4,5]:
-            neu.append(get_multi_sess_neu_trial_average(
-                self.list_stim_labels, neu_cate,
-                trial_param=[[i], [normal], None, None, [0]])[0])
-        neu.append(get_multi_sess_neu_trial_average(
-            self.list_stim_labels, neu_cate,
-            trial_param=[[2,3,4,5], [normal], None, None, [0]])[0])
-        for i in range(5):
-            self.plot_win_mag_box(
-                ax, neu[i], self.list_neu_time[0], win_base, colors[i], 0, offsets[i])
-            ax.plot([], color=colors[i], label=lbl[i])
-        ax.legend(loc='upper right')
-
-    def plot_epoch(self, ax, epoch, normal, colors, cate=None, roi_id=None):
-        lbl = ['ep11', 'ep12', 'ep21', 'ep22']
-        if cate != None:
-            neu_cate = [
-                self.list_neu_seq[i][:,(self.list_labels[i]==cate)*self.list_significance[i]['r_normal'],:]
-                for i in range(self.n_sess)]
-        if roi_id != None:
-            neu_cate = [np.expand_dims(self.list_neu_seq[0][:,roi_id,:], axis=1)]
-        neu_mean = []
-        neu_sem = []
-        for i in range(4):
-            neu, _ = get_multi_sess_neu_trial_average(
-                self.list_stim_labels, neu_cate,
-                trial_idx=epoch[i],
-                trial_param=[[2,3,4,5], [normal], None, None, [0]])
-            m, s = get_mean_sem(neu)
-            neu_mean.append(m)
-            neu_sem.append(s)
-        upper = np.nanmax(neu_mean) + np.nanmax(neu_sem)
-        lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
-        idx = pick_trial(self.list_stim_labels[0], [2,3,4,5], [normal], None, None, [0])
-        stim = np.mean(self.list_stim_seq[0][idx,1,:],axis=0)
-        ax.fill_between(
-            stim,
-            lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-            color='gold', alpha=0.15, step='mid', label='stim')
-        self.plot_vol(
-            ax, self.list_stim_time[0], self.list_stim_value[0][idx,:],
-            'gold', upper, lower)
-        for i in range(4):
-            self.plot_mean_sem(
-                ax, self.list_neu_time[0], neu_mean[i], neu_sem[i],
-                colors[i], lbl[i])
-        adjust_layout_neu(ax)
-        ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
-        ax.set_xlabel('time since stim (ms)')
-
-    def plot_epoch_box(self, ax, epoch, normal, colors, cate=None, roi_id=None):
-        win_base = [-1000,0]
-        lbl = ['ep11', 'ep12', 'ep21', 'ep22']
-        offsets = [0.0, 0.1, 0.2, 0.3]
-        if cate != None:
-            neu_cate = [
-                self.list_neu_seq[i][:,(self.list_labels[i]==cate)*self.list_significance[i]['r_normal'],:]
-                for i in range(self.n_sess)]
-        if roi_id != None:
-            neu_cate = [np.expand_dims(self.list_neu_seq[0][:,roi_id,:], axis=1)]
-        neu = []
-        for i in range(4):
-            neu.append(get_multi_sess_neu_trial_average(
-                self.list_stim_labels, neu_cate,
-                trial_idx=epoch[i],
-                trial_param=[[2,3,4,5], [normal], None, None, [0]])[0])
-        for i in range(4):
-            self.plot_win_mag_box(
-                ax, neu[i], self.list_neu_time[0], win_base, colors[i], 0, offsets[i])
-            ax.plot([], color=colors[i], label=lbl[i])
-        ax.legend(loc='upper right')
-    
-    def plot_context(self, ax, img_id, cate=None, roi_id=None):
-        if cate != None:
-            _, _, color, _ = get_roi_label_color([cate], 0)
-            neu_cate = [
-                self.list_neu_seq[i][:,(self.list_labels[i]==cate)*self.list_significance[i]['r_normal'],:]
-                for i in range(self.n_sess)]
-        if roi_id != None:
-            _, _, color, _ = get_roi_label_color(self.labels, roi_id)
-            neu_cate = [np.expand_dims(self.list_neu_seq[0][:,roi_id,:], axis=1)]
-        neu, _ = get_multi_sess_neu_trial_average(
-            self.list_stim_labels, neu_cate,
-            trial_param=[img_id, [0], None, None, [0]])
-        m, s = get_mean_sem(neu)
-        upper = np.nanmax(m) + np.nanmax(s)
-        lower = np.nanmin(m) - np.nanmax(s)
-        idx = pick_trial(self.list_stim_labels[0], img_id, [0], None, None, [0])
-        ax.fill_between(
-            np.mean(self.list_stim_seq[0][idx,1,:],axis=0),
-            lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-            color=color, alpha=0.15, step='mid')
-        ax.fill_between(
-            np.mean(self.list_stim_seq[0][idx,2,:],axis=0),
-            lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-            color=color, alpha=0.15, step='mid')
-        self.plot_vol(
-            ax, self.list_stim_time[0], self.list_stim_value[0][idx,:],
-            color, upper, lower)
-        self.plot_mean_sem(ax, self.list_neu_time[0], m, s, color, None)
-        adjust_layout_neu(ax)
-        ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
-        ax.set_xlabel('time since stim (ms)')
-
-    def plot_context_box(self, ax, cate=None, roi_id=None):
-        win_base = [-1500,-300]
-        lbl = ['dff']
-        offsets = [0.0]
-        if cate != None:
-            _, _, color, _ = get_roi_label_color([cate], 0)
-            neu_cate = [
-                self.list_neu_seq[i][:,(self.list_labels[i]==cate)*self.list_significance[i]['r_normal'],:]
-                for i in range(self.n_sess)]
-        if roi_id != None:
-            _, _, color, _ = get_roi_label_color(self.labels, roi_id)
-            neu_cate = [np.expand_dims(self.list_neu_seq[0][:,roi_id,:], axis=1)]
-        neu = get_multi_sess_neu_trial_average(
-            self.list_stim_labels, neu_cate,
-            trial_param=[[2,3,4,5], [0], None, None, [0]])[0]
-        self.plot_win_mag_box(
-                ax, neu, self.list_neu_time[0], win_base, color, 0, offsets[0])
-        ax.plot([], color=color, label=lbl[0])
-        ax.legend(loc='upper right')
-
-    def plot_change_prepost(self, ax, normal, cate=None, roi_id=None):
+    def plot_normal(self, ax, normal, fix_jitter, cate=None, roi_id=None):
         if cate != None:
             _, color1, color2, _ = get_roi_label_color([cate], 0)
             neu_cate = [
-                self.list_neu_seq[i][:,(self.list_labels[i]==cate)*self.list_significance[i]['r_normal'],:]
+                self.alignment['list_neu_seq'][i][:,(self.list_labels[i]==cate)*self.list_significance[i]['r_normal'],:]
                 for i in range(self.n_sess)]
         if roi_id != None:
             _, color1, color2, _ = get_roi_label_color(self.labels, roi_id)
-            neu_cate = [np.expand_dims(self.list_neu_seq[0][:,roi_id,:], axis=1)]
-        list_idx_pre  = [get_change_prepost_idx(sl)[0] for sl in self.list_stim_labels]
-        list_idx_post = [get_change_prepost_idx(sl)[1] for sl in self.list_stim_labels]
-        neu_pre, _ = get_multi_sess_neu_trial_average(
-            self.list_stim_labels, neu_cate,
-            trial_idx=list_idx_pre,
-            trial_param=[[2,3,4,5], [normal], None, None, [0]])
-        neu_post, _ = get_multi_sess_neu_trial_average(
-            self.list_stim_labels, neu_cate,
-            trial_idx=list_idx_post,
-            trial_param=[[-2,-3,-4,-5], [normal], None, None, [0]])
-        neu_mean_pre,  neu_sem_pre  = get_mean_sem(neu_pre)
-        neu_mean_post, neu_sem_post = get_mean_sem(neu_post)
-        idx = pick_trial(self.list_stim_labels[0], [-2,-3,-4,-5], [normal], None, None, [0])
-        stim_seq = np.mean(self.list_stim_seq[0][idx,1,:],axis=0)
-        upper = np.nanmax([neu_mean_pre, neu_mean_post]) + np.nanmax([neu_sem_pre, neu_sem_post])
-        lower = np.nanmin([neu_mean_pre, neu_mean_post]) - np.nanmax([neu_sem_pre, neu_sem_post])
-        ax.fill_between(
-            stim_seq,
-            lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-            color='gold', alpha=0.25, step='mid', label='stim')
-        self.plot_vol(
-            ax, self.list_stim_time[0], self.list_stim_value[0][idx,:],
-            'gold', upper, lower)
-        self.plot_mean_sem(ax, self.list_neu_time[0], neu_mean_pre,  neu_sem_pre,  color1, 'pre')
-        self.plot_mean_sem(ax, self.list_neu_time[0], neu_mean_post, neu_sem_post, color2, 'post')
+            neu_cate = [np.expand_dims(self.alignment['list_neu_seq'][0][:,roi_id,:], axis=1)]
+        # collect data.
+        neu_mean = []
+        neu_sem = []
+        if 0 in normal:
+            neu_short, _, stim_seq_short, stim_value_short, _ = get_multi_sess_neu_trial_average(
+                self.list_stim_labels, neu_cate, self.alignment['list_stim_seq'],
+                self.alignment['list_stim_value'], self.alignment['list_pre_isi'],
+                trial_param=[[2,3,4,5], [0], [fix_jitter], None, [0]])
+            mean_short, sem_short = get_mean_sem(neu_short)
+            neu_mean.append(mean_short)
+            neu_sem.append(sem_short)
+        if 1 in normal:
+            neu_long, _, stim_seq_long, stim_value_long, _ = get_multi_sess_neu_trial_average(
+                self.list_stim_labels, neu_cate, self.alignment['list_stim_seq'],
+                self.alignment['list_stim_value'], self.alignment['list_pre_isi'],
+                trial_param=[[2,3,4,5], [1], [fix_jitter], None, [0]])
+            mean_long, sem_long = get_mean_sem(neu_long)
+            neu_mean.append(mean_long)
+            neu_sem.append(sem_long)
+        # compute bounds.
+        upper = np.nanmax(neu_mean) + np.nanmax(neu_sem)
+        lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
+        # plot voltages.
+        if 0 in normal:
+            for i in range(3):
+                ax.fill_between(
+                    stim_seq_short[i,:],
+                    lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+                    color=color1, alpha=0.15, step='mid')
+            self.plot_vol(ax, self.alignment['stim_time'], stim_value_short.reshape(1,-1), color1, upper, lower)
+        if 1 in normal:
+            for i in range(3):
+                ax.fill_between(
+                    stim_seq_long[i,:],
+                    lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+                    color=color2, alpha=0.15, step='mid')
+            self.plot_vol(ax, self.alignment['stim_time'], stim_value_long.reshape(1,-1), color2, upper, lower)
+        # plot neural traces.
+        if 0 in normal:
+            self.plot_mean_sem(ax, self.alignment['neu_time'], mean_short, sem_short, color1, 'short')
+        if 1 in normal:
+            self.plot_mean_sem(ax, self.alignment['neu_time'], mean_long,  sem_long,  color2, 'long')
         adjust_layout_neu(ax)
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         ax.set_xlabel('time since stim (ms)')
 
-    # roi response to normal stimulus.
-    def roi_normal(self, ax, roi_id):
-        self.plot_normal(ax, roi_id=roi_id)
-        ax.set_title('response to normal stimulus')
-
-    # roi response to normal stimulus quantification.
-    def roi_normal_box(self, ax, roi_id):
-        self.plot_normal_box(ax, roi_id=roi_id)
-        ax.set_title('response to normal stimulus')
-
-    # roi response to normal stimulus single trial heatmap.
-    def roi_normal_heatmap_trials(self, ax, roi_id):
-        neu_cate = self.neu_seq[:,roi_id,:]
-        neu_cate = neu_cate[self.stim_labels[:,2]>0,:]
-        _, _, _, cmap = get_roi_label_color(self.labels, roi_id)
-        self.plot_heatmap_trials(ax, neu_cate, cmap)
-        ax.set_title('single trial response to normal stimulus')
-
-    # roi response to image change in short block.
-    def roi_change_short(self, ax, roi_id):
-        self.plot_change(ax, 0, roi_id=roi_id)
-        ax.set_title('response to image change in short block')
-
-    # roi response to image change in short block.
-    def roi_change_long(self, ax, roi_id):
-        self.plot_change(ax, 1, roi_id=roi_id)
-        ax.set_title('response to image change in long block')
-
-    # roi response to image change quantification.
-    def roi_change_box(self, ax, roi_id):
-        self.plot_change_box(ax, roi_id=roi_id)
-        ax.set_title('response to image change')
-
-    # roi response to image change single trial heatmap.
-    def roi_change_heatmap_trials(self, ax, roi_id):
-        neu_cate = self.neu_seq[:,roi_id,:]
-        neu_cate = neu_cate[self.stim_labels[:,2]<-1,:]
-        _, _, _, cmap = get_roi_label_color(self.labels, roi_id)
-        self.plot_heatmap_trials(ax, neu_cate, cmap)
-        ax.set_title('response to image change')
-
-    # roi response to short long context for all normal image.
-    def roi_context_all(self, ax, roi_id):
-        self.plot_context(ax, 5, roi_id=roi_id)
-        ax.set_title('response to all normal image')
-
-    # roi response to all stimulus average across trial for short.
-    def roi_context_all_short_heatmap_trial(self, ax, roi_id):
-        idx = (self.stim_labels[:,2]>0) * (self.stim_labels[:,3]==0)
-        neu_cate = self.neu_seq[idx,:,:]
-        neu_cate = neu_cate[:,roi_id,:]
-        _, _, _, cmap = get_roi_label_color(self.labels, roi_id)
-        self.plot_heatmap_trials(ax, neu_cate, cmap)
-        ax.set_title('single trial response to normal stim (short)')
-
-    # roi response to all stimulus average across trial for long.
-    def roi_context_all_long_heatmap_trial(self, ax, roi_id):
-        idx = (self.stim_labels[:,2]>0) * (self.stim_labels[:,3]==1)
-        neu_cate = self.neu_seq[idx,:,:]
-        neu_cate = neu_cate[:,roi_id,:]
-        _, _, _, cmap = get_roi_label_color(self.labels, roi_id)
-        self.plot_heatmap_trials(ax, neu_cate, cmap)
-        ax.set_title('single trial response to normal stim (long)')
-
-    # roi response to short long context for individual image.
-    def roi_context_individual(self, axs, roi_id):
-        titles = [
-            'response to normal img#1',
-            'response to normal img#2',
-            'response to normal img#3',
-            'response to normal img#4']
-        for i in range(4):
-            self.plot_context(axs[i], i+1, roi_id=roi_id)
-            axs[i].set_title(titles[i])
-
-    # roi response to short long context quantification
-    def roi_context_box(self, ax, roi_id):
-        self.plot_context_box(ax, roi_id=roi_id)
-        ax.set_title('response to different image')
+    def plot_normal_select(self, ax, normal, fix_jitter, cate=None, roi_id=None):
+        if cate != None:
+            _, color1, color2, _ = get_roi_label_color([cate], 0)
+            neu_cate = [
+                self.alignment['list_neu_seq'][i][:,(self.list_labels[i]==cate)*self.list_significance[i]['r_normal'],:]
+                for i in range(self.n_sess)]
+        if roi_id != None:
+            _, color1, color2, _ = get_roi_label_color(self.labels, roi_id)
+            neu_cate = [np.expand_dims(self.alignment['list_neu_seq'][0][:,roi_id,:], axis=1)]
+        # collect data.
+        neu_x = []
+        for img_id in [2,3,4,5]:
+            neu, _, _, _, _ = get_multi_sess_neu_trial_average(
+                self.list_stim_labels, neu_cate, self.alignment['list_stim_seq'],
+                self.alignment['list_stim_value'], self.alignment['list_pre_isi'],
+                trial_param=[[img_id], [normal], [fix_jitter], None, [0]])
+            neu = neu[~np.isnan(np.sum(neu,axis=1)),:]
+            neu_x.append(np.expand_dims(neu,axis=2))
+        neu_x = np.concatenate(neu_x, axis=2)
 
 
-# fig, ax = plt.subplots(1, 1, figsize=(6, 6))
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_VIPTD_G8_align_stim(plotter_utils):
     def __init__(self, neural_trials, labels, significance):
         super().__init__(neural_trials, labels, significance)
 
     def normal_exc(self, axs):
-        # excitatory response to normal stimulus.
-        self.plot_normal(axs[0], 0, cate=-1)
-        axs[0].set_title('excitatory response to normal')
-        # excitatory response to normal stimulus quantification.
-        self.plot_normal_box(axs[1], 0, cate=-1)
-        axs[1].set_title('excitatory response to normal')
+        self.plot_normal(axs[0], [0], 0, cate=-1)
+        axs[0].set_title('response to normal \n excitatory (short, fix)')
+        self.plot_normal(axs[1], [1], 0, cate=-1)
+        axs[1].set_title('response to normal \n excitatory (long, fix)')
+        self.plot_normal(axs[2], [0,1], 0, cate=-1)
+        axs[2].set_title('response to normal \n excitatory (fix)')
+        self.plot_normal_box(axs[3], 0, cate=-1)
+        axs[3].set_title('response to normal \n excitatory (fix)')
+        self.plot_normal(axs[4], [0], 1, cate=-1)
+        axs[4].set_title('response to normal \n excitatory (short, jitter)')
+        self.plot_normal(axs[5], [1], 1, cate=-1)
+        axs[5].set_title('response to normal \n excitatory (long, jitter)')
+        self.plot_normal(axs[6], [0,1], 1, cate=-1)
+        axs[6].set_title('response to normal \n excitatory (jitter)')
+        self.plot_normal_box(axs[7], 1, cate=-1)
+        axs[7].set_title('response to normal \n excitatory (jitter)')
 
     def normal_inh(self, axs):
-        # inhibitory response to normal stimulus.
-        self.plot_normal(axs[0], 0, cate=1)
-        axs[0].set_title('inhibitory response to normal')
-        # inhibitory response to normal stimulus quantification.
-        self.plot_normal_box(axs[1], 0, cate=1)
-        axs[1].set_title('inhibitory response to normal')
+        self.plot_normal(axs[0], [0], 0, cate=1)
+        axs[0].set_title('response to normal \n inhibitory (short, fix)')
+        self.plot_normal(axs[1], [1], 0, cate=1)
+        axs[1].set_title('response to normal \n inhibitory (long, fix)')
+        self.plot_normal(axs[2], [0,1], 0, cate=1)
+        axs[2].set_title('response to normal \n inhibitory (fix)')
+        self.plot_normal_box(axs[3], 0, cate=1)
+        axs[3].set_title('response to normal \n inhibitory (fix)')
+        self.plot_normal(axs[4], [0], 1, cate=1)
+        axs[4].set_title('response to normal \n inhibitory (short, jitter)')
+        self.plot_normal(axs[5], [1], 1, cate=1)
+        axs[5].set_title('response to normal \n inhibitory (long, jitter)')
+        self.plot_normal(axs[6], [0,1], 1, cate=1)
+        axs[6].set_title('response to normal \n inhibitory (jitter)')
+        self.plot_normal_box(axs[7], 1, cate=1)
+        axs[7].set_title('response to normal \n inhibitory (jitter)')
 
     def normal_heatmap(self, axs):
-        sig = np.concatenate([self.list_significance[n]['r_normal'] for n in range(self.n_sess)])
+        win_sort = [-200, 1000]
         labels = np.concatenate(self.list_labels)
-        neu, _ = get_multi_sess_neu_trial_average(
-            self.list_stim_labels, self.list_neu_seq,
-            trial_param=[[2,3,4,5], [0], None, None, [0]])
-        axs[0].set_xlabel('time since stim (ms)')
-        # response to normal stimulus heatmap average across trials.
+        sig = np.concatenate([self.list_significance[n]['r_normal'] for n in range(self.n_sess)])
+        neu_short_fix, _, _, _, _ = get_multi_sess_neu_trial_average(
+            self.list_stim_labels, self.alignment['list_neu_seq'], self.alignment['list_stim_seq'],
+            self.alignment['list_stim_value'], self.alignment['list_pre_isi'],
+            trial_param=[[2,3,4,5], [0], [0], None, [0]])
+        neu_long_fix, _, _, _, _ = get_multi_sess_neu_trial_average(
+            self.list_stim_labels, self.alignment['list_neu_seq'], self.alignment['list_stim_seq'],
+            self.alignment['list_stim_value'], self.alignment['list_pre_isi'],
+            trial_param=[[2,3,4,5], [1], [0], None, [0]])
+        neu_short_jitter, _, _, _, _ = get_multi_sess_neu_trial_average(
+            self.list_stim_labels, self.alignment['list_neu_seq'], self.alignment['list_stim_seq'],
+            self.alignment['list_stim_value'], self.alignment['list_pre_isi'],
+            trial_param=[[2,3,4,5], [0], [1], None, [0]])
+        neu_long_jitter, _, _, _, _ = get_multi_sess_neu_trial_average(
+            self.list_stim_labels, self.alignment['list_neu_seq'], self.alignment['list_stim_seq'],
+            self.alignment['list_stim_value'], self.alignment['list_pre_isi'],
+            trial_param=[[2,3,4,5], [1], [1], None, [0]])
+        for i in range(8):
+            axs[i].set_xlabel('time since stim (ms)')
         self.plot_heatmap_neuron(
-            axs[0], neu, self.list_neu_time[0], neu,
-            labels, sig)
-        axs[0].set_title('response to normal')
+            axs[0], neu_short_fix, self.alignment['neu_time'], neu_short_fix,
+            win_sort, labels, sig)
+        axs[0].set_title('response to normal \n (short sorted by short, fix)')
+        self.plot_heatmap_neuron(
+            axs[1], neu_long_fix, self.alignment['neu_time'], neu_short_fix,
+            win_sort, labels, sig)
+        axs[1].set_title('response to normal \n (long sorted by short, fix)')
+        self.plot_heatmap_neuron(
+            axs[2], neu_short_fix, self.alignment['neu_time'], neu_long_fix,
+            win_sort, labels, sig)
+        axs[2].set_title('response to normal \n (short sorted by long, fix)')
+        self.plot_heatmap_neuron(
+            axs[3], neu_long_fix, self.alignment['neu_time'], neu_long_fix,
+            win_sort, labels, sig)
+        axs[3].set_title('response to normal \n (long sorted by long, fix)')
+        self.plot_heatmap_neuron(
+            axs[4], neu_short_jitter, self.alignment['neu_time'], neu_short_jitter,
+            win_sort, labels, sig)
+        axs[4].set_title('response to normal \n (short sorted by short, jitter)')
+        self.plot_heatmap_neuron(
+            axs[5], neu_long_jitter, self.alignment['neu_time'], neu_short_jitter,
+            win_sort, labels, sig)
+        axs[5].set_title('response to normal \n (long sorted by short, jitter)')
+        self.plot_heatmap_neuron(
+            axs[6], neu_short_jitter, self.alignment['neu_time'], neu_long_jitter,
+            win_sort, labels, sig)
+        axs[6].set_title('response to normal \n (short sorted by long, jitter)')
+        self.plot_heatmap_neuron(
+            axs[7], neu_long_jitter, self.alignment['neu_time'], neu_long_jitter,
+            win_sort, labels, sig)
+        axs[7].set_title('response to normal \n (long sorted by long, jitter)')
 
-    def context_exc(self, axs):
-        # excitatory response to context.
-        titles = [
-            'excitatory response to all image',
-            'excitatory response to img#1',
-            'excitatory response to img#2',
-            'excitatory response to img#3',
-            'excitatory response to img#4']
-        img_id = [[2,3,4,5], [2], [3], [4], [5]]
-        for i in range(5):
-            self.plot_context(axs[i], img_id[i], cate=-1)
-            axs[i].set_title(titles[i])
-        # excitatory response to context quantification.
-        self.plot_context_box(axs[5], cate=-1)
-        axs[5].set_title('excitatory response to all image')
+    def normal_isi_exc(self, axs):
+        self.plot_normal_global(axs[0], 0, cate=-1)
+        axs[0].set_title('response to normal with proceeding ISI \n excitatory (global, short)')
+        self.plot_normal_global(axs[1], 1, cate=-1)
+        axs[1].set_title('response to normal with proceeding ISI \n excitatory (global, long)')
+        self.plot_normal_overlap(axs[2], cate=-1)
+        axs[2].set_title('response to normal with proceeding ISI \n excitatory (global, {}-{} ms overlap)'.format(
+            int(self.expect[0]), int(self.expect[1])))
+        self.plot_normal_local(axs[3], 0, cate=-1)
+        axs[3].set_title('response to normal with proceeding ISI \n excitatory (local, short)')
+        self.plot_normal_local(axs[4], 1, cate=-1)
+        axs[4].set_title('response to normal with proceeding ISI \n excitatory (local, long)')
 
-    def context_inh(self, axs):
-        # inhibitory response to short long context.
-        titles = [
-            'inhibitory response to all image',
-            'inhibitory response to img#1',
-            'inhibitory response to img#2',
-            'inhibitory response to img#3',
-            'inhibitory response to img#4']
-        img_id = [[2,3,4,5], [2], [3], [4], [5]]
-        for i in range(5):
-            self.plot_context(axs[i], img_id[i], cate=1)
-            axs[i].set_title(titles[i])
-        # inhibitory response to short long context quantification.
-        self.plot_context_box(axs[5], cate=1)
-        axs[5].set_title('inhibitory response to all image')
-    
-    def epoch_exc(self, axs):
-        colors = ['#969696', '#6BAED6', '#2171B5', '#504099']
-        # excitatory response to normal stimulus with epoch.
-        self.plot_epoch(axs[0], self.epoch, 0, colors, cate=-1)
-        axs[0].set_title('excitatory response to normal with epoch')
-        # excitatory response to normal stimulus with epoch quantification.
-        self.plot_epoch_box(axs[1], self.epoch, 0, colors, cate=-1)
-        axs[1].set_title('excitatory response to normal with epoch')
+    def normal_isi_inh(self, axs):
+        self.plot_normal_global(axs[0], 0, cate=1)
+        axs[0].set_title('response to normal with proceeding ISI \n inhibitory (global, short)')
+        self.plot_normal_global(axs[1], 1, cate=1)
+        axs[1].set_title('response to normal with proceeding ISI \n inhibitory (global, long)')
+        self.plot_normal_overlap(axs[2], cate=1)
+        axs[2].set_title('response to normal with proceeding ISI \n inhibitory (global, {}-{} ms overlap)'.format(
+            int(self.expect[0]), int(self.expect[1])))
+        self.plot_normal_local(axs[3], 0, cate=1)
+        axs[3].set_title('response to normal with proceeding ISI \n inhibitory (local, short)')
+        self.plot_normal_local(axs[4], 1, cate=1)
+        axs[4].set_title('response to normal with proceeding ISI \n inhibitory (local, long)')
 
-    def epoch_inh(self, axs):
-        colors = ['#969696', '#FE7BBF', '#974EC3', '#504099']
-        # inhibitory response to normal stimulus with epoch.
-        self.plot_epoch(axs[0], self.epoch, 0, colors, cate=1)
-        axs[0].set_title('inhibitory response to normal with epoch')
-        # inhibitory response to normal stimulus with epochquantification.
-        self.plot_epoch_box(axs[1], self.epoch, 0, colors, cate=1)
-        axs[1].set_title('inhibitory response to normal with epoch')
+    def normal_epoch_exc(self, axs):
+        self.plot_normal_epoch(axs[0], 0, 0, cate=-1)
+        axs[0].set_title('response to normal \n excitatory (short, fix)')
+        self.plot_normal_epoch(axs[1], 1, 0, cate=-1)
+        axs[1].set_title('response to normal \n excitatory (long, fix)')
+        self.plot_normal_epoch(axs[2], 0, 1, cate=-1)
+        axs[2].set_title('response to normal \n excitatory (short, jitter)')
+        self.plot_normal_epoch(axs[3], 1, 1, cate=-1)
+        axs[3].set_title('response to normal \n excitatory (long, jitter)')
 
-    def change_exc(self, axs):
-        # excitatory response to image change for all images.
-        self.plot_change_prepost(axs[0], 0, cate=-1)
-        axs[0].set_title('excitatory response to pre & post change')
+    def normal_epoch_inh(self, axs):
+        self.plot_normal_epoch(axs[0], 0, 0, cate=1)
+        axs[0].set_title('response to normal \n inhibitory (short, fix)')
+        self.plot_normal_epoch(axs[1], 1, 0, cate=1)
+        axs[1].set_title('response to normal \n inhibitory (long, fix)')
+        self.plot_normal_epoch(axs[2], 0, 1, cate=1)
+        axs[2].set_title('response to normal \n inhibitory (short, jitter)')
+        self.plot_normal_epoch(axs[3], 1, 1, cate=1)
+        axs[3].set_title('response to normal \n inhibitory (long, jitter)')
 
-    def change_inh(self, axs):
-        # inhibitory response to image change for all images.
-        self.plot_change_prepost(axs[0], 0, cate=1)
-        axs[0].set_title('inhibitory response to pre & post change')
+
+
+

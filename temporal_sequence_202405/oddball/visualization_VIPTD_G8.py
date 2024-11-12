@@ -65,48 +65,16 @@ def run(list_session_data_path, sig_tag):
         plotter_masks.superimpose(mask_ax11, 'max', with_mask=False)
         # normal alignment.
         print('Plotting normal alignment')
-        normal_axs01 = [plt.subplot(gs[5, i]) for i in range(2)]
-        normal_axs02 = [plt.subplot(gs[6, i]) for i in range(2)]
-        normal_axs03 = [plt.subplot(gs[5:7, 2])]
-        plotter_align_stim.normal_exc(normal_axs01)
-        plotter_align_stim.normal_inh(normal_axs02)
-        plotter_align_stim.normal_heatmap(normal_axs03)
-        context_ax01 = [plt.subplot(gs[7, i]) for i in range(6)]
-        context_ax02 = [plt.subplot(gs[8, i]) for i in range(6)]
-        plotter_align_stim.context_exc(context_ax01)
-        plotter_align_stim.context_inh(context_ax02)
-        epoch_ax01 = [plt.subplot(gs[5, i+10]) for i in range(2)]
-        epoch_ax02 = [plt.subplot(gs[6, i+10]) for i in range(2)]
-        plotter_align_stim.epoch_exc(epoch_ax01)
-        plotter_align_stim.epoch_inh(epoch_ax02)
-        # change alignment.
-        print('Plotting change alignment')
-        change_axs01 = [plt.subplot(gs[7, 6])]
-        change_axs02 = [plt.subplot(gs[8, 6])]
-        plotter_align_stim.change_exc(change_axs01)
-        plotter_align_stim.change_inh(change_axs02)
         # oddball alignment.
         print('Plotting oddball alignment')
         odd_normal_axs01 = [
-            plt.subplot(gs[11, 0:2]), plt.subplot(gs[11, 2:4]), plt.subplot(gs[11, 4]),
-            plt.subplot(gs[11, 5]), plt.subplot(gs[11, 6])]
+            plt.subplot(gs[10, 0:2]), plt.subplot(gs[10, 2:4]),  plt.subplot(gs[10, 4:6])]
         odd_normal_axs02 = [
-            plt.subplot(gs[12, 0:2]), plt.subplot(gs[12, 2:4]), plt.subplot(gs[12, 4]),
-            plt.subplot(gs[12, 5]), plt.subplot(gs[12, 6])]
-        odd_normal_axs03 = [plt.subplot(gs[11:13, i+7]) for i in range(4)]
+            plt.subplot(gs[11, 0:2]), plt.subplot(gs[11, 2:4]),  plt.subplot(gs[11, 4:6])]
+        odd_normal_axs03 = [plt.subplot(gs[10:12, i]) for i in [6,7,8,9]]
         plotter_align_odd.odd_normal_exc(odd_normal_axs01)
         plotter_align_odd.odd_normal_inh(odd_normal_axs02)
-        plotter_align_odd.odd_normal_post_heatmap_neuron(odd_normal_axs03)
-        '''
-        odd_context_axs01 = [
-            plt.subplot(gs[13, i:i+2]) for i in [0,2,4,6]] + [
-            plt.subplot(gs[13, i+8]) for i in range(2)]
-        odd_context_axs02 = [
-            plt.subplot(gs[14, i:i+2]) for i in [0,2,4,6]] + [
-            plt.subplot(gs[14, i+8]) for i in range(2)]
-        plotter_align_odd.odd_context_exc(odd_context_axs01)
-        plotter_align_odd.odd_context_inh(odd_context_axs02)
-        '''
+        plotter_align_odd.odd_normal_heatmap(odd_normal_axs03)
         # example traces.
         print('Plotting example traces')
         example_ax = plt.subplot(gs[0:4, 12])

@@ -92,15 +92,21 @@ def pick_trial(
     idx = (idx1*idx2*idx3*idx4*idx5).astype('bool')
     return idx
 
-# for multi session settings find trials based on stim_labels and trial averge.
+# for multi session settings find trials based on stim_labels and trial avergae.
 def get_multi_sess_neu_trial_average(
         list_stim_labels,
         neu_cate,
+        list_stim_seq,
+        list_stim_value,
+        list_pre_isi,
         trial_idx=None,
         trial_param=None,
         mean_sem=True,
         ):
     neu = []
+    stim_seq = []
+    stim_value = []
+    pre_isi = []
     # use stim_labels to find trials.
     if trial_param != None and trial_idx == None:
         for i in range(len(neu_cate)):
@@ -112,10 +118,16 @@ def get_multi_sess_neu_trial_average(
                 trial_param[3],
                 trial_param[4])
             neu.append(neu_cate[i][idx,:,:])
+            stim_seq.append(list_stim_seq[i][idx,:,:])
+            stim_value.append(list_stim_value[i][idx,:])
+            pre_isi.append(list_pre_isi[i][idx])
     # use given idx to find trials.
     if trial_param == None and trial_idx != None:
         for i in range(len(neu_cate)):
             neu.append(neu_cate[i][trial_idx[i],:,:])
+            stim_seq.append(list_stim_seq[i][trial_idx[i],:,:])
+            stim_value.append(list_stim_value[i][trial_idx[i],:])
+            pre_isi.append(list_pre_isi[i][trial_idx[i]])
     # use both.
     if trial_param != None and trial_idx != None:
         for i in range(len(neu_cate)):
@@ -127,34 +139,31 @@ def get_multi_sess_neu_trial_average(
                 trial_param[3],
                 trial_param[4])
             neu.append(neu_cate[i][trial_idx[i]*idx,:,:])
-    # compute trial average and concatenate neurons.
+            stim_seq.append(list_stim_seq[i][trial_idx[i]*idx,:,:])
+            stim_value.append(list_stim_value[i][trial_idx[i]*idx,:])
+            pre_isi.append(list_pre_isi[i][trial_idx[i]*idx])
+    # compute trial average and concatenate.
     if mean_sem:
         mean = [np.nanmean(n, axis=0) for n in neu]
         sem  = [np.nanstd(n, axis=0)/np.sqrt(np.sum(~np.isnan(n), axis=0)) for n in neu]    
         mean = np.concatenate(mean, axis=0)
         sem  = np.concatenate(sem, axis=0)
-        return mean, sem
+        stim_seq   = np.mean(np.concatenate(stim_seq, axis=0),axis=0)
+        stim_value = np.mean(np.concatenate(stim_value, axis=0),axis=0)
+        return mean, sem, stim_seq, stim_value, None
     # return single trial response.
     else:
-        return neu
-
+        return neu, stim_seq, stim_value, pre_isi
 
 # find index for each epoch.
 def get_epoch_idx(stim_labels):
-    n = len(stim_labels[:,3])
-    epoch_short = [np.zeros(n, dtype=bool) for _ in range(4)]
-    idx = np.where(stim_labels[:,3] == 0)[0]
-    for i in range(4):
-        start = i * len(idx) // 4
-        end = (i + 1) * len(idx) // 4
-        epoch_short[i][idx[start:end]] = True
-    epoch_long = [np.zeros(n, dtype=bool) for _ in range(4)]
-    idx = np.where(stim_labels[:,3] == 1)[0]
-    for i in range(4):
-        start = i * len(idx) // 4
-        end = (i + 1) * len(idx) // 4
-        epoch_long[i][idx[start:end]] = True
-    return epoch_short, epoch_long
+    num_early_trials = 50
+    switch_idx = np.where(np.diff(stim_labels[:,3], prepend=1-stim_labels[:,3][0])!=0)[0]
+    epoch_early = np.zeros_like(stim_labels[:,3], dtype='bool')
+    for start in switch_idx:
+        epoch_early[start:start+num_early_trials] = True
+    epoch_late = ~epoch_early
+    return epoch_early, epoch_late
 
 # find expected isi.
 def get_expect_time(stim_labels):
@@ -166,28 +175,10 @@ def get_expect_time(stim_labels):
     expect_long = np.median(expect_long[idx_long[:-1]])
     return expect_short, expect_long
 
-# find neural trials for epoch.
-def get_epoch_response(neu_cate, stim_seq, stim_labels, epoch, idx):
-    stim_seq_epoch = []
-    for i in range(4):
-        idx_epoch = epoch[i] * idx
-        stim_seq_epoch.append(np.mean(stim_seq[idx_epoch,:,:], axis=0))
-    expect_epoch = []
-    for i in range(4):
-        stim_labels_epoch = stim_labels[epoch[i],:].copy()
-        isi = stim_labels_epoch[1:,0] - stim_labels_epoch[:-1,1]
-        img_dur = np.mean(stim_labels_epoch[:,1] - stim_labels_epoch[:,0])
-        expect_epoch.append(img_dur + np.median(isi))
-    neu_epoch = []
-    for i in range(4):
-        idx_epoch = epoch[i] * idx
-        neu_epoch.append(neu_cate[idx_epoch,:,:])
-    return [stim_seq_epoch, expect_epoch, neu_epoch]
-
 # get index for short/long or pre/post.
 def get_odd_stim_prepost_idx(stim_labels):
-    idx_pre_short = (stim_labels[:,2]==-1) * (stim_labels[:,5]==0)
-    idx_pre_long  = (stim_labels[:,2]==-1) * (stim_labels[:,5]==1)
+    idx_pre_short = (stim_labels[:,2]==-1) * (stim_labels[:,3]==0)
+    idx_pre_long  = (stim_labels[:,2]==-1) * (stim_labels[:,3]==1)
     idx_post_short = np.zeros_like(idx_pre_short)
     idx_post_short[1:] = idx_pre_short[:-1]
     idx_post_long = np.zeros_like(idx_pre_long)
@@ -264,35 +255,13 @@ def adjust_layout_raw_trace(ax):
     ax.set_xlabel('time (s)')
     ax.legend(loc='upper left')
 
-# adjust layout for decoding accuracy.
-def adjust_layout_decode_box(ax, state_all):
-    ax.legend(loc='upper right')
-    ax.tick_params(tick1On=False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.set_xlim([-0.5, len(state_all)+1])
-    ax.set_xticks(np.arange(len(state_all)))
-    ax.set_xticklabels(state_all)
-    ax.set_ylabel('validation accuracy')
-
-# adjust layout for decoding accuracy outcome percentage.
-def adjust_layout_decode_outcome_pc(ax, state_all):
-    ax.legend(loc='upper right')
-    ax.tick_params(tick1On=False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.yaxis.grid(True)
-    ax.set_xlim([-0.5, len(state_all)+1])
-    ax.set_xlabel('state')
-    ax.set_xticks(np.arange(len(state_all)))
-    ax.set_xticklabels(state_all)
-    ax.set_ylabel('outcome percentage in class')
-
 
 class utils:
 
     def __init__(self):
         self.min_num_trial = 5
+        self.color_isi = ['blue','red']
+        self.color_epoch = ['mediumseagreen', 'coral']
 
     def plot_mean_sem(self, ax, t, m, s, c, l, a=1.0):
         ax.plot(t, m, color=c, label=l, alpha=a)
@@ -304,18 +273,25 @@ class utils:
         v = rescale(v, u, l)
         ax.plot(st, v, color=c, lw=0.5, linestyle=':')
 
-    def plot_heatmap_neuron(self, ax, neu_seq, neu_time, neu_seq_sort, labels, s, colorbar=False):
+    def plot_heatmap_neuron(
+            self, ax, neu_seq, neu_time, neu_seq_sort,
+            win_sort, labels, s, colorbar=False):
         win_conv = 5
-        win_sort = [-500,500]
         if len(neu_seq) > 0:
             _, _, _, cmap_exc = get_roi_label_color([-1], 0)
             _, _, _, cmap_inh = get_roi_label_color([1], 0)
             zero = np.searchsorted(neu_time, 0)
+            # exclude nan.
+            neu_idx = ~np.isnan(np.sum(neu_seq,axis=1))
+            neu_seq = neu_seq[neu_idx,:].copy()
+            neu_seq_sort = neu_seq_sort[neu_idx,:].copy()
+            labels = labels[neu_idx].copy()
+            s = s[neu_idx].copy()
             # smooth the values in the sorting window.
             l_idx, r_idx = get_frame_idx_from_time(neu_time, 0, win_sort[0], win_sort[1])
             smoothed_mean = np.array(
                 [np.convolve(row, np.ones(win_conv)/win_conv, mode='same')
-                 for row in neu_seq[s,l_idx:r_idx]])
+                 for row in neu_seq_sort[s,l_idx:r_idx]])
             sort_idx_neu = np.argmax(smoothed_mean, axis=1).reshape(-1).argsort()
             # rearrange the matrix.
             mean = neu_seq[s,:][sort_idx_neu,:].copy()
