@@ -75,7 +75,7 @@ class plotter_utils(utils):
         ax.set_xlabel('time since stim (ms)')
 
     def plot_normal_pca(self, ax, normal, fix_jitter):
-        _, _, color, _ = get_roi_label_color([0], 0)
+        _, color1, color2, _ = get_roi_label_color([0], 0)
         d_latent = 6
         scale = 0.9
         neu_cate = [
@@ -99,16 +99,16 @@ class plotter_utils(utils):
             ax.fill_between(
                 stim_seq[i,:],
                 lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                color=color, alpha=0.15, step='mid')
+                color=color1, alpha=0.15, step='mid')
         # plot latents.
         for i in range(d_latent):
-            ax.plot(self.alignment['neu_time'], norm01(z[i,:])*scale+d_latent-i-1, color=color)
+            ax.plot(self.alignment['neu_time'], norm01(z[i,:])*scale+d_latent-i-1, color=color2)
         ax.tick_params(axis='y', tick1On=False)
         ax.spines['left'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.set_yticks([])
-        ax.set_xlabel('time (ms)')
+        ax.set_xlabel('time since stim (ms)')
         ax.set_ylabel('df/f (z-scored)')
         ax.set_ylim([-0.1, d_latent+0.1])
 
@@ -167,7 +167,7 @@ class plotter_utils(utils):
         ax[1].spines['right'].set_visible(False)
         ax[1].spines['top'].set_visible(False)
         ax[1].set_yticks([])
-        ax[1].set_xlabel('time (ms)')
+        ax[1].set_xlabel('time since stim (ms)')
         ax[1].set_ylabel('df/f (z-scored)')
         ax[1].set_ylim([-0.1, n_clusters+0.1])
 
