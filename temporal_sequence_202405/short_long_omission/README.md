@@ -82,3 +82,6 @@
 - Now get_stim_response uses np.searchsorted to find alignement points.
 - Now get_stim_response can align traces on expected isi.
 - Now get_stim_response returns a dict of results.
+
+## 2024.11.12
+- Added voltage correction into trialization.

@@ -282,6 +282,7 @@ if __name__ == "__main__":
         ]
     list_session_data_path = [
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240611_seq1420_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241104_seq1421_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240612_seq2420_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240613_seq2420_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240617_seq2420_t',
@@ -292,6 +293,7 @@ if __name__ == "__main__":
     '''
     list_session_data_path = [
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240611_seq1420_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241104_seq1421_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240612_seq2420_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240613_seq2420_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240617_seq2420_t',

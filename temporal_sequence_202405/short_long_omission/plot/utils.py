@@ -198,25 +198,25 @@ def get_change_prepost_idx(stim_labels):
 # get ROI color from label.
 def get_roi_label_color(labels, roi_id):
     if labels[roi_id] == -1:
-        cate = 'excitory'
+        cate = 'excitatory'
         color1 = 'grey'
         color2 = 'dodgerblue'
         cmap = LinearSegmentedColormap.from_list(
-            'yicong_will_love_you_forever',
+            'never_quit_and_remember_yicong_will_love_you_forever',
             ['white', 'dodgerblue', 'black'])
     if labels[roi_id] == 0:
         cate = 'unsure'
         color1 = 'grey'
         color2 = 'mediumseagreen'
         cmap = LinearSegmentedColormap.from_list(
-            'yicong_will_love_you_forever',
+            'never_quit_and_remember_yicong_will_love_you_forever',
             ['white', 'mediumseagreen', 'black'])
     if labels[roi_id] == 1:
         cate = 'inhibitory'
         color1 = 'grey'
         color2 = 'hotpink'
         cmap = LinearSegmentedColormap.from_list(
-            'yicong_will_love_you_forever',
+            'never_quit_and_remember_yicong_will_love_you_forever',
             ['white', 'hotpink', 'black'])
     return cate, color1, color2, cmap
 

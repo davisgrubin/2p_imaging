@@ -399,7 +399,7 @@ class plotter_VIPTD_G8_align_stim(plotter_utils):
         axs[7].set_title('response to normal \n inhibitory (jitter)')
 
     def normal_heatmap(self, axs):
-        win_sort = [-200, 1000]
+        win_sort = [-500, 500]
         labels = np.concatenate(self.list_labels)
         sig = np.concatenate([self.list_significance[n]['r_normal'] for n in range(self.n_sess)])
         neu_short_fix, _, _, _, _ = get_multi_sess_neu_trial_average(
