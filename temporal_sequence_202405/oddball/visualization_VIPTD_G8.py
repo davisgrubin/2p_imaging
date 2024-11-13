@@ -68,16 +68,20 @@ def run(list_session_data_path, sig_tag):
         normal_axs01 = [plt.subplot(gs[5, 0])]
         normal_axs02 = [plt.subplot(gs[6, 0])]
         normal_axs03 = [plt.subplot(gs[5:7, 1])]
+        normal_axs04 = [plt.subplot(gs[5:7, 2]),
+                        plt.subplot(gs[7:9, 0:2]),  plt.subplot(gs[7:9, 2]),
+                        plt.subplot(gs[9:11, 0:2]), plt.subplot(gs[9:11, 2])]
         plotter_align_stim.normal_exc(normal_axs01)
         plotter_align_stim.normal_inh(normal_axs02)
         plotter_align_stim.normal_heatmap(normal_axs03)
+        plotter_align_stim.normal_mode(normal_axs04)
         # oddball alignment.
         print('Plotting oddball alignment')
         odd_normal_axs01 = [
-            plt.subplot(gs[10, 0:2]), plt.subplot(gs[10, 2:4]),  plt.subplot(gs[10, 4:6])]
+            plt.subplot(gs[12, 0:2]), plt.subplot(gs[12, 2:4]),  plt.subplot(gs[12, 4:6])]
         odd_normal_axs02 = [
-            plt.subplot(gs[11, 0:2]), plt.subplot(gs[11, 2:4]),  plt.subplot(gs[11, 4:6])]
-        odd_normal_axs03 = [plt.subplot(gs[10:12, i]) for i in [6,7,8,9]]
+            plt.subplot(gs[13, 0:2]), plt.subplot(gs[13, 2:4]),  plt.subplot(gs[13, 4:6])]
+        odd_normal_axs03 = [plt.subplot(gs[12:14, i]) for i in [6,7,8,9]]
         plotter_align_odd.odd_normal_exc(odd_normal_axs01)
         plotter_align_odd.odd_normal_inh(odd_normal_axs02)
         plotter_align_odd.odd_normal_heatmap(odd_normal_axs03)

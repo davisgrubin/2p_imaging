@@ -260,6 +260,7 @@ class utils:
 
     def __init__(self):
         self.min_num_trial = 5
+        self.color_single = 'grey'
         self.color_isi = ['blue','red']
         self.color_epoch = ['mediumseagreen', 'coral']
 

@@ -99,7 +99,7 @@ class plotter_utils(utils):
         # find bounds.
         upper = np.nanmax(neu_mean) + np.nanmax(neu_sem)
         lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
-        # plot voltages.
+        # plot stimulus.
         if 0 in normal:
             for i in range(3):
                 ax.fill_between(
