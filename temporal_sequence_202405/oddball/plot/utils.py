@@ -15,6 +15,35 @@ def rescale(data, upper, lower):
     data = data * (upper - lower) + lower
     return data
 
+# bin data for histogram.
+def get_bin_stat(data, win, bin_size):
+    min_samples = 5
+    bins = np.arange(win[0], win[1] + bin_size, bin_size)
+    bin_center = bins[:-1] + bin_size / 2
+    bin_idx = np.digitize(data, bins) - 1
+    bin_num = []
+    bin_mean = []
+    bin_sem = []
+    for i in range(len(bins) - 1):
+        bin_samples = data[(bin_idx == i)]
+        bin_num.append(len(bin_samples))
+        if len(bin_samples) > min_samples:
+            m, s = get_mean_sem(bin_samples.reshape(-1,1))
+        else:
+            m = np.array([np.nan])
+            s = np.array([np.nan])
+        bin_mean.append(m)
+        bin_sem.append(s)
+    bin_num  = np.array(bin_num).reshape(-1)
+    bin_mean = np.array(bin_mean).reshape(-1)
+    bin_sem  = np.array(bin_sem).reshape(-1)
+    non_nan    = (1-np.isnan(bin_mean)).astype('bool')
+    bin_center = bin_center[non_nan]
+    bin_num    = bin_num[non_nan]/len(data)
+    bin_mean   = bin_mean[non_nan]
+    bin_sem    = bin_sem[non_nan]
+    return bin_center, bin_num, bin_mean, bin_sem
+
 # compute baseline within given time window.
 def get_base_mean_win(neu_seq, neu_time, c_time, win_base):
     pct = 30

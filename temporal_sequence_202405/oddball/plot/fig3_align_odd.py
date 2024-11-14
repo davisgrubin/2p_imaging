@@ -137,18 +137,24 @@ class plotter_VIPTD_G8_align_odd(plotter_utils):
         super().__init__(neural_trials, labels, significance)
 
     def odd_normal_exc(self, axs):
+        
         self.plot_odd_normal(axs[0], [0], cate=-1)
         axs[0].set_title('response to oddball \n excitatory (short)')
+        
         self.plot_odd_normal(axs[1], [1], cate=-1)
         axs[1].set_title('response to oddball \n excitatory (long)')
+        
         self.plot_odd_normal(axs[2], [0,1], cate=-1)
         axs[2].set_title('response to oddball \n excitatory')
 
     def odd_normal_inh(self, axs):
+        
         self.plot_odd_normal(axs[0], [0], cate=1)
         axs[0].set_title('response to oddball \n inhibitory (short)')
+        
         self.plot_odd_normal(axs[1], [1], cate=1)
         axs[1].set_title('response to oddball \n inhibitory (long)')
+        
         self.plot_odd_normal(axs[2], [0,1], cate=1)
         axs[2].set_title('response to oddball \n inhibitory')
 
@@ -168,12 +174,16 @@ class plotter_VIPTD_G8_align_odd(plotter_utils):
             trial_param=[[-1], None, None, [1], [0]])
         for i in range(4):
             axs[i].set_xlabel('time since pre oddball stim (ms)')
+            
         self.plot_heatmap_neuron(axs[0], neu_short, self.alignment['neu_time'], neu_short, win_sort, labels, sig)
         axs[0].set_title('response to oddball \n (short sorted by short)')
+        
         self.plot_heatmap_neuron(axs[1], neu_long, self.alignment['neu_time'], neu_short, win_sort, labels, sig)
         axs[1].set_title('response to oddball \n (long sorted by short)')
+        
         self.plot_heatmap_neuron(axs[2], neu_short, self.alignment['neu_time'], neu_long, win_sort, labels, sig)
         axs[2].set_title('response to oddball \n (short sorted by long)')
+        
         self.plot_heatmap_neuron(axs[3], neu_long, self.alignment['neu_time'], neu_long, win_sort, labels, sig)
         axs[3].set_title('response to oddball \n (long sorted by long)')
         

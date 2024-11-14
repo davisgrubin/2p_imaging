@@ -9,4 +9,13 @@
 
 ## 2024.11.12
 - Update with omission codes.
-- Added plot_normal_pca and plot_normal_pca.
+- Completed plot_normal_latent.
+- Completed plot_normal_cluster.
+- Completed plot_change_select.
+- Completed plot_change_prepost.
+- Completed plot_change_latent.
+
+## 2024.11.13
+- Added get_bin_stat into utils.
+- Completed plot_normal_peak.
+- Completed plot_change_decode.
