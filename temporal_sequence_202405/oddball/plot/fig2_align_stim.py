@@ -5,9 +5,6 @@ from scipy.signal import find_peaks
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans
-from sklearn.utils import shuffle
-from sklearn.svm import SVC
-from sklearn.model_selection import train_test_split
 
 from modules.Alignment import run_get_stim_response
 from plot.utils import norm01
@@ -287,6 +284,47 @@ class plotter_utils(utils):
             autopct='%1.1f%%',
             wedgeprops={'linewidth': 1, 'edgecolor':'white'})
     
+    def plot_change_select_decode(self, ax, normal, fix_jitter, cate=None):
+        num_step = 10
+        n_decode = 20
+        win_eval = [-200,400]
+        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_eval[0], win_eval[1])
+        _, color1, color2, _ = get_roi_label_color([cate], 0)
+        neu_cate = [
+            self.alignment['list_neu_seq'][i][:,(self.list_labels[i]==cate)*self.list_significance[i]['r_normal'],:]
+            for i in range(self.n_sess)]
+        # collect data.
+        neu_x = []
+        for img_id in [2,3,4,5]:
+            neu, _, _, _ = get_multi_sess_neu_trial_average(
+                self.list_stim_labels, neu_cate, self.alignment['list_stim_seq'],
+                self.alignment['list_stim_value'], self.alignment['list_pre_isi'],
+                trial_param=[[img_id], [normal], [fix_jitter], None, [0]],
+                mean_sem=False)
+            neu_x.append(neu)
+        # extract response projection for each neuron.
+        neu_x = [[np.mean(neu_x[i][s][:,:,l_idx:r_idx], axis=2)
+                  for s in range(self.n_sess)] for i in range(4)]
+        # organize data.
+        neu_y = [np.concatenate([
+            np.ones(neu_x[i][s].shape[0])*i
+            for i in range(4)], axis=0) for s in range(self.n_sess)]
+        neu_x = [np.concatenate([
+            neu_x[i][s]
+            for i in range(4)], axis=0) for s in range(self.n_sess)]
+        # run decoding.
+        n, m_model, s_model, m_chance, s_chance = self.run_multi_sess_decoding_num_neu(
+            neu_x, neu_y, num_step, n_decode)
+        # plot decoding results.
+        self.plot_mean_sem(ax, n, m_model,  s_model,  color2, 'model')
+        self.plot_mean_sem(ax, n, m_chance, s_chance, color1, 'chance')
+        ax.tick_params(tick1On=False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.legend(loc='upper left')
+        ax.set_xlabel('number of sampled neurons')
+        ax.set_ylabel('ACC')
+            
     def plot_change_prepost(self, ax, normal, fix_jitter, cate=None, roi_id=None):
         if cate != None:
             _, color1, color2, _ = get_roi_label_color([cate], 0)
@@ -326,11 +364,10 @@ class plotter_utils(utils):
         adjust_layout_neu(ax)
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         ax.set_xlabel('time since image change (ms)')
-    
+
     def plot_change_decode(self, ax, normal, fix_jitter, cate=None):
-        num_step = 5
-        n_decode = 50
-        test_size = 0.5
+        num_step = 10
+        n_decode = 10
         win_eval = [-200,400]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_eval[0], win_eval[1])
         _, color1, color2, _ = get_roi_label_color([cate], 0)
@@ -361,49 +398,12 @@ class plotter_utils(utils):
                  for i in range(self.n_sess)]
         neu_y = [np.concatenate([np.zeros(neu_pre[i].shape[0]), np.ones(neu_post[i].shape[0])], axis=0)
                  for i in range(self.n_sess)]
-        # define sampling numbers.
-        max_num = np.nanmax([neu_x[i].shape[1] for i in range(self.n_sess)])
-        sampling_nums = np.arange(num_step, ((max_num//num_step)+1)*num_step, num_step)
         # run decoding.
-        acc_model   = []
-        acc_chance = []
-        for n_neu in sampling_nums:
-            results_model = []
-            results_chance = []
-            for s in range(self.n_sess):
-                # not enough neurons.
-                if n_neu > neu_x[s].shape[1]:
-                    results_model.append(np.nan)
-                    results_chance.append(np.nan)
-                # random sampling n_decode times.
-                else:
-                    for _ in range(n_decode):
-                        sub_idx = np.random.choice(neu_x[s].shape[1], n_neu, replace=False)
-                        x = neu_x[s][:,sub_idx].copy()
-                        y = neu_y[s].copy()
-                        # reparate training and testing sets.
-                        x_train, x_test, y_train, y_test = train_test_split(
-                            x, y, test_size=test_size, stratify=y)
-                        x_train, y_train = shuffle(x_train, y_train)
-                        # model.
-                        model = SVC(kernel='linear')
-                        model.fit(x_train, y_train)
-                        results_model.append(model.score(x_test, y_test))
-                        # chance.
-                        chance = SVC(kernel='linear')
-                        x_shuffle, y_shuffle = shuffle(x_train, y_train)
-                        chance.fit(np.random.permutation(x_train), np.random.permutation(y_train))
-                        results_chance.append(chance.score(x_test, y_test))
-            acc_model.append(np.array(results_model).reshape(-1,1))
-            acc_chance.append(np.array(results_chance).reshape(-1,1))
-        # compute mean and sem.
-        acc_mean_model = np.array([get_mean_sem(a)[0] for a in acc_model]).reshape(-1)
-        acc_sem_model  = np.array([get_mean_sem(a)[1] for a in acc_model]).reshape(-1)
-        acc_mean_chance = np.array([get_mean_sem(a)[0] for a in acc_chance]).reshape(-1)
-        acc_sem_chance  = np.array([get_mean_sem(a)[1] for a in acc_chance]).reshape(-1)
+        n, m_model, s_model, m_chance, s_chance = self.run_multi_sess_decoding_num_neu(
+            neu_x, neu_y, num_step, n_decode)
         # plot decoding results.
-        self.plot_mean_sem(ax, sampling_nums, acc_mean_model,  acc_sem_model,  color2, 'model')
-        self.plot_mean_sem(ax, sampling_nums, acc_mean_chance, acc_sem_chance, color1, 'chance')
+        self.plot_mean_sem(ax, n, m_model,  s_model,  color2, 'model')
+        self.plot_mean_sem(ax, n, m_chance, s_chance, color1, 'chance')
         ax.tick_params(tick1On=False)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -512,14 +512,17 @@ class plotter_VIPTD_G8_align_stim(plotter_utils):
             axs[i].set_title('response to normal \n excitatory prefer {}'.format(lbl[i]))
         axs[4].set_title('percentage of preferred stimlus \n excitatory')
         
-        self.plot_change_prepost(axs[5], 0, 0, cate=-1)
-        axs[5].set_title('response to change \n excitatory')
+        self.plot_change_select_decode(axs[5], 0, 0, cate=-1)
+        axs[5].set_title('decoding accuracy for images VS number of neurons \n excitatory')
         
-        self.plot_change_decode(axs[6], 0, 0, cate=-1)
-        axs[6].set_title('decoding accuracy VS number of neurons \n excitatory')
+        self.plot_change_prepost(axs[6], 0, 0, cate=-1)
+        axs[6].set_title('response to change \n excitatory')
         
-        self.plot_change_latent(axs[7], 0, 0, cate=-1)
-        axs[7].set_title('latent dynamics response to change \n excitatory')
+        self.plot_change_decode(axs[7], 0, 0, cate=-1)
+        axs[7].set_title('decoding accuracy for pre&post change VS number of neurons \n excitatory')
+        
+        self.plot_change_latent(axs[8], 0, 0, cate=-1)
+        axs[8].set_title('latent dynamics response to change \n excitatory')
 
     def change_inh(self, axs):
         lbl = ['img#1', 'img#2', 'img#3', 'img#4']
@@ -529,14 +532,17 @@ class plotter_VIPTD_G8_align_stim(plotter_utils):
             axs[i].set_title('response to normal \n inhibitory prefer {}'.format(lbl[i]))
         axs[4].set_title('percentage of preferred stimlus \n inhibitory')
         
-        self.plot_change_prepost(axs[5], 0, 0, cate=1)
-        axs[5].set_title('response to change \n inhibitory')
+        self.plot_change_select_decode(axs[5], 0, 0, cate=1)
+        axs[5].set_title('decoding accuracy for images VS number of neurons \n inhibitory')
         
-        self.plot_change_decode(axs[6], 0, 0, cate=1)
-        axs[6].set_title('decoding accuracy for pre&post change VS number of neurons \n excitatory')
+        self.plot_change_prepost(axs[6], 0, 0, cate=1)
+        axs[6].set_title('response to change \n inhibitory')
         
-        self.plot_change_latent(axs[7], 0, 0, cate=1)
-        axs[7].set_title('latent dynamics response to change \n inhibitory')
+        self.plot_change_decode(axs[7], 0, 0, cate=1)
+        axs[7].set_title('decoding accuracy for pre&post change VS number of neurons \n excitatory')
+        
+        self.plot_change_latent(axs[8], 0, 0, cate=1)
+        axs[8].set_title('latent dynamics response to change \n inhibitory')
         
         
         

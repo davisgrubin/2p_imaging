@@ -77,8 +77,10 @@ def run(list_session_data_path, sig_tag):
         plotter_align_stim.normal_mode(normal_axs04)
         # selectivity alignment.
         print('Plotting selectivity alignment')
-        change_axs01 = [plt.subplot(gs[5, i+7]) for i in range(8)]
-        change_axs02 = [plt.subplot(gs[6, i+7]) for i in range(8)]
+        change_axs01 = [plt.subplot(gs[5, i+7]) for i in range(6)]
+        change_axs01+= [plt.subplot(gs[7, i+7]) for i in range(3)]
+        change_axs02 = [plt.subplot(gs[6, i+7]) for i in range(6)]
+        change_axs02+= [plt.subplot(gs[8, i+7]) for i in range(3)]
         plotter_align_stim.change_exc(change_axs01)
         plotter_align_stim.change_inh(change_axs02)
         # oddball alignment.

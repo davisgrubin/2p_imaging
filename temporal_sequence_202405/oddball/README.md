@@ -19,3 +19,4 @@
 - Added get_bin_stat into utils.
 - Completed plot_normal_peak.
 - Completed plot_change_decode.
+- Added run_multi_sess_decoding_num_neu into utils.

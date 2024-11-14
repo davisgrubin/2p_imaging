@@ -2,6 +2,9 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.utils import shuffle
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
 from matplotlib.colors import LinearSegmentedColormap
 
 # normalization into [0,1].
@@ -292,6 +295,53 @@ class utils:
         self.color_single = 'grey'
         self.color_isi = ['blue','red']
         self.color_epoch = ['mediumseagreen', 'coral']
+    
+    def run_multi_sess_decoding_num_neu(
+            self, neu_x, neu_y,
+            num_step, n_decode
+            ):
+        test_size = 0.5
+        # define sampling numbers.
+        max_num = np.nanmax([neu_x[i].shape[1] for i in range(self.n_sess)])
+        sampling_nums = np.arange(num_step, ((max_num//num_step)+1)*num_step, num_step)
+        # run decoding.
+        acc_model   = []
+        acc_chance = []
+        for n_neu in sampling_nums:
+            results_model = []
+            results_chance = []
+            for s in range(self.n_sess):
+                # not enough neurons.
+                if n_neu > neu_x[s].shape[1]:
+                    results_model.append(np.nan)
+                    results_chance.append(np.nan)
+                # random sampling n_decode times.
+                else:
+                    for _ in range(n_decode):
+                        sub_idx = np.random.choice(neu_x[s].shape[1], n_neu, replace=False)
+                        x = neu_x[s][:,sub_idx].copy()
+                        y = neu_y[s].copy()
+                        # reparate training and testing sets.
+                        x_train, x_test, y_train, y_test = train_test_split(
+                            x, y, test_size=test_size, stratify=y)
+                        x_train, y_train = shuffle(x_train, y_train)
+                        # model.
+                        model = SVC(kernel='linear')
+                        model.fit(x_train, y_train)
+                        results_model.append(model.score(x_test, y_test))
+                        # chance.
+                        chance = SVC(kernel='linear')
+                        x_shuffle, y_shuffle = shuffle(x_train, y_train)
+                        chance.fit(np.random.permutation(x_train), np.random.permutation(y_train))
+                        results_chance.append(chance.score(x_test, y_test))
+            acc_model.append(np.array(results_model).reshape(-1,1))
+            acc_chance.append(np.array(results_chance).reshape(-1,1))
+        # compute mean and sem.
+        acc_mean_model = np.array([get_mean_sem(a)[0] for a in acc_model]).reshape(-1)
+        acc_sem_model  = np.array([get_mean_sem(a)[1] for a in acc_model]).reshape(-1)
+        acc_mean_chance = np.array([get_mean_sem(a)[0] for a in acc_chance]).reshape(-1)
+        acc_sem_chance  = np.array([get_mean_sem(a)[1] for a in acc_chance]).reshape(-1)
+        return sampling_nums, acc_mean_model, acc_sem_model, acc_mean_chance, acc_sem_chance
 
     def plot_mean_sem(self, ax, t, m, s, c, l, a=1.0):
         ax.plot(t, m, color=c, label=l, alpha=a)
