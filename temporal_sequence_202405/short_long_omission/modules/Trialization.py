@@ -60,6 +60,9 @@ def correct_time_img_center(time_img):
 # get stimulus sequence labels.
 def get_stim_labels(bpod_sess_data, vol_time, vol_stim_vis):
     stim_time_up, stim_time_down = get_trigger_time(vol_time, vol_stim_vis)
+    if bpod_sess_data['img_seq_label'][-1] == -1:
+        stim_time_up = stim_time_up[:-1]
+        stim_time_down = stim_time_down[:-1]
     stim_labels = np.zeros((len(stim_time_up), 7))
     # row 0: stim start.
     # row 1: stim end.

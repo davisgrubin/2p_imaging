@@ -84,4 +84,6 @@
 - Now get_stim_response returns a dict of results.
 
 ## 2024.11.12
-- Added voltage correction into trialization.
+- Added voltage correction for the beginning voltage into trialization.
+- Added voltage correction for the last image as oddball into trialization.
+- Completed plot_odd_normal_cluster.

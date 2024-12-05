@@ -2,6 +2,9 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.utils import shuffle
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split
 from matplotlib.colors import LinearSegmentedColormap
 
 # normalization into [0,1].
@@ -14,6 +17,35 @@ def rescale(data, upper, lower):
     data = ( data - np.nanmin(data) ) / (np.nanmax(data) - np.nanmin(data))
     data = data * (upper - lower) + lower
     return data
+
+# bin data for histogram.
+def get_bin_stat(data, win, bin_size):
+    min_samples = 5
+    bins = np.arange(win[0], win[1] + bin_size, bin_size)
+    bin_center = bins[:-1] + bin_size / 2
+    bin_idx = np.digitize(data, bins) - 1
+    bin_num = []
+    bin_mean = []
+    bin_sem = []
+    for i in range(len(bins) - 1):
+        bin_samples = data[(bin_idx == i)]
+        bin_num.append(len(bin_samples))
+        if len(bin_samples) > min_samples:
+            m, s = get_mean_sem(bin_samples.reshape(-1,1))
+        else:
+            m = np.array([np.nan])
+            s = np.array([np.nan])
+        bin_mean.append(m)
+        bin_sem.append(s)
+    bin_num  = np.array(bin_num).reshape(-1)
+    bin_mean = np.array(bin_mean).reshape(-1)
+    bin_sem  = np.array(bin_sem).reshape(-1)
+    non_nan    = (1-np.isnan(bin_mean)).astype('bool')
+    bin_center = bin_center[non_nan]
+    bin_num    = bin_num[non_nan]/len(data)
+    bin_mean   = bin_mean[non_nan]
+    bin_sem    = bin_sem[non_nan]
+    return bin_center, bin_num, bin_mean, bin_sem
 
 # compute baseline within given time window.
 def get_base_mean_win(neu_seq, neu_time, c_time, win_base):
@@ -198,27 +230,27 @@ def get_change_prepost_idx(stim_labels):
 # get ROI color from label.
 def get_roi_label_color(labels, roi_id):
     if labels[roi_id] == -1:
-        cate = 'excitatory'
-        color1 = 'grey'
-        color2 = 'dodgerblue'
+        color0 = 'grey'
+        color1 = 'deepskyblue'
+        color2 = 'royalblue'
         cmap = LinearSegmentedColormap.from_list(
-            'never_quit_and_remember_yicong_will_love_you_forever',
-            ['white', 'dodgerblue', 'black'])
+            'yicong_will_love_you_forever',
+            ['white', 'royalblue', 'black'])
     if labels[roi_id] == 0:
-        cate = 'unsure'
-        color1 = 'grey'
-        color2 = 'mediumseagreen'
+        color0 = 'grey'
+        color1 = 'mediumseagreen'
+        color2 = 'forestgreen'
         cmap = LinearSegmentedColormap.from_list(
-            'never_quit_and_remember_yicong_will_love_you_forever',
-            ['white', 'mediumseagreen', 'black'])
+            'yicong_will_love_you_forever',
+            ['white', 'forestgreen', 'black'])
     if labels[roi_id] == 1:
-        cate = 'inhibitory'
-        color1 = 'grey'
-        color2 = 'hotpink'
+        color0 = 'grey'
+        color1 = 'hotpink'
+        color2 = 'crimson'
         cmap = LinearSegmentedColormap.from_list(
-            'never_quit_and_remember_yicong_will_love_you_forever',
-            ['white', 'hotpink', 'black'])
-    return cate, color1, color2, cmap
+            'yicong_will_love_you_forever',
+            ['white', 'crimson', 'black'])
+    return color0, color1, color2, cmap
 
 # adjust layout for grand average neural traces.
 def adjust_layout_neu(ax):
@@ -260,13 +292,12 @@ class utils:
 
     def __init__(self):
         self.min_num_trial = 5
-        self.color_isi = ['blue','red']
+        self.color_isi = ['mediumseagreen', 'coral']
         self.color_epoch = ['mediumseagreen', 'coral']
 
     def plot_mean_sem(self, ax, t, m, s, c, l, a=1.0):
         ax.plot(t, m, color=c, label=l, alpha=a)
         ax.fill_between(t, m - s, m + s, color=c, alpha=0.2)
-        ax.set_xlim([np.min(t), np.max(t)])
 
     def plot_vol(self, ax, st, sv, c, u, l):
         v = np.mean(sv, axis=0)
@@ -355,6 +386,77 @@ class utils:
         ax.set_xticklabels(['early \n [{},{}] ms'.format(win_early[0], win_early[1]),
                             'late \n [{},{}] ms'.format(win_late[0], win_late[1])])
         ax.set_xlim([-0.5, 2.5])
+    
+    def plot_run_multi_sess_decoding_num_neu(
+            self, ax,
+            neu_x, neu_y,
+            num_step, n_decode,
+            color1, color2
+            ):
+        offset = [-0.5, 0.5]
+        test_size = 0.5
+        # define sampling numbers.
+        max_num = np.nanmax([neu_x[i].shape[1] for i in range(self.n_sess)])
+        sampling_nums = np.arange(num_step, ((max_num//num_step)+1)*num_step, num_step)
+        # run decoding.
+        acc_model   = []
+        acc_chance = []
+        for n_neu in sampling_nums:
+            results_model = []
+            results_chance = []
+            for s in range(self.n_sess):
+                # not enough neurons.
+                if n_neu > neu_x[s].shape[1]:
+                    results_model.append(np.nan)
+                    results_chance.append(np.nan)
+                # random sampling n_decode times.
+                else:
+                    for _ in range(n_decode):
+                        sub_idx = np.random.choice(neu_x[s].shape[1], n_neu, replace=False)
+                        x = neu_x[s][:,sub_idx].copy()
+                        y = neu_y[s].copy()
+                        # reparate training and testing sets.
+                        x_train, x_test, y_train, y_test = train_test_split(
+                            x, y, test_size=test_size, stratify=y)
+                        x_train, y_train = shuffle(x_train, y_train)
+                        # model.
+                        model = SVC(kernel='linear')
+                        model.fit(x_train, y_train)
+                        results_model.append(model.score(x_test, y_test))
+                        # chance.
+                        chance = SVC(kernel='linear')
+                        x_shuffle, y_shuffle = shuffle(x_train, y_train)
+                        chance.fit(np.random.permutation(x_train), np.random.permutation(y_train))
+                        results_chance.append(chance.score(x_test, y_test))
+            acc_model.append(np.array(results_model).reshape(-1,1))
+            acc_chance.append(np.array(results_chance).reshape(-1,1))
+        # compute mean and sem.
+        acc_mean_model = np.array([get_mean_sem(a)[0] for a in acc_model]).reshape(-1)
+        acc_sem_model  = np.array([get_mean_sem(a)[1] for a in acc_model]).reshape(-1)
+        acc_mean_chance = np.array([get_mean_sem(a)[0] for a in acc_chance]).reshape(-1)
+        acc_sem_chance  = np.array([get_mean_sem(a)[1] for a in acc_chance]).reshape(-1)
+        # plot results.
+        ax.errorbar(
+            sampling_nums + offset[0],
+            acc_mean_model, acc_sem_model,
+            color=color2,
+            capsize=2, marker='o', linestyle='none',
+            markeredgecolor='white', markeredgewidth=0.1)
+        ax.errorbar(
+            sampling_nums + offset[1],
+            acc_mean_chance, acc_sem_chance,
+            color=color1,
+            capsize=2, marker='o', linestyle='none',
+            markeredgecolor='white', markeredgewidth=0.1)
+        ax.tick_params(tick1On=False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.plot([], color=color2, label='model')
+        ax.plot([], color=color1, label='chance')
+        ax.legend(loc='upper left')
+        ax.set_xlabel('number of sampled neurons')
+        ax.set_ylabel('ACC')
+        ax.set_xlim([sampling_nums[0]-num_step, sampling_nums[-1]+num_step])
 
     def plot_heatmap_trials(self, ax, neu_seq, neu_time, cmap, norm=True):
         if not np.isnan(np.sum(neu_seq)) and len(neu_seq)>0:
