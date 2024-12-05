@@ -65,34 +65,44 @@ def run(list_session_data_path, sig_tag):
         plotter_masks.superimpose(mask_ax11, 'max', with_mask=False)
         # normal alignment.
         print('Plotting normal alignment')
-        normal_axs01 = [plt.subplot(gs[5, 0]), plt.subplot(gs[5, 1])]
-        normal_axs02 = [plt.subplot(gs[6, 0]), plt.subplot(gs[6, 1])]
-        normal_axs03 = [plt.subplot(gs[5:7, 2])]
-        normal_axs04 = [plt.subplot(gs[5:7, 3]),
-                        plt.subplot(gs[7:9, 0:2]),  plt.subplot(gs[7:9, 2]),
-                        plt.subplot(gs[9:11, 0:2]), plt.subplot(gs[9:11, 2])]
+        normal_axs01 = [plt.subplot(gs[5, i]) for i in range(3)]
+        normal_axs02 = [plt.subplot(gs[6, i]) for i in range(3)]
+        normal_axs03 = [plt.subplot(gs[5:7, 3])]
+        normal_axs04 = [
+            plt.subplot(gs[7:9, 0:2]),  plt.subplot(gs[7:9, 2]),  plt.subplot(gs[7, 3]), plt.subplot(gs[8, 3]),
+            plt.subplot(gs[9:11, 0:2]), plt.subplot(gs[9:11, 2]), plt.subplot(gs[9, 3]), plt.subplot(gs[10, 3])]
         plotter_align_stim.normal_exc(normal_axs01)
         plotter_align_stim.normal_inh(normal_axs02)
         plotter_align_stim.normal_heatmap(normal_axs03)
         plotter_align_stim.normal_mode(normal_axs04)
         # selectivity alignment.
         print('Plotting selectivity alignment')
-        change_axs01 = [plt.subplot(gs[5, i+7]) for i in range(6)]
-        change_axs01+= [plt.subplot(gs[7, i+7]) for i in range(3)]
-        change_axs02 = [plt.subplot(gs[6, i+7]) for i in range(6)]
-        change_axs02+= [plt.subplot(gs[8, i+7]) for i in range(3)]
-        plotter_align_stim.change_exc(change_axs01)
-        plotter_align_stim.change_inh(change_axs02)
+        select_axs01 = [plt.subplot(gs[5, i+7]) for i in range(6)]
+        select_axs01+= [plt.subplot(gs[7, i+7]) for i in range(6)]
+        select_axs02 = [plt.subplot(gs[6, i+7]) for i in range(6)]
+        select_axs02+= [plt.subplot(gs[8, i+7]) for i in range(6)]
+        plotter_align_stim.select_exc(select_axs01)
+        plotter_align_stim.select_inh(select_axs02)
         # oddball alignment.
         print('Plotting oddball alignment')
-        odd_normal_axs01 = [
-            plt.subplot(gs[12, 0:2]), plt.subplot(gs[12, 2:4]),  plt.subplot(gs[12, 4:6])]
-        odd_normal_axs02 = [
-            plt.subplot(gs[13, 0:2]), plt.subplot(gs[13, 2:4]),  plt.subplot(gs[13, 4:6])]
-        odd_normal_axs03 = [plt.subplot(gs[12:14, i]) for i in [6,7,8,9]]
+        odd_normal_axs01 = [plt.subplot(gs[12, 0:2]), plt.subplot(gs[12, 2:4]), plt.subplot(gs[12, 4:6])]
+        odd_normal_axs01+= [plt.subplot(gs[12, i+6]) for i in range(6)]
+        odd_normal_axs02 = [plt.subplot(gs[13, 0:2]), plt.subplot(gs[13, 2:4]), plt.subplot(gs[13, 4:6])]
+        odd_normal_axs02+= [plt.subplot(gs[13, i+6]) for i in range(6)]
+        odd_normal_axs03 = [plt.subplot(gs[14:16, i]) for i in range(4)]
+        odd_normal_axs04 = [plt.subplot(gs[14, 4:6]), plt.subplot(gs[14, 6]), plt.subplot(gs[14, 7])]
+        odd_normal_axs05 = [plt.subplot(gs[15, 4:6]), plt.subplot(gs[15, 6]), plt.subplot(gs[15, 7])]
+        odd_normal_axs06 = [
+            plt.subplot(gs[16:18, 0:2]), plt.subplot(gs[16:18, 2]), plt.subplot(gs[16, 3]), plt.subplot(gs[17, 3]),
+            plt.subplot(gs[16:18, 4:6]), plt.subplot(gs[16:18, 6]), plt.subplot(gs[16, 7]), plt.subplot(gs[17, 7]),
+            plt.subplot(gs[18:20, 0:2]), plt.subplot(gs[18:20, 2]), plt.subplot(gs[18, 3]), plt.subplot(gs[19, 3]),
+            plt.subplot(gs[18:20, 4:6]), plt.subplot(gs[18:20, 6]), plt.subplot(gs[18, 7]), plt.subplot(gs[19, 7])]
         plotter_align_odd.odd_normal_exc(odd_normal_axs01)
         plotter_align_odd.odd_normal_inh(odd_normal_axs02)
         plotter_align_odd.odd_normal_heatmap(odd_normal_axs03)
+        plotter_align_odd.odd_normal_pop_exc(odd_normal_axs04)
+        plotter_align_odd.odd_normal_pop_inh(odd_normal_axs05)
+        plotter_align_odd.odd_normal_mode(odd_normal_axs06)
         # example traces.
         print('Plotting example traces')
         example_ax = plt.subplot(gs[0:4, 12])
@@ -204,7 +214,6 @@ def run(list_session_data_path, sig_tag):
         print(session_data_path.split('/')[-1])
     print('Reading ops.npy')
     list_ops = read_ops(list_session_data_path)
-    '''
     print('===============================================')
     print('============= trials segmentation =============')
     print('===============================================')
@@ -215,7 +224,6 @@ def run(list_session_data_path, sig_tag):
     print('===============================================')
     for ops in list_ops:
         StatTest.run(ops)
-    '''
     print('===============================================')
     print('============ reading saved results ============')
     print('===============================================')
@@ -236,8 +244,9 @@ def run(list_session_data_path, sig_tag):
     print('Preparing omission alignments')
     plotter_align_odd = plotter_VIPTD_G8_align_odd(
         list_neural_trials, list_labels, list_significance)
-    print('Preparing misc results')
-
+    print('===============================================')
+    print('=========== plotting session report ===========')
+    print('===============================================')
     plot_session_report()
     print('===============================================')
     print('=============== plot roi report ===============')
@@ -260,14 +269,20 @@ if __name__ == "__main__":
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240708_seq1131_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240710_seq1130_t',
         ]
+    list_session_data_path = [
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_PPC_20241129_seq1131_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_PPC_20241130_seq1131_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_PPC_20241202_seq1131_t',
+        ]
+    list_session_data_path = [
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/VT02_PPC_20241129_seq1131_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/VT02_PPC_20241130_seq1131_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/VT02_PPC_20241201_seq1131_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/VT02_PPC_20241202_seq1131_t',
+        ]
     '''
     list_session_data_path = [
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240627_seq1130_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240701_seq1130_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240702_seq1130_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240705_seq1130_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240708_seq1131_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240710_seq1130_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/VT02_PPC_20241202_seq1131_t',
         ]
     #run(list_session_data_path, 'sig')
     run(list_session_data_path, 'all')
