@@ -3,51 +3,68 @@
 import os
 import h5py
 import numpy as np
+import pandas as pd
+from scipy.signal import savgol_filter
 from scipy.ndimage import gaussian_filter
-from modules import SpikeDeconv
+from scipy.ndimage import percentile_filter
 
-from .SpikeAnalysis import analyze_spike_traces
-# compute dff from raw fluorescence signals.
-
-
-def get_dff(
-        ops,
-        fluo,
-        neuropil,
-        norm,
-):
-    # correct with neuropil signals.
-    dff = fluo.copy() - ops['neucoeff']*neuropil
-    # get baseline.
-    f0 = gaussian_filter(dff, [0., ops['sig_baseline']])
-    for j in range(dff.shape[0]):
-        # baseline subtraction.
-        dff[j, :] = (dff[j, :] - f0[j, :]) / f0[j, :]
-        if norm:
-            # z score.
-            dff[j, :] = (dff[j, :] - np.mean(dff[j, :])) / \
-                (np.std(dff[j, :]) + 1e-5)
+# process dff for opto sessions.
+def pmt_led_handler(fluo, dff):
+    # find lowest part of values ready for detection.
+    fluo_mean = np.percentile(fluo.copy(), 10, axis=0)
+    #plt.plot(time_img, fluo_mean)
+    # baseline correction.
+    fluo_base = percentile_filter(fluo_mean, 90, size=15, mode='nearest')
+    fluo_correct = (fluo_mean - fluo_base) / fluo_base
+    #plt.plot(time_img, fluo_correct*-200)
+    # find threshold based on baseline.
+    thres = 2*np.std(fluo_correct[fluo_correct<np.percentile(fluo_correct, 90)])
+    #plt.hlines(-thres*-200, time_img[0], time_img[-1], color='black')
+    # replace nan with interpolation.
+    nan_idx = fluo_correct < -thres
+    #plt.plot(time_img, dff[5,:])
+    #plt.plot(time_img, nan_idx*500)
+    dff[:,nan_idx] = np.nan
+    dff = pd.DataFrame(dff)
+    dff = dff.interpolate(method='linear', axis=1, limit_direction='both')
+    dff = dff.to_numpy()
     return dff
 
+# apply Savitzky-Golay filter to smooth dff.
+def smooth_dff(dff):
+    window_length=25
+    polyorder=5
+    dff_filtered = np.apply_along_axis(
+        savgol_filter, 1, dff.copy(),
+        window_length=window_length, polyorder=polyorder)
+    return dff_filtered
 
-# save results
-def save(ops, name, data):
+# compute dff from raw fluorescence signals.
+def get_dff(
+        ops,
+        dff,
+        norm,
+        ):
+    sig_baseline = 600
+    # get baseline.
+    f0 = gaussian_filter(dff, [0., sig_baseline])
+    for j in range(dff.shape[0]):
+        # baseline subtraction.
+        dff[j,:] = ( dff[j,:] - f0[j,:] ) / f0[j,:]
+        if norm:
+            # z score.
+            dff[j,:] = (dff[j,:] - np.nanmean(dff[j,:])) / (np.nanstd(dff[j,:]) + 1e-5)
+    return dff
+
+# save dff traces results.
+def save_dff(ops, dff, fluo):
     f = h5py.File(os.path.join(ops['save_path0'], 'dff.h5'), 'w')
-    f['name'] = data
+    f['dff'] = dff
+    f['fluo'] = fluo
     f.close()
 
 # main function to compute spikings.
-
-
-def run(
-        ops,
-        norm=True,
-        plotting_neurons=[5],
-        taus=[0.05, 0.10, 0.15, 0.20, 0.25, 0.30,
-              0.35, 0.40, 0.45, 0.50, 0.55, 0.6],
-        plot_with_smoothed=False,
-        plot_without_smoothed=True):
-
+def run(ops, norm=True, smooth=True, correct_pmt=False):
     print('===============================================')
     print('=========== dff trace normalization ===========')
     print('===============================================')
@@ -58,44 +75,14 @@ def run(
     neuropil = np.load(
         os.path.join(ops['save_path0'], 'qc_results', 'neuropil.npy'),
         allow_pickle=True)
+    dff = fluo.copy() - ops['neucoeff']*neuropil
+    if smooth:
+        print('Running trace smoothing')
+        dff = smooth_dff(dff)
     print('Running baseline subtraction and normalization')
-    dff = get_dff(ops, fluo, neuropil, norm)
-
-    save(ops, 'dff', dff)
-    print("DFF Results saved under name 'dff'")
-
-    # deconvolution code
-    if len(taus) > 1:
-        # code to perform a parameter search on tau
-        tau_spike_dict = {}
-        neurons = np.arange(dff.shape[0])
-        for tau in taus:
-            smoothed, spikes = SpikeDeconv.run(
-                ops,
-                dff,
-                oasis_tau=tau,
-                neurons=neurons,
-                plotting_neurons=plotting_neurons,
-                plot_with_smoothed=plot_with_smoothed,
-                plot_without_smoothed=plot_without_smoothed)
-            tau_spike_dict[tau] = spikes
-
-        analyze_spike_traces(ops, dff, tau_spike_dict,
-                             neurons=np.arange(dff.shape[0]))
-    else:
-        # if we just specify one tau value
-        neurons = np.arange(dff.shape[0])
-        smoothed, spikes = SpikeDeconv.run(
-            ops,
-            dff,
-            oasis_tau=tau,
-            neurons=neurons,
-            plotting_neurons=plotting_neurons,
-            plot_with_smoothed=plot_with_smoothed,
-            plot_without_smoothed=plot_without_smoothed)
-
-        save(ops, 'spikes', spikes)
-        print("Spike traces saved under name 'spikes'")
-
-        save(ops, 'smoothed', smoothed)
-        print("De-noised DFF data saved under name 'smoothed'")
+    dff = get_dff(ops, dff, norm)
+    if correct_pmt:
+        print('Running PMT/LED fluorescence correction.')
+        dff = pmt_led_handler(fluo, dff)
+    print('Results saved')
+    save_dff(ops, dff, fluo)

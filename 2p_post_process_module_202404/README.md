@@ -30,3 +30,7 @@ sbatch run_postprocess.sh
 
 ## 2024.09.06
 - Rewritten signal correction for opto/shutter with percentile filtering.
+
+## 2024.12.11
+- Added dff filtering and activate smoothing by default.
+- Set sig_baseline to 600 within the funciton.
