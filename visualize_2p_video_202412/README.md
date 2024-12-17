@@ -12,7 +12,7 @@ python get_raw.py `
 --roi_labels '[1,1,1,0,0,0,0,0,0,0]' `
 --img_path './test' `
 --suite2p_path './test/FN14_PPC_20241209_seq1131_t' `
---n_channels 1 `
+--n_channels 2 `
 
 python .\SRDTrans\train.py `
 --datasets_path '.\results\temp_data\tiff' `
