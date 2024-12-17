@@ -2,6 +2,7 @@
 
 Download ffmpeg into the project folder from https://github.com/FFmpeg/FFmpeg/tags.
 
+Run on windows command line window:
 ```
 cd C:\Users\yhuang887\Projects\visualize_2p_video_202412
 
