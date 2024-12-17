@@ -1,5 +1,8 @@
 # Usage
 
+Download ffmpeg into the project folder from https://github.com/FFmpeg/FFmpeg/tags.
+
+```
 cd C:\Users\yhuang887\Projects\visualize_2p_video_202412
 
 python get_raw.py `
@@ -32,7 +35,7 @@ python .\SRDTrans\test.py `
 
 python get_videos.py `
 --labels '[exc, inh]' `
-
+```
 
 # Update note
 
