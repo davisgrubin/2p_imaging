@@ -39,7 +39,7 @@ def main(args):
     for file_name in ch_files:
         shutil.copy(
             os.path.join(args.img_path, file_name),
-            os.path.join(os.path.join('./', 'results', 'temp_data'), file_name))
+            os.path.join(os.path.join('./', 'results', 'temp_data', 'tiff'), file_name))
 
     # get dff sub array.
     sig_baseline = 600
