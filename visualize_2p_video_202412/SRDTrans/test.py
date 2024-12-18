@@ -24,16 +24,16 @@ from sampling import *
 parser = argparse.ArgumentParser()
 parser.add_argument('--GPU', type=str, default='0,1', help="the index of GPU used for computation (e.g., '0', '0,1', '0,1,2')")
 
-parser.add_argument('--denoise_model', type=str, default=None, help='A folder containing models to be tested')
-parser.add_argument('--datasets_folder', type=str, default='train', help="A folder containing all *.tif files for training")
+parser.add_argument('--denoise_model', type=str, default='./', help='A folder containing models to be tested')
+parser.add_argument('--datasets_folder', type=str, default='./', help="A folder containing all *.tif files for training")
 
-parser.add_argument('--patch_x', type=int, default=128, help="patch size in x and y")
-parser.add_argument('--patch_t', type=int, default=128, help="patch size in t")
+parser.add_argument('--patch_x', type=int, default=160, help="patch size in x and y")
+parser.add_argument('--patch_t', type=int, default=160, help="patch size in t")
 parser.add_argument('--overlap_factor', type=float, default=0.5, help="the overlap factor between two adjacent patches")
 
-parser.add_argument('--datasets_path', type=str, default='./datasets', help="dataset root path")
-parser.add_argument('--pth_path', type=str, default='./pth', help="the root path to save models")
-parser.add_argument('--output_path', type=str, default='./results', help="output directory")
+parser.add_argument('--datasets_path', type=str, default='./results/temp_data/tiff', help="dataset root path")
+parser.add_argument('--pth_path', type=str, default='./results/temp_model', help="the root path to save models")
+parser.add_argument('--output_path', type=str, default='./results/temp_denoised', help="output directory")
 
 parser.add_argument('--test_datasize', type=int, default=1000000, help='how many slices to be tested')
 parser.add_argument('--scale_factor', type=int, default=1, help='the factor for image intensity scaling')
