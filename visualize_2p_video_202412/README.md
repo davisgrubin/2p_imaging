@@ -14,22 +14,22 @@ python get_raw.py `
 --suite2p_path './test/FN14_PPC_20241209_seq1131_t' `
 --n_channels 2 `
 
-python .\SRDTrans\train.py `
---datasets_path '.\results\temp_data\tiff' `
---datasets_folder '.\' `
---pth_path '.\results\temp_model' `
---n_epochs 8 `
+python ./SRDTrans/train.py `
+--datasets_path './results/temp_data/tiff' `
+--datasets_folder './' `
+--pth_path './results/temp_model' `
+--n_epochs 20 `
 --GPU 0 `
---train_datasets_size 8192 `
+--train_datasets_size 6000 `
 --patch_x 160 `
 --patch_t 160 `
 
-python .\SRDTrans\test.py `
---datasets_path '.\results\temp_data\tiff' `
---datasets_folder '.\' `
---pth_path '.\results\temp_model' `
---denoise_model '.\' `
---output_path '.\results\temp_denoised' `
+python ./SRDTrans/test.py `
+--datasets_path './results/temp_data/tiff' `
+--datasets_folder './' `
+--pth_path './results/temp_model' `
+--denoise_model './' `
+--output_path './results/temp_denoised' `
 --GPU 0 `
 --patch_x 160 `
 --patch_t 160 `
