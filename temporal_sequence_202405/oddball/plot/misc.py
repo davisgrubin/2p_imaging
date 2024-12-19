@@ -35,13 +35,16 @@ def plot_motion_offset_hist(ax, list_move_offset):
     ax.spines['top'].set_visible(False)
     ax.set_xticks(center)
     ax.set_xlabel('offset pixels')
-    ax.set_ylabel('percentage of frames')
+    ax.set_ylabel('fraction of frames')
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles[:2], labels[:2], loc='upper right')
     ax.set_title('motion correction offset distribution')
 
 # inhibitory/excitory labels.
 def plot_inh_exc_label_pc(ax, list_labels):
+    _, _, c_exc, _ = get_roi_label_color([-1], 0)
+    _, _, c_uns, _ = get_roi_label_color([0], 0)
+    _, _, c_inh, _ = get_roi_label_color([1], 0)
     labels = np.concatenate(list_labels)
     exc = np.sum(labels==-1)
     uns = np.sum(labels==0)
@@ -51,10 +54,10 @@ def plot_inh_exc_label_pc(ax, list_labels):
         labels=['{} excitory'.format(exc),
                 '{} unsure'.format(uns),
                 '{} inhibitory'.format(inh)],
-        colors=['#A4CB9E', '#9DB4CE', '#EDA1A4'],
+        colors=[c_exc, c_uns, c_inh],
         autopct='%1.1f%%',
-        wedgeprops={'linewidth': 1, 'edgecolor':'white'})
-    ax.set_title('percentage of {} neuron labels'.format(len(labels)))
+        wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+    ax.set_title('fraction of {} neuron labels'.format(len(labels)))
 
 # significant neurons ratio.
 def plot_significance(ax, list_significance, list_labels):
@@ -83,11 +86,11 @@ def plot_significance(ax, list_significance, list_labels):
             i+width/2, r1_inh/(r0_inh+r1_inh),
             bottom=0,
             width=width, color=c_inh)
-    ax.set_title('percentage of neuron with significant window response')
+    ax.set_title('fraction of neuron with significant window response')
     ax.tick_params(tick1On=False)
     ax.spines['left'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.set_ylabel('percentage')
+    ax.set_ylabel('fraction')
     ax.set_xlim([-1,len(sig)+1])
     ax.set_ylim([0,1])
     ax.set_xticks(np.arange(len(sig)))
@@ -133,11 +136,11 @@ def plot_isi_distribution(ax, list_neural_trials):
         bins=200, range=[0, np.nanmax(isi)], align='right',
         color='coral', density=True, label='oddball (long)')
     ax.set_title('stimulus interval distribution')
-    ax.tick_params(tick1On=False)
+    ax.tick_params(axis='y', tick1On=False)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.set_xlabel('time (ms)')
-    ax.set_ylabel('percentage')
+    ax.set_ylabel('fraction')
     ax.set_xlim([0, np.nanmax(isi)])
     ax.set_xticks(500*np.arange(0, np.nanmax(isi)/500+1).astype('int32'))
     ax.set_xticklabels(
@@ -165,8 +168,8 @@ def plot_stim_type(ax, list_neural_trials):
                 '{} img#4'.format(num_img4)],
         colors=['#989A9C', '#B3D8D5', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A'],
         autopct='%1.1f%%',
-        wedgeprops={'linewidth': 1, 'edgecolor':'white'})
-    ax.set_title('percentage of {} stimulus types'.format(
+        wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+    ax.set_title('fraction of {} stimulus types'.format(
         num_odd+num_change+num_img1+num_img2+num_img3+num_img4))
 
 # normal type distribution
@@ -180,8 +183,8 @@ def plot_normal_type(ax, list_neural_trials):
                 '{} long'.format(num_long)],
         colors=['#9DB4CE', '#EDA1A4'],
         autopct='%1.1f%%',
-        wedgeprops={'linewidth': 1, 'edgecolor':'white'})
-    ax.set_title('percentage of normal types')
+        wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+    ax.set_title('fraction of normal types')
     
 # fix jitter type distribution
 def plot_fix_jitter_type(ax, list_neural_trials):
@@ -194,8 +197,8 @@ def plot_fix_jitter_type(ax, list_neural_trials):
                 '{} jitter'.format(num_jitter)],
         colors=['#9DB4CE', '#EDA1A4'],
         autopct='%1.1f%%',
-        wedgeprops={'linewidth': 1, 'edgecolor':'white'})
-    ax.set_title('percentage of fix/jitter types')
+        wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+    ax.set_title('fraction of fix/jitter types')
 
 # oddball type distribution
 def plot_oddball_type(ax, list_neural_trials):
@@ -208,5 +211,5 @@ def plot_oddball_type(ax, list_neural_trials):
                 '{} long'.format(num_long)],
         colors=['#9DB4CE', '#EDA1A4'],
         autopct='%1.1f%%',
-        wedgeprops={'linewidth': 1, 'edgecolor':'white'})
-    ax.set_title('percentage of oddball types')
+        wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+    ax.set_title('fraction of oddball types')

@@ -2,7 +2,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.spatial.distance import pdist, squareform
+from scipy.spatial.distance import pdist
 from matplotlib.colors import LinearSegmentedColormap
 
 # normalization into [0,1].
@@ -271,7 +271,6 @@ def adjust_layout_neu(ax):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.set_ylabel('df/f (z-scored)')
-    ax.legend(loc='upper right')
 
 # adjust layout for heatmap.
 def adjust_layout_heatmap(ax):
@@ -291,23 +290,49 @@ def adjust_layout_spectral(ax):
     ax.spines['bottom'].set_visible(False)
     ax.set_ylabel('frequency (Hz)')
 
-# adjust layout for example traces.
-def adjust_layout_example_trace(ax):
-    ax.tick_params(axis='y', tick1On=False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
+# adjust layout for 3d latent dynamics.
+def adjust_layout_3d_latent(ax, neu_z, cmap, neu_time, cbar_label):
+    scale = 0.9
+    ax.grid(False)
+    ax.view_init(elev=30, azim=30)
+    ax.set_xticks([])
     ax.set_yticks([])
-    ax.set_xlabel('time (ms)')
-    ax.set_title('example traces')
-
-# adjust layout for raw traces.
-def adjust_layout_raw_trace(ax):
-    ax.tick_params(tick1On=False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.set_xlabel('time (s)')
-    ax.legend(loc='upper left')
+    ax.set_zticks([])
+    ax.set_xlim([np.min(neu_z[0,:])*scale, np.max(neu_z[0,:])*scale])
+    ax.set_ylim([np.min(neu_z[1,:])*scale, np.max(neu_z[1,:])*scale])
+    ax.set_zlim([np.min(neu_z[2,:])*scale, np.max(neu_z[2,:])*scale])
+    ax.set_xlabel('latent 1')
+    ax.set_ylabel('latent 2')
+    ax.set_zlabel('latent 3')
+    ax.xaxis.pane.fill = False
+    ax.yaxis.pane.fill = False
+    ax.zaxis.pane.fill = False
+    cbar = ax.figure.colorbar(
+        plt.cm.ScalarMappable(cmap=cmap), ax=ax, ticks=[0.2,0.5,0.8],
+        shrink=0.5, aspect=25)
+    cbar.outline.set_visible(False)
+    cbar.ax.set_ylabel(cbar_label, rotation=-90, va='bottom')
+    cbar.ax.set_yticklabels(
+        [int(neu_time[int(len(neu_time)*0.2)]),
+         int(neu_time[int(len(neu_time)*0.5)]),
+         int(neu_time[int(len(neu_time)*0.8)])], rotation=-90)
+    
+# add legend into subplots.
+def add_legend(ax, colors, labels, loc, dim=2):
+    if dim == 2:
+        handles = [
+            ax.plot([], lw=0, color=colors[i], label=labels[i])[0]
+            for i in range(len(labels))]
+    if dim == 3:
+        handles = [
+            ax.plot([],[],[], lw=0, color=colors[i], label=labels[i])[0]
+            for i in range(len(labels))]
+    ax.legend(
+        loc=loc,
+        handles=handles,
+        labelcolor='linecolor',
+        frameon=False,
+        framealpha=0)
 
 
 class utils:
@@ -437,8 +462,8 @@ class utils:
         ax.tick_params(tick1On=False)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
-        ax.legend(loc='upper left')
         ax.set_xlabel('number of sampled neurons')
+        add_legend(ax, [color2,color1], ['model','chance'], 'upper left')
 
     def plot_multi_sess_decoding_slide_win(
             self, ax,
@@ -459,9 +484,31 @@ class utils:
         ax.tick_params(tick1On=False)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
-        ax.legend(loc='upper right')
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
-
+        add_legend(ax, [color2,color1], ['model','chance'], 'upper left')
+    
+    def plot_cluster_mean_sem(self, ax, neu_mean, neu_sem, stim_seq, c, colors):
+        for i in range(3):
+            ax.fill_between(
+                stim_seq[i,:],
+                0-0.1*neu_mean.shape[0], neu_mean.shape[0]+0.1*neu_mean.shape[0],
+                color=c, alpha=0.15, step='mid')
+        for i in range(neu_mean.shape[0]):
+            a = 1 / (np.nanmax(neu_mean[i,:]) - np.nanmin(neu_mean[i,:]))
+            b = - np.nanmin(neu_mean[i,:]) / (np.nanmax(neu_mean[i,:]) - np.nanmin(neu_mean[i,:]))
+            self.plot_mean_sem(
+                ax, self.alignment['neu_time'],
+                (a*neu_mean[i,:]+b)+neu_mean.shape[0]-i-1, np.abs(a)*neu_sem[i,:],
+                colors[i], None)
+        ax.tick_params(axis='y', tick1On=False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.set_yticks([])
+        ax.set_xlabel('time since stim (ms)')
+        ax.set_ylabel('df/f (z-scored)')
+        ax.set_ylim([-0.1, neu_mean.shape[0]+0.1])
+            
     def plot_heatmap_trials(self, ax, neu_seq, neu_time, cmap, norm=True):
         if not np.isnan(np.sum(neu_seq)) and len(neu_seq)>0:
             if len(neu_seq.shape) == 3:

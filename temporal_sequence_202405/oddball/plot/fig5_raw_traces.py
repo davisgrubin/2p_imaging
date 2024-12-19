@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import random
 from plot.utils import get_sub_time_idx
 from plot.utils import get_roi_label_color
-from plot.utils import adjust_layout_example_trace
-from plot.utils import adjust_layout_raw_trace
-
+from plot.utils import add_legend
 
 # rescale voltage recordings.
 def rescale(data, upper, lower):
@@ -14,7 +11,6 @@ def rescale(data, upper, lower):
     data = ( data - np.min(data) ) / (np.max(data) - np.min(data))
     data = data * (upper - lower) + lower
     return data
-
 
 # find imaging trigger time stamps
 def get_img_time(
@@ -26,7 +22,23 @@ def get_img_time(
     img_time = vol_time[idx_up]
     return img_time
 
-
+# adjust layout for raw traces.
+def adjust_layout_roi_raw_trace(ax):
+    ax.tick_params(tick1On=False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.set_xlabel('time (s)')
+    
+# adjust layout for example traces.
+def adjust_layout_example_trace(ax):
+    ax.tick_params(axis='y', tick1On=False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.set_yticks([])
+    ax.set_xlabel('time (ms)')
+    ax.set_title('example traces')
+    
 # roi example traces.
 def plot_roi_example_traces(
         ax,
@@ -44,107 +56,51 @@ def plot_roi_example_traces(
     adjust_layout_example_trace(ax)
     ax.set_xlim([np.min(sub_time_img), np.max(sub_time_img)])
     
-    
-# plot example traces for ppc.
-def plot_VIPTD_G8_example_traces(
-        ax,
-        dff, labels, vol_img_bin, vol_time
-        ):
+# select example neural traces.
+def plot_sess_example_traces(ax, list_dff, list_labels, list_vol, label_names):
     max_ms = 300000
-    num_exc = 8
-    num_inh = 2
-    time_img = get_img_time(vol_time, vol_img_bin)
-    start_time = np.max(time_img)/4
-    time_img_idx = get_sub_time_idx(time_img, start_time, start_time+max_ms)
-    sub_time_img = time_img[time_img_idx]
-    sub_dff_exc  = dff[labels==-1, :]
-    num_exc = num_exc if num_exc < sub_dff_exc.shape[0] else sub_dff_exc.shape[0]
-    dff_idx_exc  = np.isin(
-        np.arange(sub_dff_exc.shape[0]),
-        random.sample(range(sub_dff_exc.shape[0]), num_exc))
-    sub_dff_exc  = sub_dff_exc[dff_idx_exc, :]
-    sub_dff_exc  = sub_dff_exc[:, time_img_idx]
-    sub_dff_inh  = dff[labels==-1, :]
-    num_inh = num_inh if num_inh < sub_dff_inh.shape[0] else sub_dff_inh.shape[0]
-    dff_idx_inh  = np.isin(
-        np.arange(sub_dff_inh.shape[0]),
-        random.sample(range(sub_dff_inh.shape[0]), num_inh))
-    sub_dff_inh  = sub_dff_inh[dff_idx_inh, :]
-    sub_dff_inh  = sub_dff_inh[:, time_img_idx]
-    sub_dff = np.concatenate((sub_dff_exc, sub_dff_inh), axis=0)
-    color_label  = np.zeros(num_exc+num_inh, dtype='int32')
-    color_label[num_exc:] = 1
-    label = ['excitory', 'inhibitory']
+    n = 20
+    r = 0.75
+    dff = list_dff[0]
+    labels = list_labels[0]
+    vol_img_bin = list_vol[0][3]
+    vol_time = list_vol[0][0]
     _, _, c1, _ = get_roi_label_color([-1], 0)
     _, _, c2, _ = get_roi_label_color([1], 0)
-    color = [c1, c2]
-    scale = np.max(np.abs(sub_dff))*1.5
-    for i in range(num_exc+num_inh):
-        ax.plot(
-            sub_time_img, sub_dff[i,:] + i * scale,
-            color=color[color_label[i]],
-            label=label[color_label[i]])
-    adjust_layout_example_trace(ax)
-    ax.set_xlim([np.min(sub_time_img), np.max(sub_time_img)])
-    handles, labels = ax.get_legend_handles_labels()
-    handles = [handles[0], handles[-1]]
-    labels = [labels[0], labels[-1]]
-    ax.legend(handles, labels, loc='upper right')
-        
-
-# example traces for crbl.
-def plot_L7G8_example_traces(
-        ax,
-        dff, vol_stim_bin, vol_img_bin, vol_time
-        ):
-    max_ms = 60000
-    num_roi = 10
-    num_roi = num_roi if num_roi < dff.shape[0] else dff.shape[0]
-    dff_idx  = np.isin(
-        np.arange(dff.shape[0]),
-        random.sample(range(dff.shape[0]), num_roi))
-    vol_stim = vol_stim_bin.copy()
-    vol_stim[vol_stim!=0] = 1
+    # find time indice.
     time_img = get_img_time(vol_time, vol_img_bin)
-    start_time = np.max(time_img)/4
-    time_img = get_img_time(vol_time, vol_img_bin)
+    start_time = np.max(time_img)/5.025520
     time_img_idx = get_sub_time_idx(time_img, start_time, start_time+max_ms)
     sub_time_img = time_img[time_img_idx]
-    sub_dff = dff[dff_idx, :]
+    # select neurons.
+    if len(label_names) == 1:
+        idx = np.where(np.array(labels) == int(list(label_names.keys())[0]))[0]
+        idx = np.random.choice(idx, n, replace=False)
+    if len(label_names) == 2:
+        idx1 = np.where(np.array(labels) == -1)[0]
+        idx2 = np.where(np.array(labels) == 1)[0]
+        n1 = int(r*n) if int(r*n) < len(idx1) else len(idx1)
+        n2 = int((1-r)*n) if int((1-r)*n) < len(idx2) else len(idx2)
+        idx1 = np.random.choice(idx1, n1, replace=False)
+        idx2 = np.random.choice(idx2, n2, replace=False)
+        idx = np.concatenate([idx1,idx2])
+    # plot neural traces.
+    sub_dff = dff[idx, :].copy()
     sub_dff = sub_dff[:, time_img_idx]
-    scale = np.max(np.abs(sub_dff))*1.5
-    for i in range(num_roi):
+    scale = np.max(np.abs(sub_dff))
+    for i in range(len(idx)):
         ax.plot(
             sub_time_img, sub_dff[i,:] + i * scale,
-            color='#A4CB9E')
+            color=[get_roi_label_color([i], 0)[2] for i in labels[idx]][i])
     adjust_layout_example_trace(ax)
+    ax.set_ylim([-0.5*scale,(len(idx)+1)*scale])
     ax.set_xlim([np.min(sub_time_img), np.max(sub_time_img)])
-
-
-# example traces for crbl.
-def plot_VIPG8_example_traces(
+    add_legend(
         ax,
-        dff, vol_stim_bin, vol_img_bin, vol_time
-        ):
-    max_ms = 30000
-    num_roi = 10
-    vol_stim = vol_stim_bin.copy()
-    vol_stim[vol_stim!=0] = 1
-    time_img = get_img_time(vol_time, vol_img_bin)
-    start_time = np.max(time_img)/4
-    time_img = get_img_time(vol_time, vol_img_bin)
-    time_img_idx = get_sub_time_idx(time_img, start_time, start_time+max_ms)
-    sub_time_img = time_img[time_img_idx]
-    sub_dff = dff[:np.min([num_roi, dff.shape[0]]), time_img_idx]
-    scale = np.max(np.abs(sub_dff))*1.5
-    for i in range(num_roi):
-        ax.plot(
-            sub_time_img, sub_dff[i,:] + i * scale,
-            color='#EDA1A4')
-    adjust_layout_example_trace(ax)
-    ax.set_xlim([np.min(sub_time_img), np.max(sub_time_img)])
+        [get_roi_label_color([int(k)], 0)[2] for k in label_names.keys()],
+        [i[1] for i in label_names.items()],
+        'upper right')
     
-
 # ROI raw traces.
 def plot_roi_raw_trace(
         axs, roi_id, max_ms,
@@ -177,7 +133,7 @@ def plot_roi_raw_trace(
             color=color[int(labels[roi_id]+1)],
             label=category[int(labels[roi_id]+1)],
             lw=0.5)
-        adjust_layout_raw_trace(axs[i])
+        adjust_layout_roi_raw_trace(axs[i])
         axs[i].set_title('raw trace of ROI # '+ str(roi_id).zfill(4))
         axs[i].set_ylim([lower - 0.1*(upper-lower),
                            upper + 0.1*(upper-lower)])

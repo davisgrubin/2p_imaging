@@ -45,3 +45,23 @@
 - Now decoding is based on pytorch.
 - Simplified get_multi_sess_neu_trial_average.
 - Corrected get_stim_labels if the last stimulus is oddball.
+
+## 2024.12.09
+- Replaced all pie charts with ring charts.
+- Added all_2chan and all_1chan for plotting masks.
+- Decoding went back to simple machine learning.
+- Added exception to all methods.
+- Merged all title with label_names.
+- Now functional channel image has a fusion option to combine two projections.
+- Added add_legend into utils.
+- Now plot_sess_example_traces is for all session types.
+- Now read_all has force_label for all session types.
+
+## 2024.12.17
+- Now session_config contains all session configurations.
+- Now latent dynamics are in 3D plots.
+- Added colorbar to latent dynamics.
+- Added black to latent dynamics colormap.
+- Added plot_cluster_mean_sem.
+- Now get_sorted_corr_mat, get_mean_sem_cluster, and get_cross_corr are independent functions.
+

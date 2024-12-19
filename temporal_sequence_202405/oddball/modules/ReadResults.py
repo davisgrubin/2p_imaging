@@ -172,7 +172,7 @@ def read_bpod_mat_data(ops):
 
 # retract all session results.
 
-def read_all(list_ops, sig_tag):
+def read_all(list_ops, sig_tag=None, force_label=None):
     list_labels = []
     list_masks = []
     list_vol = []
@@ -202,6 +202,9 @@ def read_all(list_ops, sig_tag):
             significance['r_normal']  = np.ones_like(significance['r_normal']).astype('bool')
             significance['r_change']  = np.ones_like(significance['r_change']).astype('bool')
             significance['r_oddball'] = np.ones_like(significance['r_oddball']).astype('bool')
+        # labels.
+        if force_label != None:
+            labels = np.ones_like(labels) * force_label
         # append to list.
         list_labels.append(labels)
         list_masks.append(

@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from skimage.segmentation import find_boundaries
 from matplotlib.colors import ListedColormap
-
+from scipy.ndimage import median_filter
 
 # label images with yellow and green.
 def get_labeled_masks_img(masks, labels, cate):
@@ -15,7 +15,6 @@ def get_labeled_masks_img(masks, labels, cate):
         neuron_mask = ((masks == i) * 255).astype('int32')
         labeled_masks_img[:,:,0] += neuron_mask
     return labeled_masks_img
-
 
 # get ROI sub image.
 def get_roi_range(size, masks):
@@ -31,15 +30,13 @@ def get_roi_range(size, masks):
         col.append(int(max(0, min(masks.shape[1] - size, center_col - size/2))))
     return row, col
          
-
 # automatical adjustment of contrast.
-def adjust_contrast(org_img, lower_percentile=50, upper_percentile=99):
+def adjust_contrast(org_img, lower_percentile=25, upper_percentile=99):
     lower = np.percentile(org_img, lower_percentile)
     upper = np.percentile(org_img, upper_percentile)
     img = np.clip((org_img - lower) * 255 / (upper - lower), 0, 255)
     img = img.astype('int32')
     return img
-
 
 # adjust layout for masks plot.
 def adjust_layout(ax):
@@ -52,7 +49,7 @@ def adjust_layout(ax):
     ax.set_yticks([])
 
 
-class plotter_all_masks:
+class plotter_main_masks:
     
     def __init__(
             self,
@@ -75,13 +72,16 @@ class plotter_all_masks:
         self.roi_row, self.roi_col = get_roi_range(self.size, masks)
         
     # functional channel.
-    def func(self, ax, img, with_mask=True):
+    def plot_func(self, ax, img, with_mask=True):
         if img == 'mean':
             f = self.mean_func
             t = 'functional channel mean projection'
         if img == 'max':
             f = self.max_func
             t = 'functional channel max projection'
+        if img == 'fuse':
+            f = median_filter(self.max_func, size=3)
+            t = 'functional channel reference'
         func_img = np.zeros(
             (f.shape[0], f.shape[1], 3), dtype='int32')
         func_img[:,:,1] = adjust_contrast(f)
@@ -95,7 +95,7 @@ class plotter_all_masks:
         ax.set_title(t)
 
     # functional channel ROI masks with color.
-    def func_masks_color(self, ax):
+    def plot_func_masks_color(self, ax):
         colors = plt.cm.nipy_spectral(np.linspace(0, 1, int(np.max(self.masks)+1)))
         np.random.shuffle(colors)
         colors[0,:] = [0,0,0,1]
@@ -105,7 +105,7 @@ class plotter_all_masks:
         ax.set_title('functional channel ROI masks')
 
     # functional channel ROI masks.
-    def func_masks(self, ax):
+    def plot_func_masks(self, ax):
         masks_img = np.zeros(
             (self.masks.shape[0], self.masks.shape[1], 3), dtype='int32')
         masks_img[:,:,1] = self.masks
@@ -115,7 +115,7 @@ class plotter_all_masks:
         ax.set_title('functional channel ROI masks')
     
     # anatomy channel and cellpose results.
-    def anat_cellpose(self, ax):
+    def plot_anat_cellpose(self, ax):
         anat_img = np.zeros(
             (self.mean_anat.shape[0], self.mean_anat.shape[1], 3), dtype='int32')
         anat_img[:,:,0] = adjust_contrast(self.mean_anat)
@@ -128,7 +128,7 @@ class plotter_all_masks:
         ax.set_title('cellpose results on anatomy channel mean image')
     
     # suite2p masks and cellpose masks superimpose.
-    def masks_superimpose(self, ax):
+    def plot_masks_superimpose(self, ax):
         masks_img = np.zeros(
             (self.masks.shape[0], self.masks.shape[1], 3), dtype='int32')
         masks_img[:,:,1] = self.masks
@@ -145,7 +145,7 @@ class plotter_all_masks:
         ax.set_title('functional and anatomical masks superimpose')
 
     # anatomy channel mean image.
-    def anat(self, ax, with_mask=True):
+    def plot_anat(self, ax, with_mask=True):
         anat_img = np.zeros(
             (self.mean_anat.shape[0], self.mean_anat.shape[1], 3), dtype='int32')
         anat_img[:,:,0] = adjust_contrast(self.mean_anat)
@@ -165,17 +165,19 @@ class plotter_all_masks:
         ax.set_title('anatomy channel mean image')
 
     # anatomy channel masks.
-    def anat_label_masks(self, ax):
+    def plot_anat_label_masks(self, ax):
         ax.matshow(self.labeled_masks_img)
         adjust_layout(ax)
         ax.set_title('anatomy channel label masks')
 
     # superimpose image.
-    def superimpose(self, ax, img, with_mask=True):
+    def plot_superimpose(self, ax, img, with_mask=True):
         if img == 'mean':
             f = self.mean_func
         if img == 'max':
             f = self.max_func
+        if img == 'fuse':
+            f = median_filter(self.max_func, size=3)
         super_img = np.zeros((f.shape[0], f.shape[1], 3), dtype='int32')
         super_img[:,:,0] = adjust_contrast(self.mean_anat)
         super_img[:,:,1] = adjust_contrast(f)
@@ -189,7 +191,7 @@ class plotter_all_masks:
         ax.set_title('channel images superimpose')
 
     # channel shared masks.
-    def shared_masks(self, ax):
+    def plot_shared_masks(self, ax):
         label_masks = np.zeros(
             (self.masks.shape[0], self.masks.shape[1], 3), dtype='int32')
         label_masks[:,:,0] = get_labeled_masks_img(self.masks, self.labels, 1)[:,:,0]
@@ -207,6 +209,8 @@ class plotter_all_masks:
             f = self.mean_func
         if img == 'max':
             f = self.max_func
+        if img == 'fuse':
+            f = median_filter(self.max_func, size=3)
         func_img = np.zeros((f.shape[0], f.shape[1], 3), dtype='int32')
         func_img[:,:,1] = adjust_contrast(f)
         func_img = adjust_contrast(func_img)
@@ -227,6 +231,8 @@ class plotter_all_masks:
             f = self.mean_func
         if img == 'max':
             f = self.max_func
+        if img == 'fuse':
+            f = median_filter(self.max_func, size=3)
         super_img = np.zeros((f.shape[0], f.shape[1], 3), dtype='int32')
         super_img[:,:,0] = adjust_contrast(self.mean_anat)
         super_img[:,:,1] = adjust_contrast(f)
@@ -256,6 +262,9 @@ class plotter_all_masks:
         if img == 'max':
             f = self.max_func
             t = 'functional channel max projection'
+        if img == 'fuse':
+            f = median_filter(self.max_func, size=3)
+            t = 'functional channel reference'
         r = self.roi_row[roi_id]
         c = self.roi_col[roi_id]
         func_img = f[r:r+self.size, c:c+self.size]
@@ -294,6 +303,8 @@ class plotter_all_masks:
             f = self.mean_func
         if img == 'max':
             f = self.max_func
+        if img == 'fuse':
+            f = median_filter(self.max_func, size=3)
         super_img = np.zeros((f.shape[0], f.shape[1], 3), dtype='int32')
         super_img[:,:,0] = adjust_contrast(self.mean_anat)
         super_img[:,:,1] = adjust_contrast(f)
@@ -322,3 +333,24 @@ class plotter_all_masks:
         ax.matshow(img)
         adjust_layout(ax)
         ax.set_title('ROI masks')
+    
+    def all_1chan(self, axs):
+        self.plot_func(axs[0], 'mean')
+        self.plot_func_masks_color(axs[1])
+        self.plot_func(axs[2], 'mean', with_mask=False)
+        self.plot_func(axs[3], 'max', with_mask=False)
+        self.plot_func(axs[4], 'fuse', with_mask=False)
+
+    def all_2chan(self, axs):
+        self.plot_func(axs[0], 'fuse')
+        self.plot_func_masks(axs[1])
+        self.plot_anat_cellpose(axs[2])
+        self.plot_masks_superimpose(axs[3])
+        self.plot_anat(axs[4])
+        self.plot_anat_label_masks(axs[5])
+        self.plot_superimpose(axs[6], 'fuse')
+        self.plot_shared_masks(axs[7])
+        self.plot_func(axs[8], 'mean', with_mask=False)
+        self.plot_anat(axs[9], with_mask=False)
+        self.plot_func(axs[10], 'max', with_mask=False)
+        self.plot_superimpose(axs[11], 'fuse', with_mask=False)
