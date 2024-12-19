@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
 from modules.Alignment import run_get_stim_response
+from modeling.clustering import clustering_neu_response_mode
+from modeling.clustering import get_sorted_corr_mat
+from modeling.clustering import get_mean_sem_cluster
+from modeling.clustering import get_cross_corr
 from plot.utils import get_mean_sem
 from plot.utils import get_frame_idx_from_time
 from plot.utils import get_multi_sess_neu_trial_average
@@ -12,8 +17,8 @@ from plot.utils import get_epoch_idx
 from plot.utils import get_odd_stim_prepost_idx
 from plot.utils import get_expect_time
 from plot.utils import adjust_layout_neu
+from plot.utils import add_legend
 from plot.utils import utils
-
 
 class plotter_utils(utils):
 
@@ -136,73 +141,6 @@ class plotter_utils(utils):
             ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
             ax.set_xlabel('time since omission (ms)')
             ax.legend(loc='upper left')
-    
-    def plot_odd_normal_cluster(self, axs, normal, fix_jitter, cate):
-        n_clusters = 5
-        win_sort = [-500,3000]
-        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_sort[0], win_sort[1])
-        _, color1, color2, cmap = get_roi_label_color([cate], 0)
-        neu_cate = [
-            self.alignment['list_neu_seq'][i][:,(self.list_labels[i]==cate)*self.list_significance[i]['r_normal'],:]
-            for i in range(self.n_sess)]
-        # collect data.       
-        neu, _, stim_seq, _, _ = get_multi_sess_neu_trial_average(
-            self.list_stim_labels, neu_cate, self.alignment['list_stim_seq'],
-            self.alignment['list_stim_value'], self.alignment['list_pre_isi'],
-            trial_idx=[l[normal] for l in self.list_odd_idx],
-            trial_param=[[-1], [normal], [fix_jitter], None, [0]])
-        neu = neu[~np.isnan(np.sum(neu,axis=1)),:]
-        # fit model.
-        corr_matrix = np.corrcoef(neu)
-        model = KMeans(n_clusters)
-        cluster_id = model.fit_predict(corr_matrix)
-        # collect neural traces based on clusters and sorted by peak timing.
-        neu_mean = np.zeros((n_clusters, len(self.alignment['neu_time'])))
-        neu_sem  = np.zeros((n_clusters, len(self.alignment['neu_time'])))
-        for i in range(n_clusters):
-            neu_mean[i,:], neu_sem[i,:] = get_mean_sem(neu[np.where(cluster_id==i)[0], :])
-        sort_idx_neu = np.argmax(neu_mean[:,l_idx:r_idx], axis=1).reshape(-1).argsort()
-        neu_mean = neu_mean[sort_idx_neu,:]
-        neu_sem  = neu_sem[sort_idx_neu,:]
-        # plot sorted correlation matrix.
-        sorted_indices = np.argsort(cluster_id)
-        sorted_corr_matrix = corr_matrix[sorted_indices, :][:, sorted_indices]
-        axs[0].imshow(sorted_corr_matrix, cmap=cmap)
-        axs[0].set_xlabel('neuron id')
-        axs[0].set_ylabel('neuron id')
-        axs[0].spines['left'].set_visible(False)
-        axs[0].spines['right'].set_visible(False)
-        axs[0].spines['top'].set_visible(False)
-        axs[0].spines['bottom'].set_visible(False)
-        axs[0].set_xticks([])
-        axs[0].set_yticks([])
-        # plot stimulus.
-        upper = n_clusters
-        lower = 0
-        for i in range(2):
-            axs[1].fill_between(
-                stim_seq[i+1,:]-self.expect[0]-stim_seq[1,1],
-                lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                color=color1, alpha=0.15, step='mid')
-        axs[1].axvline(0, color='gold', lw=1, linestyle='--')
-        # plot neural traces averaged within clusters.
-        for i in range(n_clusters):
-            a = 1 / (np.nanmax(neu_mean[i,:]) - np.nanmin(neu_mean[i,:]))
-            b = - np.nanmin(neu_mean[i,:]) / (np.nanmax(neu_mean[i,:]) - np.nanmin(neu_mean[i,:]))
-            self.plot_mean_sem(
-                axs[1],
-                self.alignment['neu_time']-self.expect[0]-stim_seq[1,1],
-                (a*neu_mean[i,:]+b)+n_clusters-i-1, np.abs(a)*neu_sem[i,:],
-                color2, None)
-        axs[1].tick_params(axis='y', tick1On=False)
-        axs[1].spines['left'].set_visible(False)
-        axs[1].spines['right'].set_visible(False)
-        axs[1].spines['top'].set_visible(False)
-        axs[1].set_yticks([])
-        axs[1].set_xlabel('time since expected stim (ms)')
-        axs[1].set_ylabel('df/f (z-scored)')
-        axs[1].set_xlim([np.nanmin(self.alignment['neu_time']), np.nanmax(self.alignment['neu_time'])])
-        axs[1].set_ylim([-0.1, n_clusters+0.1])
 
     def plot_odd_global(self, ax, normal, cate=None, roi_id=None):
         if cate != None:
@@ -465,6 +403,102 @@ class plotter_utils(utils):
             ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
             ax.set_xlabel('time since omission (ms)')
 
+    def plot_odd_cluster(self, axs, fix_jitter, cate):
+        n_clusters = 8
+        max_clusters = 16
+        win_eval = [-2000,2000]
+        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_eval[0], win_eval[1])
+        color0, color1, color2, cmap = get_roi_label_color([cate], 0)
+        neu_cate = [
+            self.alignment['list_neu_seq'][i][:,(self.list_labels[i]==cate)*self.list_significance[i]['r_normal'],:]
+            for i in range(self.n_sess)]
+        # collect data.
+        neu, _, stim_seq, _, _ = get_multi_sess_neu_trial_average(
+            self.list_stim_labels, neu_cate, self.alignment,
+            trial_param=[[2,3,4,5], [0], [fix_jitter], None, [0]])
+        neu = neu[~np.isnan(np.sum(neu,axis=1)),:]
+        # fit model.
+        metrics, cluster_id = clustering_neu_response_mode(
+             neu, n_clusters, max_clusters, l_idx, r_idx)
+        # plot sorted correlation matrix.
+        sorted_neu_corr = get_sorted_corr_mat(neu, cluster_id, l_idx, r_idx)
+        axs[0].imshow(sorted_neu_corr, cmap=cmap)
+        axs[0].set_xlabel('neuron id')
+        axs[0].set_ylabel('neuron id')
+        axs[0].spines['left'].set_visible(False)
+        axs[0].spines['right'].set_visible(False)
+        axs[0].spines['top'].set_visible(False)
+        axs[0].spines['bottom'].set_visible(False)
+        axs[0].set_xticks([])
+        axs[0].set_yticks([])
+        # plot clustering metrics.
+        colors=['#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
+        metric_lbl = ['silhouette', 'calinski_harabasz', 'davies_bouldin', 'inertia']
+        for i in range(4):
+            axs[1].plot(metrics['n_clusters'], metrics[metric_lbl[i]], color=colors[i], label=metric_lbl[i])
+        axs[1].tick_params(axis='y', tick1On=False)
+        axs[1].spines['right'].set_visible(False)
+        axs[1].spines['top'].set_visible(False)
+        axs[1].set_xlabel('n_clusters')
+        axs[1].set_ylabel('normalized value')
+        axs[1].set_xlim(2, max_clusters+2)
+        add_legend(axs[1], colors, metric_lbl, 'upper right')
+        # plot cross cluster correlations.
+        cluster_corr = get_cross_corr(neu, n_clusters, cluster_id, l_idx, r_idx)
+        mask = np.tril(np.ones_like(cluster_corr, dtype=bool), k=0)
+        masked_corr = np.where(mask, cluster_corr, np.nan)
+        axs[2].matshow(masked_corr, interpolation='nearest', cmap=cmap)
+        axs[2].tick_params(bottom=False, top=False, labelbottom=True, labeltop=False)
+        axs[2].tick_params(tick1On=False)
+        axs[2].spines['left'].set_visible(False)
+        axs[2].spines['right'].set_visible(False)
+        axs[2].spines['top'].set_visible(False)
+        axs[2].spines['bottom'].set_visible(False)
+        axs[2].set_xticks(np.arange(n_clusters))
+        axs[2].set_yticks(np.arange(n_clusters))
+        axs[2].set_xlabel('cluster id')
+        axs[2].set_ylabel('cluster id')
+        for i in range(cluster_corr.shape[0]):
+            for j in range(cluster_corr.shape[1]):
+                if not np.isnan(masked_corr[i, j]):
+                    axs[2].text(j, i, f'{masked_corr[i, j]:.2f}',
+                                ha='center', va='center', color='grey')
+        # plot fraction of each cluster.
+        colors = plt.cm.nipy_spectral(np.arange(n_clusters)/n_clusters)
+        num = [np.sum(cluster_id==i) for i in np.unique(cluster_id)]
+        axs[3].pie(
+            num,
+            labels=[str(num[i])+' cluster # '+str(i) for i in range(n_clusters)],
+            colors=colors,
+            autopct='%1.1f%%',
+            wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+        # plot within cluster average for normal (short).
+        neu_mean, neu_sem = get_mean_sem_cluster(neu, n_clusters, cluster_id, l_idx, r_idx)
+        self.plot_cluster_mean_sem(axs[4], neu_mean, neu_sem, stim_seq, color0, colors)
+        # plot within cluster average for normal (long).
+        neu, _, stim_seq, _, _ = get_multi_sess_neu_trial_average(
+            self.list_stim_labels, neu_cate, self.alignment,
+            trial_param=[[2,3,4,5], [1], [fix_jitter], None, [0]])
+        neu = neu[~np.isnan(np.sum(neu,axis=1)),:]
+        neu_mean, neu_sem = get_mean_sem_cluster(neu, n_clusters, cluster_id, l_idx, r_idx)
+        self.plot_cluster_mean_sem(axs[5], neu_mean, neu_sem, stim_seq, color0, colors)
+        # plot within cluster average for oddball (short).
+        neu, _, stim_seq, _, _ = get_multi_sess_neu_trial_average(
+            self.list_stim_labels, neu_cate, self.alignment,
+            trial_idx=[l[0] for l in self.list_odd_idx],
+            trial_param=[[-1], [0], [fix_jitter], None, [0]])
+        neu = neu[~np.isnan(np.sum(neu,axis=1)),:]
+        neu_mean, neu_sem = get_mean_sem_cluster(neu, n_clusters, cluster_id, l_idx, r_idx)
+        self.plot_cluster_mean_sem(axs[6], neu_mean, neu_sem, stim_seq, color0, colors)
+        # plot within cluster average for oddball (long).
+        neu, _, stim_seq, _, _ = get_multi_sess_neu_trial_average(
+            self.list_stim_labels, neu_cate, self.alignment,
+            trial_idx=[l[1] for l in self.list_odd_idx],
+            trial_param=[[-1], [1], [fix_jitter], None, [0]])
+        neu = neu[~np.isnan(np.sum(neu,axis=1)),:]
+        neu_mean, neu_sem = get_mean_sem_cluster(neu, n_clusters, cluster_id, l_idx, r_idx)
+        self.plot_cluster_mean_sem(axs[7], neu_mean, neu_sem, stim_seq, color0, colors)
+        
 class plotter_VIPTD_G8_align_odd(plotter_utils):
     def __init__(self, neural_trials, labels, significance):
         super().__init__(neural_trials, labels, significance)
@@ -584,23 +618,53 @@ class plotter_VIPTD_G8_align_odd(plotter_utils):
                 win_sort, labels, sig)
             axs[7].set_title('response to oddball \n (long sorted by long, jitter)')
 
-    def odd_normal_cluster(self, axs):
+    def odd_cluster_fix_exc(self, axs):
         
-        self.plot_odd_normal_cluster([axs[0], axs[1]], 0, 0, cate=-1)
-        axs[0].set_title('sorted correlation matrix \n (short, fix) excitatory')
-        axs[1].set_title('clustering response \n (short, fix) excitatory')
+        self.plot_odd_cluster(axs, 0, cate=-1)
+        axs[0].set_title('sorted correlation matrix \n fix (normal) excitatory')
+        axs[1].set_title('clustering evaluation \n fix (normal) excitatory')
+        axs[2].set_title('cross cluster correlation \n fix (normal) excitatory')
+        axs[3].set_title('cluster fraction \n fix (normal) excitatory')
+        axs[4].set_title('clustering response \n fix (short normal) excitatory')
+        axs[5].set_title('clustering response \n fix (long normal) excitatory')
+        axs[6].set_title('clustering response \n fix (short oddball) excitatory')
+        axs[7].set_title('clustering response \n fix (long oddball) excitatory')
+    
+    def odd_cluster_jitter_exc(self, axs):
         
-        self.plot_odd_normal_cluster([axs[2], axs[3]], 1, 0, cate=-1)
-        axs[2].set_title('sorted correlation matrix \n (long, fix) excitatory')
-        axs[4].set_title('clustering response \n (long, fix) excitatory')
+        self.plot_odd_cluster(axs, 1, cate=-1)
+        axs[0].set_title('sorted correlation matrix \n jitter (normal) excitatory')
+        axs[1].set_title('clustering evaluation \n jitter (normal) excitatory')
+        axs[2].set_title('cross cluster correlation \n jitter (normal) excitatory')
+        axs[3].set_title('cluster fraction \n jitter (normal) excitatory')
+        axs[4].set_title('clustering response \n jitter (short normal) excitatory')
+        axs[5].set_title('clustering response \n jitter (long normal) excitatory')
+        axs[6].set_title('clustering response \n jitter (short oddball) excitatory')
+        axs[7].set_title('clustering response \n jitter (long oddball) excitatory')
+    
+    def odd_cluster_fix_inh(self, axs):
         
-        self.plot_odd_normal_cluster([axs[4], axs[5]], 0, 0, cate=1)
-        axs[4].set_title('sorted correlation matrix \n (short, fix) inhibitory')
-        axs[5].set_title('clustering response \n (short, fix) inhibitory')
+        self.plot_odd_cluster(axs, 0, cate=1)
+        axs[0].set_title('sorted correlation matrix \n fix (normal) inhibitory')
+        axs[1].set_title('clustering evaluation \n fix (normal) inhibitory')
+        axs[2].set_title('cross cluster correlation \n fix (normal) inhibitory')
+        axs[3].set_title('cluster fraction \n fix (normal) inhibitory')
+        axs[4].set_title('clustering response \n fix (short normal) inhibitory')
+        axs[5].set_title('clustering response \n fix (long normal) inhibitory')
+        axs[6].set_title('clustering response \n fix (short oddball) inhibitory')
+        axs[7].set_title('clustering response \n fix (long oddball) inhibitory')
+    
+    def odd_cluster_jitter_inh(self, axs):
         
-        self.plot_odd_normal_cluster([axs[6], axs[7]], 1, 0, cate=1)
-        axs[6].set_title('sorted correlation matrix \n (long, fix) inhibitory')
-        axs[7].set_title('clustering response \n (long, fix) inhibitory')
+        self.plot_odd_cluster(axs, 1, cate=1)
+        axs[0].set_title('sorted correlation matrix \n jitter (normal) inhibitory')
+        axs[1].set_title('clustering evaluation \n jitter (normal) inhibitory')
+        axs[2].set_title('cross cluster correlation \n jitter (normal) inhibitory')
+        axs[3].set_title('cluster fraction \n jitter (normal) inhibitory')
+        axs[4].set_title('clustering response \n jitter (short normal) inhibitory')
+        axs[5].set_title('clustering response \n jitter (long normal) inhibitory')
+        axs[6].set_title('clustering response \n jitter (short oddball) inhibitory')
+        axs[7].set_title('clustering response \n jitter (long oddball) inhibitory')
         
     def odd_isi_exc(self, axs):
         

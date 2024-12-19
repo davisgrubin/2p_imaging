@@ -2,9 +2,6 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.utils import shuffle
-from sklearn.svm import SVC
-from sklearn.model_selection import train_test_split
 from matplotlib.colors import LinearSegmentedColormap
 
 # normalization into [0,1].
@@ -128,9 +125,7 @@ def pick_trial(
 def get_multi_sess_neu_trial_average(
         list_stim_labels,
         neu_cate,
-        list_stim_seq,
-        list_stim_value,
-        list_pre_isi,
+        alignment,
         trial_idx=None,
         trial_param=None,
         mean_sem=True,
@@ -150,16 +145,16 @@ def get_multi_sess_neu_trial_average(
                 trial_param[3],
                 trial_param[4])
             neu.append(neu_cate[i][idx,:,:])
-            stim_seq.append(list_stim_seq[i][idx,:,:])
-            stim_value.append(list_stim_value[i][idx,:])
-            pre_isi.append(list_pre_isi[i][idx])
+            stim_seq.append(alignment['list_stim_seq'][i][idx,:,:])
+            stim_value.append(alignment['list_stim_value'][i][idx,:])
+            pre_isi.append(alignment['list_pre_isi'][i][idx])
     # use given idx to find trials.
     if trial_param == None and trial_idx != None:
         for i in range(len(neu_cate)):
             neu.append(neu_cate[i][trial_idx[i],:,:])
-            stim_seq.append(list_stim_seq[i][trial_idx[i],:,:])
-            stim_value.append(list_stim_value[i][trial_idx[i],:])
-            pre_isi.append(list_pre_isi[i][trial_idx[i]])
+            stim_seq.append(alignment['list_stim_seq'][i][trial_idx[i],:,:])
+            stim_value.append(alignment['list_stim_value'][i][trial_idx[i],:])
+            pre_isi.append(alignment['list_pre_isi'][i][trial_idx[i]])
     # use both.
     if trial_param != None and trial_idx != None:
         for i in range(len(neu_cate)):
@@ -171,9 +166,9 @@ def get_multi_sess_neu_trial_average(
                 trial_param[3],
                 trial_param[4])
             neu.append(neu_cate[i][trial_idx[i]*idx,:,:])
-            stim_seq.append(list_stim_seq[i][trial_idx[i]*idx,:,:])
-            stim_value.append(list_stim_value[i][trial_idx[i]*idx,:])
-            pre_isi.append(list_pre_isi[i][trial_idx[i]*idx])
+            stim_seq.append(alignment['list_stim_seq'][i][trial_idx[i]*idx,:,:])
+            stim_value.append(alignment['list_stim_value'][i][trial_idx[i]*idx,:])
+            pre_isi.append(alignment['list_pre_isi'][i][trial_idx[i]*idx])
     # compute trial average and concatenate.
     if mean_sem:
         mean = [np.nanmean(n, axis=0) for n in neu]
@@ -287,6 +282,22 @@ def adjust_layout_raw_trace(ax):
     ax.set_xlabel('time (s)')
     ax.legend(loc='upper left')
 
+# add legend into subplots.
+def add_legend(ax, colors, labels, loc, dim=2):
+    if dim == 2:
+        handles = [
+            ax.plot([], lw=0, color=colors[i], label=labels[i])[0]
+            for i in range(len(labels))]
+    if dim == 3:
+        handles = [
+            ax.plot([],[],[], lw=0, color=colors[i], label=labels[i])[0]
+            for i in range(len(labels))]
+    ax.legend(
+        loc=loc,
+        handles=handles,
+        labelcolor='linecolor',
+        frameon=False,
+        framealpha=0)
 
 class utils:
 
@@ -298,6 +309,7 @@ class utils:
     def plot_mean_sem(self, ax, t, m, s, c, l, a=1.0):
         ax.plot(t, m, color=c, label=l, alpha=a)
         ax.fill_between(t, m - s, m + s, color=c, alpha=0.2)
+        ax.set_xlim([np.min(t), np.max(t)])
 
     def plot_vol(self, ax, st, sv, c, u, l):
         v = np.mean(sv, axis=0)
@@ -330,14 +342,13 @@ class utils:
             heatmap_exc = apply_colormap(mean[labels[s]==-1,:], cmap_exc)
             heatmap_inh = apply_colormap(mean[labels[s]==1,:], cmap_inh)
             neu_h = np.concatenate([heatmap_exc, heatmap_inh], axis=0)
-            ax.imshow(neu_h, interpolation='nearest', aspect='auto')
+            ax.imshow(
+                neu_h,
+                extent=[neu_time[0], neu_time[-1], 1, neu_h.shape[0]],
+                interpolation='nearest', aspect='auto')
             adjust_layout_heatmap(ax)
             ax.set_ylabel('neuron id (sorted)')
             ax.axvline(zero, color='black', lw=1, label='stim', linestyle='--')
-            ax.set_xticks([0, zero, len(neu_time)])
-            ax.set_xticklabels([int(neu_time[0]), 0, int(neu_time[-1])])
-            ax.set_yticks([0, int(neu_h.shape[0]/3), int(neu_h.shape[0]*2/3), int(neu_h.shape[0])])
-            ax.set_yticklabels([0, int(neu_h.shape[0]/3), int(neu_h.shape[0]*2/3), int(neu_h.shape[0])])
             # add coloarbar.
             if colorbar:
                 if heatmap_exc.shape[0] != 0:
@@ -354,24 +365,33 @@ class utils:
     def plot_win_mag_box(self, ax, neu_seq, neu_time, win_base, color, c_time, offset):
         win_early = [0,250]
         win_late  = [250,500]
-        mean_base = get_base_mean_win(
+        baseline = get_base_mean_win(
             neu_seq.reshape(-1, neu_seq.shape[-1]), neu_time, c_time, win_base)
-        [mean_early, sem_early] = get_mean_sem_win(
-            neu_seq.reshape(-1, neu_seq.shape[-1]),
-            neu_time, c_time, win_early[0], win_early[1])
         [mean_late, sem_late] = get_mean_sem_win(
             neu_seq.reshape(-1, neu_seq.shape[-1]),
             neu_time, c_time, win_late[0], win_late[1])
-        mean_early -= mean_base
-        mean_late -= mean_base
+        [mean_early, sem_early] = get_mean_sem_win(
+            neu_seq.reshape(-1, neu_seq.shape[-1]),
+            neu_time, c_time, win_early[0], win_early[1])
+        mean_early -= baseline
+        mean_late  -= baseline
+        [mean_base, sem_base] = get_mean_sem_win(
+            neu_seq.reshape(-1, neu_seq.shape[-1]),
+            neu_time, c_time, win_base[0], win_base[1])
         ax.errorbar(
             0 + offset,
-            mean_early, sem_early,
+            mean_base, sem_base,
             color=color,
             capsize=2, marker='o', linestyle='none',
             markeredgecolor='white', markeredgewidth=0.1)
         ax.errorbar(
             1 + offset,
+            mean_early, sem_early,
+            color=color,
+            capsize=2, marker='o', linestyle='none',
+            markeredgecolor='white', markeredgewidth=0.1)
+        ax.errorbar(
+            2 + offset,
             mean_late, sem_late,
             color=color,
             capsize=2, marker='o', linestyle='none',
@@ -382,101 +402,72 @@ class utils:
         ax.set_ylabel(
             'response magnitude df/f (mean$\pm$sem) \n baseline [{},{}] ms'.format(
                 win_base[0], win_base[1]))
-        ax.set_xticks([0,1])
-        ax.set_xticklabels(['early \n [{},{}] ms'.format(win_early[0], win_early[1]),
-                            'late \n [{},{}] ms'.format(win_late[0], win_late[1])])
-        ax.set_xlim([-0.5, 2.5])
-    
-    def plot_run_multi_sess_decoding_num_neu(
+        ax.set_xticks([0,1,2])
+        ax.set_xticklabels([
+            'baseline \n [{},{}] ms'.format(win_base[0], win_base[1]),
+            'early \n [{},{}] ms'.format(win_early[0], win_early[1]),
+            'late \n [{},{}] ms'.format(win_late[0], win_late[1])])
+        ax.set_xlim([-0.5, 3.5])
+
+    def plot_multi_sess_decoding_num_neu(
             self, ax,
-            neu_x, neu_y,
-            num_step, n_decode,
+            sampling_nums, acc_model, acc_chance,
             color1, color2
             ):
-        offset = [-0.5, 0.5]
-        test_size = 0.5
-        # define sampling numbers.
-        max_num = np.nanmax([neu_x[i].shape[1] for i in range(self.n_sess)])
-        sampling_nums = np.arange(num_step, ((max_num//num_step)+1)*num_step, num_step)
-        # run decoding.
-        acc_model   = []
-        acc_chance = []
-        for n_neu in sampling_nums:
-            results_model = []
-            results_chance = []
-            for s in range(self.n_sess):
-                # not enough neurons.
-                if n_neu > neu_x[s].shape[1]:
-                    results_model.append(np.nan)
-                    results_chance.append(np.nan)
-                # random sampling n_decode times.
-                else:
-                    for _ in range(n_decode):
-                        sub_idx = np.random.choice(neu_x[s].shape[1], n_neu, replace=False)
-                        x = neu_x[s][:,sub_idx].copy()
-                        y = neu_y[s].copy()
-                        # reparate training and testing sets.
-                        x_train, x_test, y_train, y_test = train_test_split(
-                            x, y, test_size=test_size, stratify=y)
-                        x_train, y_train = shuffle(x_train, y_train)
-                        # model.
-                        model = SVC(kernel='linear')
-                        model.fit(x_train, y_train)
-                        results_model.append(model.score(x_test, y_test))
-                        # chance.
-                        chance = SVC(kernel='linear')
-                        x_shuffle, y_shuffle = shuffle(x_train, y_train)
-                        chance.fit(np.random.permutation(x_train), np.random.permutation(y_train))
-                        results_chance.append(chance.score(x_test, y_test))
-            acc_model.append(np.array(results_model).reshape(-1,1))
-            acc_chance.append(np.array(results_chance).reshape(-1,1))
         # compute mean and sem.
-        acc_mean_model = np.array([get_mean_sem(a)[0] for a in acc_model]).reshape(-1)
-        acc_sem_model  = np.array([get_mean_sem(a)[1] for a in acc_model]).reshape(-1)
+        acc_mean_model  = np.array([get_mean_sem(a)[0] for a in acc_model]).reshape(-1)
+        acc_sem_model   = np.array([get_mean_sem(a)[1] for a in acc_model]).reshape(-1)
         acc_mean_chance = np.array([get_mean_sem(a)[0] for a in acc_chance]).reshape(-1)
         acc_sem_chance  = np.array([get_mean_sem(a)[1] for a in acc_chance]).reshape(-1)
         # plot results.
-        ax.errorbar(
-            sampling_nums + offset[0],
-            acc_mean_model, acc_sem_model,
-            color=color2,
-            capsize=2, marker='o', linestyle='none',
-            markeredgecolor='white', markeredgewidth=0.1)
-        ax.errorbar(
-            sampling_nums + offset[1],
-            acc_mean_chance, acc_sem_chance,
-            color=color1,
-            capsize=2, marker='o', linestyle='none',
-            markeredgecolor='white', markeredgewidth=0.1)
+        self.plot_mean_sem(ax, sampling_nums, acc_mean_model,  acc_sem_model,  color2, 'model')
+        self.plot_mean_sem(ax, sampling_nums, acc_mean_chance, acc_sem_chance, color1, 'chance')
         ax.tick_params(tick1On=False)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
-        ax.plot([], color=color2, label='model')
-        ax.plot([], color=color1, label='chance')
-        ax.legend(loc='upper left')
         ax.set_xlabel('number of sampled neurons')
-        ax.set_ylabel('ACC')
-        ax.set_xlim([sampling_nums[0]-num_step, sampling_nums[-1]+num_step])
+        add_legend(ax, [color2,color1], ['model','chance'], 'upper left')
 
-    def plot_heatmap_trials(self, ax, neu_seq, neu_time, cmap, norm=True):
-        if not np.isnan(np.sum(neu_seq)) and len(neu_seq)>0:
-            if len(neu_seq.shape) == 3:
-                mean = np.mean(neu_seq, axis=1)
-            else:
-                mean = neu_seq
-            if norm:
-                for i in range(mean.shape[0]):
-                    mean[i,:] = norm01(mean[i,:])
-            zero = np.searchsorted(neu_time, 0)
-            img = ax.imshow(
-                mean, interpolation='nearest', aspect='auto', cmap=cmap)
-            adjust_layout_heatmap(ax)
-            ax.set_ylabel('trial id')
-            ax.axvline(zero, color='black', lw=1, linestyle='--')
-            ax.set_xticks([0, zero, len(neu_time)])
-            ax.set_xticklabels([int(neu_time[0]), 0, int(neu_time[-1])])
-            ax.set_yticks([0, int(mean.shape[0]/3), int(mean.shape[0]*2/3), int(mean.shape[0])])
-            ax.set_yticklabels([0, int(mean.shape[0]/3), int(mean.shape[0]*2/3), int(mean.shape[0])])
-            cbar = ax.figure.colorbar(img, ax=ax, ticks=[0.2,0.8], aspect=100)
-            cbar.ax.set_ylabel('normalized response', rotation=-90, va="bottom")
-            cbar.ax.set_yticklabels(['0.2', '0.8'])
+    def plot_multi_sess_decoding_slide_win(
+            self, ax,
+            eval_time, acc_model, acc_chance,
+            color1, color2
+            ):
+        # compute mean and sem.
+        acc_mean_model  = np.array([get_mean_sem(a)[0] for a in acc_model]).reshape(-1)
+        acc_sem_model   = np.array([get_mean_sem(a)[1] for a in acc_model]).reshape(-1)
+        acc_mean_chance = np.array([get_mean_sem(a)[0] for a in acc_chance]).reshape(-1)
+        acc_sem_chance  = np.array([get_mean_sem(a)[1] for a in acc_chance]).reshape(-1)
+        # compute bounds.
+        upper = np.nanmax([acc_mean_model,acc_mean_chance]) + np.nanmax([acc_sem_model,acc_sem_chance])
+        lower = np.nanmin([acc_mean_model,acc_mean_chance]) - np.nanmax([acc_sem_model,acc_sem_chance])
+        # plot results.
+        self.plot_mean_sem(ax, eval_time, acc_mean_model,  acc_sem_model,  color2, 'model')
+        self.plot_mean_sem(ax, eval_time, acc_mean_chance, acc_sem_chance, color1, 'chance')
+        ax.tick_params(tick1On=False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+        add_legend(ax, [color2,color1], ['model','chance'], 'upper left')
+    
+    def plot_cluster_mean_sem(self, ax, neu_mean, neu_sem, stim_seq, c, colors):
+        for i in range(3):
+            ax.fill_between(
+                stim_seq[i,:],
+                0-0.1*neu_mean.shape[0], neu_mean.shape[0]+0.1*neu_mean.shape[0],
+                color=c, alpha=0.15, step='mid')
+        for i in range(neu_mean.shape[0]):
+            a = 1 / (np.nanmax(neu_mean[i,:]) - np.nanmin(neu_mean[i,:]))
+            b = - np.nanmin(neu_mean[i,:]) / (np.nanmax(neu_mean[i,:]) - np.nanmin(neu_mean[i,:]))
+            self.plot_mean_sem(
+                ax, self.alignment['neu_time'],
+                (a*neu_mean[i,:]+b)+neu_mean.shape[0]-i-1, np.abs(a)*neu_sem[i,:],
+                colors[i], None)
+        ax.tick_params(axis='y', tick1On=False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.set_yticks([])
+        ax.set_xlabel('time since stim (ms)')
+        ax.set_ylabel('df/f (z-scored)')
+        ax.set_ylim([-0.1, neu_mean.shape[0]+0.1])

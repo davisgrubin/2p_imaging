@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from sklearn.cluster import KMeans
 
 from modules.Alignment import run_get_stim_response
 from plot.utils import exclude_post_odd_stim
 from plot.utils import get_mean_sem
-from plot.utils import get_frame_idx_from_time
 from plot.utils import get_multi_sess_neu_trial_average
 from plot.utils import get_roi_label_color
 from plot.utils import get_epoch_idx
@@ -350,71 +348,7 @@ class plotter_utils(utils):
             adjust_layout_neu(ax)
             ax.set_xlim([np.nanmin(self.alignment['neu_time']), np.nanmax(self.alignment['neu_time'])])
             ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
-            ax.set_xlabel('time since stim (ms)')
-    
-    def plot_normal_cluster(self, axs, normal, fix_jitter, cate):
-        n_clusters = 5
-        win_sort = [-500,500]
-        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_sort[0], win_sort[1])
-        _, color1, color2, cmap = get_roi_label_color([cate], 0)
-        neu_cate = [
-            self.alignment['list_neu_seq'][i][:,(self.list_labels[i]==cate)*self.list_significance[i]['r_normal'],:]
-            for i in range(self.n_sess)]
-        # collect data.
-        neu, _, stim_seq, _, _ = get_multi_sess_neu_trial_average(
-            self.list_stim_labels, neu_cate, self.alignment['list_stim_seq'],
-            self.alignment['list_stim_value'], self.alignment['list_pre_isi'],
-            trial_param=[[2,3,4,5], [normal], [fix_jitter], None, [0]])
-        neu = neu[~np.isnan(np.sum(neu,axis=1)),:]
-        # fit model.
-        corr_matrix = np.corrcoef(neu)
-        model = KMeans(n_clusters)
-        cluster_id = model.fit_predict(corr_matrix)
-        # collect neural traces based on clusters and sorted by peak timing.
-        neu_mean = np.zeros((n_clusters, len(self.alignment['neu_time'])))
-        neu_sem  = np.zeros((n_clusters, len(self.alignment['neu_time'])))
-        for i in range(n_clusters):
-            neu_mean[i,:], neu_sem[i,:] = get_mean_sem(neu[np.where(cluster_id==i)[0], :])
-        sort_idx_neu = np.argmax(neu_mean[:,l_idx:r_idx], axis=1).reshape(-1).argsort()
-        neu_mean = neu_mean[sort_idx_neu,:]
-        neu_sem  = neu_sem[sort_idx_neu,:]
-        # plot sorted correlation matrix.
-        sorted_indices = np.argsort(cluster_id)
-        sorted_corr_matrix = corr_matrix[sorted_indices, :][:, sorted_indices]
-        axs[0].imshow(sorted_corr_matrix, cmap=cmap)
-        axs[0].set_xlabel('neuron id')
-        axs[0].set_ylabel('neuron id')
-        axs[0].spines['left'].set_visible(False)
-        axs[0].spines['right'].set_visible(False)
-        axs[0].spines['top'].set_visible(False)
-        axs[0].spines['bottom'].set_visible(False)
-        axs[0].set_xticks([])
-        axs[0].set_yticks([])
-        # plot stimulus.
-        upper = n_clusters
-        lower = 0
-        for i in range(3):
-            axs[1].fill_between(
-                stim_seq[i,:],
-                lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                color=color1, alpha=0.15, step='mid')
-        # plot neural traces averaged within clusters.
-        for i in range(n_clusters):
-            a = 1 / (np.nanmax(neu_mean[i,:]) - np.nanmin(neu_mean[i,:]))
-            b = - np.nanmin(neu_mean[i,:]) / (np.nanmax(neu_mean[i,:]) - np.nanmin(neu_mean[i,:]))
-            self.plot_mean_sem(
-                axs[1], self.alignment['neu_time'],
-                (a*neu_mean[i,:]+b)+n_clusters-i-1, np.abs(a)*neu_sem[i,:],
-                color2, None)
-        axs[1].tick_params(axis='y', tick1On=False)
-        axs[1].spines['left'].set_visible(False)
-        axs[1].spines['right'].set_visible(False)
-        axs[1].spines['top'].set_visible(False)
-        axs[1].set_yticks([])
-        axs[1].set_xlabel('time since stim (ms)')
-        axs[1].set_ylabel('df/f (z-scored)')
-        axs[1].set_ylim([-0.1, n_clusters+0.1])
-        
+            ax.set_xlabel('time since stim (ms)')        
 
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_VIPTD_G8_align_stim(plotter_utils):
@@ -607,23 +541,4 @@ class plotter_VIPTD_G8_align_stim(plotter_utils):
         
         self.plot_normal_epoch(axs[3], 1, 1, cate=1)
         axs[3].set_title('response to normal \n inhibitory (long, jitter)')
-
-    def normal_cluster(self, axs):
-        
-        self.plot_normal_cluster([axs[0], axs[1]], 0, 0, cate=-1)
-        axs[0].set_title('sorted correlation matrix \n (short, fix) excitatory')
-        axs[1].set_title('clustering response \n (short, fix) excitatory')
-        
-        self.plot_normal_cluster([axs[2], axs[3]], 1, 0, cate=-1)
-        axs[2].set_title('sorted correlation matrix \n (long, fix) excitatory')
-        axs[4].set_title('clustering response \n (long, fix) excitatory')
-        
-        self.plot_normal_cluster([axs[4], axs[5]], 0, 0, cate=1)
-        axs[4].set_title('sorted correlation matrix \n (short, fix) inhibitory')
-        axs[5].set_title('clustering response \n (short, fix) inhibitory')
-        
-        self.plot_normal_cluster([axs[6], axs[7]], 1, 0, cate=1)
-        axs[6].set_title('sorted correlation matrix \n (long, fix) inhibitory')
-        axs[7].set_title('clustering response \n (long, fix) inhibitory')
-
 

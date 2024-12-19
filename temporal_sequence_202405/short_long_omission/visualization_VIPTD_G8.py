@@ -40,9 +40,10 @@ from plot.misc import plot_roi_significance
 def run(list_session_data_path, sig_tag):
 
     def plot_session_report():
-        fig = plt.figure(figsize=(140, 210))
-        gs = GridSpec(30, 20, figure=fig)
+        fig = plt.figure(figsize=(140, 280), layout='tight')
+        gs = GridSpec(40, 20, figure=fig)
         # masks.
+        '''
         print('Plotting masks')
         mask_ax01 = plt.subplot(gs[0:2, 0:2])
         mask_ax02 = plt.subplot(gs[2:4, 0:2])
@@ -71,15 +72,9 @@ def run(list_session_data_path, sig_tag):
         normal_axs01 = [plt.subplot(gs[5, i]) for i in range(4)] + [plt.subplot(gs[7, i]) for i in range(4)]
         normal_axs02 = [plt.subplot(gs[6, i]) for i in range(4)] + [plt.subplot(gs[8, i]) for i in range(4)]
         normal_axs03 = [plt.subplot(gs[5:7, i+4]) for i in range(4)] + [plt.subplot(gs[7:9, i+4]) for i in range(4)]
-        normal_axs04 = [
-            plt.subplot(gs[5:7, 8 :10]), plt.subplot(gs[5:7, 10]),
-            plt.subplot(gs[5:7, 11:13]), plt.subplot(gs[5:7, 13]),
-            plt.subplot(gs[7:9, 8 :10]), plt.subplot(gs[7:9, 10]),
-            plt.subplot(gs[7:9, 11:13]), plt.subplot(gs[7:9, 13])]
         plotter_align_stim.normal_exc(normal_axs01)
         plotter_align_stim.normal_inh(normal_axs02)
         plotter_align_stim.normal_heatmap(normal_axs03)
-        plotter_align_stim.normal_cluster(normal_axs04)
         # oddball.
         print('Plotting oddball alignment')
         odd_normal_axs01 = [
@@ -93,15 +88,32 @@ def run(list_session_data_path, sig_tag):
             plt.subplot(gs[10:12, 8]), plt.subplot(gs[10:12, 9]),
             plt.subplot(gs[12:14, 6]), plt.subplot(gs[12:14, 7]),
             plt.subplot(gs[12:14, 8]), plt.subplot(gs[12:14, 9])]
-        odd_normal_axs04 = [
-            plt.subplot(gs[10:12, 10:12]), plt.subplot(gs[10:12, 12]),
-            plt.subplot(gs[10:12, 13:15]), plt.subplot(gs[10:12, 15]),
-            plt.subplot(gs[12:14, 10:12]), plt.subplot(gs[12:14, 12]),
-            plt.subplot(gs[12:14, 13:15]), plt.subplot(gs[12:14, 15])]
         plotter_align_odd.odd_normal_exc(odd_normal_axs01)
         plotter_align_odd.odd_normal_inh(odd_normal_axs02)
         plotter_align_odd.odd_normal_heatmap(odd_normal_axs03)
-        plotter_align_odd.odd_normal_cluster(odd_normal_axs04)
+        '''
+        # clustering.
+        cluster_axs01 = [
+            plt.subplot(gs[25:28, 0:3]),
+            plt.subplot(gs[25, 3]), plt.subplot(gs[26, 3]), plt.subplot(gs[27, 3]),
+            plt.subplot(gs[25:28, 4]), plt.subplot(gs[25:28, 5]), plt.subplot(gs[25:28, 6]), plt.subplot(gs[25:28, 7])]
+        cluster_axs02 = [
+            plt.subplot(gs[25:28, 8:11]),
+            plt.subplot(gs[25, 11]), plt.subplot(gs[26, 11]), plt.subplot(gs[27, 11]),
+            plt.subplot(gs[25:28, 12]), plt.subplot(gs[25:28, 13]), plt.subplot(gs[25:28, 14]), plt.subplot(gs[25:28, 15])]
+        cluster_axs03 = [
+            plt.subplot(gs[28:31, 0:3]),
+            plt.subplot(gs[28, 3]), plt.subplot(gs[29, 3]), plt.subplot(gs[30, 3]),
+            plt.subplot(gs[28:31, 4]), plt.subplot(gs[28:31, 5]), plt.subplot(gs[28:31, 6]), plt.subplot(gs[28:31, 7])]
+        cluster_axs04 = [
+            plt.subplot(gs[28:31, 8:11]),
+            plt.subplot(gs[28, 11]), plt.subplot(gs[29, 11]), plt.subplot(gs[30, 11]),
+            plt.subplot(gs[28:31, 12]), plt.subplot(gs[28:31, 13]), plt.subplot(gs[28:31, 14]), plt.subplot(gs[28:31, 15])]
+        plotter_align_odd.odd_cluster_fix_exc(cluster_axs01)
+        plotter_align_odd.odd_cluster_jitter_exc(cluster_axs02)
+        plotter_align_odd.odd_cluster_fix_inh(cluster_axs03)
+        plotter_align_odd.odd_cluster_jitter_inh(cluster_axs04)
+        '''
         # proceeding isi.
         isi_normal_axs01 = [plt.subplot(gs[15, i]) for i in range(5)]
         isi_normal_axs02 = [plt.subplot(gs[16, i]) for i in range(5)]
@@ -131,6 +143,7 @@ def run(list_session_data_path, sig_tag):
         example_ax = plt.subplot(gs[0:4, 12])
         plot_VIPTD_G8_example_traces(
             example_ax, list_dff[0], list_labels[0], list_vol[0][3], list_vol[0][0])
+        '''
         print('Plotting stimulus types')
         # isi distribution.
         isi_ax01 = plt.subplot(gs[0, 14])
@@ -160,7 +173,7 @@ def run(list_session_data_path, sig_tag):
         sess_ax = plt.subplot(gs[3, 14])
         plot_sess_name(sess_ax, list_session_data_path)
         # save figure.
-        fig.set_size_inches(140, 210)
+        fig.set_size_inches(140, 280)
         fig.savefig(os.path.join(
             list_ops[0]['save_path0'], 'figures',
             'session_report_{}_{}.pdf'.format(
@@ -168,65 +181,6 @@ def run(list_session_data_path, sig_tag):
                 list_session_data_path[0].split('/')[-1])),
             dpi=300)
         plt.close()
-    '''
-    def plot_individual_roi():
-        roi_report = fitz.open()
-        for roi_id in tqdm(np.argsort(labels, kind='stable')[:2]):
-            fig = plt.figure(figsize=(56, 35))
-            gs = GridSpec(5, 8, figure=fig)
-            # masks.
-            mask_ax01 = plt.subplot(gs[0:2, 0:2])
-            mask_ax02 = plt.subplot(gs[0, 2])
-            mask_ax03 = plt.subplot(gs[0, 3])
-            mask_ax04 = plt.subplot(gs[1, 2])
-            mask_ax05 = plt.subplot(gs[1, 3])
-            plotter_masks.roi_loc_2chan(mask_ax01, roi_id, 'max')
-            plotter_masks.roi_func(mask_ax02, roi_id, 'max')
-            plotter_masks.roi_anat(mask_ax03, roi_id)
-            plotter_masks.roi_superimpose(mask_ax04, roi_id, 'max')
-            plotter_masks.roi_masks(mask_ax05, roi_id)
-
-            # save figure.
-            fname = os.path.join(
-                ops['save_path0'], 'figures',
-                str(roi_id).zfill(4)+'.pdf')
-            fig.set_size_inches(56, 35)
-            fig.savefig(fname, dpi=300)
-            plt.close()
-            roi_fig = fitz.open(fname)
-            roi_report.insert_pdf(roi_fig)
-            roi_fig.close()
-            os.remove(fname)
-        roi_report.save(
-            os.path.join(ops['save_path0'], 'figures', 'roi_report_{}.pdf'.format(
-            session_data_name)))
-        roi_report.close()
-
-    def plot_raw_traces():
-        max_ms = 300000
-        if not os.path.exists(os.path.join(
-                ops['save_path0'], 'figures', 'raw_traces')):
-            os.makedirs(os.path.join(
-                ops['save_path0'], 'figures', 'raw_traces'))
-        if np.max(vol_time) < max_ms:
-            trace_num_fig = 1
-        else:
-            trace_num_fig = int(np.max(vol_time)/max_ms)
-        for roi_id in [50,55,60,65,70]:
-            fig, axs = plt.subplots(trace_num_fig, 1, figsize=(max_ms/5000, trace_num_fig*4))
-            plt.subplots_adjust(hspace=0.6)
-            plot_roi_raw_trace(
-                axs, roi_id, max_ms,
-                labels, dff,
-                vol_img, vol_stim_vis, vol_led, vol_time)
-            fig.set_size_inches(max_ms/2500, trace_num_fig*4)
-            fig.tight_layout()
-            fig.savefig(os.path.join(
-                ops['save_path0'], 'figures', 'raw_traces',
-                str(roi_id).zfill(4)+'.pdf'),
-                dpi=300)
-            plt.close()
-    '''
 
     # main
     print('===============================================')
@@ -295,37 +249,25 @@ if __name__ == "__main__":
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20241125_seq2421_t',
         ]
     list_session_data_path = [
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240611_seq1420_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241104_seq1421_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241105_seq1421_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241106_seq1421_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240612_seq2420_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240613_seq2420_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_P_20240617_seq2420_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241118_seq2421_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241119_seq2421_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241120_seq2421_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241121_seq2421_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241125_seq2421_t',
         ]
-    list_session_data_path = [
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT01_PPC_20241104_seq1421_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT01_PPC_20241106_seq1421_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT01_PPC_20241107_seq1421_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT01_PPC_20241125_seq2421_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT01_PPC_20241126_seq2421_t',
-        ]
     '''
     list_session_data_path = [
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20240813_seq1421_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20240818_seq1421_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20240821_seq1421_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20241106_seq1421_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20241107_seq1421_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20241118_seq2421_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20241119_seq1421_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20241123_seq2421_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/VT02_PPC_20241125_seq2421_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241104_seq1421_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241105_seq1421_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241106_seq1421_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241118_seq2421_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241119_seq2421_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241120_seq2421_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241121_seq2421_t',
+        'C:/Users/yhuang887/Projects/temporal_sequence_202405/short_long_omission/results/FN14_PPC_20241125_seq2421_t',
         ]
     #run(list_session_data_path, 'sig')
     run(list_session_data_path, 'all')
