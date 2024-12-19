@@ -5,8 +5,8 @@
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
 #SBATCH -N1 --gres=gpu:H100:4
-#SBATCH --mem-per-gpu=8G
-#SBATCH --time=6:00:00
+#SBATCH --mem-per-gpu=16G
+#SBATCH --time=12:00:00
 #SBATCH --output=Report_%A-%a.out
 #SBATCH --mail-user=hilberthuang05@gatech.edu
 
@@ -22,10 +22,24 @@ python get_raw.py \
 --n_channels 2 \
 
 python ./SRDTrans/train.py \
+--datasets_path './results/temp_data/tiff' \
+--datasets_folder './' \
+--pth_path './results/temp_model' \
+--n_epochs 8 \
 --GPU 0,1 \
+--train_datasets_size 8192 \
+--patch_x 160 \
+--patch_t 160 \
 
 python ./SRDTrans/test.py \
+--datasets_path './results/temp_data/tiff' \
+--datasets_folder './' \
+--pth_path './results/temp_model' \
+--denoise_model './' \
+--output_path './results/temp_denoised' \
 --GPU 0,1 \
+--patch_x 160 \
+--patch_t 160 \
 
 python get_videos.py \
 --labels '[exc, inh]' \

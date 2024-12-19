@@ -86,7 +86,8 @@ def adjust_video_contrast(video, lower_percentile=25, upper_percentile=99):
 def save_fov_video():
     fps = 30
     # get video file list.
-    filename = [f for f in os.listdir(os.path.join('./results', 'temp_denoised')) if 'tif' in f].sort()
+    filename = [f for f in os.listdir(os.path.join('./results', 'temp_denoised')) if 'tif' in f]
+    filename.sort()
     videos = [tifffile.imread(os.path.join('./results', 'temp_denoised', f)) for f in filename]
     videos = [adjust_video_contrast(v) for v in videos]
     video_writer = cv2.VideoWriter(
