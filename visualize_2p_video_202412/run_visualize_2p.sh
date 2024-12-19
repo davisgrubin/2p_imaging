@@ -4,8 +4,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH -N1 --gres=gpu:H100:4
-#SBATCH --mem-per-gpu=16G
+#SBATCH -N1 --gres=gpu:V100:2
+#SBATCH --mem-per-gpu=32G
 #SBATCH --time=12:00:00
 #SBATCH --output=Report_%A-%a.out
 #SBATCH --mail-user=hilberthuang05@gatech.edu
