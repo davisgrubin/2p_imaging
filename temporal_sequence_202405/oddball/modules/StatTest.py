@@ -8,7 +8,7 @@ from scipy.stats import ks_2samp
 from modules.Alignment import get_stim_response
 from modules.ReadResults import read_neural_trials
 from plot.utils import get_odd_stim_prepost_idx
-from plot.utils import exclude_post_odd_stim
+from plot.utils import exclude_odd_stim
 from plot.utils import pick_trial
 
 # compute indice with givn time window for df/f.
@@ -48,7 +48,7 @@ def test_prepost(neu_seq_pre, neu_seq_post, neu_time, win_evoke):
 def stat_test_normal(neu_seq, neu_time, stim_labels):
     win_base  = [-200,0]
     win_early = [0,400]
-    labels = exclude_post_odd_stim(stim_labels)
+    labels = exclude_odd_stim(stim_labels)
     idx = pick_trial(labels, [2,3,4,5], None, None, None, [0])
     responsive = test_win(
         neu_seq[idx,:,:], neu_time, win_base, win_early)
@@ -92,7 +92,7 @@ def save_significance(
 def run(ops):
     print('Aligning neural population response')
     neural_trials = read_neural_trials(ops)
-    stim_labels = neural_trials['stim_labels'][1:-1,:]
+    stim_labels = neural_trials['stim_labels'][2:-2,:]
     [neu_seq, neu_time, _, _, _, _, _] = get_stim_response(
             neural_trials, 100, 200)
     print('Running statistics test')

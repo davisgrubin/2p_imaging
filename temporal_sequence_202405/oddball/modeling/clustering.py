@@ -48,15 +48,11 @@ def get_sorted_corr_mat(neu, cluster_id, l_idx, r_idx):
 
 # compute mean and sem for clusters.
 def get_mean_sem_cluster(neu, n_clusters, cluster_id, l_idx, r_idx):
-    # collect neural traces based on clusters and sorted by peak timing.
     neu_mean = np.zeros((n_clusters, neu.shape[1]))
     neu_sem  = np.zeros((n_clusters, neu.shape[1]))
     for i in range(n_clusters):
         neu_mean[i,:], neu_sem[i,:] = get_mean_sem(
             neu[np.where(cluster_id==i)[0], :].reshape(-1,neu.shape[1]))
-    sort_idx_neu = np.argmax(neu_mean[:,l_idx:r_idx], axis=1).reshape(-1).argsort()
-    neu_mean = neu_mean[sort_idx_neu,:]
-    neu_sem  = neu_sem[sort_idx_neu,:]
     return neu_mean, neu_sem
 
 # compute cross cluster correlations.

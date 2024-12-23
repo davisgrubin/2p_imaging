@@ -10,7 +10,7 @@ from modules.Alignment import run_get_stim_response
 from modeling.decoding import multi_sess_decoding_num_neu
 from modeling.decoding import multi_sess_decoding_slide_win
 from plot.utils import norm01
-from plot.utils import exclude_post_odd_stim
+from plot.utils import exclude_odd_stim
 from plot.utils import get_frame_idx_from_time
 from plot.utils import get_change_prepost_idx
 from plot.utils import get_mean_sem
@@ -18,7 +18,6 @@ from plot.utils import get_neu_sync
 from plot.utils import get_multi_sess_neu_trial_average
 from plot.utils import get_roi_label_color
 from plot.utils import get_epoch_idx
-from plot.utils import get_expect_time
 from plot.utils import adjust_layout_neu
 from plot.utils import adjust_layout_spectral
 from plot.utils import adjust_layout_3d_latent
@@ -36,16 +35,13 @@ class plotter_utils(utils):
         super().__init__()
         timescale = 1.0
         self.n_sess = len(list_neural_trials)
-        self.l_frames = int(80*timescale)
-        self.r_frames = int(100*timescale)
+        self.l_frames = int(100*timescale)
+        self.r_frames = int(120*timescale)
         self.list_stim_labels = [
-            nt['stim_labels'][1:-1,:] for nt in list_neural_trials]
+            nt['stim_labels'][2:-2,:] for nt in list_neural_trials]
         self.list_stim_labels = [
-            exclude_post_odd_stim(sl) for sl in self.list_stim_labels]
+            exclude_odd_stim(sl) for sl in self.list_stim_labels]
         self.list_labels = list_labels
-        self.expect = np.array([
-            np.mean([get_expect_time(sl)[0] for sl in self.list_stim_labels]),
-            np.mean([get_expect_time(sl)[1] for sl in self.list_stim_labels])])
         self.epoch_early = [get_epoch_idx(sl)[0] for sl in self.list_stim_labels]
         self.epoch_late  = [get_epoch_idx(sl)[1] for sl in self.list_stim_labels]
         self.alignment = run_get_stim_response(
@@ -70,7 +66,7 @@ class plotter_utils(utils):
         upper = np.nanmax(mean_short) + np.nanmax(sem_short)
         lower = np.nanmin(mean_short) - np.nanmax(sem_short)
         # plot stimulus.
-        for i in range(3):
+        for i in range(stim_seq_short.shape[0]):
             ax.fill_between(
                 stim_seq_short[i,:],
                 lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
@@ -155,7 +151,7 @@ class plotter_utils(utils):
         upper = np.nanmax(sync_short)
         lower = np.nanmin(sync_short)
         # plot stimulus.
-        for i in range(3):
+        for i in range(stim_seq_short.shape[0]):
             ax.fill_between(
                 stim_seq_short[i,:],
                 lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
@@ -206,7 +202,7 @@ class plotter_utils(utils):
         lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
         # plot stimulus.
         for ai in range(4):
-            for i in range(3):
+            for i in range(stim_seq.shape[0]):
                 axs[ai].fill_between(
                     stim_seq[i,:],
                     lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
@@ -406,7 +402,7 @@ class plotter_utils(utils):
         upper = np.nanmax([acc_model, acc_chance])
         lower = np.nanmin([acc_model, acc_chance])
         # plot stimulus.
-        for i in range(3):
+        for i in range(stim_seq.shape[0]):
             ax.fill_between(
                 stim_seq[i,:],
                 lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
@@ -448,7 +444,7 @@ class plotter_utils(utils):
         lower = np.nanmin([m_pre, m_post]) - np.nanmax([s_pre, s_post])
         # plot stimulus.
         ax.fill_between(
-            stim_seq[1,:],
+            stim_seq[int(stim_seq.shape[0]/2),:],
             lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
             color=color0, alpha=0.15, step='mid')
         # plot neural traces.

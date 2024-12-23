@@ -65,3 +65,9 @@
 - Added plot_cluster_mean_sem.
 - Now get_sorted_corr_mat, get_mean_sem_cluster, and get_cross_corr are independent functions.
 
+## 2024.12.21
+- Now alignment gives 5 stimulus timings.
+- Now stimulus shape has 5 areas.
+- Now exclude_odd_stim marks 2+2 neighbors for image changes and oddball.
+- Deleted sorting for traces clustering to avoid bug.
+- Added expected stimulus timing for oddball traces.

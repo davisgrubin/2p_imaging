@@ -14,6 +14,8 @@ from modeling.clustering import clustering_neu_response_mode
 from modeling.clustering import get_sorted_corr_mat
 from modeling.clustering import get_mean_sem_cluster
 from modeling.clustering import get_cross_corr
+from plot.utils import get_norm01_params
+from plot.utils import exclude_odd_stim
 from plot.utils import get_mean_sem
 from plot.utils import get_frame_idx_from_time
 from plot.utils import get_multi_sess_neu_trial_average
@@ -39,11 +41,11 @@ class plotter_utils(utils):
         super().__init__()
         timescale = 1.0
         self.n_sess = len(list_neural_trials)
-        self.l_frames = int(100*timescale)
+        self.l_frames = int(90*timescale)
         self.r_frames = int(160*timescale)
         self.cut_frames = int(60*timescale)
         self.list_stim_labels = [
-            nt['stim_labels'][1:-1,:] for nt in list_neural_trials]
+            nt['stim_labels'][2:-2,:] for nt in list_neural_trials]
         self.list_labels = list_labels
         self.alignment = run_get_stim_response(
                 list_neural_trials, self.l_frames, self.r_frames, expected='none')
@@ -112,7 +114,10 @@ class plotter_utils(utils):
         lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
         # plot stimulus.
         if 0 in normal:
-            for i in range(3):
+            ax.axvline(
+                stim_seq_short[int(stim_seq_short.shape[0]/2),1]+self.expect[0],
+                color=color1, lw=1, linestyle='--')
+            for i in range(stim_seq_short.shape[0]):
                 ax.fill_between(
                     stim_seq_short[i,:],
                     lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
@@ -121,7 +126,10 @@ class plotter_utils(utils):
                 ax, self.alignment['stim_time'],
                 stim_value_short.reshape(1,-1), color1, upper, lower)
         if 1 in normal:
-            for i in range(3):
+            ax.axvline(
+                stim_seq_long[int(stim_seq_long.shape[0]/2),1]+self.expect[0],
+                color=color2, lw=1, linestyle='--')
+            for i in range(stim_seq_long.shape[0]):
                 ax.fill_between(
                     stim_seq_long[i,:],
                     lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
@@ -200,7 +208,7 @@ class plotter_utils(utils):
         lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
         # plot stimulus.
         ax.fill_between(
-            stim_seq[1,:],
+            stim_seq[int(stim_seq.shape[0]/2),:],
             lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
             color=color0, alpha=0.15, step='mid')
         # plot neural traces.
@@ -329,7 +337,7 @@ class plotter_utils(utils):
         lower = np.nanmin([acc_model, acc_chance])
         # plot stimulus.
         ax.fill_between(
-            stim_seq[1,:],
+            stim_seq[int(stim_seq.shape[0]/2),:],
             lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
             color=color0, alpha=0.15, step='mid')
         # plot results.
@@ -363,19 +371,25 @@ class plotter_utils(utils):
         upper = np.nanmax([sync_short, sync_long])
         lower = np.nanmin([sync_short, sync_long])
         # plot stimulus.
-        for i in range(3):
+        ax.axvline(
+            stim_seq_short[int(stim_seq_short.shape[0]/2),1]+self.expect[0],
+            color=color1, lw=1, linestyle='--')
+        ax.axvline(
+            stim_seq_long[int(stim_seq_long.shape[0]/2),1]+self.expect[0],
+            color=color2, lw=1, linestyle='--')
+        for i in range(stim_seq_short.shape[0]):
             ax.fill_between(
                 stim_seq_short[i,:],
                 lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
                 color=color1, alpha=0.15, step='mid')
-        self.plot_vol(
-            ax, self.alignment['stim_time'],
-            stim_value_short.reshape(1,-1), color1, upper, lower)
-        for i in range(3):
+        for i in range(stim_seq_long.shape[0]):
             ax.fill_between(
                 stim_seq_long[i,:],
                 lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
                 color=color2, alpha=0.15, step='mid')
+        self.plot_vol(
+            ax, self.alignment['stim_time'],
+            stim_value_short.reshape(1,-1), color1, upper, lower)
         self.plot_vol(
             ax, self.alignment['stim_time'],
             stim_value_long.reshape(1,-1), color2, upper, lower)
@@ -488,7 +502,7 @@ class plotter_utils(utils):
     def plot_odd_cluster(self, axs, normal, fix_jitter, cate):
         n_clusters = 8
         max_clusters = 16
-        win_eval = [-2000,2000]
+        win_eval = [-2000,4000]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_eval[0], win_eval[1])
         color0, color1, color2, cmap = get_roi_label_color([cate], 0)
         neu_cate = [
@@ -496,9 +510,9 @@ class plotter_utils(utils):
             for i in range(self.n_sess)]
         # collect data.
         neu, _, stim_seq, _, _ = get_multi_sess_neu_trial_average(
-            self.list_stim_labels, neu_cate, self.alignment,
+            [exclude_odd_stim(sl) for sl in self.list_stim_labels],
+            neu_cate, self.alignment,
             trial_param=[[2,3,4,5], [normal], [fix_jitter], None, [0]])
-        neu = neu[~np.isnan(np.sum(neu,axis=1)),:]
         # fit model.
         metrics, cluster_id = clustering_neu_response_mode(
              neu, n_clusters, max_clusters, l_idx, r_idx)
@@ -555,21 +569,36 @@ class plotter_utils(utils):
             autopct='%1.1f%%',
             wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
         # plot within cluster average for normal.
-        neu_mean, neu_sem = get_mean_sem_cluster(neu, n_clusters, cluster_id, l_idx, r_idx)
-        self.plot_cluster_mean_sem(axs[4], neu_mean, neu_sem, stim_seq, color0, colors)
+        neu_mean, neu_sem = get_mean_sem_cluster(
+            neu, n_clusters, cluster_id, l_idx, r_idx)
+        norm_params = [get_norm01_params(neu_mean[i,:]) for i in range(neu_mean.shape[0])]
+        self.plot_cluster_mean_sem(
+            axs[4], neu_mean, neu_sem, norm_params, stim_seq, color0, colors)
         # plot within cluster average for short oddball.
-        neu, _, stim_seq, _, _ = get_multi_sess_neu_trial_average(
+        neu_short, _, stim_seq_short, _, _ = get_multi_sess_neu_trial_average(
             self.list_stim_labels, neu_cate, self.alignment,
             trial_idx=[l[0] for l in self.list_odd_idx])
-        neu_mean, neu_sem = get_mean_sem_cluster(neu, n_clusters, cluster_id, l_idx, r_idx)
-        self.plot_cluster_mean_sem(axs[5], neu_mean, neu_sem, stim_seq, color1, colors)
+        neu_mean_short, neu_sem_short = get_mean_sem_cluster(
+            neu_short, n_clusters, cluster_id, l_idx, r_idx)
+        norm_params = [get_norm01_params(neu_mean_short[i,:]) for i in range(neu_mean_short.shape[0])]
+        self.plot_cluster_mean_sem(
+            axs[5], neu_mean_short, neu_sem_short, norm_params, stim_seq_short, color1, colors)
+        axs[5].axvline(
+            stim_seq_short[int(stim_seq_short.shape[0]/2),1]+self.expect[0],
+            color=color1, lw=1, linestyle='--')
         # plot within cluster average for long oddball.
-        neu, _, stim_seq, _, _ = get_multi_sess_neu_trial_average(
+        neu_long, _, stim_seq_long, _, _ = get_multi_sess_neu_trial_average(
             self.list_stim_labels, neu_cate, self.alignment,
             trial_idx=[l[1] for l in self.list_odd_idx])
-        neu_mean, neu_sem = get_mean_sem_cluster(neu, n_clusters, cluster_id, l_idx, r_idx)
-        self.plot_cluster_mean_sem(axs[6], neu_mean, neu_sem, stim_seq, color2, colors)
-        
+        neu_mean_long, neu_sem_long = get_mean_sem_cluster(
+            neu_long, n_clusters, cluster_id, l_idx, r_idx)
+        norm_params = [get_norm01_params(neu_mean_long[i,:]) for i in range(neu_mean_long.shape[0])]
+        self.plot_cluster_mean_sem(
+            axs[6], neu_mean_long, neu_sem_long, norm_params, stim_seq_long, color2, colors)
+        axs[6].axvline(
+            stim_seq_long[int(stim_seq_long.shape[0]/2),1]+self.expect[0],
+            color=color2, lw=1, linestyle='--')
+
 
 class plotter_main_align_odd(plotter_utils):
     def __init__(self, neural_trials, labels, significance, label_names):

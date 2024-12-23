@@ -149,13 +149,13 @@ def run(session_config):
     print('===============================================')
     print('============= trials segmentation =============')
     print('===============================================')
-    for ops in list_ops:
-        Trialization.run(ops)
+    #for ops in list_ops:
+    #    Trialization.run(ops)
     print('===============================================')
     print('============== significance test ==============')
     print('===============================================')
-    for ops in list_ops:
-        StatTest.run(ops)
+    #for ops in list_ops:
+    #    StatTest.run(ops)
     print('===============================================')
     print('============ reading saved results ============')
     print('===============================================')

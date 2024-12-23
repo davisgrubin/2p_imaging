@@ -41,7 +41,7 @@ def get_stim_response(
     led_value  = []
     pre_isi    = []
     # loop over stimulus.
-    for stim_id in tqdm(range(1, stim_labels.shape[0]-1)):
+    for stim_id in tqdm(range(2, stim_labels.shape[0]-2)):
         # find alignment offset.
         if expected=='none':
             t = stim_labels[stim_id,0]
@@ -65,14 +65,11 @@ def get_stim_response(
             stim_time.append(vol_time[vol_t_l:vol_t_r] - vol_time[vol_t_c])
             stim_value.append(vol_stim[vol_t_l:vol_t_r])
             led_value.append(vol_led[vol_t_l:vol_t_r])
+            # stimulus timing.
             stim_seq.append(np.array(
-                [[stim_labels[stim_id-1,0]-stim_labels[stim_id,0],
-                 stim_labels[stim_id-1,1]-stim_labels[stim_id,0]],
-                 [0,
-                  stim_labels[stim_id,1]-stim_labels[stim_id,0]],
-                 [stim_labels[stim_id+1,0]-stim_labels[stim_id,0],
-                  stim_labels[stim_id+1,1]-stim_labels[stim_id,0]]]
-                ).reshape(1,3,2))
+                [[stim_labels[stim_id+i,0]-stim_labels[stim_id,0],
+                 stim_labels[stim_id+i,1]-stim_labels[stim_id,0]]
+                for i in [-2,-1,0,1,2]]).reshape(1,5,2))
             # preceeding isi.
             pre_isi.append(np.array([stim_labels[stim_id,0]-stim_labels[stim_id-1,1]]))
     # correct neural data centering at zero.

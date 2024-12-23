@@ -9,6 +9,12 @@ from matplotlib.colors import LinearSegmentedColormap
 def norm01(data):
     return (data - np.nanmin(data)) / (np.nanmax(data) - np.nanmin(data) + 1e-5)
 
+# compute the scale parameters when normalizing data into [0,1].
+def get_norm01_params(data):
+    a = 1 / (np.nanmax(data) - np.nanmin(data))
+    b = - np.nanmin(data) / (np.nanmax(data) - np.nanmin(data))
+    return a,b
+
 # rescale voltage recordings.
 def rescale(data, upper, lower):
     data = data.copy()
@@ -113,14 +119,15 @@ def apply_colormap(data, cmap):
     data_heatmap = data_heatmap[..., :3]
     return data_heatmap
 
-# mark stim after omi as outlier.
-def exclude_post_odd_stim(stim_labels):
+# mark stim around image change and oddball as outlier.
+def exclude_odd_stim(stim_labels):
+    n = 2
+    neg = np.where(stim_labels[:,2] < 0)[0]
     stim_labels_mark = stim_labels.copy()
-    idx_post = np.diff(stim_labels_mark[:,2]==-1, prepend=0)
-    idx_post[idx_post==1] = 0
-    idx_post[idx_post==-1] = 1
-    idx_post = idx_post.astype('bool')
-    stim_labels_mark[idx_post,2] = -1
+    for i in neg:
+        stim_labels_mark[
+            np.max([0, i-n]):np.min([stim_labels.shape[0], i+n+1]),2] = -np.abs(
+                stim_labels_mark[np.max([0, i-n]):np.min([stim_labels.shape[0], i+n+1]),2])
     return stim_labels_mark
 
 # find trials based on stim_labels.
@@ -487,15 +494,14 @@ class utils:
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         add_legend(ax, [color2,color1], ['model','chance'], 'upper left')
     
-    def plot_cluster_mean_sem(self, ax, neu_mean, neu_sem, stim_seq, c, colors):
-        for i in range(3):
+    def plot_cluster_mean_sem(self, ax, neu_mean, neu_sem, norm_params, stim_seq, c, colors):
+        for i in range(stim_seq.shape[0]):
             ax.fill_between(
                 stim_seq[i,:],
                 0-0.1*neu_mean.shape[0], neu_mean.shape[0]+0.1*neu_mean.shape[0],
                 color=c, alpha=0.15, step='mid')
         for i in range(neu_mean.shape[0]):
-            a = 1 / (np.nanmax(neu_mean[i,:]) - np.nanmin(neu_mean[i,:]))
-            b = - np.nanmin(neu_mean[i,:]) / (np.nanmax(neu_mean[i,:]) - np.nanmin(neu_mean[i,:]))
+            a, b = norm_params[i]
             self.plot_mean_sem(
                 ax, self.alignment['neu_time'],
                 (a*neu_mean[i,:]+b)+neu_mean.shape[0]-i-1, np.abs(a)*neu_sem[i,:],
