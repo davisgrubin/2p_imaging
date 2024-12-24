@@ -14,11 +14,11 @@ source activate suite2p
 cd /storage/coda1/p-fnajafi3/0/yhuang887/Projects/visualize_2p_video_202412
 
 python get_raw.py \
---target_frame 5000 \
---target_rois '[12,65,2,46,11,51,10,56,26,56]' \
---roi_labels '[1,1,1,0,0,0,0,0,0,0]' \
---img_path './test' \
---suite2p_path './test/FN14_PPC_20241209_seq1131_t' \
+--target_frame 25000 \
+--target_rois '[1,2,27,15,12,14,3,98,6,22,11,19]' \
+--roi_labels '[1,1,1,0,0,0,0,0,0,0,0,0]' \
+--img_path '/storage/cedar/cedar0/cedarp-fnajafi3-0/2p_imaging/FN14/20240605/FN14_P_20240605_seq1420_t-583' \
+--suite2p_path '/storage/cedar/cedar0/cedarp-fnajafi3-0/2p_imaging/processed/passive/sequence_omission/FN14/FN14_P_20240605_seq1420_t' \
 --n_channels 2 \
 
 python ./SRDTrans/train.py \

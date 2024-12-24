@@ -14,7 +14,7 @@ import tifffile
 
 # generate video for dff traces.
 def save_dff_video(args):
-    window_size = 500
+    window_size = 2000
     colors = ['royalblue', 'crimson']
     labels = [str(x) for x in args.labels.strip('[]').split(',')]
     # initialize animation.
@@ -43,7 +43,7 @@ def save_dff_video(args):
         dff[i,:] = (dff[i,:] - np.nanmin(dff[i,:])) / (np.nanmax(dff[i,:]) - np.nanmin(dff[i,:]) + 1e-5)
         dff[i,:] += i
     # set canvas.
-    fig, ax = plt.subplots(1, 1, figsize=(4, 10), layout='tight')
+    fig, ax = plt.subplots(1, 1, figsize=(4, dff.shape[0]), layout='tight')
     fig.patch.set_facecolor('black')
     lines = [ax.plot([], [], lw=2, color=colors[roi_labels[i]])[0] for i in range(dff.shape[0])]
     vertical_line = ax.axvline(x=0, color='white', linestyle='--')
@@ -56,8 +56,8 @@ def save_dff_video(args):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.spines['bottom'].set_color('white')
-    ax.set_xlim(-5, 5)
-    ax.set_ylim(-0.5, 10.5)
+    ax.set_xlim(-10, 10)
+    ax.set_ylim(-0.5, dff.shape[0]+0.5)
     ax.set_xlabel('time (ms)', color='white')
     handles = [
         ax.plot([], lw=0, color=colors[i], label=labels[i])[0] 
@@ -71,7 +71,7 @@ def save_dff_video(args):
         framealpha=0)
     # set anime.
     ani = animation.FuncAnimation(fig, update, frames=len(time), init_func=init, blit=True)
-    ani.save(os.path.join('./results', 'traces.mp4'), fps=30, dpi=300)
+    ani.save(os.path.join('./results', 'traces.mp4'), fps=args.fps, dpi=300)
 
 # automatical adjustment of contrast.
 def adjust_video_contrast(video, lower_percentile=25, upper_percentile=99):
@@ -83,8 +83,7 @@ def adjust_video_contrast(video, lower_percentile=25, upper_percentile=99):
     return video
 
 # output denoised fov video.
-def save_fov_video():
-    fps = 30
+def save_fov_video(args):
     # get video file list.
     filename = [f for f in os.listdir(os.path.join('./results', 'temp_denoised')) if 'tif' in f]
     filename.sort()
@@ -92,7 +91,7 @@ def save_fov_video():
     videos = [adjust_video_contrast(v) for v in videos]
     video_writer = cv2.VideoWriter(
         os.path.join('./results', 'fov.mp4'),
-        cv2.VideoWriter_fourcc(*'mp4v'), fps,
+        cv2.VideoWriter_fourcc(*'mp4v'), args.fps,
         (videos[0].shape[1], videos[0].shape[2]), isColor=True)
     for i in range(videos[0].shape[0]):
         if len(videos) == 1:
@@ -109,7 +108,8 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='If Farzaneh wants to kill you ask Yicong for a hug!')
     parser.add_argument('--labels', required=True, type=str, help='The frame around the output period.')
+    parser.add_argument('--fps',    required=True, type=int, help='Frame rate per second.')
     args = parser.parse_args()
 
-    save_fov_video()
+    save_fov_video(args)
     save_dff_video(args)

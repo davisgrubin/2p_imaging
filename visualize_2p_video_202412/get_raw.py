@@ -70,8 +70,7 @@ def main(args):
     vol_img = np.array(f['raw']['vol_img'])
     f.close()
     diff_vol = np.diff(vol_img, prepend=0)
-    idx_up = np.where(diff_vol == 1)[0]
-    time_img = vol_time[idx_up][idx_start:idx_end]
+    time_img = vol_time[np.where(diff_vol == 1)[0]]
     np.save(os.path.join('./', 'results', 'temp_data', 'time_img.npy'), time_img)
     
     # save roi labels.
