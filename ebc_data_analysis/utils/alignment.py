@@ -13,7 +13,7 @@ def aligning_times(trials , aligning_event = "LED"):
     ending_time = min(ending_times) 
     init_index = {}
     ending_index = {}
-    event_index = {}
+    led_index = {}
     ap_index = {}
     event_diff = []
     ending_diff = []
@@ -22,21 +22,21 @@ def aligning_times(trials , aligning_event = "LED"):
     for id in trials:
         init_index[id] = np.searchsorted(trials[id]["time"][:] - trials[id][aligning_event][0], init_time, side='right')
         ending_index[id]=np.searchsorted(trials[id]["time"][:] - trials[id][aligning_event][0], ending_time, side='left')
-        event_index[id] =np.searchsorted(trials[id]["time"][:],  trials[id][aligning_event][0], side='right')
+        led_index[id] =np.searchsorted(trials[id]["time"][:],  trials[id][aligning_event][0], side='right')
         ap_index[id] =np.searchsorted(trials[id]["time"][:],  trials[id]["AirPuff"][0], side='right')
-        event_diff.append(event_index[id] - init_index[id])
-        ending_diff.append(ending_index[id] - event_index[id])
+        event_diff.append(led_index[id] - init_index[id])
+        ending_diff.append(ending_index[id] - led_index[id])
     ending_incr = min(ending_diff)
     init_incr = min(event_diff)
     for id in trials:
-        init_index_0[id] = event_index[id] - init_incr
-        ending_index_0[id] = event_index[id] + ending_incr
+        init_index_0[id] = led_index[id] - init_incr
+        ending_index_0[id] = led_index[id] + ending_incr
 
-    return(init_time, init_index_0, ending_time, ending_index_0, event_index, ap_index)
+    return(init_time, init_index_0, ending_time, ending_index_0, led_index, ap_index)
 
-def index_differences(init_index , event_index, ending_index, ap_index):
+def index_differences(init_index , led_index, ending_index, ap_index):
     for id in init_index:
-        event_diff = event_index[id] - init_index[id]
+        event_diff = led_index[id] - init_index[id]
         ending_diff = ending_index[id] - init_index[id]
         ap_diff = ap_index[id] - init_index[id]
         event_diff_0 = event_diff  
@@ -109,7 +109,7 @@ def calculate_average_dff_roi(aligned_dff):
             average_dff[roi] = []
             sem_dff[roi] = []
 
-    return average_dff, sem_dff
+    return average_dff, sem_dff , stacked_dff.shape[0]
 
 def calculate_average_dff_pool(aligned_dff):
     all_trials_dff = []
@@ -129,7 +129,7 @@ def calculate_average_dff_pool(aligned_dff):
         average_dff = np.array([])
         sem_dff = np.array([])
 
-    return average_dff, sem_dff
+    return average_dff, sem_dff , stacked_dff.shape[0]
 
 
 def calculate_average_sig(aligned_dff, roi_indices):
@@ -201,3 +201,9 @@ def moving_average(fec_0, window_size):
         kernel = np.ones(window_size) / window_size
         smoothed_fec[id] = np.convolve(fec_0[id], kernel, mode='same')
     return smoothed_fec
+
+def min_max_normalize(data):
+    normalized_fec = {}
+    for id in data:
+        normalized_fec[id] = data[id] - np.min(data[id]) / np.max(data[id]) - np.min(data[id])
+    return normalized_fec

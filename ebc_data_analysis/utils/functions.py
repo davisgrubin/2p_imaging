@@ -379,3 +379,15 @@ def read_dff(dff_file_path):
     dff = np.array(f['name'])
     f.close()
     return dff
+
+def interval_averaging(interval):
+    interval_avg = {}
+    for roi in interval:
+        dummy = []
+        for id in interval[roi]:
+            dummy.append(interval[roi][id])
+        interval_avg[roi] = np.nanmean(dummy, axis=0)
+    return interval_avg
+
+def sig_pdf_name(session_date, sig_event):
+    return f"./outputs/{session_date}/significant_ROIs/individual_{sig_event}_sig_roi.pdf"
