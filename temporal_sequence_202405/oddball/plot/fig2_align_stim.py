@@ -25,6 +25,7 @@ from plot.utils import add_legend
 from plot.utils import utils
 
 # fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+# fig, ax = plt.subplots(1, 1, figsize=(6, 6), subplot_kw={"projection": "3d"})
 
 class plotter_utils(utils):
 
@@ -125,9 +126,10 @@ class plotter_utils(utils):
             # trajaectory.
             ax.plot(neu_z[0,t:t+2], neu_z[1,t:t+2], neu_z[2,t:t+2], color=c[t,:])
         # end point.
-        ax.scatter(neu_z[0,-1], neu_z[1,-1], neu_z[2,-1], color='black')
+        ax.scatter(neu_z[0,0], neu_z[1,0], neu_z[2,0], color='black', marker='x')
+        ax.scatter(neu_z[0,-1], neu_z[1,-1], neu_z[2,-1], color='black', marker='o')
         # stimulus.
-        for i in range(3):
+        for i in range(stim_seq.shape[0]):
             l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, stim_seq[i,0], stim_seq[i,1])
             ax.plot(neu_z[0,l_idx:r_idx], neu_z[1,l_idx:r_idx], neu_z[2,l_idx:r_idx], lw=4, color='grey')
         adjust_layout_3d_latent(ax, neu_z, cmap, self.alignment['neu_time'], 'time since stim (ms)')
@@ -217,7 +219,7 @@ class plotter_utils(utils):
             axs[ai].set_xlabel('time since stim (ms)')
         for ai in range(4):
             add_legend(axs[ai], colors, lbl, 'upper right')
-    
+
     def plot_select_pie(self, ax, normal, fix_jitter, cate):
         colors = ['cornflowerblue', 'mediumseagreen', 'hotpink', 'coral']
         win_eval = [-500,500]
@@ -255,7 +257,7 @@ class plotter_utils(utils):
             colors=colors,
             autopct='%1.1f%%',
             wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
-    
+
     def plot_select_box(self, ax, normal, fix_jitter, cate):
         win_base = [-1500,0]
         win_eval = [-500,500]
@@ -523,9 +525,12 @@ class plotter_utils(utils):
                 c = cmap(np.linspace(0, 1, neu_z.shape[1]))
                 ax.plot(neu_z[0,t:t+2,i], neu_z[1,t:t+2,i], neu_z[2,t:t+2,i], color=c[t,:])
             # end point.
-            ax.scatter(neu_z[0,-1,i], neu_z[1,-1,i], neu_z[2,-1,i], color='black')
+            ax.scatter(neu_z[0,0,i], neu_z[1,0,i], neu_z[2,0,i], color='black', marker='x')
+            ax.scatter(neu_z[0,-1,i], neu_z[1,-1,i], neu_z[2,-1,i], color='black', marker='o')
         # image change.
-        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, stim_seq[1,0], stim_seq[1,1])
+        l_idx, r_idx = get_frame_idx_from_time(
+            self.alignment['neu_time'], 0,
+            stim_seq[int(stim_seq.shape[0]/2),0], stim_seq[int(stim_seq.shape[0]/2),1])
         for i in range(4):
             ax.plot(neu_z[0,l_idx:r_idx,i], neu_z[1,l_idx:r_idx,i], neu_z[2,l_idx:r_idx,i], lw=4, color=colors[-1])
         cmap = LinearSegmentedColormap.from_list('', ['white', 'black'])
@@ -542,39 +547,39 @@ class plotter_main_align_stim(plotter_utils):
         try:
             cate = -1
             label_name = self.label_names[str(cate)]
-            
+
             self.plot_normal(axs[0], [0], 0, cate=cate)
             axs[0].set_title(f'response to normal \n {label_name}')
-            
+
             self.plot_normal_spectral(axs[1], 0, 0, cate=cate)
             axs[1].set_title(f'response spectrogram to normal \n {label_name}')
-            
+
             self.plot_normal_sync(axs[2], 0, 0, cate=cate)
             axs[2].set_title(f'synchronization level to normal \n {label_name}')
-            
+
             self.plot_normal_latent(axs[3], 0, 0, cate=cate)
             axs[3].set_title(f'response to normal \n {label_name}')
-            
+
         except:
             pass
-        
+
     def normal_inh(self, axs):
         try:
             cate = 1
             label_name = self.label_names[str(cate)]
-            
+
             self.plot_normal(axs[0], [0], 0, cate=cate)
             axs[0].set_title(f'response to normal \n {label_name}')
-            
+
             self.plot_normal_spectral(axs[1], 0, 0, cate=cate)
             axs[1].set_title(f'response spectrogram to normal \n {label_name}')
-            
+
             self.plot_normal_sync(axs[2], 0, 0, cate=cate)
             axs[2].set_title(f'synchronization level to normal \n {label_name}')
-            
+
             self.plot_normal_latent(axs[3], 0, 0, cate=cate)
             axs[3].set_title(f'response spectrogram to normal \n {label_name}')
-            
+
         except:
             pass
 
@@ -587,12 +592,12 @@ class plotter_main_align_stim(plotter_utils):
                 self.list_stim_labels, self.alignment['list_neu_seq'], self.alignment,
                 trial_param=[[2,3,4,5], [0], [0], None, [0]])
             axs[0].set_xlabel('time since stim (ms)')
-            
+
             self.plot_heatmap_neuron(
                 axs[0], neu_short_fix, self.alignment['neu_time'], neu_short_fix,
                 win_sort, labels, sig)
             axs[0].set_title('response to normal')
-        
+
         except:
             pass
 
@@ -601,35 +606,35 @@ class plotter_main_align_stim(plotter_utils):
             cate = -1
             label_name = self.label_names[str(cate)]
             lbl = ['img#1', 'img#2', 'img#3', 'img#4']
-            
+
             self.plot_select([axs[i] for i in range(4)], 0, 0, cate=cate)
             for i in range(4):
                 axs[i].set_title(f'response to normal \n {label_name} prefer {lbl[i]}')
-            
+
             self.plot_select_pie(axs[4], 0, 0, cate=cate)
             axs[4].set_title(f'percentage of preferred stimlus \n {label_name}')
-            
+
             self.plot_select_box(axs[5], 0, 0, cate=cate)
             axs[5].set_title(f'presponse to preferred stimlus \n {label_name}')
-            
-            self.plot_select_decode_num_neu(axs[6], 0, 0, cate=cate)
+
+            #self.plot_select_decode_num_neu(axs[6], 0, 0, cate=cate)
             axs[6].set_title(f'single trial decoding accuracy for images \n with number of neurons \n {label_name}')
-    
+
             self.plot_select_features(axs[7], 0, 0, cate=cate)
             axs[7].set_title(f'response features projection with image preference \n {label_name}')
-            
-            self.plot_select_decode_slide_win(axs[8], 0, 0, cate=cate)
+
+            #self.plot_select_decode_slide_win(axs[8], 0, 0, cate=cate)
             axs[8].set_title(f'single trial decoding accuracy for images \n with sliding window \n {label_name}')
-    
+
             self.plot_change_prepost(axs[9], 0, 0, cate=cate)
             axs[9].set_title(f'response to change \n {label_name}')
-            
-            self.plot_change_decode_num_neu(axs[10], 0, 0, cate=cate)
+
+            #self.plot_change_decode_num_neu(axs[10], 0, 0, cate=cate)
             axs[10].set_title(f'single trial decoding accuracy for pre&post change \n with number of neurons \n {label_name}')
-            
+
             self.plot_change_latent(axs[11], 0, 0, cate=cate)
             axs[11].set_title(f'latent dynamics response to change \n {label_name}')
-        
+
         except:
             pass
 
@@ -638,34 +643,34 @@ class plotter_main_align_stim(plotter_utils):
             cate = 1
             label_name = self.label_names[str(cate)]
             lbl = ['img#1', 'img#2', 'img#3', 'img#4']
-    
+
             self.plot_select([axs[i] for i in range(4)], [0], 0, cate=cate)
             for i in range(4):
                 axs[i].set_title(f'response to normal \n {label_name} prefer {lbl[i]}')
-    
+
             self.plot_select_pie(axs[4], 0, 0, cate=cate)
             axs[4].set_title(f'percentage of preferred stimlus \n {label_name}')
-            
+
             self.plot_select_box(axs[5], 0, 0, cate=cate)
             axs[5].set_title(f'presponse to preferred stimlus \n {label_name}')
-            
-            self.plot_select_decode_num_neu(axs[6], 0, 0, cate=cate)
+
+            #self.plot_select_decode_num_neu(axs[6], 0, 0, cate=cate)
             axs[6].set_title(f'decoding accuracy for images VS number of neurons \n {label_name}')
-            
+
             self.plot_select_features(axs[7], 0, 0, cate=cate)
             axs[7].set_title(f'response features projection with image preference \n {label_name}')
-            
-            self.plot_select_decode_slide_win(axs[8], 0, 0, cate=cate)
+
+            #self.plot_select_decode_slide_win(axs[8], 0, 0, cate=cate)
             axs[8].set_title(f'decoding accuracy for images with sliding window \n {label_name}')
-            
+
             self.plot_change_prepost(axs[9], 0, 0, cate=cate)
             axs[9].set_title(f'response to change \n {label_name}')
-            
-            self.plot_change_decode_num_neu(axs[10], 0, 0, cate=cate)
+
+            #self.plot_change_decode_num_neu(axs[10], 0, 0, cate=cate)
             axs[10].set_title(f'decoding accuracy for pre&post change VS number of neurons \n {label_name}')
-            
+
             self.plot_change_latent(axs[11], 0, 0, cate=cate)
             axs[11].set_title(f'latent dynamics response to change \n {label_name}')
-            
+
         except:
             pass

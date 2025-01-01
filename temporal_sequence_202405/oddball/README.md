@@ -70,4 +70,4 @@
 - Now stimulus shape has 5 areas.
 - Now exclude_odd_stim marks 2+2 neighbors for image changes and oddball.
 - Deleted sorting for traces clustering to avoid bug.
-- Added expected stimulus timing for oddball traces.
+- Added expected stimulus timing for oddball traces. 

@@ -348,8 +348,8 @@ class plotter_utils(utils):
         ax.set_xlabel('time since stim (ms)')
         ax.set_ylabel('ACC')
         ax.set_xlim([eval_time[0], eval_time[-1]])
-    
-    def plot_odd_sync(self, ax, cate=None):
+
+    def plot_odd_sync(self, ax, normal, cate=None):
         win_width = 200
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, win_width)
         win_width = r_idx - l_idx
@@ -358,44 +358,52 @@ class plotter_utils(utils):
             for i in range(self.n_sess)]
         color0, color1, color2, _ = get_roi_label_color([cate], 0)
         # collect data.
-        neu_short, _, stim_seq_short, stim_value_short, _ = get_multi_sess_neu_trial_average(
-            self.list_stim_labels, neu_cate, self.alignment,
-            trial_idx=[l[0] for l in self.list_odd_idx])
-        neu_long, _, stim_seq_long, stim_value_long, _ = get_multi_sess_neu_trial_average(
-            self.list_stim_labels, neu_cate, self.alignment,
-            trial_idx=[l[1] for l in self.list_odd_idx])
-        # compute synchronization.
-        sync_short = get_neu_sync(neu_short, win_width)
-        sync_long  = get_neu_sync(neu_long, win_width)
+        neu = []
+        if 0 in normal:
+            neu_short, _, stim_seq_short, stim_value_short, _ = get_multi_sess_neu_trial_average(
+                self.list_stim_labels, neu_cate, self.alignment,
+                trial_idx=[l[0] for l in self.list_odd_idx])
+            sync_short = get_neu_sync(neu_short, win_width)
+            neu.append(sync_short)
+        if 1 in normal:
+            neu_long, _, stim_seq_long, stim_value_long, _ = get_multi_sess_neu_trial_average(
+                self.list_stim_labels, neu_cate, self.alignment,
+                trial_idx=[l[1] for l in self.list_odd_idx])
+            sync_long  = get_neu_sync(neu_long, win_width)
+            neu.append(sync_long)
         # find bounds.
-        upper = np.nanmax([sync_short, sync_long])
-        lower = np.nanmin([sync_short, sync_long])
+        upper = np.nanmax(neu)
+        lower = np.nanmin(neu)
         # plot stimulus.
-        ax.axvline(
-            stim_seq_short[int(stim_seq_short.shape[0]/2),1]+self.expect[0],
-            color=color1, lw=1, linestyle='--')
-        ax.axvline(
-            stim_seq_long[int(stim_seq_long.shape[0]/2),1]+self.expect[0],
-            color=color2, lw=1, linestyle='--')
-        for i in range(stim_seq_short.shape[0]):
-            ax.fill_between(
-                stim_seq_short[i,:],
-                lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                color=color1, alpha=0.15, step='mid')
-        for i in range(stim_seq_long.shape[0]):
-            ax.fill_between(
-                stim_seq_long[i,:],
-                lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                color=color2, alpha=0.15, step='mid')
-        self.plot_vol(
-            ax, self.alignment['stim_time'],
-            stim_value_short.reshape(1,-1), color1, upper, lower)
-        self.plot_vol(
-            ax, self.alignment['stim_time'],
-            stim_value_long.reshape(1,-1), color2, upper, lower)
+        if 0 in normal:
+            ax.axvline(
+                stim_seq_short[int(stim_seq_short.shape[0]/2),1]+self.expect[0],
+                color=color1, lw=1, linestyle='--')
+            for i in range(stim_seq_short.shape[0]):
+                ax.fill_between(
+                    stim_seq_short[i,:],
+                    lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+                    color=color1, alpha=0.15, step='mid')
+            self.plot_vol(
+                ax, self.alignment['stim_time'],
+                stim_value_short.reshape(1,-1), color1, upper, lower)
+        if 1 in normal:
+            ax.axvline(
+                stim_seq_long[int(stim_seq_long.shape[0]/2),1]+self.expect[0],
+                color=color2, lw=1, linestyle='--')
+            for i in range(stim_seq_long.shape[0]):
+                ax.fill_between(
+                    stim_seq_long[i,:],
+                    lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+                    color=color2, alpha=0.15, step='mid')
+            self.plot_vol(
+                ax, self.alignment['stim_time'],
+                stim_value_long.reshape(1,-1), color2, upper, lower)
         # plot synchronization.
-        ax.plot(self.alignment['neu_time'][win_width:], sync_short, color=color1, label='short')
-        ax.plot(self.alignment['neu_time'][win_width:], sync_long,  color=color2, label='long')
+        if 0 in normal:
+            ax.plot(self.alignment['neu_time'][win_width:], sync_short, color=color1, label='short')
+        if 1 in normal:
+            ax.plot(self.alignment['neu_time'][win_width:], sync_long,  color=color2, label='long')
         ax.tick_params(axis='y', tick1On=False)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -489,20 +497,21 @@ class plotter_utils(utils):
                 c = cmap(np.linspace(0, 1, neu_z.shape[1]))
                 ax.plot(neu_z[0,t:t+2,i], neu_z[1,t:t+2,i], neu_z[2,t:t+2,i], color=c[t,:])
             # end point.
-            ax.scatter(neu_z[0,-1,i], neu_z[1,-1,i], neu_z[2,-1,i], color='black')
+            ax.scatter(neu_z[0,0,i], neu_z[1,0,i], neu_z[2,0,i], color='black', marker='x')
+            ax.scatter(neu_z[0,-1,i], neu_z[1,-1,i], neu_z[2,-1,i], color='black', marker='o')
             # oddball isi.
             l_idx, r_idx = get_frame_idx_from_time(
-                self.alignment['neu_time'], 0, stim_seq[i][1,1], stim_seq[i][2,0])
+                self.alignment['neu_time'], 0,
+                stim_seq[i][int(stim_seq[i].shape[0]/2),1], stim_seq[i][int(stim_seq[i].shape[0]/2)+1,0])
             ax.plot(neu_z[0,l_idx:r_idx,i], neu_z[1,l_idx:r_idx,i], neu_z[2,l_idx:r_idx,i],
                     lw=4, color=colors[-1])
         cmap = LinearSegmentedColormap.from_list('', ['white', 'black'])
         adjust_layout_3d_latent(ax, neu_z, cmap, self.alignment['neu_time'], 'time since oddball ISI (ms)')
         add_legend(ax, colors, lbl, 'upper right', dim=3)
-    
-    def plot_odd_cluster(self, axs, normal, fix_jitter, cate):
-        n_clusters = 8
+
+    def plot_odd_cluster(self, axs, win_eval, normal, fix_jitter, cate):
+        n_clusters = 10
         max_clusters = 16
-        win_eval = [-2000,4000]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_eval[0], win_eval[1])
         color0, color1, color2, cmap = get_roi_label_color([cate], 0)
         neu_cate = [
@@ -609,72 +618,118 @@ class plotter_main_align_odd(plotter_utils):
         try:
             cate = -1
             label_name = self.label_names[str(cate)]
-    
+
             self.plot_odd_normal_pre(axs[0], [0], cate=cate)
             axs[0].set_title(f'response to oddball \n {label_name} (short)')
-            
+
             self.plot_odd_normal_pre(axs[1], [1], cate=cate)
             axs[1].set_title(f'response to oddball \n {label_name} (long)')
-            
+
             self.plot_odd_normal_pre(axs[2], [0,1], cate=cate)
             axs[2].set_title(f'response to oddball \n {label_name}')
-            
+
             self.plot_odd_normal_spectral(axs[3], 0, cate=cate)
             axs[3].set_title(f'response spectrogram to oddball \n {label_name} (short)')
-            
+
             self.plot_odd_normal_spectral(axs[4], 1, cate=cate)
             axs[4].set_title(f'response spectrogram to oddball \n {label_name} (long)')
-            
+
             self.plot_odd_prepost(axs[5], cate=cate)
-            axs[5].set_title(f'response to oddball stim \n {label_name}')
-    
+            axs[5].set_title(f'response to pre&post oddball stim \n {label_name}')
+
             self.plot_odd_post_box(axs[6], cate=cate)
-            axs[6].set_title(f'response to oddball stim \n {label_name}')
-            
-            self.plot_odd_decode_num_neu(axs[7], cate=cate)
+            axs[6].set_title(f'response to pre&post oddball stim \n {label_name}')
+
+            #self.plot_odd_decode_num_neu(axs[7], cate=cate)
             axs[7].set_title(f'single trial decoding accuracy for pre/short/long \n with number of neurons \n {label_name}')
-            
-            self.plot_odd_decode_slide_win(axs[8], cate=cate)
+
+            #self.plot_odd_decode_slide_win(axs[8], cate=cate)
             axs[8].set_title(f'single trial decoding accuracy for pre/short/long \n with sliding window \n {label_name}')
-        
+
         except:
             pass
-        
+
     def odd_normal_inh(self, axs):
         try:
             cate = 1
             label_name = self.label_names[str(cate)]
-            
+
             self.plot_odd_normal_pre(axs[0], [0], cate=cate)
             axs[0].set_title(f'response to oddball \n {label_name} (short)')
-            
+
             self.plot_odd_normal_pre(axs[1], [1], cate=cate)
             axs[1].set_title(f'response to oddball \n {label_name} (long)')
-            
+
             self.plot_odd_normal_pre(axs[2], [0,1], cate=cate)
             axs[2].set_title(f'response to oddball \n {label_name}')
-            
+
             self.plot_odd_normal_spectral(axs[3], 0, cate=cate)
             axs[3].set_title(f'response spectrogram to oddball \n {label_name} (short)')
-            
+
             self.plot_odd_normal_spectral(axs[4], 1, cate=cate)
             axs[4].set_title(f'response spectrogram to oddball \n {label_name} (long)')
-            
+
             self.plot_odd_prepost(axs[5], cate=cate)
             axs[5].set_title(f'response to oddball stim \n {label_name}')
-            
+
             self.plot_odd_post_box(axs[6], cate=cate)
             axs[6].set_title(f'response to oddball stim \n {label_name}')
-            
-            self.plot_odd_decode_num_neu(axs[7], cate=cate)
+
+            #self.plot_odd_decode_num_neu(axs[7], cate=cate)
             axs[7].set_title(f'single trial decoding accuracy for pre/short/long \n with number of neurons \n {label_name}')
-            
-            self.plot_odd_decode_slide_win(axs[8], cate=cate)
+
+            #self.plot_odd_decode_slide_win(axs[8], cate=cate)
             axs[8].set_title(f'single trial decoding accuracy for pre/short/long \n with sliding window \n {label_name}')
-        
+
         except:
             pass
-        
+
+    def odd_normal_pop_exc(self, axs):
+        try:
+            cate = -1
+            label_name = self.label_names[str(cate)]
+
+            self.plot_odd_sync(axs[0], [0], cate=cate)
+            axs[0].set_title(f'synchronization level to oddball \n {label_name} (short)')
+
+            self.plot_odd_sync(axs[1], [1], cate=cate)
+            axs[1].set_title(f'synchronization level to oddball \n {label_name} (long)')
+
+            self.plot_odd_sync(axs[2], [0,1], cate=cate)
+            axs[2].set_title(f'synchronization level to oddball \n {label_name}')
+
+            self.plot_odd_stim_corr(axs[3], cate=cate)
+            axs[3].set_title(f'correlation with stimulus \n {label_name}')
+
+            self.plot_odd_latent(axs[4], cate=cate)
+            axs[4].set_title(f'latent dynamics to oddball \n {label_name}')
+
+        except:
+            pass
+
+    def odd_normal_pop_inh(self, axs):
+        try:
+            cate = 1
+            label_name = self.label_names[str(cate)]
+
+            self.plot_odd_sync(axs[0], [0], cate=cate)
+            axs[0].set_title(f'synchronization level to oddball \n {label_name} (short)')
+
+            self.plot_odd_sync(axs[1], [1], cate=cate)
+            axs[1].set_title(f'synchronization level to oddball \n {label_name} (long)')
+
+            self.plot_odd_sync(axs[2], [0,1], cate=cate)
+            axs[2].set_title(f'synchronization level to oddball \n {label_name}')
+
+            self.plot_odd_stim_corr(axs[3], cate=cate)
+            axs[3].set_title(f'correlation with stimulus \n {label_name}')
+
+            self.plot_odd_latent(axs[4], cate=cate)
+            axs[4].set_title(f'latent dynamics to oddball \n {label_name}')
+
+        except:
+            pass
+
     def odd_normal_heatmap(self, axs):
         try:
             win_sort = [-500, 1500]
@@ -688,87 +743,54 @@ class plotter_main_align_odd(plotter_utils):
                 trial_idx=[l[1] for l in self.list_odd_idx])
             for i in range(4):
                 axs[i].set_xlabel('time since pre oddball stim (ms)')
-                
+
             self.plot_heatmap_neuron(axs[0], neu_short, self.alignment['neu_time'], neu_short, win_sort, labels, sig)
             axs[0].set_title('response to oddball \n (short sorted by short)')
-            
+
             self.plot_heatmap_neuron(axs[1], neu_long, self.alignment['neu_time'], neu_short, win_sort, labels, sig)
             axs[1].set_title('response to oddball \n (long sorted by short)')
-            
+
             self.plot_heatmap_neuron(axs[2], neu_short, self.alignment['neu_time'], neu_long, win_sort, labels, sig)
             axs[2].set_title('response to oddball \n (short sorted by long)')
-            
+
             self.plot_heatmap_neuron(axs[3], neu_long, self.alignment['neu_time'], neu_long, win_sort, labels, sig)
             axs[3].set_title('response to oddball \n (long sorted by long)')
-        
+
         except:
             pass
 
-    def odd_normal_pop_exc(self, axs):
-        try:
-            cate = -1
-            label_name = self.label_names[str(cate)]
-            
-            self.plot_odd_sync(axs[0], cate=cate)
-            axs[0].set_title(f'synchronization level to oddball \n {label_name}')
-    
-            self.plot_odd_stim_corr(axs[1], cate=cate)
-            axs[1].set_title(f'correlation with stimulus \n {label_name}')
-            
-            self.plot_odd_latent(axs[2], cate=cate)
-            axs[2].set_title(f'latent dynamics to oddball \n {label_name}')
-        
-        except:
-            pass
-
-    def odd_normal_pop_inh(self, axs):
-        try:
-            cate = 1
-            label_name = self.label_names[str(cate)]
-            
-            self.plot_odd_sync(axs[0], cate=cate)
-            axs[0].set_title(f'synchronization level to oddball \n {label_name}')
-            
-            self.plot_odd_stim_corr(axs[1], cate=cate)
-            axs[1].set_title(f'correlation with stimulus \n {label_name}')
-            
-            self.plot_odd_latent(axs[2], cate=cate)
-            axs[2].set_title(f'latent dynamics to oddball \n {label_name}')
-        
-        except:
-            pass
-        
     def odd_cluster_exc(self, axs):
         try:
+            win_eval = [-100,2000]
             cate = -1
             label_name = self.label_names[str(cate)]
-            
-            self.plot_odd_cluster(axs, 0, 0, cate=cate)
+
+            self.plot_odd_cluster(axs, win_eval, 0, 0, cate=cate)
             axs[0].set_title(f'sorted correlation matrix \n (normal) {label_name}')
             axs[1].set_title(f'clustering evaluation \n (normal) {label_name}')
             axs[2].set_title(f'cross cluster correlation \n (normal) {label_name}')
             axs[3].set_title(f'cluster fraction \n (normal) {label_name}')
-            axs[4].set_title(f'clustering response \n (normal) {label_name}')
+            axs[4].set_title(f'[{win_eval[0]},{win_eval[1]}] ms clustering response \n (normal) {label_name}')
             axs[5].set_title(f'clustering response \n (short oddball) {label_name}')
             axs[6].set_title(f'clustering response \n (long oddball) {label_name}')
 
         except:
             pass
-    
+
     def odd_cluster_inh(self, axs):
         try:
+            win_eval = [-100,2000]
             cate = 1
             label_name = self.label_names[str(cate)]
-            
-            self.plot_odd_cluster(axs, 0, 0, cate=cate)
+
+            self.plot_odd_cluster(axs, win_eval, 0, 0, cate=cate)
             axs[0].set_title(f'sorted correlation matrix \n (normal) {label_name}')
             axs[1].set_title(f'clustering evaluation \n (normal) {label_name}')
             axs[2].set_title(f'cross cluster correlation \n (normal) {label_name}')
             axs[3].set_title(f'cluster fraction \n (normal) {label_name}')
-            axs[4].set_title(f'clustering response \n (normal) {label_name}')
+            axs[4].set_title(f'[{win_eval[0]},{win_eval[1]}] ms clustering response \n (normal) {label_name}')
             axs[5].set_title(f'clustering response \n (short oddball) {label_name}')
             axs[6].set_title(f'clustering response \n (long oddball) {label_name}')
-        
+
         except:
             pass
-        

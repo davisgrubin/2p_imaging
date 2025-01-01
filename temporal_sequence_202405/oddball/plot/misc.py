@@ -118,7 +118,7 @@ def plot_roi_significance(ax, significance, roi_id):
     ax.set_xticks(np.arange(len(labels)))
     ax.set_xticklabels(labels, rotation='vertical')
 
-    
+
 # isi distribution
 def plot_isi_distribution(ax, list_neural_trials):
     stim_labels = np.concatenate([nt['stim_labels'] for nt in list_neural_trials], axis=0)
@@ -185,7 +185,7 @@ def plot_normal_type(ax, list_neural_trials):
         autopct='%1.1f%%',
         wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
     ax.set_title('fraction of normal types')
-    
+
 # fix jitter type distribution
 def plot_fix_jitter_type(ax, list_neural_trials):
     stim_labels = np.concatenate([nt['stim_labels'] for nt in list_neural_trials], axis=0)

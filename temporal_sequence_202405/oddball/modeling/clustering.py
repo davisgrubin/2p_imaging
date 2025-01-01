@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+from collections import Counter
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 from sklearn.metrics import calinski_harabasz_score
@@ -34,9 +35,15 @@ def clustering_neu_response_mode(
         'davies_bouldin': norm01(np.array(davies_bouldin_scores)),
         'inertia': norm01(np.array(inertia_values)),
         }
+    # fit the clustering model.
     neu_corr = np.corrcoef(neu[:,l_idx:r_idx])
     model = KMeans(n_clusters)
     cluster_id = model.fit_predict(neu_corr)
+    # relabel based on the number of elements.
+    unique, counts = np.unique(cluster_id, return_counts=True)
+    sorted_labels = unique[np.argsort(-counts)]
+    mapping = {val: i for i, val in enumerate(sorted_labels)}
+    cluster_id = np.vectorize(mapping.get)(cluster_id)
     return metrics, cluster_id
 
 # compute sorted correlation matrix.

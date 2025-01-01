@@ -76,22 +76,22 @@ def run(session_config):
         odd_normal_axs01+= [plt.subplot(gs[10, i+6]) for i in range(6)]
         odd_normal_axs02 = [plt.subplot(gs[11, 0:2]), plt.subplot(gs[11, 2:4]), plt.subplot(gs[11, 4:6])]
         odd_normal_axs02+= [plt.subplot(gs[11, i+6]) for i in range(6)]
-        odd_normal_axs03 = [plt.subplot(gs[12:14, i]) for i in range(4)]
-        odd_normal_axs04 = [plt.subplot(gs[12, 4:6]), plt.subplot(gs[12, 6])]
-        odd_normal_axs04+= [plt.subplot(gs[12, 7], projection='3d')]
-        odd_normal_axs05 = [plt.subplot(gs[13, 4:6]), plt.subplot(gs[13, 6])]
-        odd_normal_axs05+= [plt.subplot(gs[13, 7], projection='3d')]
+        odd_normal_axs03 = [plt.subplot(gs[12, 0:2]), plt.subplot(gs[12, 2:4]), plt.subplot(gs[12, 4:6])]
+        odd_normal_axs03+= [plt.subplot(gs[12, 6]), plt.subplot(gs[12, 7], projection='3d')]
+        odd_normal_axs04 = [plt.subplot(gs[13, 0:2]), plt.subplot(gs[13, 2:4]), plt.subplot(gs[13, 4:6])]
+        odd_normal_axs04+= [plt.subplot(gs[13, 6]), plt.subplot(gs[13, 7], projection='3d')]
+        odd_normal_axs05 = [plt.subplot(gs[12:14, i+8]) for i in range(4)]
         plotter_align_odd.odd_normal_exc(odd_normal_axs01)
         plotter_align_odd.odd_normal_inh(odd_normal_axs02)
-        plotter_align_odd.odd_normal_heatmap(odd_normal_axs03)
-        plotter_align_odd.odd_normal_pop_exc(odd_normal_axs04)
-        plotter_align_odd.odd_normal_pop_inh(odd_normal_axs05)
+        plotter_align_odd.odd_normal_pop_exc(odd_normal_axs03)
+        plotter_align_odd.odd_normal_pop_inh(odd_normal_axs04)
+        plotter_align_odd.odd_normal_heatmap(odd_normal_axs05)
         # cluster analysis.
         cluster_axs01 = [
             plt.subplot(gs[15:18, 0:3]),
             plt.subplot(gs[15, 3]), plt.subplot(gs[16, 3]), plt.subplot(gs[17, 3]),
             plt.subplot(gs[15:18, 4]), plt.subplot(gs[15:18, 5]), plt.subplot(gs[15:18, 6])]
-        cluster_axs02 = [       
+        cluster_axs02 = [
             plt.subplot(gs[18:21, 0:3]),
             plt.subplot(gs[18, 3]), plt.subplot(gs[19, 3]), plt.subplot(gs[20, 3]),
             plt.subplot(gs[18:21, 4]), plt.subplot(gs[18:21, 5]), plt.subplot(gs[18:21, 6])]
@@ -193,14 +193,13 @@ def run(session_config):
     print('File saved as '+os.path.join('results', session_config['output_filename']))
 
 if __name__ == "__main__":
-    
+
     session_config = {
         'list_session_name' : {
-            'VT02_PPC_20241129_seq1131_t' : 'oddball',
-            'VT02_PPC_20241130_seq1131_t' : 'oddball',
-            'VT02_PPC_20241201_seq1131_t' : 'oddball',
-            'VT02_PPC_20241205_seq1131_t' : 'oddball',
-            'VT02_PPC_20241209_seq1131_t' : 'oddball',
+            'FN14_PPC_20241129_seq1131_t' : 'oddball',
+            'FN14_PPC_20241130_seq1131_t' : 'oddball',
+            'FN14_PPC_20241202_seq1131_t' : 'oddball',
+            'FN14_PPC_20241209_seq1131_t' : 'oddball',
             },
         'sig_tag' : 'all',
         'label_names' : {
@@ -208,10 +207,10 @@ if __name__ == "__main__":
             '1':'inhibitory'
             },
         'force_label' : None,
-        'output_filename' : 'VT02_PPC_oddball.pdf'
+        'output_filename' : 'FN14_PPC_oddball.pdf'
         }
     run(session_config)
-    
+
     '''
 
     session_config = {
@@ -230,7 +229,7 @@ if __name__ == "__main__":
         'output_filename' : 'FN14_PPC_oddball.pdf'
         }
     run(session_config)
-    
+
     session_config = {
         'list_session_name' : {
             'VT02_PPC_20241129_seq1131_t' : 'oddball',
@@ -248,7 +247,7 @@ if __name__ == "__main__":
         'output_filename' : 'VT02_PPC_oddball.pdf'
         }
     run(session_config)
-    
+
     session_config = {
         'list_session_name' : {
             'E4LG_CRBL_crux2_20241202_seq1131_t' : 'crux2',
@@ -265,7 +264,7 @@ if __name__ == "__main__":
         'output_filename' : 'E4LG_CRBL_oddball.pdf'
         }
     run(session_config)
-    
+
     list_session_data_path = [
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240627_seq1130_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240701_seq1130_t',
@@ -275,7 +274,7 @@ if __name__ == "__main__":
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240710_seq1130_t',
         'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20241021_seq1131_t',
         ]
-    
+
     list_session_data_path = [
         os.path.join('results', n)
         for n in session_config['list_session_name'].keys()]
@@ -286,6 +285,6 @@ if __name__ == "__main__":
 
     ops = list_ops[0]
     plt.plot(vol_time, vol_stim_vis)
-    
+
     run(list_session_data_path, 'sig')
     '''

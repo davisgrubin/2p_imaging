@@ -197,7 +197,7 @@ def get_multi_sess_neu_trial_average(
     # compute trial average and concatenate.
     if mean_sem:
         mean = [np.nanmean(n, axis=0) for n in neu]
-        sem  = [np.nanstd(n, axis=0)/np.sqrt(np.sum(~np.isnan(n), axis=0)) for n in neu]    
+        sem  = [np.nanstd(n, axis=0)/np.sqrt(np.sum(~np.isnan(n), axis=0)) for n in neu]
         mean = np.concatenate(mean, axis=0)
         sem  = np.concatenate(sem, axis=0)
         stim_seq   = np.mean(np.concatenate(stim_seq, axis=0),axis=0)
@@ -315,15 +315,17 @@ def adjust_layout_3d_latent(ax, neu_z, cmap, neu_time, cbar_label):
     ax.yaxis.pane.fill = False
     ax.zaxis.pane.fill = False
     cbar = ax.figure.colorbar(
-        plt.cm.ScalarMappable(cmap=cmap), ax=ax, ticks=[0.2,0.5,0.8],
+        plt.cm.ScalarMappable(cmap=cmap), ax=ax, ticks=[0.0,0.2,0.5,0.8,1.0],
         shrink=0.5, aspect=25)
     cbar.outline.set_visible(False)
     cbar.ax.set_ylabel(cbar_label, rotation=-90, va='bottom')
     cbar.ax.set_yticklabels(
-        [int(neu_time[int(len(neu_time)*0.2)]),
-         int(neu_time[int(len(neu_time)*0.5)]),
-         int(neu_time[int(len(neu_time)*0.8)])], rotation=-90)
-    
+        ['\u2716',
+         str(int(neu_time[int(len(neu_time)*0.2)])),
+         str(int(neu_time[int(len(neu_time)*0.5)])),
+         str(int(neu_time[int(len(neu_time)*0.8)])),
+         '\u25CF'], rotation=-90)
+
 # add legend into subplots.
 def add_legend(ax, colors, labels, loc, dim=2):
     if dim == 2:
@@ -493,7 +495,7 @@ class utils:
         ax.spines['top'].set_visible(False)
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         add_legend(ax, [color2,color1], ['model','chance'], 'upper left')
-    
+
     def plot_cluster_mean_sem(self, ax, neu_mean, neu_sem, norm_params, stim_seq, c, colors):
         for i in range(stim_seq.shape[0]):
             ax.fill_between(
@@ -514,7 +516,7 @@ class utils:
         ax.set_xlabel('time since stim (ms)')
         ax.set_ylabel('df/f (z-scored)')
         ax.set_ylim([-0.1, neu_mean.shape[0]+0.1])
-            
+
     def plot_heatmap_trials(self, ax, neu_seq, neu_time, cmap, norm=True):
         if not np.isnan(np.sum(neu_seq)) and len(neu_seq)>0:
             if len(neu_seq.shape) == 3:
