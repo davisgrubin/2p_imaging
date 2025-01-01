@@ -149,13 +149,13 @@ def run(session_config):
     print('===============================================')
     print('============= trials segmentation =============')
     print('===============================================')
-    #for ops in list_ops:
-    #    Trialization.run(ops)
+    for ops in list_ops:
+        Trialization.run(ops)
     print('===============================================')
     print('============== significance test ==============')
     print('===============================================')
-    #for ops in list_ops:
-    #    StatTest.run(ops)
+    for ops in list_ops:
+        StatTest.run(ops)
     print('===============================================')
     print('============ reading saved results ============')
     print('===============================================')
@@ -196,10 +196,12 @@ if __name__ == "__main__":
 
     session_config = {
         'list_session_name' : {
-            'FN14_PPC_20241129_seq1131_t' : 'oddball',
-            'FN14_PPC_20241130_seq1131_t' : 'oddball',
-            'FN14_PPC_20241202_seq1131_t' : 'oddball',
-            'FN14_PPC_20241209_seq1131_t' : 'oddball',
+            'FN14_P_20240627_seq1130_t' : 'oddball',
+            'FN14_P_20240701_seq1130_t' : 'oddball',
+            'FN14_P_20240702_seq1130_t' : 'oddball',
+            'FN14_P_20240705_seq1130_t' : 'oddball',
+            'FN14_P_20240708_seq1131_t' : 'oddball',
+            'FN14_P_20240710_seq1130_t' : 'oddball',
             },
         'sig_tag' : 'all',
         'label_names' : {
@@ -207,7 +209,7 @@ if __name__ == "__main__":
             '1':'inhibitory'
             },
         'force_label' : None,
-        'output_filename' : 'FN14_PPC_oddball.pdf'
+        'output_filename' : 'FN14_PPC_oddball_old.pdf'
         }
     run(session_config)
 
@@ -226,7 +228,26 @@ if __name__ == "__main__":
             '1':'inhibitory'
             },
         'force_label' : None,
-        'output_filename' : 'FN14_PPC_oddball.pdf'
+        'output_filename' : 'FN14_PPC_oddball_new.pdf'
+        }
+    run(session_config)
+    
+    session_config = {
+        'list_session_name' : {
+            'FN14_P_20240627_seq1130_t' : 'oddball',
+            'FN14_P_20240701_seq1130_t' : 'oddball',
+            'FN14_P_20240702_seq1130_t' : 'oddball',
+            'FN14_P_20240705_seq1130_t' : 'oddball',
+            'FN14_P_20240708_seq1131_t' : 'oddball',
+            'FN14_P_20240710_seq1130_t' : 'oddball',
+            },
+        'sig_tag' : 'all',
+        'label_names' : {
+            '-1':'excitatory',
+            '1':'inhibitory'
+            },
+        'force_label' : None,
+        'output_filename' : 'FN14_PPC_oddball_old.pdf'
         }
     run(session_config)
 
@@ -265,15 +286,6 @@ if __name__ == "__main__":
         }
     run(session_config)
 
-    list_session_data_path = [
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240627_seq1130_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240701_seq1130_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240702_seq1130_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240705_seq1130_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240708_seq1131_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20240710_seq1130_t',
-        'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_P_20241021_seq1131_t',
-        ]
 
     list_session_data_path = [
         os.path.join('results', n)
@@ -286,5 +298,4 @@ if __name__ == "__main__":
     ops = list_ops[0]
     plt.plot(vol_time, vol_stim_vis)
 
-    run(list_session_data_path, 'sig')
     '''

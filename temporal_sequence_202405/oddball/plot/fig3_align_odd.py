@@ -469,7 +469,7 @@ class plotter_utils(utils):
     def plot_odd_latent(self, ax, cate=None):
         d_latent = 3
         _, color1, color2, _ = get_roi_label_color([cate], 0)
-        colors = [color1, color2, 'grey']
+        colors = [color1, color2, 'gold']
         lbl = ['short', 'long', 'oddball ISI']
         neu_cate = [
             self.alignment['list_neu_seq'][i][:,(self.list_labels[i]==cate)*self.list_significance[i]['r_normal'],:]
@@ -504,7 +504,7 @@ class plotter_utils(utils):
                 self.alignment['neu_time'], 0,
                 stim_seq[i][int(stim_seq[i].shape[0]/2),1], stim_seq[i][int(stim_seq[i].shape[0]/2)+1,0])
             ax.plot(neu_z[0,l_idx:r_idx,i], neu_z[1,l_idx:r_idx,i], neu_z[2,l_idx:r_idx,i],
-                    lw=4, color=colors[-1])
+                    lw=4, color=colors[-1], linestyle=':')
         cmap = LinearSegmentedColormap.from_list('', ['white', 'black'])
         adjust_layout_3d_latent(ax, neu_z, cmap, self.alignment['neu_time'], 'time since oddball ISI (ms)')
         add_legend(ax, colors, lbl, 'upper right', dim=3)

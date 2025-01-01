@@ -40,8 +40,6 @@ class plotter_utils(utils):
         self.r_frames = int(120*timescale)
         self.list_stim_labels = [
             nt['stim_labels'][2:-2,:] for nt in list_neural_trials]
-        self.list_stim_labels = [
-            exclude_odd_stim(sl) for sl in self.list_stim_labels]
         self.list_labels = list_labels
         self.epoch_early = [get_epoch_idx(sl)[0] for sl in self.list_stim_labels]
         self.epoch_late  = [get_epoch_idx(sl)[1] for sl in self.list_stim_labels]
@@ -60,7 +58,8 @@ class plotter_utils(utils):
             neu_cate = [np.expand_dims(self.alignment['list_neu_seq'][0][:,roi_id,:], axis=1)]
         # collect data.
         neu_short, _, stim_seq_short, stim_value_short, _ = get_multi_sess_neu_trial_average(
-            self.list_stim_labels, neu_cate, self.alignment,
+            [exclude_odd_stim(sl) for sl in self.list_stim_labels],
+            neu_cate, self.alignment,
             trial_param=[[2,3,4,5], [0], [fix_jitter], None, [0]])
         mean_short, sem_short = get_mean_sem(neu_short)
         # compute bounds.
@@ -88,7 +87,8 @@ class plotter_utils(utils):
             self.alignment['list_neu_seq'][i][:,(self.list_labels[i]==cate)*self.list_significance[i]['r_normal'],:]
             for i in range(self.n_sess)]
         neu_x, _, _, _, _ = get_multi_sess_neu_trial_average(
-            self.list_stim_labels, neu_cate, self.alignment,
+            [exclude_odd_stim(sl) for sl in self.list_stim_labels],
+            neu_cate, self.alignment,
             trial_param=[[2,3,4,5], [0], [fix_jitter], None, [0]])
         # wavelet decomposition.
         neu_cwt = [
@@ -113,7 +113,8 @@ class plotter_utils(utils):
             for i in range(self.n_sess)]
         # collect data.
         neu_x, _, stim_seq, _, _ = get_multi_sess_neu_trial_average(
-            self.list_stim_labels, neu_cate, self.alignment,
+            [exclude_odd_stim(sl) for sl in self.list_stim_labels],
+            neu_cate, self.alignment,
             trial_param=[[2,3,4,5], [0], [fix_jitter], None, [0]])
         # fit model.
         model = TSNE(n_components=d_latent)
@@ -145,7 +146,8 @@ class plotter_utils(utils):
         color0, color1, color2, _ = get_roi_label_color([cate], 0)
         # collect data.
         neu_short, _, stim_seq_short, stim_value_short, _ = get_multi_sess_neu_trial_average(
-            self.list_stim_labels, neu_cate, self.alignment,
+            [exclude_odd_stim(sl) for sl in self.list_stim_labels],
+            neu_cate, self.alignment,
             trial_param=[[2,3,4,5], [0], [fix_jitter], None, [0]])
         # compute synchronization.
         sync_short = get_neu_sync(neu_short, win_width)
@@ -181,7 +183,8 @@ class plotter_utils(utils):
         neu_x = []
         for img_id in [2,3,4,5]:
             neu, _, _, _, _ = get_multi_sess_neu_trial_average(
-                self.list_stim_labels, neu_cate, self.alignment,
+                [exclude_odd_stim(sl) for sl in self.list_stim_labels],
+                neu_cate, self.alignment,
                 trial_param=[[img_id], [normal], [fix_jitter], None, [0]])
             neu = neu[~np.isnan(np.sum(neu,axis=1)),:]
             neu_x.append(np.expand_dims(neu,axis=2))
@@ -232,7 +235,8 @@ class plotter_utils(utils):
         neu_x = []
         for img_id in [2,3,4,5]:
             neu, _, _, _, _ = get_multi_sess_neu_trial_average(
-                self.list_stim_labels, neu_cate, self.alignment,
+                [exclude_odd_stim(sl) for sl in self.list_stim_labels],
+                neu_cate, self.alignment,
                 trial_param=[[img_id], [normal], [fix_jitter], None, [0]])
             neu = neu[~np.isnan(np.sum(neu,axis=1)),:]
             neu_x.append(np.expand_dims(neu,axis=2))
@@ -271,7 +275,8 @@ class plotter_utils(utils):
         neu_x = []
         for img_id in [2,3,4,5]:
             neu, _, _, _, _ = get_multi_sess_neu_trial_average(
-                self.list_stim_labels, neu_cate, self.alignment,
+                [exclude_odd_stim(sl) for sl in self.list_stim_labels],
+                neu_cate, self.alignment,
                 trial_param=[[img_id], [normal], [fix_jitter], None, [0]])
             neu = neu[~np.isnan(np.sum(neu,axis=1)),:]
             neu_x.append(np.expand_dims(neu,axis=2))
@@ -310,7 +315,8 @@ class plotter_utils(utils):
         neu_x = []
         for img_id in [2,3,4,5]:
             neu, _, _, _ = get_multi_sess_neu_trial_average(
-                self.list_stim_labels, neu_cate, self.alignment,
+                [exclude_odd_stim(sl) for sl in self.list_stim_labels],
+                neu_cate, self.alignment,
                 trial_param=[[img_id], [normal], [fix_jitter], None, [0]],
                 mean_sem=False)
             neu_x.append(neu)
@@ -344,7 +350,8 @@ class plotter_utils(utils):
         neu_x = []
         for img_id in [2,3,4,5]:
             neu, _, _, _, _ = get_multi_sess_neu_trial_average(
-                self.list_stim_labels, neu_cate, self.alignment,
+                [exclude_odd_stim(sl) for sl in self.list_stim_labels],
+                neu_cate, self.alignment,
                 trial_param=[[img_id], [normal], [fix_jitter], None, [0]])
             neu = neu[~np.isnan(np.sum(neu,axis=1)),:]
             neu_x.append(np.expand_dims(neu,axis=2))
@@ -383,7 +390,8 @@ class plotter_utils(utils):
         neu_x = []
         for img_id in [2,3,4,5]:
             neu, _, _, _ = get_multi_sess_neu_trial_average(
-                self.list_stim_labels, neu_cate, self.alignment,
+                [exclude_odd_stim(sl) for sl in self.list_stim_labels],
+                neu_cate, self.alignment,
                 trial_param=[[img_id], [normal], [fix_jitter], None, [0]],
                 mean_sem=False)
             neu_x.append(neu)
