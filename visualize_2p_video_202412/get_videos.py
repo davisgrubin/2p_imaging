@@ -15,34 +15,38 @@ import tifffile
 # generate video for dff traces.
 def save_dff_video(args):
     window_size = 2000
-    colors = ['royalblue', 'crimson']
+    colors = ['mediumseagreen', 'crimson']
     labels = [str(x) for x in args.labels.strip('[]').split(',')]
-    # initialize animation.
+    # initialize animation
     def init():
-        for line in lines:
-            line.set_data([], [])
-        vertical_line.set_xdata(0)
-        time_text.set_text('')
-        return lines + [vertical_line, time_text]
-    # animation function.
-    def update(frame):
-        start_idx = max(0, frame - window_size // 2)
-        end_idx = min(len(time), start_idx + window_size)
+        start_idx = 0
+        end_idx = min(len(time), window_size)
         for i, line in enumerate(lines):
-            x_window = time[start_idx:end_idx] - time[frame]
+            x_window = time[start_idx:end_idx] - time[start_idx]
             y_window = dff[i, start_idx:end_idx]
             line.set_data(x_window, y_window)
         vertical_line.set_xdata(0)
-        time_text.set_text(f't = {time[frame]:.2f} s')
+        time_text.set_text(f't = {time[start_idx]:.2f} s')
         return lines + [vertical_line, time_text]
-    # prepare data.
+    # animation function
+    def update(frame):
+        start_idx = max(0, frame)
+        end_idx = min(len(time), start_idx + window_size)
+        for i, line in enumerate(lines):
+            x_window = time[start_idx:end_idx] - time[frame+window_size//2]
+            y_window = dff[i, start_idx:end_idx]
+            line.set_data(x_window, y_window)
+        vertical_line.set_xdata(0)
+        time_text.set_text(f't = {time[frame+window_size//2]:.2f} s')
+        return lines + [vertical_line, time_text]
+    # prepare data
     dff = np.load(os.path.join('./', 'results', 'temp_data', 'dff.npy'), allow_pickle=True)
-    time = np.load(os.path.join('./', 'results', 'temp_data', 'time_img.npy'), allow_pickle=True)/1000
+    time = np.load(os.path.join('./', 'results', 'temp_data', 'time_img.npy'), allow_pickle=True) / 1000
     roi_labels = np.load(os.path.join('./', 'results', 'temp_data', 'roi_labels.npy'), allow_pickle=True)
     for i in range(dff.shape[0]):
-        dff[i,:] = (dff[i,:] - np.nanmin(dff[i,:])) / (np.nanmax(dff[i,:]) - np.nanmin(dff[i,:]) + 1e-5)
-        dff[i,:] += i
-    # set canvas.
+        dff[i, :] = (dff[i, :] - np.nanmin(dff[i, :])) / (np.nanmax(dff[i, :]) - np.nanmin(dff[i, :]) + 1e-5)
+        dff[i, :] += i
+    # set canvas
     fig, ax = plt.subplots(1, 1, figsize=(4, dff.shape[0]), layout='tight')
     fig.patch.set_facecolor('black')
     lines = [ax.plot([], [], lw=2, color=colors[roi_labels[i]])[0] for i in range(dff.shape[0])]
@@ -57,21 +61,22 @@ def save_dff_video(args):
     ax.spines['top'].set_visible(False)
     ax.spines['bottom'].set_color('white')
     ax.set_xlim(-10, 10)
-    ax.set_ylim(-0.5, dff.shape[0]+0.5)
-    ax.set_xlabel('time (ms)', color='white')
+    ax.set_ylim(-0.5, dff.shape[0] + 0.5)
+    ax.set_xlabel('time (s)', color='white')
     handles = [
-        ax.plot([], lw=0, color=colors[i], label=labels[i])[0] 
+        ax.plot([], lw=0, color=colors[i], label=labels[i])[0]
         for i in range(len(labels))
-        if labels[i] != None]
+        if labels[i] is not None]
     ax.legend(
         loc='upper right',
         handles=handles,
         labelcolor='linecolor',
         frameon=False,
         framealpha=0)
-    # set anime.
-    ani = animation.FuncAnimation(fig, update, frames=len(time), init_func=init, blit=True)
+    # set anime
+    ani = animation.FuncAnimation(fig, update, frames=len(time)-+window_size//2, init_func=init, blit=True)
     ani.save(os.path.join('./results', 'traces.mp4'), fps=args.fps, dpi=300)
+
 
 # automatical adjustment of contrast.
 def adjust_video_contrast(video, lower_percentile=25, upper_percentile=99):
@@ -111,5 +116,5 @@ if __name__ == "__main__":
     parser.add_argument('--fps',    required=True, type=int, help='Frame rate per second.')
     args = parser.parse_args()
 
-    save_fov_video(args)
+    #save_fov_video(args)
     save_dff_video(args)

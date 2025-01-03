@@ -22,7 +22,7 @@ python ./SRDTrans/test.py `
 
 python get_videos.py `
 --labels '[exc, inh]' `
---fps 30`
+--fps 30 `
 ```
 
 # Update note
