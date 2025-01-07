@@ -9,7 +9,7 @@ python run_suite2p_pipeline.py `
 --save_path './results/FN14_P_20240507_odd_t' `
 --nchannels 2 `
 --functional_chan 2 `
---brain_region 'ppc' `
+--target_structure 'neuron' `
 ```
 
 Run on linux server:
@@ -179,3 +179,7 @@ Results will be in ./Results
 
 ## 2024.09.28
 - Added 2p stimulation voltage recording.
+
+## 2025.01.07
+- Replaced brain_region with target_structure and modifiedw json files.
+- Deleted figures folder creation.

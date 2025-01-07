@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem-per-cpu=256G
+#SBATCH --mem-per-cpu=192G
 #SBATCH --time=6:00:00
 #SBATCH --output=Report_%A-%a.out
 #SBATCH --mail-user=hilberthuang05@gatech.edu
@@ -14,8 +14,8 @@ source activate suite2p
 python run_suite2p_pipeline.py \
 --denoise 0 \
 --spatial_scale 1 \
---data_path './testdata/C2' \
---save_path './results/C2' \
+--data_path '' \
+--save_path '' \
 --nchannels 2 \
 --functional_chan 2 \
---brain_region 'ppc' \
+--target_structure 'neuron' \
