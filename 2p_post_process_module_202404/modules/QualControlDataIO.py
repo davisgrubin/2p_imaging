@@ -5,9 +5,7 @@ import h5py
 import numpy as np
 from skimage.measure import label
 
-
 # read raw results from suite2p pipeline.
-
 def read_raw(ops):
     F = np.load(
         os.path.join(ops['save_path0'],
@@ -20,9 +18,7 @@ def read_raw(ops):
         'suite2p', 'plane0', 'stat.npy'), allow_pickle=True)
     return [F, Fneu, stat]
 
-
 # get metrics for ROIs.
-
 def get_metrics(ops, stat):
     # rearrange existing statistics for masks.
     # https://suite2p.readthedocs.io/en/latest/outputs.html#stat-npy-fields
@@ -41,9 +37,7 @@ def get_metrics(ops, stat):
     connect = np.array(connect)
     return skew, connect, aspect, compact, footprint
 
-
 # threshold the statistics to keep good ROIs.
-
 def thres_stat(
         ops, stat,
         range_skew,
@@ -74,9 +68,7 @@ def thres_stat(
     bad_roi_id = np.array(list(bad_roi_id))
     return bad_roi_id
 
-
 # reset bad ROIs in the masks to nothing.
-
 def reset_roi(
         bad_roi_id,
         F, Fneu, stat
@@ -94,9 +86,7 @@ def reset_roi(
     stat = stat[good_roi_id]
     return fluo, neuropil, stat
 
-
 # save results into npy files.
-
 def save_qc_results(
         ops,
         fluo, neuropil, stat, masks
@@ -109,9 +99,7 @@ def save_qc_results(
     np.save(os.path.join(ops['save_path0'], 'qc_results', 'masks.npy'), masks)
     np.save(os.path.join(ops['save_path0'], 'ops.npy'), ops)
 
-
 # convert stat.npy results to ROI masks matrix.
-
 def stat_to_masks(ops, stat):
     masks = np.zeros((ops['Ly'], ops['Lx']))
     for n in range(len(stat)):
@@ -120,9 +108,7 @@ def stat_to_masks(ops, stat):
         masks[ypix,xpix] = n+1
     return masks
 
-
 # save motion correction offsets.
-
 def save_move_offset(ops):
     xoff = ops['xoff']
     yoff = ops['yoff']
@@ -131,9 +117,7 @@ def save_move_offset(ops):
     f['yoff'] = yoff
     f.close()
 
-
 # main function for quality control.
-
 def run(
         ops,
         range_skew, max_connect, max_aspect, range_compact, range_footprint,

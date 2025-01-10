@@ -53,23 +53,22 @@ if __name__ == "__main__":
          range_footprint] = get_qc_args(args)
         ops = read_ops(args.session_data_path)
     else:
-        session_data_path = 'C:/Users/yhuang887/Projects/temporal_sequence_202405/oddball/results/FN14_PPC_20241209_seq1131_t'
+        session_data_path = 'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/VTYH02_PPC_20250108_3331Random'
         ops = read_ops(session_data_path)
         '''
-        range_skew = [0,5]
-        max_connect = 5
+        range_skew = [1,2]
+        max_connect = 1
         max_aspect = 55
-        range_footprint = [0,2]
-        range_compact = [1.06,5]
+        range_footprint = [1,1]
+        range_compact = [1.05,5]
         diameter = 6
         '''
         range_skew = [-5,5]
         max_connect = 1
         max_aspect = 5
         range_footprint = [1,2]
-        range_compact = [0,1.06]
+        range_compact = [0,1.05]
         diameter = 6
-
     '''
     QualControlDataIO.run(
         ops, range_skew, max_connect, max_aspect, range_compact, range_footprint,
