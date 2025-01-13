@@ -6,9 +6,10 @@ import matplotlib.pyplot as plt
 from modules.Alignment import run_get_stim_response
 from utils import get_bin_idx
 from utils import get_mean_sem
-from utils import get_base_mean_win
+from utils import get_mean_sem_win
 from utils import get_neu_trial
 from utils import get_frame_idx_from_time
+from utils import get_epoch_idx
 from utils import get_isi_bin_neu
 from utils import get_neu_sync
 from utils import get_cmap_color
@@ -43,7 +44,7 @@ class plotter_utils(utils_basic):
     
     def plot_random_stim(self, ax, cate=None, roi_id=None):
         # collect data.
-        [color0, _, color2, _], [neu_seq, _, stim_seq, stim_value, _] = get_neu_trial(
+        [color0, _, color2, _], [neu_seq, _, stim_seq, stim_value], [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             cate=cate, roi_id=roi_id)
@@ -63,14 +64,14 @@ class plotter_utils(utils_basic):
         adjust_layout_neu(ax)
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         ax.set_xlabel('time since stim (ms)')
-        add_legend(ax, [color0, color2], ['stim', 'dff'], 'upper right')
+        add_legend(ax, [color0, color2], ['stim', 'dff'], n_trials, n_neurons, 'upper right')
     
     def plot_random_sync(self, ax, cate):
         win_width = 200
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, win_width)
         win_width = r_idx - l_idx
         # collect data.
-        [color0, _, color2, _], [neu_seq, _, stim_seq, stim_value, _] = get_neu_trial(
+        [color0, _, color2, _], [neu_seq, _, stim_seq, stim_value], [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             cate=cate)
@@ -93,10 +94,11 @@ class plotter_utils(utils_basic):
         ax.set_ylabel('sync level')
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         ax.set_xlabel('time since stim (ms)')
+        add_legend(ax, [color0, color2], ['stim', 'sync'], n_trials, n_neurons, 'upper right')
 
     def plot_random_interval(self, ax, cate=None, roi_id=None):
         # collect data.
-        [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi] = get_neu_trial(
+        [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             mean_sem=False,
@@ -127,13 +129,13 @@ class plotter_utils(utils_basic):
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         ax.set_xlabel('time since stim (ms)')
         lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
-        add_legend(ax, colors, lbl, 'upper right')
+        add_legend(ax, colors, lbl, n_trials, n_neurons, 'upper right')
 
     def plot_random_interval_box(self, ax, cate=None, roi_id=None):
         win_base = [-self.bin_win[1],0]
         offsets = np.arange(self.bin_num)/20
         # collect data.
-        [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi] = get_neu_trial(
+        [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             mean_sem=False,
@@ -149,11 +151,11 @@ class plotter_utils(utils_basic):
                 colors[i], 0, offsets[i])
         # adjust layout.
         lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
-        add_legend(ax, colors, lbl, 'upper right')
+        add_legend(ax, colors, lbl, n_trials, n_neurons, 'upper right')
 
     def plot_random_interval_heatmap(self, ax, cate=None, roi_id=None):
         # collect data.
-        [_, _, _, cmap], [neu_seq, stim_seq, stim_value, pre_isi] = get_neu_trial(
+        [_, _, _, cmap], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             mean_sem=False,
@@ -183,13 +185,13 @@ class plotter_utils(utils_basic):
         idx = np.arange(1, heatmap.shape[0], heatmap.shape[0]/5, dtype='int32') + int(heatmap.shape[0]/5/2)
         ax.set_yticks(idx)
         ax.set_yticklabels(pre_isi[np.argsort(pre_isi)][idx][::-1].astype('int32'))
-    
+
     def plot_random_interval_curve(self, ax, cate=None, roi_id=None):
         win_base = [-self.bin_win[1],0]
-        win_eval = [0,200]
-        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_eval[0], win_eval[1])
+        win_evoke = [200,400]
+        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_evoke[0], win_evoke[1])
         # collect data.
-        [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi] = get_neu_trial(
+        [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             mean_sem=False,
@@ -198,11 +200,12 @@ class plotter_utils(utils_basic):
         neu_seq = np.concatenate([np.nanmean(n,axis=1) for n in neu_seq],axis=0)
         pre_isi = np.concatenate(pre_isi)
         # get evoked response.
-        neu_baseline = [get_base_mean_win(n.reshape(1, -1), self.alignment['neu_time'], 0, win_base)
-                    for n in neu_seq]
+        neu_baseline, _ = get_mean_sem_win(
+            neu_seq.reshape(-1, neu_seq.shape[-1]),
+            self.alignment['neu_time'], 0, win_base[0], win_base[1], mode='lower')
         neu_evoke = np.nanmean(neu_seq[:,l_idx:r_idx],axis=1) - neu_baseline
-        bins, bin_center, bin_idx = get_bin_idx(pre_isi, self.bin_win, self.bin_num)
         # bin response data.
+        bins, bin_center, bin_idx = get_bin_idx(pre_isi, self.bin_win, self.bin_num)
         neu_mean = []
         neu_sem = []
         for i in range(self.bin_num):
@@ -223,10 +226,55 @@ class plotter_utils(utils_basic):
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.set_xlabel('preceeding interval (ms)')
-        ax.set_ylabel('response magnitude during [{},{}] ms'.format(
-            win_eval[0], win_eval[1]))
+        ax.set_ylabel('response magnitude during \n [{},{}] ms'.format(
+            win_evoke[0], win_evoke[1]))
         ax.set_xlim(self.bin_win)
+        add_legend(ax, None, None, n_trials, n_neurons, 'upper right')
 
+    def plot_random_interval_corr_epoch(self, ax, cate=None, roi_id=None):
+        win_base = [-self.bin_win[1],0]
+        win_evoke = [200,400]
+        epoch_len = 200
+        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_evoke[0], win_evoke[1])
+        # collect data.
+        [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_param=[[2,3,4,5], None, None, None, [1], [0]],
+            mean_sem=False,
+            cate=cate, roi_id=roi_id)
+        # divide into epoch.
+        epoch_idx = [get_epoch_idx(sl, 'random', epoch_len) for sl in self.list_stim_labels]
+        epoch_idx = np.concatenate(epoch_idx)
+        # average across neurons.
+        neu_seq = np.concatenate([np.nanmean(n,axis=1) for n in neu_seq],axis=0)
+        pre_isi = np.concatenate(pre_isi)
+        # get evoked response.
+        neu_baseline = np.array([get_mean_sem_win(
+            n.reshape(-1, n.shape[-1]),
+            self.alignment['neu_time'], 0, win_base[0], win_base[1], mode='lower')[0]
+            for n in neu_seq])
+        neu_evoke = np.array([get_mean_sem_win(
+            n.reshape(-1, n.shape[-1]),
+            self.alignment['neu_time'], 0, win_evoke[0], win_evoke[1], mode='higher')[0]
+            for n in neu_seq])
+        neu_evoke -= neu_baseline
+        # compute correlations.
+        corr = []
+        for i in np.unique(epoch_idx)[:-1]:
+            c = np.corrcoef(neu_evoke[epoch_idx==i], pre_isi[epoch_idx==i])[0,1]
+            corr.append(c)
+        corr = np.array(corr)
+        # plot results.
+        ax.plot(np.unique(epoch_idx)[:-1], corr, color=color2)
+        # adjust layout.
+        ax.tick_params(tick1On=False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.set_xlabel('epoch')
+        ax.set_ylabel('correlation score during \n [{},{}] ms'.format(
+            win_evoke[0], win_evoke[1]))
+        ax.set_xlim([-1, np.nanmax(np.unique(epoch_idx))+1])
+        add_legend(ax, None, None, n_trials, n_neurons, 'upper right')
 
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
@@ -255,7 +303,10 @@ class plotter_main(plotter_utils):
             axs[4].set_title(f'response to random preceeding interval heatmap \n {label_name}')
             
             self.plot_random_interval_curve(axs[5], cate=cate)
-            axs[5].set_title(f'response to random preceeding interval scatter \n {label_name}')
+            axs[5].set_title(f'evoked response to random VS interval \n {label_name}')
+            
+            self.plot_random_interval_corr_epoch(axs[6], cate=cate)
+            axs[6].set_title(f'response and interval correlation across epochs \n {label_name}')
 
         except: pass
 
@@ -271,15 +322,18 @@ class plotter_main(plotter_utils):
             axs[1].set_title(f'response to random stim synchronization level \n {label_name}')
             
             self.plot_random_interval(axs[2], cate=cate)
-            axs[2].set_title(f'response to random preceeding interval with bins \n {label_name}')
+            axs[2].set_title(f'response to random preceeding interval \n {label_name}')
             
             self.plot_random_interval_box(axs[3], cate=cate)
-            axs[3].set_title(f'response to random preceeding interval with bins \n {label_name}')
+            axs[3].set_title(f'response to random preceeding interval \n {label_name}')
             
             self.plot_random_interval_heatmap(axs[4], cate=cate)
             axs[4].set_title(f'response to random preceeding interval heatmap \n {label_name}')
             
             self.plot_random_interval_curve(axs[5], cate=cate)
-            axs[5].set_title(f'response to random preceeding interval scatter \n {label_name}')
+            axs[5].set_title(f'evoked response to random VS interval \n {label_name}')
+            
+            self.plot_random_interval_corr_epoch(axs[6], cate=cate)
+            axs[6].set_title(f'response and interval correlation across epochs \n {label_name}')
 
         except: pass

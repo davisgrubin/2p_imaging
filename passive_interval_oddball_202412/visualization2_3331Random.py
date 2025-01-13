@@ -81,8 +81,8 @@ def run(
         plot_stim_label(trial_ax02, list_neural_trials)
         # neural alignments.
         print('Plotting neural traces alignments')
-        random_axs01 = [plt.subplot(gs[0, i+6]) for i in range(6)]
-        random_axs02 = [plt.subplot(gs[1, i+6]) for i in range(6)]
+        random_axs01 = [plt.subplot(gs[0, i+6]) for i in range(7)]
+        random_axs02 = [plt.subplot(gs[1, i+6]) for i in range(7)]
         plotter.random_exc(random_axs01)
         plotter.random_inh(random_axs02)
         # save temp file.

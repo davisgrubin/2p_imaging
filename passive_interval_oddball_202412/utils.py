@@ -33,23 +33,27 @@ def get_bin_idx(data, bin_win, bin_num):
     bin_idx = np.digitize(data, bins) - 1
     return bins, bin_center, bin_idx
 
-# compute baseline within given time window.
-def get_base_mean_win(neu_seq, neu_time, c_time, win_base):
+# compute mean and sem for average df/f within given time window.
+def get_mean_sem_win(neu_seq, neu_time, c_time, l_time, r_time, mode='mean'):
     pct = 25
     l_idx, r_idx = get_frame_idx_from_time(
-        neu_time, c_time, win_base[0], win_base[1])
-    neu = neu_seq[:, l_idx:r_idx].copy().reshape(-1)
-    neu = neu[neu<np.nanpercentile(neu, pct)]
-    mean_base = np.nanmean(neu)
-    return mean_base
-
-# compute mean and sem across trials for mean df/f within given time window.
-def get_mean_sem_win(neu_seq, neu_time, c_time, l_time, r_time):
-    l_idx, r_idx = get_frame_idx_from_time(
         neu_time, c_time, l_time, r_time)
-    neu_win_mean = np.nanmean(neu_seq[:, l_idx:r_idx], axis=1)
-    neu_mean = np.nanmean(neu_win_mean)
-    std = np.nanstd(neu_win_mean, axis=0)
+    neu_win = neu_seq[:, l_idx:r_idx].copy()
+    neu_win_mean = np.nanmean(neu_win, axis=1)
+    # mean values in the window.
+    if mode == 'mean':
+        neu = neu_win_mean
+    # values lower than percentile in the window.
+    if mode == 'lower':
+        neu = neu_win.reshape(-1)
+        neu = neu[neu<np.nanpercentile(neu, pct)]
+    # values higher than percentile in the window.
+    if mode == 'higher':
+        neu = neu_win.reshape(-1)
+        neu = neu[neu>np.nanpercentile(neu, pct)]
+    # compute mean and sem.
+    neu_mean = np.nanmean(neu)
+    std = np.nanstd(neu)
     count = np.nansum(~np.isnan(neu_win_mean), axis=0)
     neu_sem = std / np.sqrt(count)
     return neu_mean, neu_sem
@@ -132,6 +136,9 @@ def get_multi_sess_neu_trial_average(
             stim_seq.append(alignment['list_stim_seq'][i][trial_idx[i]*idx,:,:])
             stim_value.append(alignment['list_stim_value'][i][trial_idx[i]*idx,:])
             pre_isi.append(alignment['list_pre_isi'][i][trial_idx[i]*idx])
+    # get numbers.
+    n_trials = np.nansum([n.shape[0] for n in neu])
+    n_neurons = np.nansum([n.shape[1] for n in neu])
     # compute trial average and concatenate.
     if mean_sem:
         mean = [np.nanmean(n, axis=0) for n in neu]
@@ -140,10 +147,10 @@ def get_multi_sess_neu_trial_average(
         sem  = np.concatenate(sem, axis=0)
         stim_seq   = np.mean(np.concatenate(stim_seq, axis=0),axis=0)
         stim_value = np.mean(np.concatenate(stim_value, axis=0),axis=0)
-        return mean, sem, stim_seq, stim_value, None
+        return [mean, sem, stim_seq, stim_value], [n_trials, n_neurons]
     # return single trial response.
     else:
-        return neu, stim_seq, stim_value, pre_isi
+        return [neu, stim_seq, stim_value, pre_isi], [n_trials, n_neurons]
 
 # find neuron category and trial data.
 def get_neu_trial(
@@ -159,10 +166,10 @@ def get_neu_trial(
     if roi_id != None:
         colors = get_roi_label_color(list_labels, roi_id)
         neu_cate = [np.expand_dims(alignment['list_neu_seq'][0][:,roi_id,:], axis=1)]
-    neu_trial = get_multi_sess_neu_trial_average(
+    neu_trial, neu_num = get_multi_sess_neu_trial_average(
         list_stim_labels, neu_cate, alignment,
         trial_idx=trial_idx, trial_param=trial_param, mean_sem=mean_sem)
-    return colors, neu_trial
+    return colors, neu_trial, neu_num
 
 # compute indice with givn time window for df/f.
 def get_frame_idx_from_time(timestamps, c_time, l_time, r_time):
@@ -175,15 +182,23 @@ def get_sub_time_idx(time, start, end):
     idx = np.where((time >= start) &(time <= end))[0]
     return idx
 
-# find index for each epoch.
-def get_epoch_idx(stim_labels):
-    num_early_trials = 50
-    switch_idx = np.where(np.diff(stim_labels[:,3], prepend=1-stim_labels[:,3][0])!=0)[0]
-    epoch_early = np.zeros_like(stim_labels[:,3], dtype='bool')
-    for start in switch_idx:
-        epoch_early[start:start+num_early_trials] = True
-    epoch_late = ~epoch_early
-    return epoch_early, epoch_late
+# find index for epoch.
+def get_epoch_idx(stim_labels, target, epoch_len):
+    # divide indice for random consecutively.
+    if target == 'random':
+        num_epoch = stim_labels.shape[0] // epoch_len
+        epoch_idx = np.full(stim_labels.shape[0], np.nan, dtype=float)
+        for i in range(num_epoch):
+            epoch_idx[i * epoch_len: (i + 1) * epoch_len] = i
+        return epoch_idx
+    else:
+        num_early_trials = 50
+        switch_idx = np.where(np.diff(stim_labels[:,3], prepend=1-stim_labels[:,3][0])!=0)[0]
+        epoch_early = np.zeros_like(stim_labels[:,3], dtype='bool')
+        for start in switch_idx:
+            epoch_early[start:start+num_early_trials] = True
+        epoch_late = ~epoch_early
+        return epoch_early, epoch_late
 
 # get index for short/long or pre/post.
 def get_odd_stim_prepost_idx(stim_labels):
@@ -421,33 +436,20 @@ def adjust_layout_3d_latent(ax, neu_z, cmap, neu_time, cbar_label):
          int(neu_time[int(len(neu_time)*0.8)])], rotation=-90)
 
 # add legend into subplots.
-def add_legend(ax, colors, labels, loc, dim=2):
+def add_legend(ax, colors, labels, n_trials, n_neurons, loc, dim=2):
     if dim == 2:
-        handles = [
-            ax.plot([], lw=0, color=colors[i], label=labels[i])[0]
-            for i in range(len(labels))]
+        plot_args = [[],[]]
     if dim == 3:
-        handles = [
-            ax.plot([],[],[], lw=0, color=colors[i], label=labels[i])[0]
+        plot_args = [[],[],[]]
+    handles = []
+    if colors != None and labels != None:
+        handles += [
+            ax.plot(*plot_args, lw=0, color=colors[i], label=labels[i])[0]
             for i in range(len(labels))]
-    ax.legend(
-        loc=loc,
-        handles=handles,
-        labelcolor='linecolor',
-        frameon=False,
-        framealpha=0)
-
-# add number of trials and neurons into subplots.
-def add_number(ax, n_neuron, n_trials, loc, dim=2):
-    fig, ax = plt.subplots(1, 1, figsize=(6, 6))
-    if dim == 2:
-        handles = [
-            ax.plot([], lw=0, color='black', label=r'$n_{neuron}=$'+str(n_neuron))[0],
-            ax.plot([], lw=0, color='black', label=r'$n_{trial}=$'+str(n_trials))[0]]
-    if dim == 3:
-        handles = [
-            ax.plot([],[],[], lw=0, color='black', label=r'$n_{neuron}=$'+str(n_neuron))[0],
-            ax.plot([],[],[], lw=0, color='black', label=r'$n_{trial}=$'+str(n_trials))[0]]
+    if n_trials != None and n_neurons != None:
+        handles += [
+            ax.plot(*plot_args, lw=0, color='black', label=r'$n_{trial}=$'+str(n_trials))[0],
+            ax.plot(*plot_args, lw=0, color='black', label=r'$n_{neuron}=$'+str(n_neurons))[0]]
     ax.legend(
         loc=loc,
         handles=handles,
@@ -519,21 +521,22 @@ class utils_basic:
                     cbar_inh.ax.set_yticklabels(['0.2', '0.8'], rotation=-90)
 
     def plot_win_mag_box(self, ax, neu_seq, neu_time, win_base, color, c_time, offset):
+        # compute response within window.
         win_early = [0,250]
         win_late  = [250,500]
-        baseline = get_base_mean_win(
-            neu_seq.reshape(-1, neu_seq.shape[-1]), neu_time, c_time, win_base)
-        [mean_late, sem_late] = get_mean_sem_win(
-            neu_seq.reshape(-1, neu_seq.shape[-1]),
-            neu_time, c_time, win_late[0], win_late[1])
-        [mean_early, sem_early] = get_mean_sem_win(
-            neu_seq.reshape(-1, neu_seq.shape[-1]),
-            neu_time, c_time, win_early[0], win_early[1])
-        mean_early -= baseline
-        mean_late  -= baseline
         [mean_base, sem_base] = get_mean_sem_win(
             neu_seq.reshape(-1, neu_seq.shape[-1]),
-            neu_time, c_time, win_base[0], win_base[1])
+            neu_time, c_time, win_base[0], win_base[1], mode='lower')
+        [mean_early, sem_early] = get_mean_sem_win(
+            neu_seq.reshape(-1, neu_seq.shape[-1]),
+            neu_time, c_time, win_early[0], win_early[1], mode='higher')
+        [mean_late, sem_late] = get_mean_sem_win(
+            neu_seq.reshape(-1, neu_seq.shape[-1]),
+            neu_time, c_time, win_late[0], win_late[1], mode='mean')
+        # corrected with baseline.
+        mean_early -= mean_base
+        mean_late  -= mean_base
+        # plot errorbar.
         ax.errorbar(
             0 + offset,
             mean_base, sem_base,
@@ -552,6 +555,7 @@ class utils_basic:
             color=color,
             capsize=2, marker='o', linestyle='none',
             markeredgecolor='white', markeredgewidth=0.1)
+        # adjust layout.
         ax.tick_params(tick1On=False)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)

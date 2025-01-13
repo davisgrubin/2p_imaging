@@ -111,6 +111,7 @@ if __name__ == "__main__":
             'VTYH01_PPC_20250106_3331Random' : 'random',
             'VTYH01_PPC_20250107_3331Random' : 'random',
             'VTYH01_PPC_20250108_3331Random' : 'random',
+            'VTYH01_PPC_20250109_3331Random' : 'random',
             },
         'sig_tag' : 'all',
         'label_names' : {
@@ -125,6 +126,7 @@ if __name__ == "__main__":
             'VTYH02_PPC_20250106_3331Random' : 'random',
             'VTYH02_PPC_20250107_3331Random' : 'random',
             'VTYH02_PPC_20250108_3331Random' : 'random',
+            'VTYH02_PPC_20250109_3331Random' : 'random',
             },
         'sig_tag' : 'all',
         'label_names' : {
@@ -139,6 +141,7 @@ if __name__ == "__main__":
             'VTYH03_PPC_20250106_3331Random' : 'random',
             'VTYH03_PPC_20250107_3331Random' : 'random',
             'VTYH03_PPC_20250108_3331Random' : 'random',
+            'VTYH03_PPC_20250109_3331Random' : 'random',
             },
         'sig_tag' : 'all',
         'label_names' : {
