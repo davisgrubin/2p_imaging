@@ -92,8 +92,8 @@ def save_significance(
 def run(ops):
     print('Aligning neural population response')
     neural_trials = read_neural_trials(ops)
-    stim_labels = neural_trials['stim_labels'][2:-2,:]
-    [neu_seq, neu_time, _, _, _, _, _] = get_stim_response(
+    stim_labels = neural_trials['stim_labels']
+    [stim_labels, neu_seq, neu_time, _, _, _, _, _] = get_stim_response(
             neural_trials, 100, 200)
     print('Running statistics test')
     r_standard = stat_test_standard(neu_seq, neu_time, stim_labels)

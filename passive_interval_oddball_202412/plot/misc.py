@@ -5,15 +5,6 @@ from utils import get_roi_label_color
 
 # fig, ax = plt.subplots(1, 1, figsize=(6, 6))
 
-# used session names.
-def plot_sess_name(ax, sess_names, title):
-    for i, name in enumerate(sess_names):
-        ax.text(0, len(sess_names)-i-1, name, ha='left', va='center', fontsize=12)
-    ax.set_axis_off()
-    ax.set_xlim(0, 1)
-    ax.set_ylim(-10, len(sess_names))
-    ax.set_title(title)
-
 # motion correction offsets.
 def plot_motion_offset_hist(ax, list_move_offset):
     xoff = np.concatenate([l[0] for l in list_move_offset])

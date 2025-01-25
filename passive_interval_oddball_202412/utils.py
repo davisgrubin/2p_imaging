@@ -2,9 +2,14 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.cluster import AgglomerativeClustering
+from scipy.cluster.hierarchy import dendrogram
 from scipy.spatial.distance import pdist
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.colors import to_hex
+
+from modeling.clustering import get_sorted_corr_mat
+from modeling.clustering import get_cross_corr
 
 #%% general data processing
 
@@ -73,13 +78,13 @@ def get_mean_sem(data, zero_start=False):
 def pick_trial(
         stim_labels,
         img_seq_label,
-        normal_types,
+        standard_types,
         fix_jitter_types,
         oddball_types,
         random_types,
         opto_types):
     idx1 = np.isin(stim_labels[:,2], img_seq_label)    if img_seq_label    else np.ones_like(stim_labels[:,2])
-    idx2 = np.isin(stim_labels[:,3], normal_types)     if normal_types     else np.ones_like(stim_labels[:,3])
+    idx2 = np.isin(stim_labels[:,3], standard_types)   if standard_types   else np.ones_like(stim_labels[:,3])
     idx3 = np.isin(stim_labels[:,4], fix_jitter_types) if fix_jitter_types else np.ones_like(stim_labels[:,4])
     idx4 = np.isin(stim_labels[:,5], oddball_types)    if oddball_types    else np.ones_like(stim_labels[:,5])
     idx5 = np.isin(stim_labels[:,6], random_types)     if random_types     else np.ones_like(stim_labels[:,6])
@@ -182,6 +187,17 @@ def get_sub_time_idx(time, start, end):
     idx = np.where((time >= start) &(time <= end))[0]
     return idx
 
+# get index for the first trial of block transition.
+def get_block_1st_idx(stim_labels, target, prepost='post'):
+    if prepost == 'pre':
+        diff = np.diff(stim_labels[:,target], prepend=stim_labels[:,target][0])
+    if prepost == 'post':
+        diff = np.diff(stim_labels[:,target], prepend=stim_labels[:,target][:2])
+        diff = diff[:-1]
+    idx_0 = (diff==-1) * (stim_labels[:,target]==0)
+    idx_1 = (diff==1) * (stim_labels[:,target]==1)
+    return idx_0, idx_1
+
 # find index for epoch.
 def get_epoch_idx(stim_labels, target, epoch_len):
     # divide indice for random consecutively.
@@ -200,10 +216,10 @@ def get_epoch_idx(stim_labels, target, epoch_len):
         epoch_late = ~epoch_early
         return epoch_early, epoch_late
 
-# get index for short/long or pre/post.
+# get index for pre/post short/long oddball.
 def get_odd_stim_prepost_idx(stim_labels):
-    idx_pre_short = (stim_labels[:,2]==-1) * (stim_labels[:,5]==0)
-    idx_pre_long  = (stim_labels[:,2]==-1) * (stim_labels[:,5]==1)
+    idx_pre_short = (stim_labels[:,2]==-1) * (stim_labels[:,5]==0) * (stim_labels[:,6]==0)
+    idx_pre_long  = (stim_labels[:,2]==-1) * (stim_labels[:,5]==1) * (stim_labels[:,6]==0)
     idx_post_short = np.zeros_like(idx_pre_short)
     idx_post_short[1:] = idx_pre_short[:-1]
     idx_post_long = np.zeros_like(idx_pre_long)
@@ -372,15 +388,18 @@ def get_roi_label_color(labels, roi_id):
     return color0, color1, color2, cmap
 
 # return colors from dim to dark with a base color.
-def get_cmap_color(n_colors, base_color=None, cmap=None):
+def get_cmap_color(n_colors, base_color=None, cmap=None, return_cmap=False):
     if base_color != None:
         cmap = LinearSegmentedColormap.from_list(
             None, ['#FCFCFC', base_color, '#2C2C2C'])
     if cmap != None:
         pass
-    colors = cmap((np.arange(n_colors)+1)/n_colors)
+    colors = cmap((np.arange(n_colors+1)+1)/(n_colors+1))[:-1,:]
     colors = [to_hex(color, keep_alpha=True) for color in colors]
-    return colors
+    if return_cmap:
+        return cmap, colors
+    else:
+        return colors
 
 # normalize and apply colormap.
 def apply_colormap(data, cmap):
@@ -426,14 +445,16 @@ def adjust_layout_3d_latent(ax, neu_z, cmap, neu_time, cbar_label):
     ax.yaxis.pane.fill = False
     ax.zaxis.pane.fill = False
     cbar = ax.figure.colorbar(
-        plt.cm.ScalarMappable(cmap=cmap), ax=ax, ticks=[0.2,0.5,0.8],
+        plt.cm.ScalarMappable(cmap=cmap), ax=ax, ticks=[0.0,0.2,0.5,0.8,1.0],
         shrink=0.5, aspect=25)
     cbar.outline.set_visible(False)
     cbar.ax.set_ylabel(cbar_label, rotation=-90, va='bottom')
     cbar.ax.set_yticklabels(
-        [int(neu_time[int(len(neu_time)*0.2)]),
-         int(neu_time[int(len(neu_time)*0.5)]),
-         int(neu_time[int(len(neu_time)*0.8)])], rotation=-90)
+        ['\u2716',
+         str(int(neu_time[int(len(neu_time)*0.2)])),
+         str(int(neu_time[int(len(neu_time)*0.5)])),
+         str(int(neu_time[int(len(neu_time)*0.8)])),
+         '\u25CF'], rotation=-90)
 
 # add legend into subplots.
 def add_legend(ax, colors, labels, n_trials, n_neurons, loc, dim=2):
@@ -609,47 +630,129 @@ class utils_basic:
         ax.spines['top'].set_visible(False)
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         add_legend(ax, [color2,color1], ['model','chance'], 'upper left')
+    
+    def plot_cluster_info(
+            self, axs, colors, cmap, neu_seq, neu_x,
+            n_clusters, max_clusters,
+            metrics, cluster_id):
+        # plot sorted correlation matrix.
+        def plot_sorted_corr(ax, neu_seq, cluster_id):
+            sorted_neu_corr = get_sorted_corr_mat(neu_seq, cluster_id)
+            ax.imshow(sorted_neu_corr, cmap=cmap)
+            ax.set_xlabel('neuron id')
+            ax.set_ylabel('neuron id')
+            ax.spines['left'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.spines['bottom'].set_visible(False)
+            ax.set_xticks([])
+            ax.set_yticks([])
+        plot_sorted_corr(axs[0], neu_seq, cluster_id)
+        # plot cross cluster correlations.
+        def plot_cross_corr(ax, cluster_id):
+            cluster_corr = get_cross_corr(neu_seq, n_clusters, cluster_id)
+            mask = np.tril(np.ones_like(cluster_corr, dtype=bool), k=0)
+            masked_corr = np.where(mask, cluster_corr, np.nan)
+            ax.matshow(masked_corr, interpolation='nearest', cmap=cmap)
+            ax.tick_params(bottom=False, top=False, labelbottom=True, labeltop=False)
+            ax.spines['left'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.spines['bottom'].set_visible(False)
+            ax.set_xticks(np.arange(n_clusters))
+            ax.set_yticks(np.arange(n_clusters))
+            ax.set_xlabel('cluster id')
+            ax.set_ylabel('cluster id')
+            for i in range(cluster_corr.shape[0]):
+                for j in range(cluster_corr.shape[1]):
+                    if not np.isnan(masked_corr[i, j]):
+                        ax.text(j, i, f'{masked_corr[i, j]:.2f}',
+                                    ha='center', va='center', color='grey')
+        plot_cross_corr(axs[1], cluster_id)
+        # plot clustering metrics.
+        def plot_metrics(ax, metrics):
+            c = ['cornflowerblue', 'mediumseagreen', 'hotpink', 'coral']
+            lbl = ['silhouette', 'calinski_harabasz', 'davies_bouldin', 'inertia']
+            for i in range(4):
+                ax.plot(metrics['n_clusters'], metrics[lbl[i]], color=c[i], label=lbl[i])
+            ax.tick_params(tick1On=False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.set_xlabel('n_clusters')
+            ax.set_ylabel('normalized value')
+            ax.set_xlim(2, max_clusters)
+            ax.set_xticks(metrics['n_clusters'][::2])
+            add_legend(ax, c, lbl, None, None, 'upper left')
+        plot_metrics(axs[2], metrics)
+        # plot fraction of each cluster.
+        def plot_cluster_fraction(ax, cluster_id):
+            num = [np.sum(cluster_id==i) for i in np.unique(cluster_id)]
+            ax.pie(
+                num,
+                labels=[str(num[i])+' cluster # '+str(i) for i in range(n_clusters)],
+                colors=colors,
+                autopct='%1.1f%%',
+                wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+        plot_cluster_fraction(axs[3], cluster_id)
+        # plot dendrogram of a hierarchical clustering.
+        def plot_dendrogram(ax):
+            p=5
+            # run hierarchical clustering.
+            model = AgglomerativeClustering(distance_threshold=0, n_clusters=None)
+            model.fit(neu_x)
+            # create the counts of samples under each node.
+            counts = np.zeros(model.children_.shape[0])
+            n_samples = len(model.labels_)
+            for i, merge in enumerate(model.children_):
+                current_count = 0
+                for child_idx in merge:
+                    if child_idx < n_samples:
+                        current_count += 1
+                    else:
+                        current_count += counts[child_idx - n_samples]
+                counts[i] = current_count
+            # create linkage matrix.
+            linkage_matrix = np.column_stack([model.children_, model.distances_, counts]).astype(float)
+            # plot dendrogram.
+            dendrogram(linkage_matrix, truncate_mode='level', p=p, ax=ax)
+            # adjust layout.
+            ax.tick_params(tick1On=False)
+            ax.spines['left'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.set_xlabel('number of points in node')
+            ax.set_yticks([])
+        plot_dendrogram(axs[4])
 
-    def plot_cluster_mean_sem(self, ax, neu_mean, neu_sem, norm_params, stim_seq, c, colors):
+    def plot_cluster_mean_sem(self, ax, neu_mean, neu_sem, norm_params, stim_seq, c_stim, c_neu):
         for i in range(stim_seq.shape[0]):
             ax.fill_between(
                 stim_seq[i,:],
                 0-0.1*neu_mean.shape[0], neu_mean.shape[0]+0.1*neu_mean.shape[0],
-                color=c, alpha=0.15, step='mid')
+                color=c_stim[i], alpha=0.15, step='mid')
         for i in range(neu_mean.shape[0]):
             a, b = norm_params[i]
             self.plot_mean_sem(
                 ax, self.alignment['neu_time'],
                 (a*neu_mean[i,:]+b)+neu_mean.shape[0]-i-1, np.abs(a)*neu_sem[i,:],
-                colors[i], None)
+                c_neu[i], None)
         ax.tick_params(axis='y', tick1On=False)
         ax.spines['left'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.set_yticks([])
-        ax.set_xlabel('time since stim (ms)')
         ax.set_ylabel('df/f (z-scored)')
         ax.set_ylim([-0.1, neu_mean.shape[0]+0.1])
-
-    def plot_heatmap_trials(self, ax, neu_seq, neu_time, cmap, norm=True):
-        if not np.isnan(np.sum(neu_seq)) and len(neu_seq)>0:
-            if len(neu_seq.shape) == 3:
-                mean = np.mean(neu_seq, axis=1)
-            else:
-                mean = neu_seq
-            if norm:
-                for i in range(mean.shape[0]):
-                    mean[i,:] = norm01(mean[i,:])
-            zero = np.searchsorted(neu_time, 0)
-            img = ax.imshow(
-                mean, interpolation='nearest', aspect='auto', cmap=cmap)
-            adjust_layout_heatmap(ax)
-            ax.set_ylabel('trial id')
-            ax.axvline(zero, color='black', lw=1, linestyle='--')
-            ax.set_xticks([0, zero, len(neu_time)])
-            ax.set_xticklabels([int(neu_time[0]), 0, int(neu_time[-1])])
-            ax.set_yticks([0, int(mean.shape[0]/3), int(mean.shape[0]*2/3), int(mean.shape[0])])
-            ax.set_yticklabels([0, int(mean.shape[0]/3), int(mean.shape[0]*2/3), int(mean.shape[0])])
-            cbar = ax.figure.colorbar(img, ax=ax, ticks=[0.2,0.8], aspect=100)
-            cbar.ax.set_ylabel('normalized response', rotation=-90, va="bottom")
-            cbar.ax.set_yticklabels(['0.2', '0.8'])
+    
+    def plot_3d_latent_dynamics(self, ax, neu_z, stim_seq, c_neu, c_stim):
+        # plot dynamics.
+        for t in range(neu_z.shape[1]-1):
+            # trajaectory.
+            ax.plot(neu_z[0,t:t+2], neu_z[1,t:t+2], neu_z[2,t:t+2], color=c_neu[t])
+        # end point.
+        ax.scatter(neu_z[0,0], neu_z[1,0], neu_z[2,0], color='black', marker='x')
+        ax.scatter(neu_z[0,-1], neu_z[1,-1], neu_z[2,-1], color='black', marker='o')
+        # stimulus.
+        for j in range(stim_seq.shape[0]):
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, stim_seq[j,0], stim_seq[j,1])
+            ax.plot(neu_z[0,l_idx:r_idx], neu_z[1,l_idx:r_idx], neu_z[2,l_idx:r_idx], lw=4, color=c_stim[j])

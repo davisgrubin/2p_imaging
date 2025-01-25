@@ -48,7 +48,6 @@ def adjust_layout(ax):
     ax.set_xticks([])
     ax.set_yticks([])
 
-
 class plotter_main_masks:
     
     def __init__(
@@ -70,7 +69,7 @@ class plotter_main_masks:
         self.unsure_masks_img = get_labeled_masks_img(masks, labels, 0)
         self.size = 128
         self.roi_row, self.roi_col = get_roi_range(self.size, masks)
-        
+
     # functional channel.
     def plot_func(self, ax, img, with_mask=True):
         if img == 'mean':

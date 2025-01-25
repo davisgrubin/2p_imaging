@@ -2,8 +2,16 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 
 from modules.Alignment import run_get_stim_response
+from modeling.clustering import clustering_neu_response_mode
+from modeling.clustering import get_mean_sem_cluster
+from modeling.generative import interp_input_seq
+from modeling.generative import fit_glm
+from modeling.generative import get_coding_score
+from modeling.generative import get_explain_variance
+from utils import get_norm01_params
 from utils import get_bin_idx
 from utils import get_mean_sem
 from utils import get_mean_sem_win
@@ -20,6 +28,7 @@ from utils import add_legend
 from utils import utils_basic
 
 # fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+# fig, axs = plt.subplots(1, 5, figsize=(30, 6))
 # fig, ax = plt.subplots(1, 1, figsize=(6, 6), subplot_kw={"projection": "3d"})
 
 class plotter_utils(utils_basic):
@@ -30,17 +39,18 @@ class plotter_utils(utils_basic):
             ):
         super().__init__()
         timescale = 1.0
-        self.bin_win = [500,2500]
-        self.bin_num = 8
         self.n_sess = len(list_neural_trials)
         self.l_frames = int(100*timescale)
         self.r_frames = int(80*timescale)
-        self.list_stim_labels = [
-            nt['stim_labels'][2:-2,:] for nt in list_neural_trials]
         self.list_labels = list_labels
         self.alignment = run_get_stim_response(
                 list_neural_trials, self.l_frames, self.r_frames, expected='none')
+        self.list_stim_labels = self.alignment['list_stim_labels']
         self.list_significance = list_significance
+        self.bin_win = [500,2500]
+        self.bin_num = 4
+        self.n_clusters = 3
+        self.max_clusters = 20
     
     def plot_random_stim(self, ax, cate=None, roi_id=None):
         # collect data.
@@ -220,7 +230,7 @@ class plotter_utils(utils_basic):
             neu_mean,
             neu_sem,
             color=color2, capsize=2, marker='o', linestyle='none',
-            markeredgecolor='white', markeredgewidth=1, label='excitory')
+            markeredgecolor='white', markeredgewidth=1)
         # adjust layout.
         ax.tick_params(tick1On=False)
         ax.spines['right'].set_visible(False)
@@ -234,7 +244,7 @@ class plotter_utils(utils_basic):
     def plot_random_interval_corr_epoch(self, ax, cate=None, roi_id=None):
         win_base = [-self.bin_win[1],0]
         win_evoke = [200,400]
-        epoch_len = 200
+        epoch_len = 500
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_evoke[0], win_evoke[1])
         # collect data.
         [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
@@ -275,7 +285,194 @@ class plotter_utils(utils_basic):
             win_evoke[0], win_evoke[1]))
         ax.set_xlim([-1, np.nanmax(np.unique(epoch_idx))+1])
         add_legend(ax, None, None, n_trials, n_neurons, 'upper right')
-
+    
+    def plot_random_cluster(self, axs, cate=None):
+        n_latents = 25
+        # collect data.
+        [color0, color1, color2, cmap], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_param=[[2,3,4,5], None, None, None, [1], [0]],
+            mean_sem=False,
+            cate=cate, roi_id=None)
+        # bin data based on isi.
+        [bins, bin_center, bin_neu_seq, _, _, bin_stim_seq, bin_stim_value] = get_isi_bin_neu(
+            neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
+        colors = get_cmap_color(self.n_clusters, cmap=plt.cm.nipy_spectral_r)
+        # construct features for clustering.
+        def prepare_data():
+            # get correlation matrix within each bin.
+            bin_corr = []
+            for i in range(self.bin_num):
+                # take timestamps with interval+image+interval.
+                l_idx, r_idx = get_frame_idx_from_time(
+                    self.alignment['neu_time'], 0, -bins[i], self.bin_win[0])
+                # compute correlation matrix.
+                bin_corr.append(np.corrcoef(bin_neu_seq[i][:,l_idx:r_idx]))
+            # combine all correlation matrix.
+            bin_corr = np.concatenate(bin_corr, axis=1)
+            # extract features.
+            model = PCA(n_components=n_latents)
+            neu_x = model.fit_transform(bin_corr)
+            return neu_x
+        neu_x = prepare_data()
+        # run clustering on extracted correlation.
+        def run_clustering():
+            metrics, cluster_id = clustering_neu_response_mode(
+                neu_x, self.n_clusters, self.max_clusters)
+            return metrics, cluster_id
+        metrics, cluster_id = run_clustering()
+        # plot basic clustering results.
+        def plot_info(axs):
+            neu = [np.nanmean(n, axis=0) for n in neu_seq]
+            neu = np.concatenate(neu, axis=0)
+            self.plot_cluster_info(
+                axs, colors, cmap, neu, neu_x,
+                self.n_clusters, self.max_clusters,
+                metrics, cluster_id)
+        plot_info(axs[:5])
+        # plot interval response for all clusters.
+        def plot_interval(ax, cluster_id):
+            # get response within cluster at each bin.
+            cluster_bin_neu_mean = [get_mean_sem_cluster(neu, cluster_id)[0] for neu in bin_neu_seq]
+            cluster_bin_neu_sem  = [get_mean_sem_cluster(neu, cluster_id)[1] for neu in bin_neu_seq]
+            # organize into bin_num*n_clusters*time.
+            cluster_bin_neu_mean = [np.expand_dims(neu, axis=0) for neu in cluster_bin_neu_mean]
+            cluster_bin_neu_sem  = [np.expand_dims(neu, axis=0) for neu in cluster_bin_neu_sem]
+            cluster_bin_neu_mean = np.concatenate(cluster_bin_neu_mean, axis=0)
+            cluster_bin_neu_sem  = np.concatenate(cluster_bin_neu_sem, axis=0)
+            norm_params = [get_norm01_params(cluster_bin_neu_mean[:,i,:]) for i in range(self.n_clusters)]
+            # get line colors for each cluster.
+            cs = [get_cmap_color(self.bin_num, base_color=c) for c in colors]
+            # convert to colors for each bin.
+            cs = [[cs[i][j] for i in range(self.n_clusters)] for j in range(self.bin_num)]
+            # get overall colors.
+            cs_all = get_cmap_color(self.bin_num, base_color='silver')
+            lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
+            # only keep 2 stimulus.
+            c_idx = int(bin_stim_seq.shape[1]/2)
+            stim_seq = bin_stim_seq[:,c_idx-1:c_idx+1,:]
+            # plot results.
+            for i in range(self.bin_num):
+                self.plot_cluster_mean_sem(
+                    ax, cluster_bin_neu_mean[i,:,:], cluster_bin_neu_sem[i,:,:],
+                    norm_params, stim_seq[i,:,:], [cs_all[i]]*stim_seq.shape[-2], cs[i])
+            # adjust layout.
+            ax.set_xlabel('time since stim (ms)')
+            add_legend(ax, cs_all, lbl, None, None, 'upper right')
+        plot_interval(axs[5], cluster_id)
+    
+    def plot_random_glm(self, axs, cate=None):
+        win_kernal = 2500
+        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, win_kernal)
+        len_kernel = r_idx - l_idx
+        # collect data.
+        [color0, color1, color2, cmap], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_param=[[2,3,4,5], None, None, None, [1], [0]],
+            mean_sem=False,
+            cate=cate, roi_id=None)
+        input_seq = [interp_input_seq(sv, self.alignment['stim_time'], self.alignment['neu_time'])
+                     for sv in stim_value]
+        # fit glm model for all sessions.
+        def run_glm():
+            w_all = [fit_glm(x, y, len_kernel) for (x,y) in zip(neu_seq, input_seq)]
+            return w_all
+        w_all = run_glm()
+        # plot coding score across kernal window.
+        def plot_coding_score(ax):
+            win_kernal_range = np.arange(
+                self.bin_win[0], self.bin_win[1] + self.bin_win[0], self.bin_win[0])
+            # run all glm for different kernal window.
+            coding_score = []
+            for win in win_kernal_range:
+                # find kernal length.
+                l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, win)
+                len_kernel = r_idx - l_idx
+                # run glm.
+                w_all = [fit_glm(x, y, len_kernel) for (x,y) in zip(neu_seq, input_seq)]
+                r2 = [get_coding_score(x, y, w) for (x,y,w) in zip(neu_seq, input_seq, w_all)]
+                r2 = np.concatenate(r2)
+                coding_score.append(r2)
+            # plot errorbar.
+            score_mean = np.concatenate([get_mean_sem(s.reshape(-1,1))[0] for s in coding_score])
+            score_sem = np.concatenate([get_mean_sem(s.reshape(-1,1))[1] for s in coding_score])
+            ax.errorbar(
+                win_kernal_range,
+                score_mean,
+                score_sem,
+                color=color2, capsize=2, marker='o', linestyle='none',
+                markeredgecolor='white', markeredgewidth=1)
+            # adjust layout.
+            ax.tick_params(tick1On=False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.set_xlabel('kernal window (ms)')
+            ax.set_ylabel(r'coding score ($R^2$)')
+            ax.set_xticks(win_kernal_range)
+            add_legend(ax, None, None, n_trials, n_neurons, 'upper left')
+        plot_coding_score(axs[0])
+        # plot explain variance across kernal window.
+        def plot_explain_variance(ax):
+            win_kernal_range = np.arange(
+                self.bin_win[0], self.bin_win[1] + self.bin_win[0], self.bin_win[0])
+            # run all glm for different kernal window.
+            explain_var = []
+            for win in win_kernal_range:
+                # find kernal length.
+                l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, win)
+                len_kernel = r_idx - l_idx
+                # run glm.
+                w_all = [fit_glm(x, y, len_kernel) for (x,y) in zip(neu_seq, input_seq)]
+                ev = [get_explain_variance(x, y, w) for (x,y,w) in zip(neu_seq, input_seq, w_all)]
+                ev = np.concatenate(ev)
+                explain_var.append(ev)
+            # plot errorbar.
+            score_mean = np.concatenate([get_mean_sem(s.reshape(-1,1))[0] for s in explain_var])
+            score_sem = np.concatenate([get_mean_sem(s.reshape(-1,1))[1] for s in explain_var])
+            ax.errorbar(
+                win_kernal_range,
+                score_mean,
+                score_sem,
+                color=color2, capsize=2, marker='o', linestyle='none',
+                markeredgecolor='white', markeredgewidth=1)
+            # adjust layout.
+            ax.tick_params(tick1On=False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.set_xlabel('kernal window (ms)')
+            ax.set_ylabel('explain variance')
+            ax.set_xticks(win_kernal_range)
+            add_legend(ax, None, None, n_trials, n_neurons, 'upper left')
+        plot_explain_variance(axs[1])
+        # clustering on glm weights.
+        def plot_glm_cluster_w(ax):
+            gap = 5
+            w = np.concatenate(w_all)
+            # run clustering.
+            _, cluster_id = clustering_neu_response_mode(
+                w, self.n_clusters, self.max_clusters)
+            # group glm weights.
+            w_group = []
+            for i in range(self.n_clusters):
+                w_group.append(w[cluster_id==i])
+                w_group.append(np.zeros((gap,w.shape[1])))
+            w_group = np.concatenate(w_group[:-1],axis=0)
+            # plot heatmap.
+            heatmap = apply_colormap(w_group, cmap)
+            ax.imshow(
+                heatmap,
+                extent=[-win_kernal, 0, 1, heatmap.shape[0]],
+                interpolation='nearest', aspect='auto',
+                origin='lower')
+            # adjust layout.
+            adjust_layout_heatmap(ax)
+            pos_tick = [int(np.sum(cluster_id==i)/2 + i*gap + np.sum(cluster_id<i))
+                        for i in range(self.n_clusters)]
+            ax.set_yticks(pos_tick)
+            ax.set_yticklabels(['{}'.format(i) for i in range(self.n_clusters)])
+            ax.set_ylabel('cluster id')
+        plot_glm_cluster_w(axs[2])
+            
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
     def __init__(self, neural_trials, labels, significance, label_names):
@@ -283,9 +480,9 @@ class plotter_main(plotter_utils):
         self.label_names = label_names
 
     def random_exc(self, axs):
+        cate = -1
+        label_name = self.label_names[str(cate)]
         try:
-            cate = -1
-            label_name = self.label_names[str(cate)]
 
             self.plot_random_stim(axs[0], cate=cate)
             axs[0].set_title(f'response to random stim \n {label_name}')
@@ -311,9 +508,9 @@ class plotter_main(plotter_utils):
         except: pass
 
     def random_inh(self, axs):
+        cate = 1
+        label_name = self.label_names[str(cate)]
         try:
-            cate = 1
-            label_name = self.label_names[str(cate)]
             
             self.plot_random_stim(axs[0], cate=cate)
             axs[0].set_title(f'response to random stim \n {label_name}')
@@ -336,4 +533,58 @@ class plotter_main(plotter_utils):
             self.plot_random_interval_corr_epoch(axs[6], cate=cate)
             axs[6].set_title(f'response and interval correlation across epochs \n {label_name}')
 
+        except: pass
+    
+    def cluster_exc(self, axs):
+        cate = -1
+        label_name = self.label_names[str(cate)]
+        try:
+            
+            self.plot_random_cluster(axs, cate=cate)
+            axs[0].set_title(f'sorted correlation matrix \n {label_name}')
+            axs[1].set_title(f'clustering evaluation metrics \n {label_name}')
+            axs[2].set_title(f'cross cluster correlation \n {label_name}')
+            axs[3].set_title(f'cluster fraction \n {label_name}')
+            axs[4].set_title(f'hierarchical clustering dendrogram \n {label_name}')
+            axs[5].set_title(f'response to random preceeding interval with bins \n {label_name}')
+            
+        except: pass
+
+    def cluster_inh(self, axs):
+        cate = 1
+        label_name = self.label_names[str(cate)]
+        try:
+            
+            self.plot_random_cluster(axs, cate=cate)
+            axs[0].set_title(f'sorted correlation matrix \n {label_name}')
+            axs[1].set_title(f'clustering evaluation metrics \n {label_name}')
+            axs[2].set_title(f'cross cluster correlation \n {label_name}')
+            axs[3].set_title(f'cluster fraction \n {label_name}')
+            axs[4].set_title(f'hierarchical clustering dendrogram \n {label_name}')
+            axs[5].set_title(f'response to random preceeding interval with bins \n {label_name}')
+            
+        except: pass
+
+    def glm_exc(self, axs):
+        cate = -1
+        label_name = self.label_names[str(cate)]
+        try:
+            
+            self.plot_random_glm(axs, cate=cate)
+            axs[0].set_title(f'coding score V.S. kernal window size \n {label_name}')
+            axs[1].set_title(f'explain variance V.S. kernal window size \n {label_name}')
+            axs[2].set_title(f'clustered kernal weights \n {label_name}')
+            
+        except: pass
+    
+    def glm_inh(self, axs):
+        cate = 1
+        label_name = self.label_names[str(cate)]
+        try:
+            
+            self.plot_random_glm(axs, cate=cate)
+            axs[0].set_title(f'coding score V.S. kernal window size \n {label_name}')
+            axs[1].set_title(f'explain variance V.S. kernal window size \n {label_name}')
+            axs[2].set_title(f'clustered kernal weights \n {label_name}')
+            
         except: pass

@@ -25,6 +25,7 @@ def get_stim_response(
         neural_trials,
         l_frames, r_frames,
         expected='none',
+        n_stim = 3,
         ):
     stim_labels = neural_trials['stim_labels']
     dff = neural_trials['dff']
@@ -41,7 +42,7 @@ def get_stim_response(
     led_value  = []
     pre_isi    = []
     # loop over stimulus.
-    for stim_id in tqdm(range(2, stim_labels.shape[0]-2)):
+    for stim_id in tqdm(range(n_stim, stim_labels.shape[0]-n_stim)):
         # find alignment offset.
         if expected=='none':
             t = stim_labels[stim_id,0]
@@ -49,6 +50,7 @@ def get_stim_response(
             t = stim_labels[stim_id,1] + stim_labels[stim_id,0]-stim_labels[stim_id-1,1]
         else:
             raise ValueError('epected can only be none or local')
+        # get stimulus timing.
         idx = np.searchsorted(time, t)
         if idx > l_frames and idx < len(time)-r_frames:
             # signal response.
@@ -69,9 +71,11 @@ def get_stim_response(
             stim_seq.append(np.array(
                 [[stim_labels[stim_id+i,0]-stim_labels[stim_id,0],
                  stim_labels[stim_id+i,1]-stim_labels[stim_id,0]]
-                for i in [-2,-1,0,1,2]]).reshape(1,5,2))
+                for i in np.arange(-n_stim,n_stim+1)]).reshape(1,2*n_stim+1,2))
             # preceeding isi.
             pre_isi.append(np.array([stim_labels[stim_id,0]-stim_labels[stim_id-1,1]]))
+    # correct stimulus labels.
+    stim_labels = neural_trials['stim_labels'][n_stim:-n_stim,:]
     # correct neural data centering at zero.
     neu_time_zero = [np.argmin(np.abs(nt)) for nt in neu_time]
     neu_time = trim_seq(neu_time, neu_time_zero)
@@ -97,29 +101,33 @@ def get_stim_response(
     neu_time  = np.mean(neu_time, axis=0)
     stim_time = np.mean(stim_time, axis=0)
     # combine results.
-    return [neu_seq, neu_time, stim_seq, stim_value, stim_time, led_value, pre_isi]
+    return [stim_labels, neu_seq, neu_time, stim_seq, stim_value, stim_time, led_value, pre_isi]
 
 # run alignment for all sessions
 def run_get_stim_response(
         list_neural_trials,
         l_frames, r_frames,
-        expected='None'
+        expected='None',
+        n_stim = 3,
         ):
     # run alignment for each session.
-    list_neu_seq    = []
-    list_neu_time   = []
-    list_stim_seq   = []
-    list_stim_value = []
-    list_stim_time  = []
-    list_led_value  = []
-    list_pre_isi    = []
+    list_stim_labels = []
+    list_neu_seq     = []
+    list_neu_time    = []
+    list_stim_seq    = []
+    list_stim_value  = []
+    list_stim_time   = []
+    list_led_value   = []
+    list_pre_isi     = []
     for neural_trials in list_neural_trials:
-        [neu_seq, neu_time,
+        [stim_labels, neu_seq, neu_time,
          stim_seq, stim_value, stim_time,
          led_value, pre_isi
          ] = get_stim_response(
              neural_trials,
-             l_frames, r_frames, expected)
+             l_frames, r_frames,
+             expected, n_stim)
+        list_stim_labels.append(stim_labels)
         list_neu_seq.append(neu_seq)
         list_neu_time.append(neu_time)
         list_stim_seq.append(stim_seq)
@@ -150,13 +158,14 @@ def run_get_stim_response(
         for i in range(len(list_led_value))]
     # combine results.
     alignment = {
-        'list_neu_seq':    list_neu_seq,
-        'neu_time':        neu_time,
-        'list_stim_seq':   list_stim_seq,
-        'list_stim_value': list_stim_value,
-        'stim_time':       stim_time,
-        'list_led_value':  list_led_value,
-        'list_pre_isi':    list_pre_isi
+        'list_stim_labels': list_stim_labels,
+        'list_neu_seq':     list_neu_seq,
+        'neu_time':         neu_time,
+        'list_stim_seq':    list_stim_seq,
+        'list_stim_value':  list_stim_value,
+        'stim_time':        stim_time,
+        'list_led_value':   list_led_value,
+        'list_pre_isi':     list_pre_isi
         }
     return alignment
 
