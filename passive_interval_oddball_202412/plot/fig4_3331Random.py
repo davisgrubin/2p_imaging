@@ -49,7 +49,7 @@ class plotter_utils(utils_basic):
         self.list_significance = list_significance
         self.bin_win = [500,2500]
         self.bin_num = 4
-        self.n_clusters = 3
+        self.n_clusters = 5
         self.max_clusters = 20
     
     def plot_random_stim(self, ax, cate=None, roi_id=None):
@@ -66,7 +66,7 @@ class plotter_utils(utils_basic):
         ax.fill_between(
             stim_seq[int(stim_seq.shape[0]/2),:],
             lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-            color=color0, alpha=0.15, step='mid')
+            color=color0, edgecolor='none', alpha=0.25, step='mid')
         self.plot_vol(ax, self.alignment['stim_time'], stim_value.reshape(1,-1), color0, upper, lower)
         # plot neural traces.
         self.plot_mean_sem(ax, self.alignment['neu_time'], mean_neu, sem_neu, color2, None)
@@ -74,7 +74,7 @@ class plotter_utils(utils_basic):
         adjust_layout_neu(ax)
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         ax.set_xlabel('time since stim (ms)')
-        add_legend(ax, [color0, color2], ['stim', 'dff'], n_trials, n_neurons, 'upper right')
+        add_legend(ax, [color0, color2], ['stim', 'dff'], n_trials, n_neurons, self.n_sess, 'upper right')
     
     def plot_random_sync(self, ax, cate):
         win_width = 200
@@ -94,7 +94,7 @@ class plotter_utils(utils_basic):
         ax.fill_between(
             stim_seq[int(stim_seq.shape[0]/2),:],
             lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-            color=color0, alpha=0.15, step='mid')
+            color=color0, edgecolor='none', alpha=0.25, step='mid')
         self.plot_vol(ax, self.alignment['stim_time'], stim_value.reshape(1,-1), color0, upper, lower)
         # plot synchronization.
         ax.plot(self.alignment['neu_time'][win_width:], neu_sync, color=color2)
@@ -104,7 +104,7 @@ class plotter_utils(utils_basic):
         ax.set_ylabel('sync level')
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         ax.set_xlabel('time since stim (ms)')
-        add_legend(ax, [color0, color2], ['stim', 'sync'], n_trials, n_neurons, 'upper right')
+        add_legend(ax, [color0, color2], ['stim', 'sync'], n_trials, n_neurons, self.n_sess, 'upper right')
 
     def plot_random_interval(self, ax, cate=None, roi_id=None):
         # collect data.
@@ -125,11 +125,11 @@ class plotter_utils(utils_basic):
             ax.fill_between(
                 bin_stim_seq[i,int(bin_stim_seq.shape[1]/2),:],
                 lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                color=colors[i], alpha=0.15, step='mid')
+                color=colors[i], edgecolor='none', alpha=0.25, step='mid')
             ax.fill_between(
                 bin_stim_seq[i,int(bin_stim_seq.shape[1]/2)-1,:],
                 lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                color=colors[i], alpha=0.15, step='mid')
+                color=colors[i], edgecolor='none', alpha=0.25, step='mid')
             self.plot_vol(ax, self.alignment['stim_time'], bin_stim_value[i,:].reshape(1,-1), colors[i], upper, lower)
         # plot neural traces.
         for i in range(self.bin_num):
@@ -139,7 +139,7 @@ class plotter_utils(utils_basic):
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         ax.set_xlabel('time since stim (ms)')
         lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
-        add_legend(ax, colors, lbl, n_trials, n_neurons, 'upper right')
+        add_legend(ax, colors, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
 
     def plot_random_interval_box(self, ax, cate=None, roi_id=None):
         win_base = [-self.bin_win[1],0]
@@ -161,7 +161,7 @@ class plotter_utils(utils_basic):
                 colors[i], 0, offsets[i])
         # adjust layout.
         lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
-        add_legend(ax, colors, lbl, n_trials, n_neurons, 'upper right')
+        add_legend(ax, colors, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
 
     def plot_random_interval_heatmap(self, ax, cate=None, roi_id=None):
         # collect data.
@@ -239,7 +239,7 @@ class plotter_utils(utils_basic):
         ax.set_ylabel('response magnitude during \n [{},{}] ms'.format(
             win_evoke[0], win_evoke[1]))
         ax.set_xlim(self.bin_win)
-        add_legend(ax, None, None, n_trials, n_neurons, 'upper right')
+        add_legend(ax, None, None, n_trials, n_neurons, self.n_sess, 'upper right')
 
     def plot_random_interval_corr_epoch(self, ax, cate=None, roi_id=None):
         win_base = [-self.bin_win[1],0]
@@ -284,7 +284,7 @@ class plotter_utils(utils_basic):
         ax.set_ylabel('correlation score during \n [{},{}] ms'.format(
             win_evoke[0], win_evoke[1]))
         ax.set_xlim([-1, np.nanmax(np.unique(epoch_idx))+1])
-        add_legend(ax, None, None, n_trials, n_neurons, 'upper right')
+        add_legend(ax, None, None, n_trials, n_neurons, self.n_sess, 'upper right')
     
     def plot_random_cluster(self, axs, cate=None):
         n_latents = 25
@@ -329,7 +329,7 @@ class plotter_utils(utils_basic):
                 axs, colors, cmap, neu, neu_x,
                 self.n_clusters, self.max_clusters,
                 metrics, cluster_id)
-        plot_info(axs[:5])
+        plot_info(axs[:3])
         # plot interval response for all clusters.
         def plot_interval(ax, cluster_id):
             # get response within cluster at each bin.
@@ -358,8 +358,8 @@ class plotter_utils(utils_basic):
                     norm_params, stim_seq[i,:,:], [cs_all[i]]*stim_seq.shape[-2], cs[i])
             # adjust layout.
             ax.set_xlabel('time since stim (ms)')
-            add_legend(ax, cs_all, lbl, None, None, 'upper right')
-        plot_interval(axs[5], cluster_id)
+            add_legend(ax, cs_all, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
+        plot_interval(axs[3], cluster_id)
     
     def plot_random_glm(self, axs, cate=None):
         win_kernal = 2500
@@ -409,7 +409,7 @@ class plotter_utils(utils_basic):
             ax.set_xlabel('kernal window (ms)')
             ax.set_ylabel(r'coding score ($R^2$)')
             ax.set_xticks(win_kernal_range)
-            add_legend(ax, None, None, n_trials, n_neurons, 'upper left')
+            add_legend(ax, None, None, n_trials, n_neurons, self.n_sess, 'upper left')
         plot_coding_score(axs[0])
         # plot explain variance across kernal window.
         def plot_explain_variance(ax):
@@ -442,7 +442,7 @@ class plotter_utils(utils_basic):
             ax.set_xlabel('kernal window (ms)')
             ax.set_ylabel('explain variance')
             ax.set_xticks(win_kernal_range)
-            add_legend(ax, None, None, n_trials, n_neurons, 'upper left')
+            add_legend(ax, None, None, n_trials, n_neurons, self.n_sess, 'upper left')
         plot_explain_variance(axs[1])
         # clustering on glm weights.
         def plot_glm_cluster_w(ax):
@@ -454,7 +454,7 @@ class plotter_utils(utils_basic):
             # group glm weights.
             w_group = []
             for i in range(self.n_clusters):
-                w_group.append(w[cluster_id==i])
+                w_group.append(w[cluster_id==i,:])
                 w_group.append(np.zeros((gap,w.shape[1])))
             w_group = np.concatenate(w_group[:-1],axis=0)
             # plot heatmap.
@@ -466,6 +466,7 @@ class plotter_utils(utils_basic):
                 origin='lower')
             # adjust layout.
             adjust_layout_heatmap(ax)
+            ax.set_xlabel('time from kernal window (ms)')
             pos_tick = [int(np.sum(cluster_id==i)/2 + i*gap + np.sum(cluster_id<i))
                         for i in range(self.n_clusters)]
             ax.set_yticks(pos_tick)
@@ -545,8 +546,7 @@ class plotter_main(plotter_utils):
             axs[1].set_title(f'clustering evaluation metrics \n {label_name}')
             axs[2].set_title(f'cross cluster correlation \n {label_name}')
             axs[3].set_title(f'cluster fraction \n {label_name}')
-            axs[4].set_title(f'hierarchical clustering dendrogram \n {label_name}')
-            axs[5].set_title(f'response to random preceeding interval with bins \n {label_name}')
+            axs[4].set_title(f'response to random preceeding interval with bins \n {label_name}')
             
         except: pass
 
@@ -560,8 +560,7 @@ class plotter_main(plotter_utils):
             axs[1].set_title(f'clustering evaluation metrics \n {label_name}')
             axs[2].set_title(f'cross cluster correlation \n {label_name}')
             axs[3].set_title(f'cluster fraction \n {label_name}')
-            axs[4].set_title(f'hierarchical clustering dendrogram \n {label_name}')
-            axs[5].set_title(f'response to random preceeding interval with bins \n {label_name}')
+            axs[4].set_title(f'response to random preceeding interval with bins \n {label_name}')
             
         except: pass
 

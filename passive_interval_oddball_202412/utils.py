@@ -2,14 +2,11 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.cluster import AgglomerativeClustering
-from scipy.cluster.hierarchy import dendrogram
 from scipy.spatial.distance import pdist
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.colors import to_hex
 
 from modeling.clustering import get_sorted_corr_mat
-from modeling.clustering import get_cross_corr
 
 #%% general data processing
 
@@ -136,7 +133,8 @@ def get_multi_sess_neu_trial_average(
                 trial_param[1],
                 trial_param[2],
                 trial_param[3],
-                trial_param[4])
+                trial_param[4],
+                trial_param[5])
             neu.append(neu_cate[i][trial_idx[i]*idx,:,:])
             stim_seq.append(alignment['list_stim_seq'][i][trial_idx[i]*idx,:,:])
             stim_value.append(alignment['list_stim_value'][i][trial_idx[i]*idx,:])
@@ -186,6 +184,16 @@ def get_frame_idx_from_time(timestamps, c_time, l_time, r_time):
 def get_sub_time_idx(time, start, end):
     idx = np.where((time >= start) &(time <= end))[0]
     return idx
+
+# find expected standard fix interval.
+def get_expect_interval(stim_labels):
+    idx_short = (stim_labels[:,2]>1)*(stim_labels[:,3]==0)
+    expect_short = stim_labels[1:,0] - stim_labels[:-1,1]
+    expect_short = np.median(expect_short[idx_short[:-1]])
+    idx_long = (stim_labels[:,2]>1)*(stim_labels[:,3]==1)
+    expect_long = stim_labels[1:,0] - stim_labels[:-1,1]
+    expect_long = np.median(expect_long[idx_long[:-1]])
+    return expect_short, expect_long
 
 # get index for the first trial of block transition.
 def get_block_1st_idx(stim_labels, target, prepost='post'):
@@ -457,7 +465,7 @@ def adjust_layout_3d_latent(ax, neu_z, cmap, neu_time, cbar_label):
          '\u25CF'], rotation=-90)
 
 # add legend into subplots.
-def add_legend(ax, colors, labels, n_trials, n_neurons, loc, dim=2):
+def add_legend(ax, colors, labels, n_trials, n_neurons, n_sessions, loc, dim=2):
     if dim == 2:
         plot_args = [[],[]]
     if dim == 3:
@@ -470,7 +478,8 @@ def add_legend(ax, colors, labels, n_trials, n_neurons, loc, dim=2):
     if n_trials != None and n_neurons != None:
         handles += [
             ax.plot(*plot_args, lw=0, color='black', label=r'$n_{trial}=$'+str(n_trials))[0],
-            ax.plot(*plot_args, lw=0, color='black', label=r'$n_{neuron}=$'+str(n_neurons))[0]]
+            ax.plot(*plot_args, lw=0, color='black', label=r'$n_{neuron}=$'+str(n_neurons))[0],
+            ax.plot(*plot_args, lw=0, color='black', label=r'$n_{session}=$'+str(n_sessions))[0]]
     ax.legend(
         loc=loc,
         handles=handles,
@@ -487,7 +496,7 @@ class utils_basic:
 
     def plot_mean_sem(self, ax, t, m, s, c, l, a=1.0):
         ax.plot(t, m, color=c, label=l, alpha=a)
-        ax.fill_between(t, m - s, m + s, color=c, alpha=0.2)
+        ax.fill_between(t, m - s, m + s, color=c, alpha=0.25, edgecolor='none')
         ax.set_xlim([np.min(t), np.max(t)])
 
     def plot_vol(self, ax, st, sv, c, u, l):
@@ -648,27 +657,6 @@ class utils_basic:
             ax.set_xticks([])
             ax.set_yticks([])
         plot_sorted_corr(axs[0], neu_seq, cluster_id)
-        # plot cross cluster correlations.
-        def plot_cross_corr(ax, cluster_id):
-            cluster_corr = get_cross_corr(neu_seq, n_clusters, cluster_id)
-            mask = np.tril(np.ones_like(cluster_corr, dtype=bool), k=0)
-            masked_corr = np.where(mask, cluster_corr, np.nan)
-            ax.matshow(masked_corr, interpolation='nearest', cmap=cmap)
-            ax.tick_params(bottom=False, top=False, labelbottom=True, labeltop=False)
-            ax.spines['left'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
-            ax.spines['bottom'].set_visible(False)
-            ax.set_xticks(np.arange(n_clusters))
-            ax.set_yticks(np.arange(n_clusters))
-            ax.set_xlabel('cluster id')
-            ax.set_ylabel('cluster id')
-            for i in range(cluster_corr.shape[0]):
-                for j in range(cluster_corr.shape[1]):
-                    if not np.isnan(masked_corr[i, j]):
-                        ax.text(j, i, f'{masked_corr[i, j]:.2f}',
-                                    ha='center', va='center', color='grey')
-        plot_cross_corr(axs[1], cluster_id)
         # plot clustering metrics.
         def plot_metrics(ax, metrics):
             c = ['cornflowerblue', 'mediumseagreen', 'hotpink', 'coral']
@@ -682,8 +670,8 @@ class utils_basic:
             ax.set_ylabel('normalized value')
             ax.set_xlim(2, max_clusters)
             ax.set_xticks(metrics['n_clusters'][::2])
-            add_legend(ax, c, lbl, None, None, 'upper left')
-        plot_metrics(axs[2], metrics)
+            add_legend(ax, c, lbl, None, None, None, 'upper left')
+        plot_metrics(axs[1], metrics)
         # plot fraction of each cluster.
         def plot_cluster_fraction(ax, cluster_id):
             num = [np.sum(cluster_id==i) for i in np.unique(cluster_id)]
@@ -693,43 +681,14 @@ class utils_basic:
                 colors=colors,
                 autopct='%1.1f%%',
                 wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
-        plot_cluster_fraction(axs[3], cluster_id)
-        # plot dendrogram of a hierarchical clustering.
-        def plot_dendrogram(ax):
-            p=5
-            # run hierarchical clustering.
-            model = AgglomerativeClustering(distance_threshold=0, n_clusters=None)
-            model.fit(neu_x)
-            # create the counts of samples under each node.
-            counts = np.zeros(model.children_.shape[0])
-            n_samples = len(model.labels_)
-            for i, merge in enumerate(model.children_):
-                current_count = 0
-                for child_idx in merge:
-                    if child_idx < n_samples:
-                        current_count += 1
-                    else:
-                        current_count += counts[child_idx - n_samples]
-                counts[i] = current_count
-            # create linkage matrix.
-            linkage_matrix = np.column_stack([model.children_, model.distances_, counts]).astype(float)
-            # plot dendrogram.
-            dendrogram(linkage_matrix, truncate_mode='level', p=p, ax=ax)
-            # adjust layout.
-            ax.tick_params(tick1On=False)
-            ax.spines['left'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
-            ax.set_xlabel('number of points in node')
-            ax.set_yticks([])
-        plot_dendrogram(axs[4])
+        plot_cluster_fraction(axs[2], cluster_id)
 
     def plot_cluster_mean_sem(self, ax, neu_mean, neu_sem, norm_params, stim_seq, c_stim, c_neu):
         for i in range(stim_seq.shape[0]):
             ax.fill_between(
                 stim_seq[i,:],
                 0-0.1*neu_mean.shape[0], neu_mean.shape[0]+0.1*neu_mean.shape[0],
-                color=c_stim[i], alpha=0.15, step='mid')
+                color=c_stim[i], edgecolor='none', alpha=0.25, step='mid')
         for i in range(neu_mean.shape[0]):
             a, b = norm_params[i]
             self.plot_mean_sem(

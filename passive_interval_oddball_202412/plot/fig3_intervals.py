@@ -94,7 +94,7 @@ def plot_standard_isi_distribution(ax, list_neural_trials):
     ax.set_xticklabels(
         500*np.arange(isi_range[0], isi_range[1]/500+1).astype('int32'),
         rotation='vertical')
-    add_legend(ax, ['mediumseagreen','coral'], ['short standard', 'long standard'], None, None, 'upper right')
+    add_legend(ax, ['mediumseagreen','coral'], ['short standard', 'long standard'], None, None, None, 'upper right')
 
 # jitter isi distribution.
 def plot_jitter_isi_distribution(ax, list_neural_trials):
@@ -149,7 +149,7 @@ def plot_oddball_isi_distribution(ax, list_neural_trials):
     ax.set_xticklabels(
         500*np.arange(isi_range[0], isi_range[1]/500+1).astype('int32'),
         rotation='vertical')
-    add_legend(ax, ['mediumseagreen', 'coral'], ['short oddball', 'long oddball'], None, None, 'upper right')
+    add_legend(ax, ['mediumseagreen', 'coral'], ['short oddball', 'long oddball'], None, None, None, 'upper right')
 
 # random isi distribution.
 def plot_random_isi_distribution(ax, list_neural_trials):
@@ -221,5 +221,5 @@ def plot_stim_label(ax, list_neural_trials):
     ax.set_yticklabels(
         500*np.arange(isi_range[0], isi_range[1]/500+1).astype('int32'))
     ax.set_title('single trial interval distribution')
-    add_legend(ax, colors, labels, None, None, 'upper right')
+    add_legend(ax, colors, labels, None, None, None, 'upper right')
     

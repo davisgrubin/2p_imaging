@@ -20,16 +20,17 @@ from plot.fig3_intervals import plot_oddball_isi_distribution
 from plot.fig3_intervals import plot_random_isi_distribution
 from plot.fig3_intervals import plot_stim_type
 from plot.fig3_intervals import plot_stim_label
+from plot.fig6_4131FixJitterOdd import plotter_main
 
 def run(
-        session_config,
+        session_config_list,
         list_labels, list_vol, list_dff, list_neural_trials, list_significance
         ):
     size_scale = 7
     # filter data.
     target_sess = 'fix_jitter_odd'
-    idx = np.array(list(session_config['list_session_name'].values())) == target_sess
-    sess_names = np.array(list(session_config['list_session_name'].keys()))[idx].copy().tolist()
+    idx = np.array(list(session_config_list['list_session_name'].values())) == target_sess
+    sess_names = np.array(list(session_config_list['list_session_name'].keys()))[idx].copy().tolist()
     list_labels = np.array(list_labels,dtype='object')[idx].copy().tolist()
     list_vol = np.array(list_vol,dtype='object')[idx].copy().tolist()
     list_dff = np.array(list_dff,dtype='object')[idx].copy().tolist()
@@ -41,6 +42,7 @@ def run(
     else:
         # create plotter.
         print('Initiating alignment results')
+        plotter = plotter_main(list_neural_trials, list_labels, list_significance, session_config_list['label_names'])
         # significance test.
         print('Plotting significance test results')
         def plot_example_traces():
@@ -53,8 +55,8 @@ def run(
             sign_ax = plt.subplot(gs[0, 0])
             plot_significance(sign_ax, list_significance, list_labels)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', session_config['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         f1 = plot_example_traces()
@@ -84,8 +86,8 @@ def run(
             plot_oddball_isi_distribution(isi_ax03, list_neural_trials)
             plot_random_isi_distribution(isi_ax04, list_neural_trials)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', session_config['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         f2 = plot_intervals()
@@ -103,11 +105,53 @@ def run(
             plot_stim_type(trial_ax01, list_neural_trials)
             plot_stim_label(trial_ax02, list_neural_trials)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', session_config['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         f3 = plot_trial()
+        def plot_oddball():
+            title = 'neural traces alignment on oddball intervals'
+            filename = '4131FixJitterOdd04_oddball'
+            n_row = 6
+            n_col = 6
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            oddball_axs01 = [plt.subplot(gs[0, i]) for i in range(6)]
+            oddball_axs01+= [plt.subplot(gs[1, i]) for i in range(6)]
+            oddball_axs01+= [plt.subplot(gs[2, i], projection='3d') for i in range(2)]
+            oddball_axs02 = [plt.subplot(gs[3, i]) for i in range(6)]
+            oddball_axs02+= [plt.subplot(gs[4, i]) for i in range(6)]
+            oddball_axs02+= [plt.subplot(gs[5, i], projection='3d') for i in range(2)]
+            plotter.oddball_exc(oddball_axs01)
+            plotter.oddball_inh(oddball_axs02)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        f4 = plot_oddball()
+        # clustering analysis.
+        print('Plotting clustering analysis')
+        def plot_clustering():
+            title = 'clustering on standard oddball fix jitter interval'
+            filename = '4131FixJitterOdd05_clustering'
+            n_row = 6
+            n_col = 12
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            cluster_axs01 = [plt.subplot(gs[0, 0]), plt.subplot(gs[1, 0]), plt.subplot(gs[2, 0])]
+            cluster_axs01+= [plt.subplot(gs[0:2, i]) for i in [1,2,3,4,5,6]]
+            cluster_axs02 = [plt.subplot(gs[3, 0]), plt.subplot(gs[4, 0]), plt.subplot(gs[5, 0])]
+            cluster_axs02+= [plt.subplot(gs[3:5, i]) for i in [1,2,3,4,5,6]]
+            plotter.cluster_exc(cluster_axs01)
+            plotter.cluster_inh(cluster_axs02)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        f5 = plot_clustering()
         # clear memory.
         print('Clearing memory usage')
         del list_labels
@@ -117,5 +161,5 @@ def run(
         del list_significance
         gc.collect()
         # combine temp filenames
-        return [f1, f2, f3]
+        return [f1, f2, f3, f4, f5]
 

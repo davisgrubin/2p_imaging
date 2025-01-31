@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import gc
 import os
 import h5py
 import numpy as np
 import scipy.io as sio
+from tqdm import tqdm
 
 # read ops.npy
 def read_ops(list_session_data_path):
@@ -18,88 +20,73 @@ def read_ops(list_session_data_path):
 
 # read raw_voltages.h5.
 def read_raw_voltages(ops):
-    f = h5py.File(
-        os.path.join(ops['save_path0'], 'raw_voltages.h5'),
-        'r')
-    try:
-        vol_time = np.array(f['raw']['vol_time'])
-        vol_start = np.array(f['raw']['vol_start'])
-        vol_stim_vis = np.array(f['raw']['vol_stim_vis'])
-        vol_hifi = np.array(f['raw']['vol_hifi'])
-        vol_img = np.array(f['raw']['vol_img'])
-        vol_stim_aud = np.array(f['raw']['vol_stim_aud'])
-        vol_flir = np.array(f['raw']['vol_flir'])
-        vol_pmt = np.array(f['raw']['vol_pmt'])
-        vol_led = np.array(f['raw']['vol_led'])
-    except:
-        vol_time = np.array(f['raw']['vol_time'])
-        vol_start = np.array(f['raw']['vol_start_bin'])
-        vol_stim_vis = np.array(f['raw']['vol_stim_bin'])
-        vol_img = np.array(f['raw']['vol_img_bin'])
-        vol_hifi = np.zeros_like(vol_time)
-        vol_stim_aud = np.zeros_like(vol_time)
-        vol_flir = np.zeros_like(vol_time)
-        vol_pmt = np.zeros_like(vol_time)
-        vol_led = np.zeros_like(vol_time)
-    f.close()
+    downsampling = 1
+    file_path = os.path.join(ops['save_path0'], 'raw_voltages.h5')
+    with h5py.File(file_path, 'r') as f:
+        vol_time = np.array(f['raw']['vol_time'])[::downsampling]
+        vol_start = np.array(f['raw']['vol_start'])[::downsampling]
+        vol_stim_vis = np.array(f['raw']['vol_stim_vis'])[::downsampling]
+        vol_hifi = np.array(f['raw']['vol_hifi'])[::downsampling]
+        vol_img = np.array(f['raw']['vol_img'])[::downsampling]
+        vol_stim_aud = np.array(f['raw']['vol_stim_aud'])[::downsampling]
+        vol_flir = np.array(f['raw']['vol_flir'])[::downsampling]
+        vol_pmt = np.array(f['raw']['vol_pmt'])[::downsampling]
+        vol_led = np.array(f['raw']['vol_led'])[::downsampling]
     return [vol_time, vol_start, vol_stim_vis, vol_img,
             vol_hifi, vol_stim_aud, vol_flir,
             vol_pmt, vol_led]
 
 # read masks.
 def read_masks(ops):
-    f = h5py.File(os.path.join(ops['save_path0'], 'masks.h5'),'r')
-    labels = np.array(f['labels'])
-    masks = np.array(f['masks_func'])
-    mean_func = np.array(f['mean_func'])
-    max_func = np.array(f['max_func'])
-    mean_anat = np.array(f['mean_anat']) if ops['nchannels'] == 2 else None
-    masks_anat = np.array(f['masks_anat']) if ops['nchannels'] == 2 else None
-    f.close()
+    file_path = os.path.join(ops['save_path0'], 'masks.h5')
+    with h5py.File(file_path, 'r') as f:
+        labels = np.array(f['labels'])
+        masks = np.array(f['masks_func'])
+        mean_func = np.array(f['mean_func'])
+        max_func = np.array(f['max_func'])
+        mean_anat = np.array(f['mean_anat']) if ops['nchannels'] == 2 else None
+        masks_anat = np.array(f['masks_anat']) if ops['nchannels'] == 2 else None
     return [labels, masks, mean_func, max_func, mean_anat, masks_anat]
 
 # read motion correction offsets.
 def read_move_offset(ops):
-    f = h5py.File(os.path.join(ops['save_path0'], 'move_offset.h5'), 'r')
-    xoff = np.array(f['xoff'])
-    yoff = np.array(f['yoff'])
-    f.close()
+    file_path = os.path.join(ops['save_path0'], 'move_offset.h5')
+    with h5py.File(file_path, 'r') as f:
+        xoff = np.array(f['xoff'])
+        yoff = np.array(f['yoff'])
     return [xoff, yoff]
 
 # read dff traces.
 def read_dff(ops):
-    f = h5py.File(os.path.join(ops['save_path0'], 'dff.h5'), 'r')
-    dff = np.array(f['dff'])
-    f.close()
+    file_path = os.path.join(ops['save_path0'], 'dff.h5')
+    with h5py.File(file_path, 'r') as f:
+        dff = np.array(f['dff'])
     return dff
 
 # read trailized neural traces with stimulus alignment.
 def read_neural_trials(ops):
-    f = h5py.File(
-        os.path.join(ops['save_path0'], 'neural_trials.h5'),
-        'r')
-    neural_trials = dict()
-    neural_trials['time'] = np.array(f['neural_trials']['time'])
-    neural_trials['dff'] = np.array(f['neural_trials']['dff'])
-    neural_trials['stim_labels'] = np.array(f['neural_trials']['stim_labels'])
-    neural_trials['vol_time'] = np.array(f['neural_trials']['vol_time'])
-    neural_trials['vol_stim_vis'] = np.array(f['neural_trials']['vol_stim_vis'])
-    neural_trials['vol_stim_aud'] = np.array(f['neural_trials']['vol_stim_aud'])
-    neural_trials['vol_flir'] = np.array(f['neural_trials']['vol_flir'])
-    neural_trials['vol_pmt'] = np.array(f['neural_trials']['vol_pmt'])
-    neural_trials['vol_led'] = np.array(f['neural_trials']['vol_led'])
-    f.close()
+    file_path = os.path.join(ops['save_path0'], 'neural_trials.h5')
+    with h5py.File(file_path, 'r') as f:
+        neural_trials = dict()
+        neural_trials['time'] = np.array(f['neural_trials']['time'], dtype=np.float32)
+        neural_trials['dff'] = np.array(f['neural_trials']['dff'], dtype=np.float32)
+        neural_trials['stim_labels'] = np.array(f['neural_trials']['stim_labels'], dtype=np.float32)
+        neural_trials['vol_time'] = np.array(f['neural_trials']['vol_time'], dtype=np.float32)
+        neural_trials['vol_stim_vis'] = np.array(f['neural_trials']['vol_stim_vis'], dtype=np.float32)
+        neural_trials['vol_stim_aud'] = np.array(f['neural_trials']['vol_stim_aud'], dtype=np.float32)
+        neural_trials['vol_flir'] = np.array(f['neural_trials']['vol_flir'], dtype=np.float32)
+        neural_trials['vol_pmt'] = np.array(f['neural_trials']['vol_pmt'], dtype=np.float32)
+        neural_trials['vol_led'] = np.array(f['neural_trials']['vol_led'], dtype=np.float32)
     return neural_trials
 
 # read significance test label results.
 def read_significance(ops):
-    f = h5py.File(
-        os.path.join(ops['save_path0'], 'significance.h5'),
-        'r')
-    significance = {}
-    significance['r_standard'] = np.array(f['significance']['r_standard'])
-    significance['r_change'] = np.array(f['significance']['r_change'])
-    significance['r_oddball'] = np.array(f['significance']['r_oddball'])
+    file_path = os.path.join(ops['save_path0'], 'significance.h5')
+    with h5py.File(file_path, 'r') as f:
+        significance = {}
+        significance['r_standard'] = np.array(f['significance']['r_standard'])
+        significance['r_change'] = np.array(f['significance']['r_change'])
+        significance['r_oddball'] = np.array(f['significance']['r_oddball'])
     return significance
 
 # read bpod session data.
@@ -150,8 +137,8 @@ def read_bpod_mat_data(ops):
         }
     return bpod_sess_data
 
-# retract all session results.
-def read_all(list_ops, sig_tag=None, force_label=None):
+# get session results for one subject.
+def read_subject(list_ops, sig_tag=None, force_label=None):
     list_labels = []
     list_masks = []
     list_vol = []
@@ -159,22 +146,17 @@ def read_all(list_ops, sig_tag=None, force_label=None):
     list_neural_trials = []
     list_move_offset = []
     list_significance = []
-    for ops in list_ops:
+    for ops in tqdm(list_ops):
         # masks.
-        [labels,
-         masks,
-         mean_func, max_func,
-         mean_anat, masks_anat] = read_masks(ops)
+        labels, masks, mean_func, max_func, mean_anat, masks_anat = read_masks(ops)
         # voltages.
-        [vol_time, vol_start, vol_stim_vis, vol_img,
-         vol_hifi, vol_stim_aud, vol_flir,
-         vol_pmt, vol_led] = read_raw_voltages(ops)
+        vol = read_raw_voltages(ops)
         # dff.
         dff = read_dff(ops)
         # trials.
         neural_trials = read_neural_trials(ops)
         # movement offset.
-        [xoff, yoff] = read_move_offset(ops)
+        xoff, yoff = read_move_offset(ops)
         # significance.
         significance = read_significance(ops)
         if sig_tag == 'all':
@@ -190,14 +172,62 @@ def read_all(list_ops, sig_tag=None, force_label=None):
             [masks,
              mean_func, max_func,
              mean_anat, masks_anat])
-        list_vol.append(
-            [vol_time, vol_start, vol_stim_vis, vol_img,
-             vol_hifi, vol_stim_aud, vol_flir,
-             vol_pmt, vol_led])
+        list_vol.append(vol)
         list_dff.append(dff)
         list_neural_trials.append(neural_trials)
         list_move_offset.append([xoff, yoff])
         list_significance.append(significance)
+        # clear memory usages.
+        del labels
+        del masks, mean_func, max_func, mean_anat, masks_anat
+        del vol
+        del dff
+        del neural_trials
+        del xoff, yoff
+        del significance
+        gc.collect()
     return [list_labels, list_masks, list_vol, list_dff,
             list_neural_trials, list_move_offset, list_significance]
 
+# get session results for all subject.
+def read_all(session_config_list):
+    list_labels = []
+    list_masks = []
+    list_vol = []
+    list_dff = []
+    list_neural_trials = []
+    list_move_offset = []
+    list_significance = []
+    for i in range(len(session_config_list['list_config'])):
+        # read ops for each subject.
+        print('Reading subject {}/{}'.format(i+1, len(session_config_list['list_config'])))
+        list_session_data_path = [
+            os.path.join('results', n)
+            for n in session_config_list['list_config'][i]['list_session_name']]
+        list_ops = read_ops(list_session_data_path)
+        # read results for each subject.
+        labels, masks, vol, dff, neural_trials, move_offset, significance = read_subject(
+             list_ops,
+             sig_tag=session_config_list['list_config'][i]['sig_tag'],
+             force_label=session_config_list['list_config'][i]['force_label'])
+        # append to list.
+        list_labels += labels
+        list_masks += masks
+        list_vol += vol
+        list_dff += dff
+        list_neural_trials += neural_trials
+        list_move_offset += move_offset
+        list_significance += significance
+        # clear memory usages.
+        del labels
+        del masks
+        del vol
+        del dff
+        del neural_trials
+        del move_offset
+        del significance
+        gc.collect()
+    return [list_labels, list_masks, list_vol, list_dff,
+            list_neural_trials, list_move_offset, list_significance]
+    
+    

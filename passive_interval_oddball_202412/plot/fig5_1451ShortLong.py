@@ -48,12 +48,12 @@ class plotter_utils(utils_basic):
         self.list_significance = list_significance
         self.bin_win = [500,2500]
         self.bin_num = 4
-        self.n_clusters = 6
+        self.n_clusters = 5
         self.max_clusters = 20
         self.d_latent = 3
-        self.xlim = [-4000,3000]
 
     def plot_standard(self, ax, standard, cate=None, roi_id=None):
+        xlim = [-3000,3000]
         neu_mean = []
         neu_sem = []
         n_trials = 0
@@ -91,7 +91,7 @@ class plotter_utils(utils_basic):
                 ax.fill_between(
                     stim_seq_short[i,:],
                     lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                    color=color1, alpha=0.15, step='mid')
+                    color=color1, edgecolor='none', alpha=0.25, step='mid')
             self.plot_vol(
                 ax, self.alignment['stim_time'],
                 stim_value_short.reshape(1,-1), color1, upper, lower)
@@ -100,7 +100,7 @@ class plotter_utils(utils_basic):
                 ax.fill_between(
                     stim_seq_long[i,:],
                     lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                    color=color2, alpha=0.15, step='mid')
+                    color=color2, edgecolor='none', alpha=0.25, step='mid')
             self.plot_vol(
                 ax, self.alignment['stim_time'],
                 stim_value_long.reshape(1,-1), color2, upper, lower)
@@ -114,11 +114,11 @@ class plotter_utils(utils_basic):
                 ax, self.alignment['neu_time'],
                 mean_long, sem_long, color2, 'long')
         adjust_layout_neu(ax)
-        ax.set_xlim(self.xlim)
+        ax.set_xlim(xlim)
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         ax.set_xlabel('time since stim (ms)')
         add_legend(ax, [color1,color2], ['short','long'],
-                   n_trials, n_neurons, 'upper right')
+                   n_trials, n_neurons, self.n_sess, 'upper right')
     
     def plot_standard_box(self, ax, cate=None, roi_id=None):
         win_base = [-self.bin_win[1],0]
@@ -143,7 +143,7 @@ class plotter_utils(utils_basic):
         self.plot_win_mag_box(ax, neu_seq_long,  self.alignment['neu_time'], win_base, color2, 0, offsets[1])
         # adjust layout.
         add_legend(ax, [color1,color2], ['short','long'],
-                   n_trials_short+n_trials_long, n_neurons, 'upper right')
+                   n_trials_short+n_trials_long, n_neurons, self.n_sess, 'upper right')
 
     def plot_standard_latent(self, ax, standard, cate=None):
         # collect data.
@@ -167,10 +167,11 @@ class plotter_utils(utils_basic):
         self.plot_3d_latent_dynamics(ax, neu_z, stim_seq, c_neu, c_stim)
         # adjust layout.
         adjust_layout_3d_latent(ax, neu_z, cmap, self.alignment['neu_time'], 'time since stim (ms)')
-        add_legend(ax, [color0,color1,color2], ['post interval stim','short','long'],
-                   n_trials, n_neurons, 'upper right', dim=3)
+        add_legend(ax, [color0,color1,color2], ['pre interval stim','short','long'],
+                   n_trials, n_neurons, self.n_sess, 'upper right', dim=3)
     
     def plot_oddball(self, ax, standard, cate=None, roi_id=None):
+        xlim = [-3000,3000]
         # collect data.
         [_, color1, color2, _], [neu_seq, _, stim_seq, stim_value], [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
@@ -188,7 +189,7 @@ class plotter_utils(utils_basic):
             ax.fill_between(
                 stim_seq[i,:],
                 lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                color=c_stim[i], alpha=0.15, step='mid')
+                color=c_stim[i], edgecolor='none', alpha=0.25, step='mid')
         self.plot_vol(
             ax, self.alignment['stim_time'],
             stim_value.reshape(1,-1), [color1, color2][standard], upper, lower)
@@ -198,11 +199,11 @@ class plotter_utils(utils_basic):
             neu_mean, neu_sem, [color1, color2][standard], None)
         # adjust layout.
         adjust_layout_neu(ax)
-        ax.set_xlim(self.xlim)
+        ax.set_xlim(xlim)
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         ax.set_xlabel('time since stim after oddball interval (ms)')
         add_legend(ax, [color1,color2], ['post short interval stim','post long interval stim'],
-                   n_trials, n_neurons, 'upper right')
+                   n_trials, n_neurons, self.n_sess, 'upper right')
     
     def plot_oddball_latent(self, ax, standard, cate=None):
         # collect data.
@@ -228,9 +229,10 @@ class plotter_utils(utils_basic):
         # adjust layout.
         adjust_layout_3d_latent(ax, neu_z, cmap, self.alignment['neu_time'], 'time since stim (ms)')
         add_legend(ax, [color1,color2], ['post short interval stim','post long interval stim'],
-                   n_trials, n_neurons, 'upper right', dim=3)
+                   n_trials, n_neurons, self.n_sess, 'upper right', dim=3)
     
     def plot_block_transition(self, ax, standard, cate=None):
+        xlim = [-4000,7000]
         # collect data.
         [_, color1, color2, _], [neu_seq, _, stim_seq, stim_value], [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
@@ -248,7 +250,7 @@ class plotter_utils(utils_basic):
             ax.fill_between(
                 stim_seq[i,:],
                 lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                color=c_stim[i], alpha=0.15, step='mid')
+                color=c_stim[i], edgecolor='none', alpha=0.25, step='mid')
         self.plot_vol(
             ax, self.alignment['stim_time'],
             stim_value.reshape(1,-1), color1, upper, lower)
@@ -258,13 +260,13 @@ class plotter_utils(utils_basic):
             neu_mean, neu_sem, [color1, color2][standard], None)
         # adjust layout.
         adjust_layout_neu(ax)
-        ax.set_xlim(self.xlim)
+        ax.set_xlim(xlim)
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         ax.set_xlabel('time since stim after interval block change (ms)')
         add_legend(
             ax, [color1, color2],
             ['post interval stim (short)', 'post interval stim (long)'],
-            n_trials, n_neurons, 'upper left')
+            n_trials, n_neurons, self.n_sess, 'upper left')
     
     def plot_block_transition_latent(self, ax, standard, cate=None):
         # collect data.
@@ -290,9 +292,10 @@ class plotter_utils(utils_basic):
         # adjust layout.
         adjust_layout_3d_latent(ax, neu_z, cmap, self.alignment['neu_time'], 'time since stim (ms)')
         add_legend(ax, [color1,color2], ['post short interval stim','post long interval stim'],
-                   n_trials, n_neurons, 'upper right', dim=3)
+                   n_trials, n_neurons, self.n_sess, 'upper right', dim=3)
     
     def plot_oddball_sync(self, ax, standard, cate=None, roi_id=None):
+        xlim = [-3000,3000]
         win_width = 200
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, win_width)
         win_width = r_idx - l_idx
@@ -313,7 +316,7 @@ class plotter_utils(utils_basic):
             ax.fill_between(
                 stim_seq[i,:],
                 lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                color=c_stim[i], alpha=0.15, step='mid')
+                color=c_stim[i], edgecolor='none', alpha=0.25, step='mid')
         self.plot_vol(
             ax, self.alignment['stim_time'],
             stim_value.reshape(1,-1), [color1, color2][standard], upper, lower)
@@ -321,27 +324,62 @@ class plotter_utils(utils_basic):
         ax.plot(self.alignment['neu_time'][win_width:], sync, color=[color1, color2][standard])
         # adjust layout.
         adjust_layout_neu(ax)
-        ax.set_xlim(self.xlim)
+        ax.set_xlim(xlim)
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         ax.set_xlabel('time since stim after oddball interval (ms)')
         ax.set_ylabel('synchronization metric')
-        add_legend(ax, [color1,color2], ['post short interval stim','post long interval stim'],
-                   n_trials, n_neurons, 'upper right')
+        add_legend(ax, [color1,color2], ['pre short interval stim','pre long interval stim'],
+                   n_trials, n_neurons, self.n_sess, 'upper right')
         
-    def plot_cluster(self, axs, standard, cate=None):
+    def plot_cluster(self, axs, cate=None):
         n_latents = 25
         # collect data.
         [color0, color1, color2, cmap], [neu_seq, _, _, _], _ = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-            trial_param=[[2,3,4,5], [standard], None, None, [0], [0]],
+            trial_param=[[2,3,4,5], [0], None, None, [0], [0]],
             cate=cate, roi_id=None)
         colors = get_cmap_color(self.n_clusters, cmap=plt.cm.nipy_spectral_r)
         lbl = ['cluster #'+str(i) for i in range(self.n_clusters)]
         cmap_3d, _ = get_cmap_color(2, base_color='#2C2C2C', return_cmap=True)
         # construct features for clustering.
         def prepare_data():
+            win_eval = [-2500,2500]
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_eval[0], win_eval[1])
+            # short standard.
+            _, [neu_1, _, _, _], _ = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_param=[[2,3,4,5], [0], None, None, [0], [0]],
+                cate=cate, roi_id=None)
+            # long standard.
+            _, [neu_2, _, _, _], _ = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_param=[[2,3,4,5], [1], None, None, [0], [0]],
+                cate=cate, roi_id=None)
+            # short oddball.
+            _, [neu_3, _, _, _], _ = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[0] for l in self.list_odd_idx],
+                cate=cate, roi_id=None)
+            # long oddball.
+            _, [neu_4, _, _, _], _ = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[1] for l in self.list_odd_idx],
+                cate=cate, roi_id=None)
+            # transition from short to long.
+            _, [neu_5, _, _, _], _ = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[1] for l in self.list_block_start],
+                cate=cate, roi_id=None)
+            # transition from long to short.
+            _, [neu_6, _, _, _], _ = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[0] for l in self.list_block_start],
+                cate=cate, roi_id=None)
+            # collect data.
+            neu_all = [neu[:,l_idx:r_idx] for neu in [neu_1, neu_2, neu_3, neu_4, neu_5, neu_6]]
             # get correlation matrix.
-            cluster_corr = np.corrcoef(neu_seq)
+            cluster_corr = [np.corrcoef(neu) for neu in neu_all]
+            cluster_corr = np.concatenate(cluster_corr, axis=1)
             # extract features.
             model = PCA(n_components=n_latents)
             neu_x = model.fit_transform(cluster_corr)
@@ -359,9 +397,10 @@ class plotter_utils(utils_basic):
                 axs, colors, cmap, neu_seq, neu_x,
                 self.n_clusters, self.max_clusters,
                 metrics, cluster_id)
-        plot_info(axs[:5])
+        plot_info(axs[:3])
         # plot standard response.
-        def plot_standard(ax):
+        def plot_standard(ax, standard):
+            xlim = [-3000, 3000]
             # collect data.
             _, [neu_seq, _, stim_seq, stim_value], [n_trials, n_neurons] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
@@ -375,16 +414,18 @@ class plotter_utils(utils_basic):
             self.plot_cluster_mean_sem(
                 ax, neu_mean, neu_sem, norm_params, stim_seq, c_stim, colors)
             # adjust layout.
-            ax.set_xlim(self.xlim)
+            ax.set_xlim(xlim)
             ax.set_xlabel('time since stim (ms)')
-            add_legend(ax, [c_stim[0]]+colors, ['stim']+lbl, n_trials, n_neurons, 'upper left')
-        plot_standard(axs[5])
+            add_legend(ax, [c_stim[0]]+colors, ['stim']+lbl, n_trials, n_neurons, self.n_sess, 'upper left')
+        plot_standard(axs[3], 0)
+        plot_standard(axs[4], 1)
         # plot oddball response.
-        def plot_oddball(ax):
+        def plot_oddball(ax, standard):
+            xlim = [-3000, 4000]
             # collect data.
-            _, [neu_seq, _, stim_seq, stim_value], [n_trials, n_neurons] = get_neu_trial(
+            [_, color1, color2, _], [neu_seq, _, stim_seq, stim_value], [n_trials, n_neurons] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_idx=[l[3-standard] for l in self.list_odd_idx],
+                trial_idx=[l[1-standard] for l in self.list_odd_idx],
                 cate=cate, roi_id=None)
             c_idx = int(stim_seq.shape[0]/2)
             c_stim = [[color1, color2][standard]] * stim_seq.shape[-2]
@@ -396,15 +437,17 @@ class plotter_utils(utils_basic):
             self.plot_cluster_mean_sem(
                 ax, neu_mean, neu_sem, norm_params, stim_seq, c_stim, colors)
             # adjust layout.
-            ax.set_xlim(self.xlim)
+            ax.set_xlim(xlim)
             ax.set_xlabel('time since stim after oddball interval (ms)')
             add_legend(
                 ax, [color1, color2]+colors,
-                ['post interval stim (short)', 'post interval stim (long)']+lbl,
-                n_trials, n_neurons, 'upper left')
-        plot_oddball(axs[6])
+                ['pre interval stim (short)', 'pre interval stim (long)']+lbl,
+                n_trials, n_neurons, self.n_sess, 'upper left')
+        plot_oddball(axs[5], 1)
+        plot_oddball(axs[6], 1)
         # plot transition response.
-        def plot_block_transition(ax):
+        def plot_block_transition(ax, standard):
+            xlim = [-4000, 5000]
             # collect data.
             _, [neu_seq, _, stim_seq, stim_value], [n_trials, n_neurons] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
@@ -420,140 +463,14 @@ class plotter_utils(utils_basic):
             self.plot_cluster_mean_sem(
                 ax, neu_mean, neu_sem, norm_params, stim_seq, c_stim, colors)
             # adjust layout.
-            ax.set_xlim(self.xlim)
+            ax.set_xlim(xlim)
             ax.set_xlabel('time since stim after interval block change (ms)')
             add_legend(
                 ax, [color1, color2]+colors,
                 ['post interval stim (short)', 'post interval stim (long)']+lbl,
-                n_trials, n_neurons, 'upper left')
-        plot_block_transition(axs[7])
-        # plot opposite standard response.
-        def plot_oppo_standard(ax):
-            # collect data.
-            _, [neu_seq, _, stim_seq, stim_value], [n_trials, n_neurons] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_param=[[2,3,4,5], [1-standard], None, None, [0], [0]],
-                cate=cate, roi_id=None)
-            c_stim = [[color1, color2][1-standard]] * stim_seq.shape[-2]
-            # get response within cluster.
-            neu_mean, neu_sem = get_mean_sem_cluster(neu_seq, cluster_id)
-            # plot results.
-            norm_params = [get_norm01_params(neu_mean[i,:]) for i in range(neu_mean.shape[0])]
-            self.plot_cluster_mean_sem(
-                ax, neu_mean, neu_sem, norm_params, stim_seq, c_stim, colors)
-            # adjust layout.
-            ax.set_xlim(self.xlim)
-            ax.set_xlabel('time since stim (ms)')
-            add_legend(ax, [c_stim[0]]+colors, ['stim']+lbl, n_trials, n_neurons, 'upper left')
-        plot_oppo_standard(axs[8])
-        # plot latent dyanmics of standard response.
-        def plot_latent_standard(ax):
-            # collect data.
-            _, [neu_seq, _, stim_seq, stim_value], [n_trials, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_param=[[2,3,4,5], [standard], None, None, [0], [0]],
-                cate=cate, roi_id=None)
-            c_stim = [[color1, color2][standard]] * stim_seq.shape[-2]
-            for i in range(self.n_clusters):
-                c_neu = get_cmap_color(
-                    neu_seq.shape[1], base_color=colors[i])
-                # get neural data within cluster.
-                neu_x = neu_seq[cluster_id==i].copy()
-                # fit model.
-                model = TSNE(n_components=self.d_latent)
-                neu_z = model.fit_transform(
-                    neu_x.reshape(neu_x.shape[0],-1).T
-                    ).T.reshape(self.d_latent, -1)
-                # plot dynamics.
-                self.plot_3d_latent_dynamics(ax, neu_z, stim_seq, c_neu, c_stim)
-            # adjust layout.
-            adjust_layout_3d_latent(
-                ax, neu_z, cmap_3d, self.alignment['neu_time'],
-                'time since stim (ms)')
-            add_legend(ax, [c_stim[0]]+colors, ['stim']+lbl, n_trials, neu_x.shape[0], 'upper left', dim=3)
-        plot_latent_standard(axs[9])
-        # plot latent dyanmics of oddball response.
-        def plot_latent_oddball(ax):
-            # collect data.
-            _, [neu_seq, _, stim_seq, stim_value], [n_trials, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_idx=[l[3-standard] for l in self.list_odd_idx],
-                cate=cate, roi_id=None)
-            c_idx = int(stim_seq.shape[0]/2)
-            c_stim = [[color1, color2][standard]] * stim_seq.shape[-2]
-            c_stim[c_idx] = [color1, color2][1-standard]
-            for i in range(self.n_clusters):
-                c_neu = get_cmap_color(
-                    neu_seq.shape[1], base_color=colors[i])
-                # get neural data within cluster.
-                neu_x = neu_seq[cluster_id==i].copy()
-                # fit model.
-                model = TSNE(n_components=self.d_latent)
-                neu_z = model.fit_transform(
-                    neu_x.reshape(neu_x.shape[0],-1).T
-                    ).T.reshape(self.d_latent, -1)
-                # plot dynamics.
-                self.plot_3d_latent_dynamics(ax, neu_z, stim_seq, c_neu, c_stim)
-            # adjust layout.
-            adjust_layout_3d_latent(
-                ax, neu_z, cmap_3d, self.alignment['neu_time'],
-                'time since stim after oddball interval (ms)')
-            add_legend(ax, [c_stim[0]]+colors, ['stim']+lbl, n_trials, neu_x.shape[0], 'upper left', dim=3)
-        plot_latent_oddball(axs[10])
-        # plot latent dyanmics of transition response.
-        def plot_latent_block_transition(ax):
-            # collect data.
-            _, [neu_seq, _, stim_seq, stim_value], [n_trials, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_idx=[l[1-standard] for l in self.list_block_start],
-                cate=cate, roi_id=None)
-            c_idx = int(stim_seq.shape[0]/2)
-            c_stim = [[color1, color2][standard]] * (c_idx+1)
-            c_stim+= [[color1, color2][1-standard]] * (stim_seq.shape[0]-c_idx-1)
-            for i in range(self.n_clusters):
-                c_neu = get_cmap_color(
-                    neu_seq.shape[1], base_color=colors[i])
-                # get neural data within cluster.
-                neu_x = neu_seq[cluster_id==i].copy()
-                # fit model.
-                model = TSNE(n_components=self.d_latent)
-                neu_z = model.fit_transform(
-                    neu_x.reshape(neu_x.shape[0],-1).T
-                    ).T.reshape(self.d_latent, -1)
-                # plot dynamics.
-                self.plot_3d_latent_dynamics(ax, neu_z, stim_seq, c_neu, c_stim)
-            # adjust layout.
-            adjust_layout_3d_latent(
-                ax, neu_z, cmap_3d, self.alignment['neu_time'],
-                'time since stim after interval block change (ms)')
-            add_legend(ax, [c_stim[0]]+colors, ['stim']+lbl, n_trials, neu_x.shape[0], 'upper left', dim=3)
-        plot_latent_block_transition(axs[11])
-        # plot latent dyanmics of opposite standard response.
-        def plot_latent_oppo_standard(ax):
-            # collect data.
-            _, [neu_seq, _, stim_seq, stim_value], [n_trials, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_param=[[2,3,4,5], [1-standard], None, None, [0], [0]],
-                cate=cate, roi_id=None)
-            c_stim = [[color1, color2][1-standard]] * stim_seq.shape[-2]
-            for i in range(self.n_clusters):
-                c_neu = get_cmap_color(
-                    neu_seq.shape[1], base_color=colors[i])
-                # get neural data within cluster.
-                neu_x = neu_seq[cluster_id==i].copy()
-                # fit model.
-                model = TSNE(n_components=self.d_latent)
-                neu_z = model.fit_transform(
-                    neu_x.reshape(neu_x.shape[0],-1).T
-                    ).T.reshape(self.d_latent, -1)
-                # plot dynamics.
-                self.plot_3d_latent_dynamics(ax, neu_z, stim_seq, c_neu, c_stim)
-            # adjust layout.
-            adjust_layout_3d_latent(
-                ax, neu_z, cmap_3d, self.alignment['neu_time'],
-                'time since stim (ms)')
-            add_legend(ax, [c_stim[0]]+colors, ['stim']+lbl, n_trials, neu_x.shape[0], 'upper left', dim=3)
-        plot_latent_oppo_standard(axs[12])
+                n_trials, n_neurons, self.n_sess, 'upper left')
+        plot_block_transition(axs[7], 0)
+        plot_block_transition(axs[8], 1)
         
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
@@ -564,48 +481,52 @@ class plotter_main(plotter_utils):
     def standard_exc(self, axs):
         cate = -1
         label_name = self.label_names[str(cate)]
+        try:
         
-        self.plot_standard(axs[0], [0], cate=cate)
-        axs[0].set_title(f'response to standard stim \n (short) {label_name}')
+            self.plot_standard(axs[0], [0], cate=cate)
+            axs[0].set_title(f'response to standard stim \n (short) {label_name}')
+            
+            self.plot_standard(axs[1], [1], cate=cate)
+            axs[1].set_title(f'response to standard stim \n (long) {label_name}')
+            
+            self.plot_standard(axs[2], [0,1], cate=cate)
+            axs[2].set_title(f'response to standard stim \n {label_name}')
+            
+            self.plot_standard_box(axs[3], cate=cate)
+            axs[3].set_title(f'response to standard stim \n {label_name}')
+            
+            self.plot_standard_latent(axs[4], 0, cate=cate)
+            axs[4].set_title(f'latent dynamics to standard stim \n (short) {label_name}')
+            
+            self.plot_standard_latent(axs[5], 1, cate=cate)
+            axs[5].set_title(f'latent dynamics to standard stim \n (long) {label_name}')
         
-        self.plot_standard(axs[1], [1], cate=cate)
-        axs[1].set_title(f'response to standard stim \n (long) {label_name}')
-        
-        self.plot_standard(axs[2], [0,1], cate=cate)
-        axs[2].set_title(f'response to standard stim \n {label_name}')
-        
-        self.plot_standard_box(axs[3], cate=cate)
-        axs[3].set_title(f'response to standard stim \n {label_name}')
-        
-        self.plot_standard_latent(axs[4], 0, cate=cate)
-        axs[4].set_title(f'latent dynamics to standard stim \n (short) {label_name}')
-        
-        self.plot_standard_latent(axs[5], 1, cate=cate)
-        axs[5].set_title(f'latent dynamics to standard stim \n (long) {label_name}')
-        
+        except: pass
     
     def standard_inh(self, axs):
         cate = 1
         label_name = self.label_names[str(cate)]
+        try:
+            
+            self.plot_standard(axs[0], [0], cate=cate)
+            axs[0].set_title(f'response to standard stim \n (short) {label_name}')
+            
+            self.plot_standard(axs[1], [1], cate=cate)
+            axs[1].set_title(f'response to standard stim \n (long) {label_name}')
+            
+            self.plot_standard(axs[2], [0,1], cate=cate)
+            axs[2].set_title(f'response to standard stim \n {label_name}')
+            
+            self.plot_standard_box(axs[3], cate=cate)
+            axs[3].set_title(f'response to standard stim \n {label_name}')
+            
+            self.plot_standard_latent(axs[4], 0, cate=cate)
+            axs[4].set_title(f'latent dynamics to standard stim \n (short) {label_name}')
+            
+            self.plot_standard_latent(axs[5], 1, cate=cate)
+            axs[5].set_title(f'latent dynamics to standard stim \n (long) {label_name}')
         
-        self.plot_standard(axs[0], [0], cate=cate)
-        axs[0].set_title(f'response to standard stim \n (short) {label_name}')
-        
-        self.plot_standard(axs[1], [1], cate=cate)
-        axs[1].set_title(f'response to standard stim \n (long) {label_name}')
-        
-        self.plot_standard(axs[2], [0,1], cate=cate)
-        axs[2].set_title(f'response to standard stim \n {label_name}')
-        
-        self.plot_standard_box(axs[3], cate=cate)
-        axs[3].set_title(f'response to standard stim \n {label_name}')
-        
-        self.plot_standard_latent(axs[4], 0, cate=cate)
-        axs[4].set_title(f'latent dynamics to standard stim \n (short) {label_name}')
-        
-        self.plot_standard_latent(axs[5], 1, cate=cate)
-        axs[5].set_title(f'latent dynamics to standard stim \n (long) {label_name}')
-    
+        except: pass
 
     def standard_heatmap(self, axs):
         try:
@@ -648,18 +569,18 @@ class plotter_main(plotter_utils):
             self.plot_oddball(axs[1], 1, cate=cate)
             axs[1].set_title(f'response to oddball interval \n (long standard) {label_name}')
             
-            self.plot_block_transition(axs[2], 0, cate=cate)
-            axs[2].set_title(f'response to block transition \n (short to long) {label_name}')
+            self.plot_oddball_latent(axs[2], 0, cate=cate)
+            axs[2].set_title(f'latent dynamics to oddball interval \n (short standard) {label_name}')
             
-            self.plot_block_transition(axs[3], 1, cate=cate)
-            axs[3].set_title(f'response to block transition \n (long to short) {label_name}')
+            self.plot_oddball_latent(axs[3], 1, cate=cate)
+            axs[3].set_title(f'latent dynamics to oddball interval \n (long standard) {label_name}')
             
-            self.plot_oddball_latent(axs[4], 0, cate=cate)
-            axs[4].set_title(f'latent dynamics to oddball interval \n (short standard) {label_name}')
+            self.plot_block_transition(axs[4], 0, cate=cate)
+            axs[4].set_title(f'response to block transition \n (short to long) {label_name}')
             
-            self.plot_oddball_latent(axs[5], 1, cate=cate)
-            axs[5].set_title(f'latent dynamics to oddball interval \n (long standard) {label_name}')
-            
+            self.plot_block_transition(axs[5], 1, cate=cate)
+            axs[5].set_title(f'response to block transition \n (long to short) {label_name}')
+
             self.plot_block_transition_latent(axs[6], 0, cate=cate)
             axs[6].set_title(f'latent dynamics to block transition \n (short to long) {label_name}')
             
@@ -715,70 +636,34 @@ class plotter_main(plotter_utils):
         cate = -1
         label_name = self.label_names[str(cate)]
         try:
-            self.plot_cluster(axs[0], 0, cate=cate)
-            axs[0][ 0].set_title(f'sorted correlation matrix \n (short) {label_name}')
-            axs[0][ 1].set_title(f'cross cluster correlation \n (short) {label_name}')
-            axs[0][ 2].set_title(f'clustering evaluation metrics \n (short) {label_name}')
-            axs[0][ 3].set_title(f'cluster fraction \n (short) {label_name}')
-            axs[0][ 4].set_title(f'hierarchical clustering dendrogram \n (short) {label_name}')
-            axs[0][ 5].set_title(f'response to standard interval \n (short) {label_name}')
-            axs[0][ 6].set_title(f'response to oddball interval \n (short) {label_name}')
-            axs[0][ 7].set_title(f'response to block transition \n (short to long) {label_name}')
-            axs[0][ 8].set_title(f'response to standard interval \n (long) {label_name}')
-            axs[0][ 9].set_title(f'latent dynamics to standard interval \n (short) {label_name}')
-            axs[0][10].set_title(f'latent dynamics to oddball interval \n (short) {label_name}')
-            axs[0][11].set_title(f'latent dynamics to block transition \n (short to long) {label_name}')
-            axs[0][12].set_title(f'latent dynamics to standard interval \n (long) {label_name}')
             
-            self.plot_cluster(axs[1], 1, cate=cate)
-            axs[1][ 0].set_title(f'sorted correlation matrix \n (long) {label_name}')
-            axs[1][ 1].set_title(f'cross cluster correlation \n (long) {label_name}')
-            axs[1][ 2].set_title(f'clustering evaluation metrics \n (long) {label_name}')
-            axs[1][ 3].set_title(f'cluster fraction \n (long) {label_name}')
-            axs[1][ 4].set_title(f'hierarchical clustering dendrogram \n (long) {label_name}')
-            axs[1][ 5].set_title(f'response to standard interval \n (long) {label_name}')
-            axs[1][ 6].set_title(f'response to oddball interval \n (long) {label_name}')
-            axs[1][ 7].set_title(f'response to block transition \n (long to short) {label_name}')
-            axs[1][ 8].set_title(f'response to standard interval \n (short) {label_name}')
-            axs[1][ 9].set_title(f'latent dynamics to standard interval \n (long) {label_name}')
-            axs[1][10].set_title(f'latent dynamics to oddball interval \n (long) {label_name}')
-            axs[1][11].set_title(f'latent dynamics to block transition \n (long to short) {label_name}')
-            axs[1][12].set_title(f'latent dynamics to standard interval \n (short) {label_name}')
-        
+            self.plot_cluster(axs, cate=cate)
+            axs[ 0].set_title(f'sorted correlation matrix \n (short) {label_name}')
+            axs[ 1].set_title(f'clustering evaluation metrics \n (short) {label_name}')
+            axs[ 2].set_title(f'cluster fraction \n (short) {label_name}')
+            axs[ 3].set_title(f'response to standard interval \n (short) {label_name}')
+            axs[ 4].set_title(f'response to standard interval \n (long) {label_name}')
+            axs[ 5].set_title(f'response to oddball interval \n (short standard) {label_name}')
+            axs[ 6].set_title(f'response to oddball interval \n (long standard) {label_name}')
+            axs[ 7].set_title(f'response to block transition \n (short to long) {label_name}')
+            axs[ 8].set_title(f'response to block transition \n (long to short) {label_name}')
+            
         except: pass
     
     def cluster_inh(self, axs):
         cate = 1
         label_name = self.label_names[str(cate)]
         try:
-            self.plot_cluster(axs[0], 0, cate=cate)
-            axs[0][ 0].set_title(f'sorted correlation matrix \n (short) {label_name}')
-            axs[0][ 1].set_title(f'cross cluster correlation \n (short) {label_name}')
-            axs[0][ 2].set_title(f'clustering evaluation metrics \n (short) {label_name}')
-            axs[0][ 3].set_title(f'cluster fraction \n (short) {label_name}')
-            axs[0][ 4].set_title(f'hierarchical clustering dendrogram \n (short) {label_name}')
-            axs[0][ 5].set_title(f'response to standard interval \n (short) {label_name}')
-            axs[0][ 6].set_title(f'response to oddball interval \n (short) {label_name}')
-            axs[0][ 7].set_title(f'response to block transition \n (short to long) {label_name}')
-            axs[0][ 8].set_title(f'response to standard interval \n (long) {label_name}')
-            axs[0][ 9].set_title(f'latent dynamics to standard interval \n (short) {label_name}')
-            axs[0][10].set_title(f'latent dynamics to oddball interval \n (short) {label_name}')
-            axs[0][11].set_title(f'latent dynamics to block transition \n (short to long) {label_name}')
-            axs[0][12].set_title(f'latent dynamics to standard interval \n (long) {label_name}')
             
-            self.plot_cluster(axs[1], 1, cate=cate)
-            axs[1][ 0].set_title(f'sorted correlation matrix \n (long) {label_name}')
-            axs[1][ 1].set_title(f'cross cluster correlation \n (long) {label_name}')
-            axs[1][ 2].set_title(f'clustering evaluation metrics \n (long) {label_name}')
-            axs[1][ 3].set_title(f'cluster fraction \n (long) {label_name}')
-            axs[1][ 4].set_title(f'hierarchical clustering dendrogram \n (long) {label_name}')
-            axs[1][ 5].set_title(f'response to standard interval \n (long) {label_name}')
-            axs[1][ 6].set_title(f'response to oddball interval \n (long) {label_name}')
-            axs[1][ 7].set_title(f'response to block transition \n (long to short) {label_name}')
-            axs[1][ 8].set_title(f'response to standard interval \n (short) {label_name}')
-            axs[1][ 9].set_title(f'latent dynamics to standard interval \n (long) {label_name}')
-            axs[1][10].set_title(f'latent dynamics to oddball interval \n (long) {label_name}')
-            axs[1][11].set_title(f'latent dynamics to block transition \n (long to short) {label_name}')
-            axs[1][12].set_title(f'latent dynamics to standard interval \n (short) {label_name}')
+            self.plot_cluster(axs, cate=cate)
+            axs[ 0].set_title(f'sorted correlation matrix \n (short) {label_name}')
+            axs[ 1].set_title(f'clustering evaluation metrics \n (short) {label_name}')
+            axs[ 2].set_title(f'cluster fraction \n (short) {label_name}')
+            axs[ 3].set_title(f'response to standard interval \n (short) {label_name}')
+            axs[ 4].set_title(f'response to standard interval \n (long) {label_name}')
+            axs[ 5].set_title(f'response to oddball interval \n (short standard) {label_name}')
+            axs[ 6].set_title(f'response to oddball interval \n (long standard) {label_name}')
+            axs[ 7].set_title(f'response to block transition \n (short to long) {label_name}')
+            axs[ 8].set_title(f'response to block transition \n (long to short) {label_name}')
         
         except: pass

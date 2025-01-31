@@ -16,7 +16,7 @@ from plot.misc import plot_motion_offset_hist
 from plot.misc import plot_inh_exc_label_pc
 
 def run(
-        session_config,
+        session_config_list,
         list_labels, list_masks, list_vol, list_dff, list_move_offset
         ):
     size_scale = 7
@@ -36,17 +36,17 @@ def run(
             list_masks[-1][2],
             list_masks[-1][3],
             list_masks[-1][4])
-        if len(session_config['label_names'])==1:
+        if len(session_config_list['label_names'])==1:
             print('Plotting masks for 1 channel data')
             mask_axs = [plt.subplot(gs[0:2, j:j+2]) for j in range(0,12,2)]
             plotter.all_1chan(mask_axs)
-        if len(session_config['label_names'])==2:
+        if len(session_config_list['label_names'])==2:
             print('Plotting masks for 2 channel data')
             mask_axs = [plt.subplot(gs[i:i+2, j:j+2]) for j in range(0,12,2) for i in [0,2]]
             plotter.all_2chan(mask_axs)
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-        fig.savefig(os.path.join('results', session_config['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-        fig.savefig(os.path.join('results', session_config['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
         plt.close(fig)
         del plotter
         gc.collect()
@@ -65,10 +65,10 @@ def run(
         plot_sess_example_traces(
             example_ax,
             list_dff[-1], list_labels[-1], list_vol[-1],
-            session_config['label_names'])
+            session_config_list['label_names'])
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-        fig.savefig(os.path.join('results', session_config['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-        fig.savefig(os.path.join('results', session_config['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
         plt.close(fig)
         return [filename, n_row, n_col, title]
     f2 = plot_example_traces()
@@ -95,14 +95,14 @@ def run(
         plot_ca_tran(
             ca_axs01,
             list_dff[-1], list_labels[-1], list_vol[-1],
-            session_config['label_names'])
+            session_config_list['label_names'])
         plot_ca_tran_half_dist(
             ca_axs02,
             list_dff[-1], list_labels[-1], list_vol[-1],
-            session_config['label_names'])
+            session_config_list['label_names'])
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-        fig.savefig(os.path.join('results', session_config['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-        fig.savefig(os.path.join('results', session_config['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
         plt.close(fig)
         return [filename, n_row, n_col, title]
     f3 = plot_misc()

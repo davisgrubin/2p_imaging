@@ -132,7 +132,7 @@ def plot_sess_example_traces(ax, dff, labels, vol, label_names):
     add_legend(
         ax,
         [get_roi_label_color([int(k)], 0)[2] for k in label_names.keys()],
-        [i[1] for i in label_names.items()], None, None,
+        [i[1] for i in label_names.items()], None, None, None,
         'upper right')
 
 # calcium transient grand average.
