@@ -25,7 +25,7 @@ def get_stim_response(
         neural_trials,
         l_frames, r_frames,
         expected='none',
-        n_stim = 5,
+        n_stim = 6,
         ):
     stim_labels = neural_trials['stim_labels']
     dff = neural_trials['dff']

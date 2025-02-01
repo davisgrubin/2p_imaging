@@ -481,8 +481,8 @@ class plotter_main(plotter_utils):
         self.label_names = label_names
 
     def random_exc(self, axs):
-        cate = -1
-        label_name = self.label_names[str(cate)]
+        cate = [-1]
+        label_name = self.label_names[str(cate[0])]
         try:
 
             self.plot_random_stim(axs[0], cate=cate)
@@ -509,8 +509,8 @@ class plotter_main(plotter_utils):
         except: pass
 
     def random_inh(self, axs):
-        cate = 1
-        label_name = self.label_names[str(cate)]
+        cate = [1]
+        label_name = self.label_names[str(cate[0])]
         try:
             
             self.plot_random_stim(axs[0], cate=cate)
@@ -537,8 +537,8 @@ class plotter_main(plotter_utils):
         except: pass
     
     def cluster_exc(self, axs):
-        cate = -1
-        label_name = self.label_names[str(cate)]
+        cate = [-1]
+        label_name = self.label_names[str(cate[0])]
         try:
             
             self.plot_random_cluster(axs, cate=cate)
@@ -551,8 +551,8 @@ class plotter_main(plotter_utils):
         except: pass
 
     def cluster_inh(self, axs):
-        cate = 1
-        label_name = self.label_names[str(cate)]
+        cate = [1]
+        label_name = self.label_names[str(cate[0])]
         try:
             
             self.plot_random_cluster(axs, cate=cate)
@@ -565,8 +565,8 @@ class plotter_main(plotter_utils):
         except: pass
 
     def glm_exc(self, axs):
-        cate = -1
-        label_name = self.label_names[str(cate)]
+        cate = [-1]
+        label_name = self.label_names[str(cate[0])]
         try:
             
             self.plot_random_glm(axs, cate=cate)
@@ -577,8 +577,8 @@ class plotter_main(plotter_utils):
         except: pass
     
     def glm_inh(self, axs):
-        cate = 1
-        label_name = self.label_names[str(cate)]
+        cate = [1]
+        label_name = self.label_names[str(cate[0])]
         try:
             
             self.plot_random_glm(axs, cate=cate)

@@ -110,32 +110,53 @@ def run(
             plt.close(fig)
             return [filename, n_row, n_col, title]
         f3 = plot_trial()
-        def plot_oddball():
-            title = 'neural traces alignment on oddball intervals'
-            filename = '4131FixJitterOdd04_oddball'
+        # fix oddball interval.
+        print('Plotting fix oddball analysis')
+        def plot_oddball_fix():
+            title = 'neural traces alignment on oddball in fix standard'
+            filename = '4131FixJitterOdd04_oddball_fix'
             n_row = 6
-            n_col = 6
+            n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            oddball_axs01 = [plt.subplot(gs[0, i]) for i in range(6)]
-            oddball_axs01+= [plt.subplot(gs[1, i]) for i in range(6)]
+            oddball_axs01 = [plt.subplot(gs[0, i]) for i in range(3)]
+            oddball_axs01+= [plt.subplot(gs[1, i]) for i in range(3)]
             oddball_axs01+= [plt.subplot(gs[2, i], projection='3d') for i in range(2)]
-            oddball_axs02 = [plt.subplot(gs[3, i]) for i in range(6)]
-            oddball_axs02+= [plt.subplot(gs[4, i]) for i in range(6)]
+            oddball_axs02 = [plt.subplot(gs[3, i]) for i in range(3)]
+            oddball_axs02+= [plt.subplot(gs[4, i]) for i in range(3)]
             oddball_axs02+= [plt.subplot(gs[5, i], projection='3d') for i in range(2)]
-            plotter.oddball_exc(oddball_axs01)
-            plotter.oddball_inh(oddball_axs02)
+            plotter.oddball_fix_exc(oddball_axs01)
+            plotter.oddball_fix_inh(oddball_axs02)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f4 = plot_oddball()
+        f4 = plot_oddball_fix()
+        # jitter oddball interval.
+        print('Plotting jitter oddball analysis')
+        def plot_oddball_jitter():
+            title = 'neural traces alignment on oddball in jitter standard'
+            filename = '4131FixJitterOdd04_oddball_jitter'
+            n_row = 2
+            n_col = 6
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            oddball_axs01 = [plt.subplot(gs[0, i]) for i in range(6)]
+            oddball_axs02 = [plt.subplot(gs[1, i]) for i in range(6)]
+            plotter.oddball_jitter_exc(oddball_axs01)
+            plotter.oddball_jitter_inh(oddball_axs02)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        f5 = plot_oddball_jitter()
         # clustering analysis.
         print('Plotting clustering analysis')
         def plot_clustering():
             title = 'clustering on standard oddball fix jitter interval'
-            filename = '4131FixJitterOdd05_clustering'
+            filename = '4131FixJitterOdd06_clustering'
             n_row = 6
             n_col = 12
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -151,7 +172,7 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f5 = plot_clustering()
+        f6 = plot_clustering()
         # clear memory.
         print('Clearing memory usage')
         del list_labels
@@ -161,5 +182,5 @@ def run(
         del list_significance
         gc.collect()
         # combine temp filenames
-        return [f1, f2, f3, f4, f5]
+        return [f1, f2, f3, f4, f5, f6]
 

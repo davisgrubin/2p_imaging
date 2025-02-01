@@ -136,18 +136,20 @@ def run(
         def plot_oddball():
             title = 'neural traces alignment on oddball intervals'
             filename = '1451ShortLong05_oddball'
-            n_row = 6
-            n_col = 10
+            n_row = 4
+            n_col = 6
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             oddball_axs01 = [plt.subplot(gs[i, 0]) for i in range(2)]
-            oddball_axs01+= [plt.subplot(gs[i, 1], projection='3d') for i in range(2)]
-            oddball_axs01+= [plt.subplot(gs[i, 2:4]) for i in range(2)]
-            oddball_axs01+= [plt.subplot(gs[i, 4], projection='3d') for i in range(2)]
+            oddball_axs01+= [plt.subplot(gs[i, 1]) for i in range(2)]
+            oddball_axs01+= [plt.subplot(gs[i, 2], projection='3d') for i in range(2)]
+            oddball_axs01+= [plt.subplot(gs[i, 3:5]) for i in range(2)]
+            oddball_axs01+= [plt.subplot(gs[i, 5], projection='3d') for i in range(2)]
             oddball_axs02 = [plt.subplot(gs[i+2, 0]) for i in range(2)]
-            oddball_axs02+= [plt.subplot(gs[i+2, 1], projection='3d') for i in range(2)]
-            oddball_axs02+= [plt.subplot(gs[i+2, 2:4]) for i in range(2)]
-            oddball_axs02+= [plt.subplot(gs[i+2, 4], projection='3d') for i in range(2)]
+            oddball_axs02+= [plt.subplot(gs[i+2, 1]) for i in range(2)]
+            oddball_axs02+= [plt.subplot(gs[i+2, 2], projection='3d') for i in range(2)]
+            oddball_axs02+= [plt.subplot(gs[i+2, 3:5]) for i in range(2)]
+            oddball_axs02+= [plt.subplot(gs[i+2, 5], projection='3d') for i in range(2)]
             plotter.oddball_exc(oddball_axs01)
             plotter.oddball_inh(oddball_axs02)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)

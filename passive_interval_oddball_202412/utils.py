@@ -162,9 +162,9 @@ def get_neu_trial(
         cate=None, roi_id=None,
         ):
     if cate != None:
-        colors = get_roi_label_color([cate], 0)
+        colors = get_roi_label_color(cate, 0)
         neu_cate = [
-            alignment['list_neu_seq'][i][:,(list_labels[i]==cate)*list_significance[i]['r_standard'],:]
+            alignment['list_neu_seq'][i][:,np.in1d(list_labels[i],cate)*list_significance[i]['r_standard'],:]
             for i in range(len(list_stim_labels))]
     if roi_id != None:
         colors = get_roi_label_color(list_labels, roi_id)
@@ -550,7 +550,10 @@ class utils_basic:
                     cbar_inh.ax.set_ylabel('inhibitory', rotation=-90, va="bottom")
                     cbar_inh.ax.set_yticklabels(['0.2', '0.8'], rotation=-90)
 
-    def plot_win_mag_box(self, ax, neu_seq, neu_time, win_base, color, c_time, offset):
+    def plot_win_mag_box(
+            self, ax, neu_seq, neu_time,
+            win_base, color, c_time, offset,
+            ):
         # compute response within window.
         win_early = [0,250]
         win_late  = [250,500]

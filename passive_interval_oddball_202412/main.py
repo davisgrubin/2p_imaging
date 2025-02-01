@@ -44,7 +44,7 @@ def run(session_config_list):
         print(n)
     print('Reading ops.npy')
     list_ops = read_ops(session_config_list['list_session_data_path'])
-
+    '''
     print('===============================================')
     print('============= trials segmentation =============')
     print('===============================================')
@@ -60,7 +60,7 @@ def run(session_config_list):
         print('Running significance test for {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
         StatTest.run(list_ops[i])
-
+    '''
     print('===============================================')
     print('============ reading saved results ============')
     print('===============================================')
@@ -255,11 +255,11 @@ if __name__ == "__main__":
         'subject_name' : 'FN14',
         'output_filename' : 'FN14_PPC_passive.html'
         }
-    run(session_config_list_YH01VT)
-    run(session_config_list_YH02VT)
-    run(session_config_list_YH03VT)
+    #run(session_config_list_YH01VT)
+    #run(session_config_list_YH02VT)
+    #run(session_config_list_YH03VT)
     #run(session_config_list_all)
-    #run(session_config_list_FN14)
+    run(session_config_list_FN14)
     
     '''
     

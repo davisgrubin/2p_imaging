@@ -19,3 +19,6 @@
 
 ## 2025.01.31
 - Now all clustering are done on all conditions.
+
+## 2025.02.01
+- Now get_neu_trial receives cate as a list.

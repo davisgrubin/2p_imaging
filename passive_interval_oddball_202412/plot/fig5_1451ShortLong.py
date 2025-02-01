@@ -37,7 +37,7 @@ class plotter_utils(utils_basic):
         timescale = 1.0
         self.n_sess = len(list_neural_trials)
         self.l_frames = int(200*timescale)
-        self.r_frames = int(150*timescale)
+        self.r_frames = int(200*timescale)
         self.list_labels = list_labels
         self.alignment = run_get_stim_response(
                 list_neural_trials, self.l_frames, self.r_frames, expected='none')
@@ -425,7 +425,7 @@ class plotter_utils(utils_basic):
             # collect data.
             [_, color1, color2, _], [neu_seq, _, stim_seq, stim_value], [n_trials, n_neurons] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_idx=[l[1-standard] for l in self.list_odd_idx],
+                trial_idx=[l[3-standard] for l in self.list_odd_idx],
                 cate=cate, roi_id=None)
             c_idx = int(stim_seq.shape[0]/2)
             c_stim = [[color1, color2][standard]] * stim_seq.shape[-2]
@@ -441,9 +441,9 @@ class plotter_utils(utils_basic):
             ax.set_xlabel('time since stim after oddball interval (ms)')
             add_legend(
                 ax, [color1, color2]+colors,
-                ['pre interval stim (short)', 'pre interval stim (long)']+lbl,
+                ['post interval stim (short)', 'post interval stim (long)']+lbl,
                 n_trials, n_neurons, self.n_sess, 'upper left')
-        plot_oddball(axs[5], 1)
+        plot_oddball(axs[5], 0)
         plot_oddball(axs[6], 1)
         # plot transition response.
         def plot_block_transition(ax, standard):
@@ -479,8 +479,8 @@ class plotter_main(plotter_utils):
         self.label_names = label_names
     
     def standard_exc(self, axs):
-        cate = -1
-        label_name = self.label_names[str(cate)]
+        cate = [-1]
+        label_name = self.label_names[str(cate[0])]
         try:
         
             self.plot_standard(axs[0], [0], cate=cate)
@@ -504,8 +504,8 @@ class plotter_main(plotter_utils):
         except: pass
     
     def standard_inh(self, axs):
-        cate = 1
-        label_name = self.label_names[str(cate)]
+        cate = [1]
+        label_name = self.label_names[str(cate[0])]
         try:
             
             self.plot_standard(axs[0], [0], cate=cate)
@@ -559,8 +559,8 @@ class plotter_main(plotter_utils):
         except: pass
     
     def oddball_exc(self, axs):
-        cate = -1
-        label_name = self.label_names[str(cate)]
+        cate = [-1]
+        label_name = self.label_names[str(cate[0])]
         try:
             
             self.plot_oddball(axs[0], 0, cate=cate)
@@ -569,48 +569,11 @@ class plotter_main(plotter_utils):
             self.plot_oddball(axs[1], 1, cate=cate)
             axs[1].set_title(f'response to oddball interval \n (long standard) {label_name}')
             
-            self.plot_oddball_latent(axs[2], 0, cate=cate)
-            axs[2].set_title(f'latent dynamics to oddball interval \n (short standard) {label_name}')
+            self.plot_oddball_sync(axs[2], 0, cate=cate)
+            axs[2].set_title(f'synchronization to oddball interval \n (short standard) {label_name}')
             
-            self.plot_oddball_latent(axs[3], 1, cate=cate)
-            axs[3].set_title(f'latent dynamics to oddball interval \n (long standard) {label_name}')
-            
-            self.plot_block_transition(axs[4], 0, cate=cate)
-            axs[4].set_title(f'response to block transition \n (short to long) {label_name}')
-            
-            self.plot_block_transition(axs[5], 1, cate=cate)
-            axs[5].set_title(f'response to block transition \n (long to short) {label_name}')
-
-            self.plot_block_transition_latent(axs[6], 0, cate=cate)
-            axs[6].set_title(f'latent dynamics to block transition \n (short to long) {label_name}')
-            
-            self.plot_block_transition_latent(axs[7], 1, cate=cate)
-            axs[7].set_title(f'latent dynamics to block transition \n (long to short) {label_name}')
-            
-            self.plot_oddball_sync(axs[8], 0, cate=cate)
-            axs[8].set_title(f'synchronization to oddball interval \n (short standard) {label_name}')
-            
-            self.plot_oddball_sync(axs[9], 1, cate=cate)
-            axs[9].set_title(f'synchronization to oddball interval \n (long standard) {label_name}')
-
-        except: pass
-
-    def oddball_inh(self, axs):
-        cate = 1
-        label_name = self.label_names[str(cate)]
-        try:
-            
-            self.plot_oddball(axs[0], 0, cate=cate)
-            axs[0].set_title(f'response to oddball interval \n (short standard) {label_name}')
-            
-            self.plot_oddball(axs[1], 1, cate=cate)
-            axs[1].set_title(f'response to oddball interval \n (long standard) {label_name}')
-            
-            self.plot_block_transition(axs[2], 0, cate=cate)
-            axs[2].set_title(f'response to block transition \n (short to long) {label_name}')
-            
-            self.plot_block_transition(axs[3], 1, cate=cate)
-            axs[3].set_title(f'response to block transition \n (long to short) {label_name}')
+            self.plot_oddball_sync(axs[3], 1, cate=cate)
+            axs[3].set_title(f'synchronization to oddball interval \n (long standard) {label_name}')
             
             self.plot_oddball_latent(axs[4], 0, cate=cate)
             axs[4].set_title(f'latent dynamics to oddball interval \n (short standard) {label_name}')
@@ -618,23 +581,60 @@ class plotter_main(plotter_utils):
             self.plot_oddball_latent(axs[5], 1, cate=cate)
             axs[5].set_title(f'latent dynamics to oddball interval \n (long standard) {label_name}')
             
-            self.plot_block_transition_latent(axs[6], 0, cate=cate)
-            axs[6].set_title(f'latent dynamics to block transition \n (short to long) {label_name}')
+            self.plot_block_transition(axs[6], 0, cate=cate)
+            axs[6].set_title(f'response to block transition \n (short to long) {label_name}')
             
-            self.plot_block_transition_latent(axs[7], 1, cate=cate)
-            axs[7].set_title(f'latent dynamics to block transition \n (long to short) {label_name}')
+            self.plot_block_transition(axs[7], 1, cate=cate)
+            axs[7].set_title(f'response to block transition \n (long to short) {label_name}')
+
+            self.plot_block_transition_latent(axs[8], 0, cate=cate)
+            axs[8].set_title(f'latent dynamics to block transition \n (short to long) {label_name}')
             
-            self.plot_oddball_sync(axs[8], 0, cate=cate)
-            axs[8].set_title(f'synchronization to oddball interval \n (short standard) {label_name}')
+            self.plot_block_transition_latent(axs[9], 1, cate=cate)
+            axs[9].set_title(f'latent dynamics to block transition \n (long to short) {label_name}')
+
+        except: pass
+
+    def oddball_inh(self, axs):
+        cate = [1]
+        label_name = self.label_names[str(cate[0])]
+        try:
             
-            self.plot_oddball_sync(axs[9], 1, cate=cate)
-            axs[9].set_title(f'synchronization to oddball interval \n (long standard) {label_name}')
+            self.plot_oddball(axs[0], 0, cate=cate)
+            axs[0].set_title(f'response to oddball interval \n (short standard) {label_name}')
+            
+            self.plot_oddball(axs[1], 1, cate=cate)
+            axs[1].set_title(f'response to oddball interval \n (long standard) {label_name}')
+            
+            self.plot_oddball_sync(axs[2], 0, cate=cate)
+            axs[2].set_title(f'synchronization to oddball interval \n (short standard) {label_name}')
+            
+            self.plot_oddball_sync(axs[3], 1, cate=cate)
+            axs[3].set_title(f'synchronization to oddball interval \n (long standard) {label_name}')
+            
+            self.plot_oddball_latent(axs[4], 0, cate=cate)
+            axs[4].set_title(f'latent dynamics to oddball interval \n (short standard) {label_name}')
+            
+            self.plot_oddball_latent(axs[5], 1, cate=cate)
+            axs[5].set_title(f'latent dynamics to oddball interval \n (long standard) {label_name}')
+            
+            self.plot_block_transition(axs[6], 0, cate=cate)
+            axs[6].set_title(f'response to block transition \n (short to long) {label_name}')
+            
+            self.plot_block_transition(axs[7], 1, cate=cate)
+            axs[7].set_title(f'response to block transition \n (long to short) {label_name}')
+
+            self.plot_block_transition_latent(axs[8], 0, cate=cate)
+            axs[8].set_title(f'latent dynamics to block transition \n (short to long) {label_name}')
+            
+            self.plot_block_transition_latent(axs[9], 1, cate=cate)
+            axs[9].set_title(f'latent dynamics to block transition \n (long to short) {label_name}')
 
         except: pass
 
     def cluster_exc(self, axs):
-        cate = -1
-        label_name = self.label_names[str(cate)]
+        cate = [-1]
+        label_name = self.label_names[str(cate[0])]
         try:
             
             self.plot_cluster(axs, cate=cate)
@@ -651,8 +651,8 @@ class plotter_main(plotter_utils):
         except: pass
     
     def cluster_inh(self, axs):
-        cate = 1
-        label_name = self.label_names[str(cate)]
+        cate = [1]
+        label_name = self.label_names[str(cate[0])]
         try:
             
             self.plot_cluster(axs, cate=cate)
