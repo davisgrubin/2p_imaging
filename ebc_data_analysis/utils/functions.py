@@ -6,24 +6,82 @@ from matplotlib.gridspec import GridSpec
 import scipy.io as sio
 import h5py
 
-def processing_files(bpod_file = "bpod_session_data.mat", 
-                     raw_voltage_file = "raw_voltages.h5", 
-                     dff_file = "raw_voltages.h5", 
-                     save_path = 'saved_trials.h5', 
+#for the fec only files
+def processing_beh(bpod_file, save_path, exclude_start, exclude_end):
+    bpod_mat_data_0 = read_bpod_mat_data(bpod_file)
+    trials = trial_label_fec(bpod_mat_data_0)
+    save_trials(trials, exclude_start, exclude_end, save_path)
+
+def trial_label_fec(bpod_sess_data):
+    valid_trials = {}  # Create a new dictionary to store only valid trials
+    #print(len(bpod_sess_data['trial_types']))
+    for i in range(len(bpod_sess_data['trial_types'])):
+        valid_trials[str(i)] = {}
+    for i in range(len(bpod_sess_data['trial_types'])):
+        # Initialize a flag to check if the trial contains invalid data
+        is_valid = True
+
+        # Check each field for NaN or unexpected values
+        if np.isnan(bpod_sess_data['trial_LED_ON'][i]).any() or np.isnan(bpod_sess_data['trial_LED_OFF'][i]).any():
+            #print(f"Warning: NaN found in trial_LED for trial {i}")
+            is_valid = False
+        if np.isnan(bpod_sess_data['trial_AirPuff'][i]).any():
+            #print(f"Warning: NaN found in trial_AirPuff for trial {i}")
+            is_valid = False
+        if not isinstance(bpod_sess_data['trial_types'][i], int):  # Assuming trial types should be integers
+            #print(f"Warning: Invalid trial_type for trial {i}")
+            is_valid = False
+        if np.isnan(bpod_sess_data['trial_ITI'][i]).any():
+            #print(f"Warning: NaN found in trial_ITI for trial {i}")
+            is_valid = False
+        if np.isnan(bpod_sess_data['trial_FEC'][i]).any():
+            #print(f"Warning: NaN found in trial_FEC for trial {i}")
+            is_valid = False
+        if np.isnan(bpod_sess_data['trial_FEC_TIME'][i]).any():
+            #print(f"Warning: NaN found in trial_FEC_TIME for trial {i}")
+            is_valid = False
+
+        # Only add the trial to valid_trials if it is valid
+        if is_valid:
+            # Modify the 'LED' field with new logic
+            led_on_time = bpod_sess_data['trial_LED_ON'][i] 
+            led_off_time = bpod_sess_data['trial_LED_OFF'][i] 
+            valid_trials[str(i)]['LED'] = [led_on_time[0], led_off_time[0]]
+
+            valid_trials[str(i)]['AirPuff'] = bpod_sess_data['trial_AirPuff'][i] 
+            valid_trials[str(i)]['trial_type'] = bpod_sess_data['trial_types'][i]
+            valid_trials[str(i)]['ITI'] = bpod_sess_data['trial_ITI'][i] 
+            valid_trials[str(i)]['FEC'] = bpod_sess_data['trial_FEC'][i]
+            valid_trials[str(i)]['FECTimes'] = bpod_sess_data['trial_FEC_TIME'][i]
+            valid_trials[str(i)]['LED_on'] = led_on_time
+            valid_trials[str(i)]['LED_off'] = led_off_time
+
+            #print(f"Data for trial {i} has been added.")
+        # else:
+            # print(f"Skipping trial {i} due to invalid data.")
+
+    return valid_trials
+
+
+def processing_files(bpod_file = "bpod_session_data.mat",
+                     raw_voltage_file = "raw_voltages.h5",
+                     dff_file = "raw_voltages.h5",
+                     save_path = 'saved_trials.h5',
                      exclude_start=20, exclude_end=20):
     bpod_mat_data_0 = read_bpod_mat_data(bpod_file)
+    #processing dff from here
     dff = read_dff(dff_file)
-    [vol_time, 
-    vol_start, 
-    vol_stim_vis, 
-    vol_img, 
-    vol_hifi, 
-    vol_stim_aud, 
+    [vol_time,
+    vol_start,
+    vol_stim_vis,
+    vol_img,
+    vol_hifi,
+    vol_stim_aud,
     vol_flir,
-    vol_pmt, 
+    vol_pmt,
     vol_led] = read_raw_voltages(raw_voltage_file)
     print('Correcting 2p camera trigger time')
-    # signal trigger time stamps.
+    # signal trigger time stamps. = {}
     time_img, _   = get_trigger_time(vol_time, vol_img)
     # correct imaging timing.
     time_neuro = correct_time_img_center(time_img)
@@ -84,10 +142,10 @@ def trial_label(neural_trials, bpod_sess_data):
             valid_trials[str(i)]['FECTimes'] = bpod_sess_data['trial_FEC_TIME'][i] + neural_trials[str(i)]['vol_time'][0]
             valid_trials[str(i)]['LED_on'] = led_on_time
             valid_trials[str(i)]['LED_off'] = led_off_time
-            
-            print(f"Data for trial {i} has been added.")
-        else:
-            print(f"Skipping trial {i} due to invalid data.")
+
+            #print(f"Data for trial {i} has been added.")
+        # else:
+            # print(f"Skipping trial {i} due to invalid data.")
 
     return valid_trials
 
@@ -117,7 +175,7 @@ def read_raw_voltages(voltage_file):
         vol_led = np.zeros_like(vol_time)
     f.close()
 
-    return [vol_time, vol_start, vol_stim_vis, vol_img, 
+    return [vol_time, vol_start, vol_stim_vis, vol_img,
             vol_hifi, vol_stim_aud, vol_flir,
             vol_pmt, vol_led]
 
@@ -257,14 +315,12 @@ def tolist(ndarray):
             elem_list.append(sub_elem)
     return elem_list
 
-import scipy.io as sio
-import numpy as np
-
 def read_bpod_mat_data(bpod_file):
     # Load .mat file
     raw = sio.loadmat(bpod_file, struct_as_record=False, squeeze_me=True)
     raw = check_keys(raw)['SessionData']
-    
+    #raw = raw['SessionData']
+
     # Initialize variables
     trial_type = []
     trial_delay = []
@@ -275,19 +331,19 @@ def read_bpod_mat_data(bpod_file):
     trial_FEC_TIME = []
     LED_on = []
     LED_off = []
-    
+
     # Loop through trials
     for i in range(raw['nTrials']):
         trial_states = raw['RawEvents']['Trial'][i]['States']
         trial_data = raw['RawEvents']['Trial'][i]['Data']
         trial_event = raw['RawEvents']['Trial'][i]['Events']
-        
+
         # Handle trial_LED
         if 'LED_Onset' in trial_states:
             trial_LED.append(1000 * np.array(trial_states['LED_Onset']).reshape(-1))
         else:
             trial_LED.append([])
-        
+
         # Handle LED_on and LED_off
         if 'GlobalTimer1_Start' in trial_event:
             LED_on.append(1000 * np.array(trial_event['GlobalTimer1_Start']).reshape(-1))
@@ -297,19 +353,19 @@ def read_bpod_mat_data(bpod_file):
             LED_off.append(1000 * np.array(trial_event['GlobalTimer1_End']).reshape(-1))
         else:
             LED_off.append([])
-        
+
         # Handle trial_AirPuff
         if 'AirPuff' in trial_states:
             trial_AirPuff.append(1000 * np.array(trial_states['AirPuff']).reshape(-1))
         else:
             trial_AirPuff.append([])
-        
+
         # Handle trial_ITI
         if 'ITI' in trial_states:
             trial_ITI.append(1000 * np.array(trial_states['ITI']).reshape(-1))
         else:
             trial_ITI.append([])
-        
+
         # Handle trial_FEC and trial_FEC_TIME
         if 'FEC' in trial_data:
             trial_FEC.append(np.array(trial_data['FEC']).reshape(-1))
@@ -319,19 +375,19 @@ def read_bpod_mat_data(bpod_file):
             trial_FEC_TIME.append(1000 * np.array(trial_data['FECTimes']).reshape(-1))
         else:
             trial_FEC_TIME.append([])
-        
+
         # Determine trial type
         if trial_data.get('BlockType') == 'short':
             trial_type.append(1)
         else:
             trial_type.append(2)
-        
+
         # Handle trial_delay
         if 'AirPuff_OnsetDelay' in trial_data:
             trial_delay.append(1000 * np.array(trial_data['AirPuff_OnsetDelay']))
         else:
             trial_delay.append(None)
-    
+
     # Prepare output dictionary
     bpod_sess_data = {
         'trial_types': trial_type,
@@ -342,6 +398,7 @@ def read_bpod_mat_data(bpod_file):
         'trial_LED_OFF': LED_off,
         'trial_ITI': trial_ITI,
         'trial_FEC': trial_FEC,
+        #eyeareapixels should replace FEC
         'trial_FEC_TIME': trial_FEC_TIME
     }
 
@@ -385,9 +442,7 @@ def interval_averaging(interval):
     for roi in interval:
         dummy = []
         for id in interval[roi]:
+            # print(interval[roi][id])
             dummy.append(interval[roi][id])
         interval_avg[roi] = np.nanmean(dummy, axis=0)
     return interval_avg
-
-def sig_pdf_name(session_date, sig_event):
-    return f"./outputs/{session_date}/significant_ROIs/individual_{sig_event}_sig_roi.pdf"

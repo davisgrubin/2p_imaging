@@ -24,10 +24,10 @@ def save_fec_plots_to_pdf(trials, fec_time_0, fec_0, CR_stat, all_id, filename):
                 block_color = "blue" if trials[id]["trial_type"][()] == 1 else "lime"
 
                 ax.plot(fec_time_0[id], fec_0[id]/100, label=f"FEC of trial {id}", color=CR_color)
-                ax.axvspan(0, trials[id]["LED"][1] - trials[id]["LED"][0], 
+                ax.axvspan(0, trials[id]["LED"][1] - trials[id]["LED"][0],
                            color="gray", alpha=0.5, label="LED")
-                ax.axvspan(trials[id]["AirPuff"][0] - trials[id]["LED"][0], 
-                           trials[id]["AirPuff"][1] - trials[id]["LED"][0], 
+                ax.axvspan(trials[id]["AirPuff"][0] - trials[id]["LED"][0],
+                           trials[id]["AirPuff"][1] - trials[id]["LED"][0],
                            color=block_color, alpha=0.5, label="AirPuff")
 
                 ax.set_title(f"Trial {id} FEC", fontsize=10)
@@ -46,8 +46,8 @@ def save_fec_plots_to_pdf(trials, fec_time_0, fec_0, CR_stat, all_id, filename):
             pdf.savefig(fig)
             plt.close(fig)
 
-def save_roi_plots_to_pdf(short_crp_avg_dff, short_crn_avg_dff, short_crp_sem_dff, short_crn_sem_dff, 
-                          short_crp_aligned_time, long_crp_avg_dff, long_crn_avg_dff, long_crp_sem_dff, long_crn_sem_dff, 
+def save_roi_plots_to_pdf(short_crp_avg_dff, short_crn_avg_dff, short_crp_sem_dff, short_crn_sem_dff,
+                          short_crp_aligned_time, long_crp_avg_dff, long_crn_avg_dff, long_crp_sem_dff, long_crn_sem_dff,
                           long_crp_aligned_time, trials, pdf_filename):
     x_min, x_max = -100, 550
 
@@ -119,8 +119,8 @@ def save_roi_plots_to_pdf(short_crp_avg_dff, short_crn_avg_dff, short_crp_sem_df
 
         print(f"All plots have been saved to {pdf_filename}")
 
-def save_roi_plots_to_pdf_sig(short_crp_avg_dff, short_crn_avg_dff, short_crp_sem_dff, short_crn_sem_dff, 
-                          short_crp_aligned_time, long_crp_avg_dff, long_crn_avg_dff, long_crp_sem_dff, long_crn_sem_dff, 
+def save_roi_plots_to_pdf_sig(short_crp_avg_dff, short_crn_avg_dff, short_crp_sem_dff, short_crn_sem_dff,
+                          short_crp_aligned_time, long_crp_avg_dff, long_crn_avg_dff, long_crp_sem_dff, long_crn_sem_dff,
                           long_crp_aligned_time, trials, pdf_filename, ROI_list):
     x_min, x_max = -100, 550
 

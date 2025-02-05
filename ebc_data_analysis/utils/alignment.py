@@ -74,14 +74,24 @@ def FEC_alignment(trials):
     return fec_aligned, fec_time_aligned
 
 def aligned_dff(trials,trials_id, cr, cr_stat, init_index, ending_index, sample_id):
+    # spike_threshold = 3
+    constant_threshold = 0.0000000001
     id = sample_id
     aligned_time = {}
     aligned_dff = {}
     for roi in range(len(trials[id]["dff"])):
         aligned_dff[roi] = {}
-    for roi in range(len(trials[id]["dff"])):
-        for id in trials_id:
+    for id in trials_id:
+        for roi in range(len(trials[id]["dff"])):
+    # for roi in range(len(trials[id]["dff"])):
+    #     for id in trials_id:
             if cr[id] == cr_stat:
+                dff_value = trials[id]["dff"][roi][init_index[id]: ending_index[id]]
+                std = np.nanstd(dff_value)
+                # mean = np.nanmean(dff_value)
+                if std< constant_threshold:
+                    print(f"roi {roi} is constant")
+                    continue
                 aligned_time[id] = trials[id]["time"][init_index[id]:ending_index[id]] - trials[id]["LED"][0]
                 aligned_dff[roi][id] = trials[id]["dff"][roi][init_index[id]: ending_index[id]]
 
@@ -150,7 +160,17 @@ def calculate_average_sig(aligned_dff, roi_indices):
         average_dff = np.array([])
         sem_dff = np.array([])
 
-    return average_dff, sem_dff
+    return average_dff, sem_dff, stacked_dff.shape[0]
+
+def calculate_average_over_roi_sig(aligned_dff, roi_indices):
+    sig_roi_trials = {}
+    for id in aligned_dff:
+        averaging = []
+        for roi in roi_indices:
+            #calculate an average over the rois with respect to their trials.
+            averaging.append(aligned_dff[roi][id])
+            average = np.nanmean(averaging)
+
 
 def average_over_roi(dff_dict):
     dff_list = list(dff_dict.values())
@@ -170,14 +190,19 @@ def sort_numbers_as_strings(numbers):
     return list(map(str, sorted_numbers))
 
 def fec_zero(trials):
+    valid_trials = {}
     fec_time_0 = {}
     fec_0 = {}
 
     for i , id in enumerate(trials):
-        fec_time_0[id] = trials[id]["FECTimes"][:] - trials[id]["LED"][0]
-        fec_0[id] = trials[id]["FEC"][:]
+        try:
+            fec_time_0[id] = trials[id]["FECTimes"][:] - trials[id]["LED"][0]
+            fec_0[id] = trials[id]["FEC"][:]
+            valid_trials[id] = trials[id]
+        except:
+            print(f"trial {id} had fec data problems")
 
-    return fec_0,fec_time_0
+    return fec_0,fec_time_0, valid_trials
 
 # def fec_zero(trials):
 #     fec_time_0 = {}
