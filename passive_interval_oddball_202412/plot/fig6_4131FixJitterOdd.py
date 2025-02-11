@@ -40,6 +40,7 @@ class plotter_utils(utils_basic):
         self.l_frames = int(200*timescale)
         self.r_frames = int(250*timescale)
         self.list_labels = list_labels
+        self.list_neural_trials = list_neural_trials
         self.alignment = run_get_stim_response(
                 list_neural_trials, self.l_frames, self.r_frames, expected='none')
         self.list_stim_labels = self.alignment['list_stim_labels']
@@ -61,7 +62,9 @@ class plotter_utils(utils_basic):
         neu_sem = []
         n_trials = 0
         if 0 in oddball:
-            [color0, color1, color2, _], [neu_short, _, stim_seq_short, stim_value_short], [nt, n_neurons] = get_neu_trial(
+            [[color0, color1, color2, _],
+             [neu_short, _, stim_seq_short, stim_value_short], _,
+             [nt, n_neurons]] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[0] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
@@ -71,7 +74,9 @@ class plotter_utils(utils_basic):
             neu_sem.append(sem_short)
             n_trials += nt
         if 1 in oddball:
-            [color0, color1, color2, _], [neu_long, _, stim_seq_long, stim_value_long], [nt, n_neurons] = get_neu_trial(
+            [[color0, color1, color2, _],
+             [neu_long, _, stim_seq_long, stim_value_long], _,
+             [nt, n_neurons]] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[1] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None,[0], [0]],
@@ -140,7 +145,9 @@ class plotter_utils(utils_basic):
         neu = []
         n_trials = 0
         if 0 in oddball:
-            [color0, color1, color2, _], [neu_short, _, stim_seq_short, stim_value_short], [nt, n_neurons] = get_neu_trial(
+            [[color0, color1, color2, _],
+             [neu_short, _, stim_seq_short, stim_value_short], _,
+             [nt, n_neurons]] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[0] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
@@ -149,7 +156,9 @@ class plotter_utils(utils_basic):
             neu.append(sync_short)
             n_trials += nt
         if 1 in oddball:
-            [color0, color1, color2, _], [neu_long, _, stim_seq_long, stim_value_long], [nt, n_neurons] = get_neu_trial(
+            [[color0, color1, color2, _],
+             [neu_long, _, stim_seq_long, stim_value_long], _,
+             [nt, n_neurons]] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[1] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None,[0], [0]],
@@ -207,7 +216,7 @@ class plotter_utils(utils_basic):
     def plot_oddball_fix_latent(self, ax, oddball, cate=None):
         # collect data.
         [[color0, color1, color2, _],
-         [neu_x, _, stim_seq, stim_value],
+         [neu_x, _, stim_seq, stim_value], _,
          [n_trials, n_neurons]] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_idx=[l[oddball] for l in self.list_odd_idx],
@@ -234,7 +243,9 @@ class plotter_utils(utils_basic):
     def plot_oddball_jitter(self, ax, oddball, cate=None, roi_id=None):
         xlim = [-3000,3500]
         # collect data.
-        [color0, color1, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
+        [[color0, color1, color2, _],
+         [neu_seq, stim_seq, stim_value, pre_isi], _,
+         [n_trials, n_neurons]] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_idx=[l[oddball] for l in self.list_odd_idx],
             trial_param=[None, None, [1], None, [0], [0]],
@@ -278,7 +289,9 @@ class plotter_utils(utils_basic):
         win_base = [-self.bin_win[1],0]
         offsets = np.arange(self.bin_num)/20
         # collect data.
-        [color0, color1, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
+        [[color0, color1, color2, _],
+         [neu_seq, stim_seq, stim_value, pre_isi], _,
+         [n_trials, n_neurons]] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_idx=[l[oddball] for l in self.list_odd_idx],
             trial_param=[None, None, [1], None, [0], [0]],
@@ -301,13 +314,15 @@ class plotter_utils(utils_basic):
         lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
         add_legend(ax, colors, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
     
-    def plot_oddball_share(self, ax, oddball, cate=None, roi_id=None):
+    def plot_oddball_share(self, ax, oddball, mode, cate=None, roi_id=None):
         isi_win = 100
         xlim = [-3000,4000]
         # collect data.
         n_trials = 0
         # fix.
-        [color0, color1, color2, _], [neu_fix, _, stim_seq_fix, stim_value_fix], [nt, n_neurons] = get_neu_trial(
+        [[color0, color1, color2, _],
+         [neu_fix, _, stim_seq_fix, stim_value_fix], _,
+         [nt, n_neurons]] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_idx=[l[oddball] for l in self.list_odd_idx],
             trial_param=[None, None, [0], None, [0], [0]],
@@ -315,19 +330,30 @@ class plotter_utils(utils_basic):
         n_trials += nt
         mean_fix, sem_fix = get_mean_sem(neu_fix)
         # jitter.
-        _, [neu_jitter, _, stim_value_jitter, pre_isi], _ = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-            trial_idx=[l[oddball] for l in self.list_odd_idx],
-            trial_param=[None, None, [1], None, [0], [0]],
-            mean_sem=False,
-            cate=cate, roi_id=roi_id)
-        idx = [(isi>np.nanmean(isi)-isi_win)*(isi<np.nanmean(isi)+isi_win) for isi in pre_isi]
-        n_trials += np.sum(np.concatenate(idx))
-        neu_jitter = [neu_jitter[i][idx[i],:,:] for i in range(self.n_sess)]
-        neu_jitter = np.concatenate([np.nanmean(n, axis=0) for n in neu_jitter], axis=0)
-        mean_jitter, sem_jitter = get_mean_sem(neu_jitter)
-        stim_value_jitter = [stim_value_jitter[i][idx[i],:] for i in range(self.n_sess)]
-        stim_value_jitter = np.nanmean(np.concatenate(stim_value_jitter,axis=0), axis=0)
+        if mode == 'common':
+            _, [neu_jitter, _, stim_value_jitter, pre_isi], _, _ = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[oddball] for l in self.list_odd_idx],
+                trial_param=[None, None, [1], None, [0], [0]],
+                mean_sem=False,
+                cate=cate, roi_id=roi_id)
+            idx = [(isi>np.nanmean(isi)-isi_win)*(isi<np.nanmean(isi)+isi_win) for isi in pre_isi]
+            n_trials += np.sum(np.concatenate(idx))
+            neu_jitter = [neu_jitter[i][idx[i],:,:] for i in range(self.n_sess)]
+            neu_jitter = np.concatenate([np.nanmean(n, axis=0) for n in neu_jitter], axis=0)
+            mean_jitter, sem_jitter = get_mean_sem(neu_jitter)
+            stim_value_jitter = [stim_value_jitter[i][idx[i],:] for i in range(self.n_sess)]
+            stim_value_jitter = np.nanmean(np.concatenate(stim_value_jitter,axis=0), axis=0)
+            lbl = ['fix', r'jitter within $\pm{}$ ms'.format(isi_win)]
+        if mode == 'all':
+            _, [neu_jitter, _, stim_seq_jitter, stim_value_jitter], _, [nt, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[oddball] for l in self.list_odd_idx],
+                trial_param=[None, None, [1], None, [0], [0]],
+                cate=cate, roi_id=None)
+            n_trials += nt
+            mean_jitter, sem_jitter = get_mean_sem(neu_jitter)
+            lbl = ['fix', 'jitter']
         # find bounds.
         upper = np.nanmax([mean_fix, mean_jitter]) + np.nanmax([sem_fix, sem_jitter])
         lower = np.nanmin([mean_fix, mean_jitter]) - np.nanmax([sem_fix, sem_jitter])
@@ -358,13 +384,12 @@ class plotter_utils(utils_basic):
         ax.set_xlim(xlim)
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         ax.set_xlabel('time since stim before oddball interval (ms)')
-        add_legend(ax, [c_fix,color0], ['fix', r'jitter within $\pm{}$ ms'.format(isi_win)],
-                   n_trials, n_neurons, self.n_sess, 'upper left')
+        add_legend(ax, [c_fix,color0], lbl, n_trials, n_neurons, self.n_sess, 'upper left')
         
     def plot_cluster(self, axs, cate=None):
         n_latents = 25
         # collect data.
-        [color0, color1, color2, cmap], [neu_seq, _, _, _], _ = get_neu_trial(
+        [color0, color1, color2, cmap], [neu_seq, _, _, _], neu_labels, _ = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance,
             [exclude_odd_stim(sl) for sl in self.list_stim_labels],
             trial_param=[[2,3,4,5], [0], [0], None, [0], [0]],
@@ -377,37 +402,37 @@ class plotter_utils(utils_basic):
             win_eval = [-3000,2000]
             l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_eval[0], win_eval[1])
             # fix standard.
-            _, [neu_1, _, _, _], _ = get_neu_trial(
+            _, [neu_1, _, _, _], _, _ = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance,
                 [exclude_odd_stim(sl) for sl in self.list_stim_labels],
                 trial_param=[[2,3,4,5], [0], [0], None, [0], [0]],
                 cate=cate, roi_id=None)
             # jitter standard.
-            _, [neu_2, _, _, _], _ = get_neu_trial(
+            _, [neu_2, _, _, _], _, _ = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance,
                 [exclude_odd_stim(sl) for sl in self.list_stim_labels],
                 trial_param=[[2,3,4,5], [0], [1], None, [0], [0]],
                 cate=cate, roi_id=None)
             # fix short oddball.
-            _, [neu_3, _, _, _], _ = get_neu_trial(
+            _, [neu_3, _, _, _], _, _ = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[2] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
             # jitter short oddball.
-            _, [neu_4, _, _, _], _ = get_neu_trial(
+            _, [neu_4, _, _, _], _, _ = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[2] for l in self.list_odd_idx],
                 trial_param=[None, None, [1], None, [0], [0]],
                 cate=cate, roi_id=None)
             # fix long oddball.
-            _, [neu_5, _, _, _], _ = get_neu_trial(
+            _, [neu_5, _, _, _], _, _ = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[3] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
             # jitter long oddball.
-            _, [neu_6, _, _, _], _ = get_neu_trial(
+            _, [neu_6, _, _, _], _, _ = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[3] for l in self.list_odd_idx],
                 trial_param=[None, None, [1], None, [0], [0]],
@@ -433,13 +458,50 @@ class plotter_utils(utils_basic):
             self.plot_cluster_info(
                 axs, colors, cmap, neu_seq, neu_x,
                 self.n_clusters, self.max_clusters,
-                metrics, cluster_id)
-        plot_info(axs[:3])
+                metrics, cluster_id, neu_labels, self.label_names, cate)
+        plot_info(axs[:5])
+        # plot bin normalized interval tracking for all clusters.
+        def plot_interval_norm(ax):
+            # collect data.
+            [_, [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons]] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_param=[None, None, None, None, None, [0]],
+                mean_sem=False,
+                cate=cate, roi_id=None)
+            # bin data based on isi.
+            [bins, _, bin_neu_seq, _, _, bin_stim_seq, _] = get_isi_bin_neu(
+                neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
+            # get response within cluster at each bin.
+            cluster_bin_neu_mean = [get_mean_sem_cluster(neu, cluster_id)[0] for neu in bin_neu_seq]
+            cluster_bin_neu_sem  = [get_mean_sem_cluster(neu, cluster_id)[1] for neu in bin_neu_seq]
+            # organize into bin_num*n_clusters*time.
+            cluster_bin_neu_mean = [np.expand_dims(neu, axis=0) for neu in cluster_bin_neu_mean]
+            cluster_bin_neu_sem  = [np.expand_dims(neu, axis=0) for neu in cluster_bin_neu_sem]
+            cluster_bin_neu_mean = np.concatenate(cluster_bin_neu_mean, axis=0)
+            cluster_bin_neu_sem  = np.concatenate(cluster_bin_neu_sem, axis=0)
+            norm_params = [get_norm01_params(cluster_bin_neu_mean[:,i,:]) for i in range(self.n_clusters)]
+            # get line colors for each cluster.
+            c_neu = [get_cmap_color(self.bin_num, base_color=c) for c in colors]
+            # convert to colors for each bin.
+            c_neu = [[c_neu[i][j] for i in range(self.n_clusters)] for j in range(self.bin_num)]
+            lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
+            lbl+= ['cluster #'+str(i) for i in range(self.n_clusters)]
+            c_all = get_cmap_color(self.bin_num, base_color='#2C2C2C') + colors
+            # only keep 2 stimulus.
+            c_idx = int(bin_stim_seq.shape[1]/2)
+            stim_seq = bin_stim_seq[:,c_idx-1:c_idx+1,:]
+            # plot results.
+            self.plot_cluster_interval_norm(
+                ax, cluster_bin_neu_mean, cluster_bin_neu_sem,
+                norm_params, stim_seq, c_neu)
+            # adjust layout.
+            add_legend(ax, c_all, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
+        plot_interval_norm(axs[5])
         # plot fix standard response.
         def plot_standard_fix(ax):
             xlim = [-4000, 3000]
             # collect data.
-            _, [neu_seq, _, stim_seq, stim_value], [n_trials, n_neurons] = get_neu_trial(
+            _, [neu_seq, _, stim_seq, stim_value], _, [n_trials, n_neurons] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance,
                 [exclude_odd_stim(sl) for sl in self.list_stim_labels],
                 trial_param=[[2,3,4,5], [0], [0], None, [0], [0]],
@@ -450,17 +512,17 @@ class plotter_utils(utils_basic):
             # plot results.
             norm_params = [get_norm01_params(neu_mean[i,:]) for i in range(neu_mean.shape[0])]
             self.plot_cluster_mean_sem(
-                ax, neu_mean, neu_sem, norm_params, stim_seq, c_stim, colors)
+                ax, neu_mean, neu_sem, norm_params, stim_seq, c_stim, colors, xlim)
             # adjust layout.
             ax.set_xlim(xlim)
             ax.set_xlabel('time since stim (ms)')
             add_legend(ax, [c_stim[0]]+colors, ['stim']+lbl, n_trials, n_neurons, self.n_sess, 'upper left')
-        plot_standard_fix(axs[3])
+        plot_standard_fix(axs[6])
         # plot jitter standard response.
         def plot_standard_jitter(ax):
             xlim = [-4000, 3000]
             # collect data.
-            _, [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
+            _, [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance,
                 [exclude_odd_stim(sl) for sl in self.list_stim_labels],
                 trial_param=[[2,3,4,5], [0], [1], None, [0], [0]],
@@ -492,43 +554,60 @@ class plotter_utils(utils_basic):
             for i in range(self.bin_num):
                 self.plot_cluster_mean_sem(
                     ax, cluster_bin_neu_mean[i,:,:], cluster_bin_neu_sem[i,:,:],
-                    norm_params, stim_seq[i,:,:], [cs_all[i]]*stim_seq.shape[-2], cs[i])
+                    norm_params, stim_seq[i,:,:], [cs_all[i]]*stim_seq.shape[-2], cs[i], xlim)
             # adjust layout.
             ax.set_xlim(xlim)
             ax.set_xlabel('time since stim (ms)')
-            add_legend(ax, cs_all, lbl, None, None, None, 'upper right')
-        plot_standard_jitter(axs[4])
-        # plot oddball response.
+            add_legend(ax, cs_all, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
+        plot_standard_jitter(axs[7])
+        # plot fix oddball response.
         def plot_oddball_fix(ax, oddball):
-            xlim = [-2500,4500]
+            xlim = [-2500,5000]
             # collect data.
-            _, [neu_seq, _, stim_seq, stim_value], [n_trials, n_neurons] = get_neu_trial(
+            [_, [neu_seq_fix, _, stim_seq_fix, stim_value_fix], _,
+             [n_trials, n_neurons]] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
-            c_idx = int(stim_seq.shape[0]/2)
-            c_stim = [color0] * stim_seq.shape[-2]
-            c_stim[c_idx] = [color1, color2][oddball]
+            [_, [neu_seq_jitter, _, stim_seq_jitter, stim_value_jitter], _,
+             [n_trials, n_neurons]] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[oddball] for l in self.list_odd_idx],
+                trial_param=[None, None, [1], None, [0], [0]],
+                cate=cate, roi_id=None)
             # get response within cluster.
-            neu_mean, neu_sem = get_mean_sem_cluster(neu_seq, cluster_id)
-            # plot results.
-            norm_params = [get_norm01_params(neu_mean[i,:]) for i in range(neu_mean.shape[0])]
+            neu_mean_fix, neu_sem_fix = get_mean_sem_cluster(neu_seq_fix, cluster_id)
+            neu_mean_jitter, neu_sem_jitter = get_mean_sem_cluster(neu_seq_jitter, cluster_id)
+            # plot jitter.
+            c_stim = ['white'] * stim_seq_fix.shape[-2]
+            c_neu = ['#2C2C2C'] * len(colors)
+            norm_params = [get_norm01_params(neu_mean_jitter[i,:]) for i in range(neu_mean_jitter.shape[0])]
             self.plot_cluster_mean_sem(
-                ax, neu_mean, neu_sem, norm_params, stim_seq, c_stim, colors)
+                ax, neu_mean_jitter, neu_sem_jitter, norm_params, stim_seq_jitter, c_stim, c_neu, xlim)
+            # plot fix.
+            c_idx = int(stim_seq_fix.shape[0]/2)
+            c_stim = [color0] * stim_seq_fix.shape[-2]
+            c_stim[c_idx] = [color1, color2][oddball]
+            norm_params = [get_norm01_params(neu_mean_fix[i,:]) for i in range(neu_mean_fix.shape[0])]
+            self.plot_cluster_mean_sem(
+                ax, neu_mean_fix, neu_sem_fix, norm_params, stim_seq_fix, c_stim, colors, xlim)
             # adjust layout.
             ax.set_xlim(xlim)
             ax.set_xlabel('time since stim before oddball interval (ms)')
             add_legend(
-                ax, [color1, color2]+colors,
-                ['pre oddball interval stim (short)', 'pre oddball interval stim (long)']+lbl,
+                ax, [color1, color2]+colors+['#2C2C2C'],
+                ['pre oddball interval stim (short)', 'pre oddball interval stim (long)']+lbl+['jitter'],
                 n_trials, n_neurons, self.n_sess, 'upper left')
-        plot_oddball_fix(axs[5], 0)
-        plot_oddball_fix(axs[7], 1)
+        plot_oddball_fix(axs[8], 0)
+        plot_oddball_fix(axs[10], 1)
+        # plot jitter oddball response.
         def plot_oddball_jitter(ax, oddball):
-            xlim = [-2500,4500]
+            xlim = [-2500,5000]
             # collect data.
-            [_, color1, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
+            [[_, color1, color2, _],
+             [neu_seq, stim_seq, stim_value, pre_isi], _,
+             [n_trials, n_neurons]] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [1], None, [0], [0]],
@@ -563,7 +642,7 @@ class plotter_utils(utils_basic):
                 c_stim[1] = [color1, color2][oddball]
                 self.plot_cluster_mean_sem(
                     ax, cluster_bin_neu_mean[i,:,:], cluster_bin_neu_sem[i,:,:],
-                    norm_params, stim_seq[i,:,:], c_stim, cs[i])
+                    norm_params, stim_seq[i,:,:], c_stim, cs[i], xlim)
             # adjust layout.
             ax.set_xlim(xlim)
             ax.set_xlabel('time since stim (ms)')
@@ -571,8 +650,70 @@ class plotter_utils(utils_basic):
                 ax, [color1, color2]+cs_all,
                 ['pre oddball interval stim (short)', 'pre oddball interval stim (long)']+lbl,
                 n_trials, n_neurons, self.n_sess, 'upper left')
-        plot_oddball_jitter(axs[6],0)
-        plot_oddball_jitter(axs[8],1)
+        plot_oddball_jitter(axs[9],0)
+        plot_oddball_jitter(axs[11],1)
+        # plot fix standard response heatmap.
+        def plot_heatmap_standard_fix(ax):
+            xlim = [-4000, 3000]
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
+            # collect data.
+            _, [neu_seq, _, _, _], _, _ = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance,
+                [exclude_odd_stim(sl) for sl in self.list_stim_labels],
+                trial_param=[[2,3,4,5], [0], [0], None, [0], [0]],
+                cate=cate, roi_id=None)
+            neu_seq = neu_seq[:,l_idx:r_idx]
+            neu_time = self.alignment['neu_time'][l_idx:r_idx]
+            # plot heatmap.
+            self.plot_cluster_heatmap(ax, neu_seq, neu_time, cluster_id, colors)
+        plot_heatmap_standard_fix(axs[12])
+        # plot jitter standard response heatmap.
+        def plot_heatmap_standard_jitter(ax):
+            xlim = [-4000, 3000]
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
+            # collect data.
+            _, [neu_seq, _, _, _], _, _ = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance,
+                [exclude_odd_stim(sl) for sl in self.list_stim_labels],
+                trial_param=[[2,3,4,5], [0], [1], None, [0], [0]],
+                cate=cate, roi_id=None)
+            neu_seq = neu_seq[:,l_idx:r_idx]
+            neu_time = self.alignment['neu_time'][l_idx:r_idx]
+            # plot heatmap.
+            self.plot_cluster_heatmap(ax, neu_seq, neu_time, cluster_id, colors)
+        plot_heatmap_standard_jitter(axs[13])
+        # plot fix oddball response heatmap.
+        def plot_heatmap_oddball_fix(ax, oddball):
+            xlim = [-2500,5000]
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
+            # collect data.
+            _, [neu_seq, _, _, _], _, _ = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[oddball] for l in self.list_odd_idx],
+                trial_param=[None, None, [0], None, [0], [0]],
+                cate=cate, roi_id=None)
+            neu_seq = neu_seq[:,l_idx:r_idx]
+            neu_time = self.alignment['neu_time'][l_idx:r_idx]
+            # plot heatmap.
+            self.plot_cluster_heatmap(ax, neu_seq, neu_time, cluster_id, colors)
+        plot_heatmap_oddball_fix(axs[14], 0)
+        plot_heatmap_oddball_fix(axs[16], 1)
+        # plot jitter oddball response heatmap.
+        def plot_heatmap_oddball_jitter(ax, oddball):
+            xlim = [-2500,5000]
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
+            # collect data.
+            _, [neu_seq, _, _, _], _, _ = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[oddball] for l in self.list_odd_idx],
+                trial_param=[None, None, [1], None, [0], [0]],
+                cate=cate, roi_id=None)
+            neu_seq = neu_seq[:,l_idx:r_idx]
+            neu_time = self.alignment['neu_time'][l_idx:r_idx]
+            # plot heatmap.
+            self.plot_cluster_heatmap(ax, neu_seq, neu_time, cluster_id, colors)
+        plot_heatmap_oddball_jitter(axs[15], 0)
+        plot_heatmap_oddball_jitter(axs[17], 1)
         
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
@@ -580,150 +721,91 @@ class plotter_main(plotter_utils):
         super().__init__(neural_trials, labels, significance)
         self.label_names = label_names
     
-    def oddball_fix_exc(self, axs):
-        cate = [-1]
-        label_name = self.label_names[str(cate[0])]
-        try:
+    def oddball_fix(self, axs_all):
+        for cate, axs in zip([[-1],[1]], axs_all):
+            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+            try:
             
-            self.plot_oddball_fix(axs[0], [0], cate=cate)
-            axs[0].set_title(f'response to oddball interval \n (fix, short oddball) {label_name}')
-            
-            self.plot_oddball_fix(axs[1], [1], cate=cate)
-            axs[1].set_title(f'response to oddball interval \n (fix, long oddball) {label_name}')
-            
-            self.plot_oddball_fix(axs[2], [0,1], cate=cate)
-            axs[2].set_title(f'response to oddball interval \n (fix) {label_name}')
-            
-            self.plot_oddball_fix_sync(axs[3], [0], cate=cate)
-            axs[3].set_title(f'synchronization to oddball interval \n (fix, short oddball) {label_name}')
-            
-            self.plot_oddball_fix_sync(axs[4], [1], cate=cate)
-            axs[4].set_title(f'synchronization to oddball interval \n (fix, long oddball) {label_name}')
-            
-            self.plot_oddball_fix_sync(axs[5], [0,1], cate=cate)
-            axs[5].set_title(f'synchronization to oddball interval \n (fix) {label_name}')
-            
-            self.plot_oddball_fix_latent(axs[6], 0, cate=cate)
-            axs[6].set_title(f'latent dynamics to oddball interval \n (fix, short oddball) {label_name}')
-            
-            self.plot_oddball_fix_latent(axs[7], 0, cate=cate)
-            axs[7].set_title(f'latent dynamics to oddball interval \n (fix, long oddball) {label_name}')
-            
-        except: pass
+                self.plot_oddball_fix(axs[0], [0], cate=cate)
+                axs[0].set_title(f'response to oddball interval \n (fix, short oddball) {label_name}')
+                
+                self.plot_oddball_fix(axs[1], [1], cate=cate)
+                axs[1].set_title(f'response to oddball interval \n (fix, long oddball) {label_name}')
+                
+                self.plot_oddball_fix(axs[2], [0,1], cate=cate)
+                axs[2].set_title(f'response to oddball interval \n (fix) {label_name}')
+                
+                self.plot_oddball_fix_sync(axs[3], [0], cate=cate)
+                axs[3].set_title(f'synchronization to oddball interval \n (fix, short oddball) {label_name}')
+                
+                self.plot_oddball_fix_sync(axs[4], [1], cate=cate)
+                axs[4].set_title(f'synchronization to oddball interval \n (fix, long oddball) {label_name}')
+                
+                self.plot_oddball_fix_sync(axs[5], [0,1], cate=cate)
+                axs[5].set_title(f'synchronization to oddball interval \n (fix) {label_name}')
+                
+                self.plot_oddball_fix_latent(axs[6], 0, cate=cate)
+                axs[6].set_title(f'latent dynamics to oddball interval \n (fix, short oddball) {label_name}')
+                
+                self.plot_oddball_fix_latent(axs[7], 1, cate=cate)
+                axs[7].set_title(f'latent dynamics to oddball interval \n (fix, long oddball) {label_name}')
+                
+            except: pass
 
-    def oddball_fix_inh(self, axs):
-        cate = [1]
-        label_name = self.label_names[str(cate[0])]
-        try:
+    def oddball_jitter(self, axs_all):
+        for cate, axs in zip([[-1],[1]], axs_all):
+            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+            try:
             
-            self.plot_oddball_fix(axs[0], [0], cate=cate)
-            axs[0].set_title(f'response to oddball interval \n (fix, short oddball) {label_name}')
-            
-            self.plot_oddball_fix(axs[1], [1], cate=cate)
-            axs[1].set_title(f'response to oddball interval \n (fix, long oddball) {label_name}')
-            
-            self.plot_oddball_fix(axs[2], [0,1], cate=cate)
-            axs[2].set_title(f'response to oddball interval \n (fix) {label_name}')
-            
-            self.plot_oddball_fix_sync(axs[3], [0], cate=cate)
-            axs[3].set_title(f'synchronization to oddball interval \n (fix, short oddball) {label_name}')
-            
-            self.plot_oddball_fix_sync(axs[4], [1], cate=cate)
-            axs[4].set_title(f'synchronization to oddball interval \n (fix, long oddball) {label_name}')
-            
-            self.plot_oddball_fix_sync(axs[5], [0,1], cate=cate)
-            axs[5].set_title(f'synchronization to oddball interval \n (fix) {label_name}')
-            
-            self.plot_oddball_fix_latent(axs[6], 0, cate=cate)
-            axs[6].set_title(f'latent dynamics to oddball interval \n (fix, short oddball) {label_name}')
-            
-            self.plot_oddball_fix_latent(axs[7], 0, cate=cate)
-            axs[7].set_title(f'latent dynamics to oddball interval \n (fix, long oddball) {label_name}')
+                self.plot_oddball_jitter(axs[0], 0, cate=cate)
+                axs[0].set_title(f'response to oddball interval \n (jitter, short oddball) {label_name}')
+                
+                self.plot_oddball_jitter_box(axs[1], 0, cate=cate)
+                axs[1].set_title(f'response to post oddball interval stim \n (jitter, short oddball) {label_name}')
+                
+                self.plot_oddball_jitter(axs[2], 1, cate=cate)
+                axs[2].set_title(f'response to oddball interval \n (jitter, long oddball) {label_name}')
+                
+                self.plot_oddball_jitter_box(axs[3], 0, cate=cate)
+                axs[3].set_title(f'response to post oddball interval stim \n (jitter, long oddball) {label_name}')
+                
+                self.plot_oddball_share(axs[4], 0, 'common', cate=cate)
+                axs[4].set_title(f'response to oddball interval across blocks \n (common preceding interval, short oddball) {label_name}')
+                
+                self.plot_oddball_share(axs[5], 1, 'common', cate=cate)
+                axs[5].set_title(f'response to oddball interval across blocks \n (common preceding interval, long oddball) {label_name}')
+                
+                self.plot_oddball_share(axs[6], 0, 'all', cate=cate)
+                axs[6].set_title(f'response to oddball interval across blocks \n (all preceding interval, short oddball) {label_name}')
+                
+                self.plot_oddball_share(axs[7], 1, 'all', cate=cate)
+                axs[7].set_title(f'response to oddball interval across blocks \n (all preceding interval, long oddball) {label_name}')
+                
+            except: pass
 
-        except: pass
+    def cluster(self, axs_all):
+        for cate, axs in zip([[-1],[1],[-1,1]], axs_all):
+            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+            try:
+                
+                self.plot_cluster(axs, cate=cate)
+                axs[ 0].set_title(f'sorted correlation matrix \n (short) {label_name}')
+                axs[ 1].set_title(f'clustering evaluation metrics \n (short) {label_name}')
+                axs[ 2].set_title(f'cluster calcium transient \n (short) {label_name}')
+                axs[ 3].set_title(f'cluster fraction \n {label_name}')
+                axs[ 4].set_title(f'cluster fraction for subtypes \n {label_name}')
+                axs[ 5].set_title(f'time normalized reseponse to preceeding interval with bins \n {label_name}')
+                axs[ 6].set_title(f'response to standard interval \n (fix) {label_name}')
+                axs[ 7].set_title(f'response to standard interval \n (jitter) {label_name}')
+                axs[ 8].set_title(f'response to oddball interval \n (fix, short oddball) {label_name}')
+                axs[ 9].set_title(f'response to oddball interval \n (jitter, short oddball) {label_name}')
+                axs[10].set_title(f'response to oddball interval \n (fix, long oddball) {label_name}')
+                axs[11].set_title(f'response to oddball interval \n (jitter, long oddball) {label_name}')
+                axs[12].set_title(f'response to standard interval \n (fix) {label_name}')
+                axs[13].set_title(f'response to standard interval \n (jitter) {label_name}')
+                axs[14].set_title(f'response to oddball interval \n (fix, short oddball) {label_name}')
+                axs[15].set_title(f'response to oddball interval \n (jitter, short oddball) {label_name}')
+                axs[16].set_title(f'response to oddball interval \n (fix, long oddball) {label_name}')
+                axs[17].set_title(f'response to oddball interval \n (jitter, long oddball) {label_name}')
     
-    def oddball_jitter_exc(self, axs):
-        cate = [-1]
-        label_name = self.label_names[str(cate[0])]
-        try:
-            
-            self.plot_oddball_jitter(axs[0], 0, cate=cate)
-            axs[0].set_title(f'response to oddball interval \n (jitter, short oddball) {label_name}')
-            
-            self.plot_oddball_jitter_box(axs[1], 0, cate=cate)
-            axs[1].set_title(f'response to post oddball interval stim \n (jitter, short oddball) {label_name}')
-            
-            self.plot_oddball_jitter(axs[2], 1, cate=cate)
-            axs[2].set_title(f'response to oddball interval \n (jitter, long oddball) {label_name}')
-            
-            self.plot_oddball_jitter_box(axs[3], 0, cate=cate)
-            axs[3].set_title(f'response to post oddball interval stim \n (jitter, long oddball) {label_name}')
-            
-            self.plot_oddball_share(axs[4], 0, cate=cate)
-            axs[4].set_title(f'response to oddball interval across blocks \n (short oddball) {label_name}')
-            
-            self.plot_oddball_share(axs[5], 1, cate=cate)
-            axs[5].set_title(f'response to oddball interval across blocks \n (long oddball) {label_name}')
-            
-        except: pass
-    
-    def oddball_jitter_inh(self, axs):
-        cate = [1]
-        label_name = self.label_names[str(cate[0])]
-        try:
-            
-            self.plot_oddball_jitter(axs[0], 0, cate=cate)
-            axs[0].set_title(f'response to oddball interval \n (jitter, short oddball) {label_name}')
-            
-            self.plot_oddball_jitter_box(axs[1], 0, cate=cate)
-            axs[1].set_title(f'response to post oddball interval stim \n (jitter, short oddball) {label_name}')
-            
-            self.plot_oddball_jitter(axs[2], 1, cate=cate)
-            axs[2].set_title(f'response to oddball interval \n (jitter, long oddball) {label_name}')
-            
-            self.plot_oddball_jitter_box(axs[3], 0, cate=cate)
-            axs[3].set_title(f'response to post oddball interval stim \n (jitter, long oddball) {label_name}')
-            
-            self.plot_oddball_share(axs[4], 0, cate=cate)
-            axs[4].set_title(f'response to oddball interval across blocks \n (short oddball) {label_name}')
-            
-            self.plot_oddball_share(axs[5], 1, cate=cate)
-            axs[5].set_title(f'response to oddball interval across blocks \n (long oddball) {label_name}')
-            
-        except: pass
-
-    def cluster_exc(self, axs):
-        cate = [-1]
-        label_name = self.label_names[str(cate[0])]
-        try:
-            
-            self.plot_cluster(axs, cate=cate)
-            axs[ 0].set_title(f'sorted correlation matrix \n (short) {label_name}')
-            axs[ 1].set_title(f'clustering evaluation metrics \n (short) {label_name}')
-            axs[ 2].set_title(f'cluster fraction \n (short) {label_name}')
-            axs[ 3].set_title(f'response to standard interval \n (fix) {label_name}')
-            axs[ 4].set_title(f'response to standard interval \n (jitter) {label_name}')
-            axs[ 5].set_title(f'response to oddball interval \n (fix, short oddball) {label_name}')
-            axs[ 6].set_title(f'response to oddball interval \n (jitter, short oddball) {label_name}')
-            axs[ 7].set_title(f'response to oddball interval \n (fix, long oddball) {label_name}')
-            axs[ 8].set_title(f'response to oddball interval \n (jitter, long oddball) {label_name}')
-
-        except: pass
-    
-    def cluster_inh(self, axs):
-        cate = [1]
-        label_name = self.label_names[str(cate[0])]
-        try:
-            
-            self.plot_cluster(axs, cate=cate)
-            axs[ 0].set_title(f'sorted correlation matrix \n (short) {label_name}')
-            axs[ 1].set_title(f'clustering evaluation metrics \n (short) {label_name}')
-            axs[ 2].set_title(f'cluster fraction \n (short) {label_name}')
-            axs[ 3].set_title(f'response to standard interval \n (fix) {label_name}')
-            axs[ 4].set_title(f'response to standard interval \n (jitter) {label_name}')
-            axs[ 5].set_title(f'response to oddball interval \n (fix, short oddball) {label_name}')
-            axs[ 6].set_title(f'response to oddball interval \n (jitter, short oddball) {label_name}')
-            axs[ 7].set_title(f'response to oddball interval \n (fix, long oddball) {label_name}')
-            axs[ 8].set_title(f'response to oddball interval \n (jitter, long oddball) {label_name}')
-
-        except: pass
+            except: pass

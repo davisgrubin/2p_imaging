@@ -24,19 +24,20 @@ def run(session_config, fn1, fn2, fn3, fn4):
             pdf_bytes = pdf_file.read()
         pdf_b64 = base64.b64encode(pdf_bytes).decode('utf-8')
         pdf_file.close()
-        # read latex discription in txt file. filename[0]+'.txt'
-        with open(os.path.join('results', 'notes', 'note.txt'),
-                  'r', encoding='utf-8') as text_file:
-            latex_discription = text_file.read().strip()
-        text_file.close()
-        # use MathJax to render.
-        latex_display_html = f"\\[{latex_discription}\\]"
+        # read discription in txt file.
+        try:
+            with open(os.path.join('results', 'notes', filename[0]+'.txt'),
+                      'r', encoding='utf-8') as text_file:
+                discription = text_file.read()
+            text_file.close()
+        except:
+            discription = ''
         # create a figure block for a pdf file.
         html_block = f"""
         <div class="figure-block">
             <div class="left-panel">
-                <div class="latex-description">
-                    {latex_display_html}
+                <div class="description">
+                    {discription}
                 </div>
             </div>
                 <div class="right-panel">
@@ -100,7 +101,6 @@ def run(session_config, fn1, fn2, fn3, fn4):
                 <title>Passive session report for {session_config['subject_name']}</title>
                 {css_styles}
                 {java_scripts}
-                <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
             </head>
             <body>
                 {logo_html}
@@ -117,7 +117,7 @@ def run(session_config, fn1, fn2, fn3, fn4):
     
     # generate page containers and assign blocks to each page.
     pages_html = ""
-    pages_html += get_page_html(fn1, 0, 'masks')
+    pages_html += get_page_html(fn1, 0, 'field_of_view')
     pages_html += get_page_html(fn2, 1, 'random')
     pages_html += get_page_html(fn3, 2, 'short_long')
     pages_html += get_page_html(fn4, 3, 'fix_jitter_odd')

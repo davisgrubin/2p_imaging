@@ -202,7 +202,7 @@ def read_all(session_config_list):
         # read ops for each subject.
         print('Reading subject {}/{}'.format(i+1, len(session_config_list['list_config'])))
         list_session_data_path = [
-            os.path.join('results', n)
+            os.path.join('results', session_config_list['list_config'][i]['session_folder'], n)
             for n in session_config_list['list_config'][i]['list_session_name']]
         list_ops = read_ops(list_session_data_path)
         # read results for each subject.

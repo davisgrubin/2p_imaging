@@ -38,16 +38,6 @@ def adjust_contrast(org_img, lower_percentile=25, upper_percentile=99):
     img = img.astype('int32')
     return img
 
-# adjust layout for masks plot.
-def adjust_layout(ax):
-    ax.tick_params(tick1On=False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.set_xticks([])
-    ax.set_yticks([])
-
 class plotter_main_masks:
     
     def __init__(
@@ -90,7 +80,7 @@ class plotter_main_masks:
             for x,y in zip(x_all, y_all):
                 func_img[x,y,:] = np.array([255,255,255])
         ax.matshow(func_img)
-        adjust_layout(ax)
+        ax.axis('off')
         ax.set_title(t)
 
     # functional channel ROI masks with color.
@@ -100,7 +90,7 @@ class plotter_main_masks:
         colors[0,:] = [0,0,0,1]
         cmap = ListedColormap(colors)
         ax.matshow(self.masks, cmap=cmap)
-        adjust_layout(ax)
+        ax.axis('off')
         ax.set_title('functional channel ROI masks')
 
     # functional channel ROI masks.
@@ -110,7 +100,7 @@ class plotter_main_masks:
         masks_img[:,:,1] = self.masks
         masks_img[masks_img >= 1] = 255
         ax.matshow(masks_img)
-        adjust_layout(ax)
+        ax.axis('off')
         ax.set_title('functional channel ROI masks')
     
     # anatomy channel and cellpose results.
@@ -123,7 +113,7 @@ class plotter_main_masks:
         for x,y in zip(x_all, y_all):
             anat_img[x,y,:] = np.array([255,255,255])
         ax.matshow(anat_img)
-        adjust_layout(ax)
+        ax.axis('off')
         ax.set_title('cellpose results on anatomy channel mean image')
     
     # suite2p masks and cellpose masks superimpose.
@@ -140,7 +130,7 @@ class plotter_main_masks:
         for x,y in zip(x_all, y_all):
             masks_img[x,y,:] = np.array([0,196,255])
         ax.matshow(masks_img)
-        adjust_layout(ax)
+        ax.axis('off')
         ax.set_title('functional and anatomical masks superimpose')
 
     # anatomy channel mean image.
@@ -160,13 +150,13 @@ class plotter_main_masks:
             for x,y in zip(x_all, y_all):
                 anat_img[x,y,:] = np.array([0,196,255])
         ax.matshow(anat_img)
-        adjust_layout(ax)
+        ax.axis('off')
         ax.set_title('anatomy channel mean image')
 
     # anatomy channel masks.
     def plot_anat_label_masks(self, ax):
         ax.matshow(self.labeled_masks_img)
-        adjust_layout(ax)
+        ax.axis('off')
         ax.set_title('anatomy channel label masks')
 
     # superimpose image.
@@ -186,7 +176,7 @@ class plotter_main_masks:
             for x,y in zip(x_all, y_all):
                 super_img[x,y,:] = np.array([255,255,255])
         ax.matshow(super_img)
-        adjust_layout(ax)
+        ax.axis('off')
         ax.set_title('channel images superimpose')
 
     # channel shared masks.
@@ -199,7 +189,7 @@ class plotter_main_masks:
         label_masks[label_masks >= 1] = 255
         label_masks = label_masks.astype('int32')
         ax.matshow(label_masks)
-        adjust_layout(ax)
+        ax.axis('off')
         ax.set_title('channel masks superimpose')
     
     # ROI global location for 1 channel data.
@@ -221,7 +211,7 @@ class plotter_main_masks:
         for x,y in zip(x_all, y_all):
             func_img[x,y,:] = np.array([255,255,255])
         ax.matshow(func_img)
-        adjust_layout(ax)
+        ax.axis('off')
         ax.set_title('ROI # {} location'.format(str(roi_id).zfill(4)))
 
     # ROI global location for 2 channel data.
@@ -244,7 +234,7 @@ class plotter_main_masks:
         for x,y in zip(x_all, y_all):
             super_img[x,y,:] = np.array([255,255,255])
         ax.matshow(super_img)
-        adjust_layout(ax)
+        ax.axis('off')
         if self.labels[roi_id]==-1:
             c = 'excitory'
         if self.labels[roi_id]==0:
@@ -276,7 +266,7 @@ class plotter_main_masks:
             for x,y in zip(x_all, y_all):
                 img[x,y,:] = np.array([255,255,255])
         ax.matshow(img)
-        adjust_layout(ax)
+        ax.axis('off')
         ax.set_title(t)
     
     # ROI anatomical channel mean projection.
@@ -293,7 +283,7 @@ class plotter_main_masks:
             for x,y in zip(x_all, y_all):
                 img[x,y,:] = np.array([255,255,255])
         ax.matshow(img)
-        adjust_layout(ax)
+        ax.axis('off')
         ax.set_title('anatomy channel mean image')
 
     # ROI channel image superimpose with max functional.
@@ -317,7 +307,7 @@ class plotter_main_masks:
             for x,y in zip(x_all, y_all):
                 super_img[x,y,:] = np.array([255,255,255])
         ax.matshow(super_img)
-        adjust_layout(ax)
+        ax.axis('off')
         ax.set_title('channel images superimpose')
 
     # ROI masks.
@@ -330,7 +320,7 @@ class plotter_main_masks:
         for x,y in zip(x_all, y_all):
             img[x,y,:] = np.array([255,255,255])
         ax.matshow(img)
-        adjust_layout(ax)
+        ax.axis('off')
         ax.set_title('ROI masks')
     
     def all_1chan(self, axs):

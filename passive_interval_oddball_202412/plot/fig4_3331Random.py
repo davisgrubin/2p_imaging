@@ -43,18 +43,19 @@ class plotter_utils(utils_basic):
         self.l_frames = int(100*timescale)
         self.r_frames = int(80*timescale)
         self.list_labels = list_labels
+        self.list_neural_trials = list_neural_trials
         self.alignment = run_get_stim_response(
                 list_neural_trials, self.l_frames, self.r_frames, expected='none')
         self.list_stim_labels = self.alignment['list_stim_labels']
         self.list_significance = list_significance
         self.bin_win = [500,2500]
         self.bin_num = 4
-        self.n_clusters = 5
+        self.n_clusters = 4
         self.max_clusters = 20
     
     def plot_random_stim(self, ax, cate=None, roi_id=None):
         # collect data.
-        [color0, _, color2, _], [neu_seq, _, stim_seq, stim_value], [n_trials, n_neurons] = get_neu_trial(
+        [color0, _, color2, _], [neu_seq, _, stim_seq, stim_value], _, [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             cate=cate, roi_id=roi_id)
@@ -81,7 +82,7 @@ class plotter_utils(utils_basic):
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, win_width)
         win_width = r_idx - l_idx
         # collect data.
-        [color0, _, color2, _], [neu_seq, _, stim_seq, stim_value], [n_trials, n_neurons] = get_neu_trial(
+        [color0, _, color2, _], [neu_seq, _, stim_seq, stim_value], _, [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             cate=cate)
@@ -108,7 +109,7 @@ class plotter_utils(utils_basic):
 
     def plot_random_interval(self, ax, cate=None, roi_id=None):
         # collect data.
-        [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
+        [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             mean_sem=False,
@@ -145,7 +146,7 @@ class plotter_utils(utils_basic):
         win_base = [-self.bin_win[1],0]
         offsets = np.arange(self.bin_num)/20
         # collect data.
-        [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
+        [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             mean_sem=False,
@@ -165,7 +166,7 @@ class plotter_utils(utils_basic):
 
     def plot_random_interval_heatmap(self, ax, cate=None, roi_id=None):
         # collect data.
-        [_, _, _, cmap], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
+        [_, _, _, cmap], [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             mean_sem=False,
@@ -201,7 +202,7 @@ class plotter_utils(utils_basic):
         win_evoke = [200,400]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_evoke[0], win_evoke[1])
         # collect data.
-        [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
+        [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             mean_sem=False,
@@ -247,7 +248,7 @@ class plotter_utils(utils_basic):
         epoch_len = 500
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_evoke[0], win_evoke[1])
         # collect data.
-        [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
+        [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             mean_sem=False,
@@ -289,7 +290,9 @@ class plotter_utils(utils_basic):
     def plot_random_cluster(self, axs, cate=None):
         n_latents = 25
         # collect data.
-        [color0, color1, color2, cmap], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
+        [[color0, color1, color2, cmap],
+         [neu_seq, stim_seq, stim_value, pre_isi], neu_labels,
+         [n_trials, n_neurons]] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             mean_sem=False,
@@ -297,7 +300,7 @@ class plotter_utils(utils_basic):
         # bin data based on isi.
         [bins, bin_center, bin_neu_seq, _, _, bin_stim_seq, bin_stim_value] = get_isi_bin_neu(
             neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
-        colors = get_cmap_color(self.n_clusters, cmap=plt.cm.nipy_spectral_r)
+        colors = get_cmap_color(self.n_clusters, cmap=plt.cm.gist_ncar)
         # construct features for clustering.
         def prepare_data():
             # get correlation matrix within each bin.
@@ -328,10 +331,48 @@ class plotter_utils(utils_basic):
             self.plot_cluster_info(
                 axs, colors, cmap, neu, neu_x,
                 self.n_clusters, self.max_clusters,
-                metrics, cluster_id)
-        plot_info(axs[:3])
-        # plot interval response for all clusters.
-        def plot_interval(ax, cluster_id):
+                metrics, cluster_id, neu_labels, self.label_names, cate)
+        plot_info(axs[:5])
+        # plot bin normalized interval tracking for all clusters.
+        def plot_interval_norm(ax):
+            # collect data.
+            [_, [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons]] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_param=[None, None, None, None, None, [0]],
+                mean_sem=False,
+                cate=cate, roi_id=None)
+            # bin data based on isi.
+            [bins, _, bin_neu_seq, _, _, bin_stim_seq, _] = get_isi_bin_neu(
+                neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
+            # get response within cluster at each bin.
+            cluster_bin_neu_mean = [get_mean_sem_cluster(neu, cluster_id)[0] for neu in bin_neu_seq]
+            cluster_bin_neu_sem  = [get_mean_sem_cluster(neu, cluster_id)[1] for neu in bin_neu_seq]
+            # organize into bin_num*n_clusters*time.
+            cluster_bin_neu_mean = [np.expand_dims(neu, axis=0) for neu in cluster_bin_neu_mean]
+            cluster_bin_neu_sem  = [np.expand_dims(neu, axis=0) for neu in cluster_bin_neu_sem]
+            cluster_bin_neu_mean = np.concatenate(cluster_bin_neu_mean, axis=0)
+            cluster_bin_neu_sem  = np.concatenate(cluster_bin_neu_sem, axis=0)
+            norm_params = [get_norm01_params(cluster_bin_neu_mean[:,i,:]) for i in range(self.n_clusters)]
+            # get line colors for each cluster.
+            c_neu = [get_cmap_color(self.bin_num, base_color=c) for c in colors]
+            # convert to colors for each bin.
+            c_neu = [[c_neu[i][j] for i in range(self.n_clusters)] for j in range(self.bin_num)]
+            lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
+            lbl+= ['cluster #'+str(i) for i in range(self.n_clusters)]
+            c_all = get_cmap_color(self.bin_num, base_color='#2C2C2C') + colors
+            # only keep 2 stimulus.
+            c_idx = int(bin_stim_seq.shape[1]/2)
+            stim_seq = bin_stim_seq[:,c_idx-1:c_idx+1,:]
+            # plot results.
+            self.plot_cluster_interval_norm(
+                ax, cluster_bin_neu_mean, cluster_bin_neu_sem,
+                norm_params, stim_seq, c_neu)
+            # adjust layout.
+            add_legend(ax, c_all, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
+        plot_interval_norm(axs[5])
+        # plot response on random for all clusters.
+        def plot_random(ax):
+            xlim = [-3500, 2500]
             # get response within cluster at each bin.
             cluster_bin_neu_mean = [get_mean_sem_cluster(neu, cluster_id)[0] for neu in bin_neu_seq]
             cluster_bin_neu_sem  = [get_mean_sem_cluster(neu, cluster_id)[1] for neu in bin_neu_seq]
@@ -346,7 +387,7 @@ class plotter_utils(utils_basic):
             # convert to colors for each bin.
             cs = [[cs[i][j] for i in range(self.n_clusters)] for j in range(self.bin_num)]
             # get overall colors.
-            cs_all = get_cmap_color(self.bin_num, base_color='silver')
+            cs_all = get_cmap_color(self.bin_num, base_color='#2C2C2C')
             lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
             # only keep 2 stimulus.
             c_idx = int(bin_stim_seq.shape[1]/2)
@@ -355,18 +396,35 @@ class plotter_utils(utils_basic):
             for i in range(self.bin_num):
                 self.plot_cluster_mean_sem(
                     ax, cluster_bin_neu_mean[i,:,:], cluster_bin_neu_sem[i,:,:],
-                    norm_params, stim_seq[i,:,:], [cs_all[i]]*stim_seq.shape[-2], cs[i])
+                    norm_params, stim_seq[i,:,:], [cs_all[i]]*stim_seq.shape[-2], cs[i], xlim)
             # adjust layout.
             ax.set_xlabel('time since stim (ms)')
+            ax.set_xlim(xlim)
             add_legend(ax, cs_all, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
-        plot_interval(axs[3], cluster_id)
-    
+        plot_random(axs[6])
+        # plot response heatmap on random for all clusters.
+        def plot_heatmap_random(ax):
+            xlim = [-3500, 2500]
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
+            # collect data.
+            _, [neu_seq, _, _, _], _, _ = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_param=[[2,3,4,5], None, None, None, [1], [0]],
+                cate=cate, roi_id=None)
+            neu_seq = neu_seq[:,l_idx:r_idx]
+            neu_time = self.alignment['neu_time'][l_idx:r_idx]
+            # plot heatmap.
+            self.plot_cluster_heatmap(ax, neu_seq, neu_time, cluster_id, colors)
+        plot_heatmap_random(axs[7])
+        
     def plot_random_glm(self, axs, cate=None):
         win_kernal = 2500
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, win_kernal)
         len_kernel = r_idx - l_idx
         # collect data.
-        [color0, color1, color2, cmap], [neu_seq, stim_seq, stim_value, pre_isi], [n_trials, n_neurons] = get_neu_trial(
+        [[color0, color1, color2, cmap],
+         [neu_seq, stim_seq, stim_value, pre_isi], _,
+         [n_trials, n_neurons]] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             mean_sem=False,
@@ -473,117 +531,66 @@ class plotter_utils(utils_basic):
             ax.set_yticklabels(['{}'.format(i) for i in range(self.n_clusters)])
             ax.set_ylabel('cluster id')
         plot_glm_cluster_w(axs[2])
-            
+
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
     def __init__(self, neural_trials, labels, significance, label_names):
         super().__init__(neural_trials, labels, significance)
         self.label_names = label_names
-
-    def random_exc(self, axs):
-        cate = [-1]
-        label_name = self.label_names[str(cate[0])]
-        try:
-
-            self.plot_random_stim(axs[0], cate=cate)
-            axs[0].set_title(f'response to random stim \n {label_name}')
-            
-            self.plot_random_sync(axs[1], cate=cate)
-            axs[1].set_title(f'response to random stim synchronization level \n {label_name}')
-            
-            self.plot_random_interval(axs[2], cate=cate)
-            axs[2].set_title(f'response to random preceeding interval with bins \n {label_name}')
-            
-            self.plot_random_interval_box(axs[3], cate=cate)
-            axs[3].set_title(f'response to random preceeding interval with bins \n {label_name}')
-            
-            self.plot_random_interval_heatmap(axs[4], cate=cate)
-            axs[4].set_title(f'response to random preceeding interval heatmap \n {label_name}')
-            
-            self.plot_random_interval_curve(axs[5], cate=cate)
-            axs[5].set_title(f'evoked response to random VS interval \n {label_name}')
-            
-            self.plot_random_interval_corr_epoch(axs[6], cate=cate)
-            axs[6].set_title(f'response and interval correlation across epochs \n {label_name}')
-
-        except: pass
-
-    def random_inh(self, axs):
-        cate = [1]
-        label_name = self.label_names[str(cate[0])]
-        try:
-            
-            self.plot_random_stim(axs[0], cate=cate)
-            axs[0].set_title(f'response to random stim \n {label_name}')
-            
-            self.plot_random_sync(axs[1], cate=cate)
-            axs[1].set_title(f'response to random stim synchronization level \n {label_name}')
-            
-            self.plot_random_interval(axs[2], cate=cate)
-            axs[2].set_title(f'response to random preceeding interval \n {label_name}')
-            
-            self.plot_random_interval_box(axs[3], cate=cate)
-            axs[3].set_title(f'response to random preceeding interval \n {label_name}')
-            
-            self.plot_random_interval_heatmap(axs[4], cate=cate)
-            axs[4].set_title(f'response to random preceeding interval heatmap \n {label_name}')
-            
-            self.plot_random_interval_curve(axs[5], cate=cate)
-            axs[5].set_title(f'evoked response to random VS interval \n {label_name}')
-            
-            self.plot_random_interval_corr_epoch(axs[6], cate=cate)
-            axs[6].set_title(f'response and interval correlation across epochs \n {label_name}')
-
-        except: pass
     
-    def cluster_exc(self, axs):
-        cate = [-1]
-        label_name = self.label_names[str(cate[0])]
-        try:
-            
-            self.plot_random_cluster(axs, cate=cate)
-            axs[0].set_title(f'sorted correlation matrix \n {label_name}')
-            axs[1].set_title(f'clustering evaluation metrics \n {label_name}')
-            axs[2].set_title(f'cross cluster correlation \n {label_name}')
-            axs[3].set_title(f'cluster fraction \n {label_name}')
-            axs[4].set_title(f'response to random preceeding interval with bins \n {label_name}')
-            
-        except: pass
+    def random(self, axs_all):
+        for cate, axs in zip([[-1],[1]], axs_all):
+            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+            try:
+                
+                self.plot_random_stim(axs[0], cate=cate)
+                axs[0].set_title(f'response to random stim \n {label_name}')
+                
+                self.plot_random_sync(axs[1], cate=cate)
+                axs[1].set_title(f'response to random stim synchronization level \n {label_name}')
+                
+                self.plot_random_interval(axs[2], cate=cate)
+                axs[2].set_title(f'response to random preceeding interval with bins \n {label_name}')
+                
+                self.plot_random_interval_box(axs[3], cate=cate)
+                axs[3].set_title(f'response to random preceeding interval with bins \n {label_name}')
+                
+                self.plot_random_interval_heatmap(axs[4], cate=cate)
+                axs[4].set_title(f'response to random preceeding interval heatmap \n {label_name}')
+                
+                self.plot_random_interval_curve(axs[5], cate=cate)
+                axs[5].set_title(f'evoked response to random VS interval \n {label_name}')
+                
+                self.plot_random_interval_corr_epoch(axs[6], cate=cate)
+                axs[6].set_title(f'response and interval correlation across epochs \n {label_name}')
 
-    def cluster_inh(self, axs):
-        cate = [1]
-        label_name = self.label_names[str(cate[0])]
-        try:
-            
-            self.plot_random_cluster(axs, cate=cate)
-            axs[0].set_title(f'sorted correlation matrix \n {label_name}')
-            axs[1].set_title(f'clustering evaluation metrics \n {label_name}')
-            axs[2].set_title(f'cross cluster correlation \n {label_name}')
-            axs[3].set_title(f'cluster fraction \n {label_name}')
-            axs[4].set_title(f'response to random preceeding interval with bins \n {label_name}')
-            
-        except: pass
+            except: pass
 
-    def glm_exc(self, axs):
-        cate = [-1]
-        label_name = self.label_names[str(cate[0])]
-        try:
+    def cluster(self, axs_all):
+        for cate, axs in zip([[-1],[1],[-1,1]], axs_all):
+            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+            try:
+                
+                self.plot_random_cluster(axs, cate=cate)
+                axs[0].set_title(f'sorted correlation matrix \n {label_name}')
+                axs[1].set_title(f'clustering evaluation metrics \n {label_name}')
+                axs[2].set_title(f'cluster calcium transient \n (short) {label_name}')
+                axs[3].set_title(f'cluster fraction \n {label_name}')
+                axs[4].set_title(f'cluster fraction for subtypes \n {label_name}')
+                axs[5].set_title(f'time normalized reseponse to preceeding interval with bins \n {label_name}')
+                axs[6].set_title(f'response to random preceeding interval with bins \n {label_name}')
+                axs[7].set_title(f'response to random interval \n {label_name}')
             
-            self.plot_random_glm(axs, cate=cate)
-            axs[0].set_title(f'coding score V.S. kernal window size \n {label_name}')
-            axs[1].set_title(f'explain variance V.S. kernal window size \n {label_name}')
-            axs[2].set_title(f'clustered kernal weights \n {label_name}')
+            except: pass
+
+    def glm(self, axs_all):
+        for cate, axs in zip([[-1],[1]], axs_all):
+            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+            try:
             
-        except: pass
-    
-    def glm_inh(self, axs):
-        cate = [1]
-        label_name = self.label_names[str(cate[0])]
-        try:
+                self.plot_random_glm(axs, cate=cate)
+                axs[0].set_title(f'coding score V.S. kernal window size \n {label_name}')
+                axs[1].set_title(f'explain variance V.S. kernal window size \n {label_name}')
+                axs[2].set_title(f'clustered kernal weights \n {label_name}')
             
-            self.plot_random_glm(axs, cate=cate)
-            axs[0].set_title(f'coding score V.S. kernal window size \n {label_name}')
-            axs[1].set_title(f'explain variance V.S. kernal window size \n {label_name}')
-            axs[2].set_title(f'clustered kernal weights \n {label_name}')
-            
-        except: pass
+            except: pass

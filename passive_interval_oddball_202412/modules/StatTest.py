@@ -94,7 +94,7 @@ def run(ops):
     neural_trials = read_neural_trials(ops)
     stim_labels = neural_trials['stim_labels']
     [stim_labels, neu_seq, neu_time, _, _, _, _, _] = get_stim_response(
-            neural_trials, 100, 200)
+            neural_trials, 100, 200, 'none', 2)
     print('Running statistics test')
     r_standard = stat_test_standard(neu_seq, neu_time, stim_labels)
     r_change   = stat_test_standard(neu_seq, neu_time, stim_labels)

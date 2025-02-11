@@ -45,12 +45,12 @@ def run(
         plotter = plotter_main(list_neural_trials, list_labels, list_significance, session_config_list['label_names'])
         # significance test.
         print('Plotting significance test results')
-        def plot_example_traces():
+        def plot_sess_significance():
             title = 'significance'
             filename = '4131FixJitterOdd01_significance'
             n_row = 1
             n_col = 1
-            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='constrained')
             gs = GridSpec(n_row, n_col, figure=fig)
             sign_ax = plt.subplot(gs[0, 0])
             plot_significance(sign_ax, list_significance, list_labels)
@@ -59,7 +59,7 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f1 = plot_example_traces()
+        f1 = plot_sess_significance()
         # stimulus types and interval distributions.
         print('Plotting stimulus types and interval distributions')
         def plot_intervals():
@@ -119,14 +119,13 @@ def run(
             n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            oddball_axs01 = [plt.subplot(gs[0, i]) for i in range(3)]
-            oddball_axs01+= [plt.subplot(gs[1, i]) for i in range(3)]
-            oddball_axs01+= [plt.subplot(gs[2, i], projection='3d') for i in range(2)]
-            oddball_axs02 = [plt.subplot(gs[3, i]) for i in range(3)]
-            oddball_axs02+= [plt.subplot(gs[4, i]) for i in range(3)]
-            oddball_axs02+= [plt.subplot(gs[5, i], projection='3d') for i in range(2)]
-            plotter.oddball_fix_exc(oddball_axs01)
-            plotter.oddball_fix_inh(oddball_axs02)
+            axs = []
+            for s in [0,3]:
+                a = [plt.subplot(gs[s+0, i]) for i in range(3)]
+                a+= [plt.subplot(gs[s+1, i]) for i in range(3)]
+                a+= [plt.subplot(gs[s+2, i], projection='3d') for i in range(2)]
+                axs.append(a)
+            plotter.oddball_fix(axs)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
@@ -139,13 +138,14 @@ def run(
             title = 'neural traces alignment on oddball in jitter standard'
             filename = '4131FixJitterOdd04_oddball_jitter'
             n_row = 2
-            n_col = 6
+            n_col = 8
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            oddball_axs01 = [plt.subplot(gs[0, i]) for i in range(6)]
-            oddball_axs02 = [plt.subplot(gs[1, i]) for i in range(6)]
-            plotter.oddball_jitter_exc(oddball_axs01)
-            plotter.oddball_jitter_inh(oddball_axs02)
+            axs = []
+            for s in [0,1]:
+                a = [plt.subplot(gs[s+0, i]) for i in range(8)]
+                axs.append(a)
+            plotter.oddball_jitter(axs)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
@@ -157,16 +157,20 @@ def run(
         def plot_clustering():
             title = 'clustering on standard oddball fix jitter interval'
             filename = '4131FixJitterOdd06_clustering'
-            n_row = 6
+            n_row = 12
             n_col = 12
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            cluster_axs01 = [plt.subplot(gs[0, 0]), plt.subplot(gs[1, 0]), plt.subplot(gs[2, 0])]
-            cluster_axs01+= [plt.subplot(gs[0:2, i]) for i in [1,2,3,4,5,6]]
-            cluster_axs02 = [plt.subplot(gs[3, 0]), plt.subplot(gs[4, 0]), plt.subplot(gs[5, 0])]
-            cluster_axs02+= [plt.subplot(gs[3:5, i]) for i in [1,2,3,4,5,6]]
-            plotter.cluster_exc(cluster_axs01)
-            plotter.cluster_inh(cluster_axs02)
+            axs = []
+            for s in [0,4,8]:
+                a = [plt.subplot(gs[s+0, 0]), plt.subplot(gs[s+1, 0]),
+                       plt.subplot(gs[s+2, 0]), plt.subplot(gs[s+3, 0]),
+                       plt.subplot(gs[s+0:s+2, 1]),
+                       plt.subplot(gs[s+2:s+4, 1])]
+                a+= [plt.subplot(gs[s+0:s+2, i]) for i in [2,3,4,5,6,7]]
+                a+= [plt.subplot(gs[s+2:s+4, i]) for i in [2,3,4,5,6,7]]
+                axs.append(a)
+            plotter.cluster(axs)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')

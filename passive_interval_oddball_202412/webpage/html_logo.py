@@ -22,7 +22,7 @@ def get_logo_html():
             style="position:absolute; width:80px; height:auto;">
         <div style="text-align:center;">
             <img src="data:image/svg+xml;base64,{bme_logo}" title="
-            I do not need sex because BME fuck me hard every day" style="max-width:50%; height:auto;">
+            I AM CUTE! GIVE ME A HUG!" style="max-width:50%; height:auto;">
         </div>
         <hr style="border:0.1px solid #ccc; margin: 1px 0;"/>
         """

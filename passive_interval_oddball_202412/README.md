@@ -22,3 +22,25 @@
 
 ## 2025.02.01
 - Now get_neu_trial receives cate as a list.
+
+## 2025.02.05
+- Added surgery window picture and note picture into webpage.
+- Combined all calcium transient computation into get_ca_transient in utils.
+- Merged plot_ca_transient for general calcium transient analysis.
+- Rewritten plot_sess_example_traces accordingly.
+- Added calcium transient for all clusters.
+
+## 2025.02.06
+- Eliminated axis for cluster average and added scalebars.
+- Eliminated axis for masks.
+
+## 2025.02.08
+- Added labels in get_neu_trial.
+- Added label fraction for neuron categories in plot_cluster_info.
+
+## 2025.02.10
+- Added time normalization wrapping for clsuters.
+- Added cluster heatmap.
+- Combined all functions for subtypes in plot_main.
+- Changed canvas creation with loop.
+

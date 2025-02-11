@@ -23,9 +23,11 @@ def norm01(data):
 
 # compute the scale parameters when normalizing data into [0,1].
 def get_norm01_params(data):
-    a = 1 / (np.nanmax(data) - np.nanmin(data))
-    b = - np.nanmin(data) / (np.nanmax(data) - np.nanmin(data))
-    return a,b
+    x_scale = 1 / (np.nanmax(data) - np.nanmin(data))
+    x_offset = - np.nanmin(data) / (np.nanmax(data) - np.nanmin(data))
+    x_min = np.nanmin(data)
+    x_max = np.nanmax(data)
+    return x_scale, x_offset, x_min, x_max
 
 # bin data and return index.
 def get_bin_idx(data, bin_win, bin_num):
@@ -163,16 +165,20 @@ def get_neu_trial(
         ):
     if cate != None:
         colors = get_roi_label_color(cate, 0)
+        neu_labels = np.concatenate([
+            list_labels[i][np.in1d(list_labels[i],cate)*list_significance[i]['r_standard']]
+            for i in range(len(list_stim_labels))])
         neu_cate = [
             alignment['list_neu_seq'][i][:,np.in1d(list_labels[i],cate)*list_significance[i]['r_standard'],:]
             for i in range(len(list_stim_labels))]
     if roi_id != None:
         colors = get_roi_label_color(list_labels, roi_id)
+        neu_labels = None
         neu_cate = [np.expand_dims(alignment['list_neu_seq'][0][:,roi_id,:], axis=1)]
     neu_trial, neu_num = get_multi_sess_neu_trial_average(
         list_stim_labels, neu_cate, alignment,
         trial_idx=trial_idx, trial_param=trial_param, mean_sem=mean_sem)
-    return colors, neu_trial, neu_num
+    return colors, neu_trial, neu_labels, neu_num
 
 # compute indice with givn time window for df/f.
 def get_frame_idx_from_time(timestamps, c_time, l_time, r_time):
@@ -323,10 +329,13 @@ def get_expect_time(stim_labels):
     expect_long = np.median(expect_long[idx_long[:-1]])
     return expect_short, expect_long
 
-# compute calcium transient event timing.
-def get_ca_transient(dff):
+# compute calcium transient event timing and average.
+def get_ca_transient(dff, time_img):
     pct = 95
     win_peak = 25
+    timescale = 1.0
+    l_frames = int(20*timescale)
+    r_frames = int(150*timescale)
     # calculate the area under this window as a threshold.
     thres = np.percentile(dff, pct) * win_peak
     # find the window larger than baseline.
@@ -359,40 +368,90 @@ def get_ca_transient(dff):
     def get_tran_time(ca_tran_win):
         ca_tran_idx = (np.diff(ca_tran_win, append=0)==1).astype('int32')
         return ca_tran_idx
-    # main.
+    # extract dff traces around calcium transient.
+    def get_ca_mean(ca_tran):
+        dff_ca_neu = []
+        dff_ca_time = []
+        for i in range(dff.shape[0]):
+            ca_event_time = np.where(ca_tran[i,:]==1)[0]
+            # find dff.
+            cn = [dff[i,t-l_frames:t+r_frames].reshape(1,-1)
+                  for t in ca_event_time
+                  if t > l_frames and t < len(time_img)-r_frames]
+            cn = np.concatenate(cn, axis=0)
+            # find time.
+            ct = [time_img[t-l_frames:t+r_frames].reshape(1,-1)-time_img[t]
+                  for t in ca_event_time
+                  if t > l_frames and t < len(time_img)-r_frames]
+            ct = np.concatenate(ct, axis=0)
+            ct = np.nanmean(ct, axis=0)
+            # collect.
+            dff_ca_neu.append(cn)
+            dff_ca_time.append(ct)
+        dff_ca_time = np.concatenate([t.reshape(1,-1) for t in dff_ca_time], axis=0)
+        dff_ca_time = np.nanmean(dff_ca_time, axis=0)
+        return dff_ca_neu, dff_ca_time
+    # compute transient events.
     ca_tran = np.zeros_like(dff)
     for i in range(dff.shape[0]):
         ca_tran_win = detect_spikes_win(dff[i,:])
         ca_tran_win = win_thres(ca_tran_win)
         ca_tran[i,:] = get_tran_time(ca_tran_win)
-    return ca_tran
+    # compute average.
+    dff_ca_neu, dff_ca_time = get_ca_mean(ca_tran)
+    # get the total number of events for each neurons.
+    n_ca = np.nansum(ca_tran, axis=1)
+    return n_ca, dff_ca_neu, dff_ca_time
 
-    
+# compute calcium transient event timing and average with multiple sessions.
+def get_ca_transient_multi_sess(list_neural_trials):
+    list_dff = [nt['dff'] for nt in list_neural_trials] 
+    list_time = [nt['time'] for nt in list_neural_trials]
+    list_n_ca = []
+    list_dff_ca_neu = []
+    list_dff_ca_time = []
+    for i in range(len(list_dff)):
+        n_ca, dff_ca_neu, dff_ca_time = get_ca_transient(
+            list_dff[i], list_time[i])
+        list_n_ca.append(n_ca)
+        list_dff_ca_neu += dff_ca_neu
+        list_dff_ca_time.append(dff_ca_time.reshape(1,-1))
+    list_n_ca = np.concatenate(list_n_ca)
+    list_dff_ca_time = np.nanmean((np.concatenate(list_dff_ca_time, axis=0)), axis=0)
+    return list_n_ca, list_dff_ca_neu, list_dff_ca_time
+
 #%% plotting
 
-# get ROI color from label.
+# get color from label.
 def get_roi_label_color(labels, roi_id):
     if labels[roi_id] == -1:
-        color0 = 'grey'
+        color0 = 'dimgrey'
         color1 = 'deepskyblue'
         color2 = 'royalblue'
         cmap = LinearSegmentedColormap.from_list(
             'yicong_will_love_you_forever',
             ['white', 'royalblue', 'black'])
     if labels[roi_id] == 0:
-        color0 = 'grey'
+        color0 = 'dimgrey'
+        color1 = 'hotpink'
+        color2 = 'violet'
+        cmap = LinearSegmentedColormap.from_list(
+            'yicong_will_love_you_forever',
+            ['white', 'forestgreen', 'black'])
+    if labels[roi_id] == 1:
+        color0 = 'dimgrey'
+        color1 = 'chocolate'
+        color2 = 'crimson'
+        cmap = LinearSegmentedColormap.from_list(
+            'yicong_will_love_you_forever',
+            ['white', 'crimson', 'black'])
+    if labels[roi_id] == 2:
+        color0 = 'dimgrey'
         color1 = 'mediumseagreen'
         color2 = 'forestgreen'
         cmap = LinearSegmentedColormap.from_list(
             'yicong_will_love_you_forever',
             ['white', 'forestgreen', 'black'])
-    if labels[roi_id] == 1:
-        color0 = 'grey'
-        color1 = 'hotpink'
-        color2 = 'crimson'
-        cmap = LinearSegmentedColormap.from_list(
-            'yicong_will_love_you_forever',
-            ['white', 'crimson', 'black'])
     return color0, color1, color2, cmap
 
 # return colors from dim to dark with a base color.
@@ -646,7 +705,7 @@ class utils_basic:
     def plot_cluster_info(
             self, axs, colors, cmap, neu_seq, neu_x,
             n_clusters, max_clusters,
-            metrics, cluster_id):
+            metrics, cluster_id, neu_labels, label_names, cate):
         # plot sorted correlation matrix.
         def plot_sorted_corr(ax, neu_seq, cluster_id):
             sorted_neu_corr = get_sorted_corr_mat(neu_seq, cluster_id)
@@ -675,36 +734,193 @@ class utils_basic:
             ax.set_xticks(metrics['n_clusters'][::2])
             add_legend(ax, c, lbl, None, None, None, 'upper left')
         plot_metrics(axs[1], metrics)
+        # plot calcium transient of each cluster.
+        def plot_ca_transient(ax, cluster_id):
+            lbl = ['cluster #'+str(i) for i in range(n_clusters)]
+            # compute calcium transient.
+            _, dff_ca_neu, dff_ca_time = get_ca_transient_multi_sess(self.list_neural_trials)
+            # get category.
+            dff_ca_cate = np.array(dff_ca_neu,dtype='object')[
+                np.in1d(np.concatenate(self.list_labels), cate)].copy().tolist()
+            # average across trials.
+            dff_ca_cate = [get_mean_sem(d)[0].reshape(1,-1) for d in dff_ca_cate]
+            dff_ca_cate = np.concatenate(dff_ca_cate, axis=0)
+            # collect within cluster average.
+            neu_mean = [get_mean_sem(dff_ca_cate[cluster_id==i])[0] for i in range(n_clusters)]
+            neu_sem = [get_mean_sem(dff_ca_cate[cluster_id==i])[1] for i in range(n_clusters)]
+            # plot results.
+            for i in range(n_clusters): 
+                self.plot_mean_sem(ax, dff_ca_time, neu_mean[i], neu_sem[i], colors[i], None)
+            # adjust layout.
+            ax.tick_params(axis='y', tick1On=False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.set_xlabel('time since calcium transient triggered (ms)')
+            ax.set_ylabel('df/f (z-scored)')
+            ax.set_title('calcium transient average')
+            add_legend(ax, colors, lbl, None, None, None, 'upper right')
+        plot_ca_transient(axs[2], cluster_id)
         # plot fraction of each cluster.
         def plot_cluster_fraction(ax, cluster_id):
-            num = [np.sum(cluster_id==i) for i in np.unique(cluster_id)]
+            num = [np.nansum(cluster_id==i) for i in np.unique(cluster_id)]
             ax.pie(
                 num,
                 labels=[str(num[i])+' cluster # '+str(i) for i in range(n_clusters)],
                 colors=colors,
                 autopct='%1.1f%%',
                 wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
-        plot_cluster_fraction(axs[2], cluster_id)
-
-    def plot_cluster_mean_sem(self, ax, neu_mean, neu_sem, norm_params, stim_seq, c_stim, c_neu):
+        plot_cluster_fraction(axs[3], cluster_id)
+        # plot fraction for neuron categories.
+        def plot_cluster_cate_fraction(ax, cluster_id, neu_labels, label_names):
+            bar_width = 0.5
+            lbl = ['cluster #'+str(i) for i in range(n_clusters)]
+            cate_eval = [int(k) for k in label_names.keys()]
+            cate_name = [v for v in label_names.values()]
+            # get fraction in each category.
+            fraction = np.zeros((n_clusters, len(cate_eval)))
+            for i in range(n_clusters):
+                for j in range(len(cate_eval)):
+                    nc = np.nansum((cluster_id==i)*(neu_labels==cate_eval[j]))
+                    nt = np.nansum(neu_labels==cate_eval[j]) + 1e-5
+                    fraction[i,j] = nc / nt
+            # plot bars.
+            bottom = 1-np.cumsum(fraction, axis=0)
+            for j in range(len(cate_eval)):
+                for i in range(n_clusters):
+                    if fraction[i,j] != 0:
+                        ax.bar(
+                            j, fraction[i,j],
+                            bottom=bottom[i,j],
+                            edgecolor='white',
+                            width=bar_width,
+                            color=colors[i])
+                        ax.text(j, bottom[i,j]+fraction[i,j]/2,
+                                f'{fraction[i,j]:.2f}',
+                                ha='center', va='center', color='#2C2C2C')
+            # adjust layout.
+            ax.tick_params(tick1On=False)
+            ax.spines['left'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.set_xticks(np.arange(len(cate_eval)))
+            ax.set_xticklabels(cate_name, rotation='vertical')
+            ax.set_yticks([])
+            ax.set_xlim([-0.5,len(cate_eval)+0.5])
+            ax.set_ylim([0,1])
+            add_legend(ax, colors, lbl, None, None, None, 'upper right')
+        plot_cluster_cate_fraction(axs[4], cluster_id, neu_labels, label_names)
+        
+    def plot_cluster_mean_sem(self, ax, neu_mean, neu_sem, norm_params, stim_seq, c_stim, c_neu, xlim):
+        l_nan_margin = 5
+        r_nan_margin = 5
+        len_scale_x = 500
+        len_scale_y = 0.5
+        # set margin values to nan.
+        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
+        nm = neu_mean.copy()
+        ns = neu_sem.copy()
+        nm[:,:l_idx+l_nan_margin] = np.nan
+        nm[:,r_idx-r_nan_margin-1:] = np.nan
+        ns[:,:l_idx+l_nan_margin] = np.nan
+        ns[:,r_idx-r_nan_margin-1:] = np.nan
+        # plot stimulus.
         for i in range(stim_seq.shape[0]):
             ax.fill_between(
                 stim_seq[i,:],
-                0-0.1*neu_mean.shape[0], neu_mean.shape[0]+0.1*neu_mean.shape[0],
+                0, nm.shape[0],
                 color=c_stim[i], edgecolor='none', alpha=0.25, step='mid')
-        for i in range(neu_mean.shape[0]):
-            a, b = norm_params[i]
+        # plot cluster average.
+        for i in range(nm.shape[0]):
+            a, b, c, d = norm_params[i]
+            # add y=0 line.
+            ax.hlines(i+b, xlim[0]*0.99, xlim[1]*0.99, linestyle=':', color='#2C2C2C', alpha=0.2)
+            # plot neural traces.
             self.plot_mean_sem(
                 ax, self.alignment['neu_time'],
-                (a*neu_mean[i,:]+b)+neu_mean.shape[0]-i-1, np.abs(a)*neu_sem[i,:],
+                (a*nm[i,:]+b)+nm.shape[0]-i-1, np.abs(a)*ns[i,:],
                 c_neu[i], None)
-        ax.tick_params(axis='y', tick1On=False)
-        ax.spines['left'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.set_yticks([])
-        ax.set_ylabel('df/f (z-scored)')
-        ax.set_ylim([-0.1, neu_mean.shape[0]+0.1])
+            # plot y scalebar.
+            y_start = i + 0.5 - len_scale_y/2
+            ax.vlines(xlim[0]*0.99, y_start, y_start+len_scale_y, color='#2C2C2C')
+            ax.text(xlim[0]*0.99, i+0.5,
+                '{:.3f}'.format(len_scale_y*(d-c)),
+                va='center', ha='right', rotation=90, color='#2C2C2C')
+        # plot x scalebar.
+        ax.hlines(-0.01, xlim[0]*0.99, xlim[0]*0.99+len_scale_x, color='#2C2C2C')
+        ax.text(xlim[0]*0.99 + len_scale_x/2, -0.02, '{} ms'.format(int(len_scale_x)),
+            va='top', ha='center')
+        ax.axis('off')
+        ax.set_ylim([-0.2, neu_mean.shape[0]+0.1])
+    
+    def plot_cluster_interval_norm(
+            self, ax, cluster_bin_neu_mean, cluster_bin_neu_sem,
+            norm_params, stim_seq, c_neu):
+        len_scale_y = 0.5
+        # plot interval.
+        ax.vlines([0,1], 0, self.n_clusters, color='#2C2C2C', linestyle=':')
+        for ci in range(self.n_clusters):
+            # take binned data for each clsuter.
+            a, b, c, d = norm_params[ci]
+            nm = cluster_bin_neu_mean[:,ci,:]
+            ns = cluster_bin_neu_sem[:,ci,:]
+            # plot neural traces.
+            for bi in range(self.bin_num):
+                # normalize timestamps.
+                neu_time = - self.alignment['neu_time'] / stim_seq[bi,0,1]
+                # set margin values to nan.
+                l_idx, r_idx = get_frame_idx_from_time(neu_time, 0, 0, 1)
+                nm[bi,:l_idx] = np.nan
+                nm[bi,r_idx:] = np.nan
+                ns[bi,:l_idx] = np.nan
+                ns[bi,r_idx:] = np.nan
+                # plot results.
+                self.plot_mean_sem(
+                    ax, neu_time,
+                    (a*nm[bi,:]+b)+self.n_clusters-ci-1, np.abs(a)*ns[bi,:],
+                    c_neu[bi][ci], None)
+        # plot y scalebar.
+        for ci in range(self.n_clusters):
+            a, b, c, d = norm_params[ci]
+            y_start = ci + 0.5 - len_scale_y/2
+            ax.vlines(-0.1, y_start, y_start+len_scale_y, color='#2C2C2C')
+            ax.text(-0.1, ci+0.5,
+                '{:.3f}'.format(len_scale_y*(d-c)),
+                va='center', ha='right', rotation=90, color='#2C2C2C')
+        # adjust layout.
+        ax.axis('off')
+        ax.set_xlim(-0.5,2)
+        ax.set_ylim([-0.2, self.n_clusters+0.1])
+        
+    def plot_cluster_heatmap(self, ax, neu_seq, neu_time, cluster_id, colors):
+        win_conv = 5
+        win_sort = [-500, 500]
+        # create heatmap for all clusters.
+        heatmap = []
+        for i in range(self.n_clusters):
+            # get colormap for a cluster.
+            cmap, _ = get_cmap_color(2, base_color=colors[self.n_clusters-i-1], return_cmap=True)
+            # get data within cluster.
+            neu = neu_seq[cluster_id==(self.n_clusters-i-1),:].copy()
+            # smooth the values in the sorting window.
+            l_idx, r_idx = get_frame_idx_from_time(neu_time, 0, win_sort[0], win_sort[1])
+            smoothed_mean = np.array(
+                [np.convolve(row, np.ones(win_conv)/win_conv, mode='same')
+                 for row in neu[:,l_idx:r_idx]])
+            sort_idx_neu = np.argmax(smoothed_mean, axis=1).reshape(-1).argsort()
+            # rearrange the matrix.
+            neu = neu[sort_idx_neu,:]
+            # add into full heatmap.
+            heatmap.append(apply_colormap(neu, cmap))
+        # plot heatmap.
+        heatmap = np.concatenate(heatmap,axis=0)
+        ax.imshow(
+            heatmap,
+            extent=[neu_time[-1], neu_time[0], 1, heatmap.shape[0]],
+            interpolation='nearest', aspect='auto',
+            origin='lower')
+        # adjust layout.
+        adjust_layout_heatmap(ax)
+        ax.set_ylabel('neuron id (sorted)')
+        ax.axvline(np.searchsorted(neu_time, 0), color='black', lw=1, label='stim', linestyle='--')
     
     def plot_3d_latent_dynamics(self, ax, neu_z, stim_seq, c_neu, c_stim):
         # plot dynamics.

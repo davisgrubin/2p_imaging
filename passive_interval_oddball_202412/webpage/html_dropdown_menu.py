@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 def get_dropdown_menu_html():
-    labels = ['masks', 'random', 'short_long', 'fix_jitter_odd']
+    labels = ['field_of_view', 'random', 'short_long', 'fix_jitter_odd']
     n_pages=4
     dropdown_options = ""
     for i in range(n_pages):

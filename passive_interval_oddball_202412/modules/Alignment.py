@@ -24,8 +24,8 @@ def trim_seq(
 def get_stim_response(
         neural_trials,
         l_frames, r_frames,
-        expected='none',
-        n_stim = 6,
+        expected,
+        n_stim,
         ):
     stim_labels = neural_trials['stim_labels']
     dff = neural_trials['dff']
@@ -108,7 +108,7 @@ def run_get_stim_response(
         list_neural_trials,
         l_frames, r_frames,
         expected='None',
-        n_stim = 3,
+        n_stim=10,
         ):
     # run alignment for each session.
     list_stim_labels = []

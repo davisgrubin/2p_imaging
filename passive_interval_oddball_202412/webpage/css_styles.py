@@ -34,12 +34,16 @@ def get_css_styles():
             border-right: 1px solid #ccc;
             padding-right: 10px;
           }
-          .latex-description {
-            font-size: 9px;
+          .description {
+            font-family: "Times New Roman", serif;
+            font-size: 11px;
+            line-height: 11px;
             color: #444;
             text-align: justify;
+            white-space: pre-wrap;
             word-wrap: break-word;
             overflow: hidden;
+            padding: 5px;
           }
           .right-panel {
             flex: 1 1 auto;

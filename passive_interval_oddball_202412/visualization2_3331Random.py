@@ -45,12 +45,12 @@ def run(
         plotter = plotter_main(list_neural_trials, list_labels, list_significance, session_config_list['label_names'])
         # significance test.
         print('Plotting significance test results')
-        def plot_example_traces():
+        def plot_sess_significance():
             title = 'significance'
             filename = '3331Random01_significance'
             n_row = 1
             n_col = 1
-            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='constrained')
             gs = GridSpec(n_row, n_col, figure=fig)
             sign_ax = plt.subplot(gs[0, 0])
             plot_significance(sign_ax, list_significance, list_labels)
@@ -59,7 +59,7 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f1 = plot_example_traces()
+        f1 = plot_sess_significance()
         # stimulus types and interval distributions.
         print('Plotting stimulus types and interval distributions')
         def plot_intervals():
@@ -119,10 +119,11 @@ def run(
             n_col = 7
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            random_axs01 = [plt.subplot(gs[0, i]) for i in range(7)]
-            random_axs02 = [plt.subplot(gs[1, i]) for i in range(7)]
-            plotter.random_exc(random_axs01)
-            plotter.random_inh(random_axs02)
+            axs = []
+            for s in [0,1]:
+                a = [plt.subplot(gs[s+0, i]) for i in range(7)]
+                axs.append(a)
+            plotter.random(axs)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
@@ -134,16 +135,19 @@ def run(
         def plot_clustering():
             title = 'clustering on random interval'
             filename = '3331Random01_random_clustering'
-            n_row = 4
+            n_row = 12
             n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            cluster_axs01 = [plt.subplot(gs[0, 0]), plt.subplot(gs[0, 1]), plt.subplot(gs[1, 0]),
-                             plt.subplot(gs[0:2, 2])]
-            cluster_axs02 = [plt.subplot(gs[2, 0]), plt.subplot(gs[2, 1]), plt.subplot(gs[3, 0]),
-                             plt.subplot(gs[2:4, 2])]
-            plotter.cluster_exc(cluster_axs01)
-            plotter.cluster_inh(cluster_axs02)
+            axs = []
+            for s in [0,4,8]:
+                a = [plt.subplot(gs[s+0, 0]), plt.subplot(gs[s+1, 0]),
+                       plt.subplot(gs[s+2, 0]), plt.subplot(gs[s+3, 0]),
+                       plt.subplot(gs[s+0:s+2, 1])]
+                a+= [plt.subplot(gs[s+2:s+4, 1])]
+                a+= [plt.subplot(gs[s+0:s+2, 2]), plt.subplot(gs[s+2:s+4, 2])]
+                axs.append(a)
+            plotter.cluster(axs)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
@@ -159,10 +163,11 @@ def run(
             n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            random_axs05 = [plt.subplot(gs[0, i]) for i in range(3)]
-            random_axs06 = [plt.subplot(gs[1, i]) for i in range(3)]
-            plotter.glm_exc(random_axs05)
-            plotter.glm_inh(random_axs06)
+            axs = []
+            for s in [0,1]:
+                a = [plt.subplot(gs[s+0, i]) for i in range(3)]
+                axs.append(a)
+            plotter.glm(axs)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')

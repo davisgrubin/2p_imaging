@@ -45,12 +45,12 @@ def run(
         plotter = plotter_main(list_neural_trials, list_labels, list_significance, session_config_list['label_names'])
         # significance test.
         print('Plotting significance test results')
-        def plot_example_traces():
+        def plot_sess_significance():
             title = 'significance'
             filename = '1451ShortLong01_significance'
             n_row = 1
             n_col = 1
-            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='constrained')
             gs = GridSpec(n_row, n_col, figure=fig)
             sign_ax = plt.subplot(gs[0, 0])
             plot_significance(sign_ax, list_significance, list_labels)
@@ -59,7 +59,7 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f1 = plot_example_traces()
+        f1 = plot_sess_significance()
         # stimulus types and interval distributions.
         print('Plotting stimulus types and interval distributions')
         def plot_intervals():
@@ -119,14 +119,14 @@ def run(
             n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            standard_ax01 = [plt.subplot(gs[0, i]) for i in range(4)]
-            standard_ax01 += [plt.subplot(gs[0, i+4], projection='3d') for i in range(2)]
-            standard_ax02 = [plt.subplot(gs[1, i]) for i in range(4)]
-            standard_ax02 += [plt.subplot(gs[1, i+4], projection='3d') for i in range(2)]
-            standard_ax03 = [plt.subplot(gs[0:2, i+6]) for i in range(4)]
-            plotter.standard_exc(standard_ax01)
-            plotter.standard_inh(standard_ax02)
-            plotter.standard_heatmap(standard_ax03)
+            axs = []
+            for s in [0,1]:
+                a = [plt.subplot(gs[s+0, i]) for i in range(4)]
+                a+= [plt.subplot(gs[s+0, i+4], projection='3d') for i in range(2)]
+                axs.append(a)
+            axs.append([plt.subplot(gs[0:2, i+6]) for i in range(4)])
+            plotter.standard(axs[:2])
+            plotter.standard_heatmap(axs[2])
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
@@ -137,48 +137,67 @@ def run(
             title = 'neural traces alignment on oddball intervals'
             filename = '1451ShortLong05_oddball'
             n_row = 4
-            n_col = 6
+            n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            oddball_axs01 = [plt.subplot(gs[i, 0]) for i in range(2)]
-            oddball_axs01+= [plt.subplot(gs[i, 1]) for i in range(2)]
-            oddball_axs01+= [plt.subplot(gs[i, 2], projection='3d') for i in range(2)]
-            oddball_axs01+= [plt.subplot(gs[i, 3:5]) for i in range(2)]
-            oddball_axs01+= [plt.subplot(gs[i, 5], projection='3d') for i in range(2)]
-            oddball_axs02 = [plt.subplot(gs[i+2, 0]) for i in range(2)]
-            oddball_axs02+= [plt.subplot(gs[i+2, 1]) for i in range(2)]
-            oddball_axs02+= [plt.subplot(gs[i+2, 2], projection='3d') for i in range(2)]
-            oddball_axs02+= [plt.subplot(gs[i+2, 3:5]) for i in range(2)]
-            oddball_axs02+= [plt.subplot(gs[i+2, 5], projection='3d') for i in range(2)]
-            plotter.oddball_exc(oddball_axs01)
-            plotter.oddball_inh(oddball_axs02)
+            axs = []
+            for s in [0,2]:
+                a = [plt.subplot(gs[s+i, 0]) for i in range(2)]
+                a+= [plt.subplot(gs[s+i, 1]) for i in range(2)]
+                a+= [plt.subplot(gs[s+i, 2], projection='3d') for i in range(2)]
+                axs.append(a)
+            plotter.oddball(axs)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         f5 = plot_oddball()
-        # clustering analysis.
-        print('Plotting clustering analysis')
-        def plot_clustering():
-            title = 'clustering on short long interval'
-            filename = '1451ShortLong06_clustering'
-            n_row = 6
-            n_col = 12
+        def plot_block():
+            title = 'neural traces alignment on block transition'
+            filename = '1451ShortLong06_block'
+            n_row = 4
+            n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            cluster_axs01 = [plt.subplot(gs[0, 0]), plt.subplot(gs[1, 0]), plt.subplot(gs[2, 0])]
-            cluster_axs01+= [plt.subplot(gs[0:2, i]) for i in [1,2,3,4,5,6]]
-            cluster_axs02 = [plt.subplot(gs[3, 0]), plt.subplot(gs[4, 0]), plt.subplot(gs[5, 0])]
-            cluster_axs02+= [plt.subplot(gs[3:5, i]) for i in [1,2,3,4,5,6]]
-            plotter.cluster_exc(cluster_axs01)
-            plotter.cluster_inh(cluster_axs02)
+            axs = []
+            for s in [0,2]:
+                a = [plt.subplot(gs[s+i, 0:2]) for i in [0,1]]
+                a+= [plt.subplot(gs[s+i, 2], projection='3d') for i in [0,1]]
+                axs.append(a)
+            plotter.block(axs)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f6 = plot_clustering()
+        f6 = plot_block()
+        # clustering analysis.
+        print('Plotting clustering analysis')
+        def plot_clustering():
+            title = 'clustering on short long interval'
+            filename = '1451ShortLong07_clustering'
+            n_row = 12
+            n_col = 12
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs = []
+            for s in [0,4,8]:
+                a = [plt.subplot(gs[s+0, 0]), plt.subplot(gs[s+1, 0]),
+                       plt.subplot(gs[s+2, 0]), plt.subplot(gs[s+3, 0]),
+                       plt.subplot(gs[s+0:s+2, 1])]
+                a+= [plt.subplot(gs[s+0:s+2, i]) for i in [2,3,4,5]]
+                a+= [plt.subplot(gs[s+0:s+2, 6:8]), plt.subplot(gs[s+0:s+2, 8:10])]
+                a+= [plt.subplot(gs[s+2:s+4, i]) for i in [2,3,4,5]]
+                a+= [plt.subplot(gs[s+2:s+4, 6:8]), plt.subplot(gs[s+2:s+4, 8:10])]
+                axs.append(a)
+            plotter.cluster(axs)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        f7 = plot_clustering()
         # clear memory.
         print('Clearing memory usage')
         del list_labels
@@ -189,4 +208,4 @@ def run(
         del plotter
         gc.collect()
         # combine temp filenames
-        return [f1, f2, f3, f4, f5, f6]
+        return [f1, f2, f3, f4, f5, f6, f7]
