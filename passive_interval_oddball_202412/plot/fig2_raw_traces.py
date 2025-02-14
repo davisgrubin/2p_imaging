@@ -12,74 +12,77 @@ from utils import add_legend
 
 # select example neural traces.
 def plot_sess_example_traces(ax, list_labels, list_neural_trials, label_names):
-    max_ms = 150000
-    n = 20
-    r = 0.75
-    _, _, c1, _ = get_roi_label_color([-1], 0)
-    _, _, c2, _ = get_roi_label_color([1], 0)
-    # organize data.
-    dff = [nt['dff'] for nt in list_neural_trials] 
-    time = [nt['time'] for nt in list_neural_trials]
-    min_len = np.nanmin([len(t) for t in time])
-    dff = np.concatenate([d[:,:min_len] for d in dff], axis=0)
-    time = np.nanmin((np.concatenate([t[:min_len].reshape(1,-1) for t in time], axis=0)),axis=0)
-    labels = np.concatenate(list_labels)
-    # find time indice.
-    def get_time_idx():
-        start_time = np.max(time)/5.19961106
-        time_img_idx = get_sub_time_idx(time, start_time, start_time+max_ms)
-        sub_time_img = time[time_img_idx]
-        return time_img_idx, sub_time_img
-    # find active neurons with most calcium transients.
-    def get_active_neuron(cate, n):
-        # correct number.
-        idx = np.where(np.in1d(np.concatenate(list_labels), cate))[0]
-        n = n if n < len(idx) else len(idx)
-        # compute calcium transient.
-        list_n_ca, _, _ = get_ca_transient_multi_sess(list_neural_trials)
-        # find the best neurons.
-        act_idx = np.argsort(np.where(np.in1d(np.concatenate(list_labels), cate), list_n_ca, 0))[-n:]
-        return act_idx
-    # pick neuron indice.
-    def get_idx(dff):
-        if len(label_names) == 1:
-            cate = int(list(label_names.keys())[-1])
-            idx = get_active_neuron([cate], n)
-        if len(label_names) == 2:
-            idx1 = get_active_neuron([-1], int(r*n))
-            idx2 = get_active_neuron([1],  int((1-r)*n))
-            idx = np.concatenate([idx1,idx2])
-        if len(label_names) == 3:
-            idx1 = get_active_neuron([-1], int(r*n))
-            idx2 = get_active_neuron([1],  int((1-r)*n))
-            idx = np.concatenate([idx1,idx2])
-        return idx
-    # main.
-    time_img_idx, sub_time_img = get_time_idx()
-    sub_dff = dff[:, time_img_idx].copy()
-    act_idx = get_idx(sub_dff)
-    sub_dff = sub_dff[act_idx, :].copy()
-    # plot neural traces.
-    scale = np.max(np.abs(sub_dff))
-    for i in range(len(act_idx)):
-        ax.plot(
-            sub_time_img, sub_dff[i,:] + i * scale,
-            color=[get_roi_label_color([i], 0)[2] for i in labels[act_idx]][i])
-    # adjust layout.
-    ax.tick_params(axis='y', tick1On=False)
-    ax.spines['left'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['top'].set_visible(False)
-    ax.set_yticks([])
-    ax.set_xlabel('time (ms)')
-    ax.set_title('example traces')
-    ax.set_ylim([-0.5*scale,len(act_idx)*scale])
-    ax.set_xlim([np.min(sub_time_img), np.max(sub_time_img)])
-    add_legend(
-        ax,
-        [get_roi_label_color([int(k)], 0)[2] for k in label_names.keys()],
-        [i[1] for i in label_names.items()], None, None, None,
-        'upper right')
+    try:
+        max_ms = 150000
+        n = 20
+        r = 0.75
+        _, _, c1, _ = get_roi_label_color([-1], 0)
+        _, _, c2, _ = get_roi_label_color([1], 0)
+        # organize data.
+        dff = [nt['dff'] for nt in list_neural_trials] 
+        time = [nt['time'] for nt in list_neural_trials]
+        min_len = np.nanmin([len(t) for t in time])
+        dff = np.concatenate([d[:,:min_len] for d in dff], axis=0)
+        time = np.nanmin((np.concatenate([t[:min_len].reshape(1,-1) for t in time], axis=0)),axis=0)
+        labels = np.concatenate(list_labels)
+        # find time indice.
+        def get_time_idx():
+            start_time = np.max(time)/5.19961106
+            time_img_idx = get_sub_time_idx(time, start_time, start_time+max_ms)
+            sub_time_img = time[time_img_idx]
+            return time_img_idx, sub_time_img
+        # find active neurons with most calcium transients.
+        def get_active_neuron(cate, n):
+            # correct number.
+            idx = np.where(np.in1d(np.concatenate(list_labels), cate))[0]
+            n = n if n < len(idx) else len(idx)
+            # compute calcium transient.
+            list_n_ca, _, _ = get_ca_transient_multi_sess(list_neural_trials)
+            # find the best neurons.
+            act_idx = np.argsort(np.where(np.in1d(np.concatenate(list_labels), cate), list_n_ca, 0))[-n:]
+            return act_idx
+        # pick neuron indice.
+        def get_idx(dff):
+            if len(label_names) == 1:
+                cate = int(list(label_names.keys())[-1])
+                idx = get_active_neuron([cate], n)
+            if len(label_names) == 2:
+                idx1 = get_active_neuron([-1], int(r*n))
+                idx2 = get_active_neuron([1],  int((1-r)*n))
+                idx = np.concatenate([idx1,idx2])
+            if len(label_names) == 3:
+                idx1 = get_active_neuron([-1], int(r*n))
+                idx2 = get_active_neuron([1],  int((1-r)*n))
+                idx = np.concatenate([idx1,idx2])
+            return idx
+        # main.
+        time_img_idx, sub_time_img = get_time_idx()
+        sub_dff = dff[:, time_img_idx].copy()
+        act_idx = get_idx(sub_dff)
+        sub_dff = sub_dff[act_idx, :].copy()
+        # plot neural traces.
+        scale = np.max(np.abs(sub_dff))
+        for i in range(len(act_idx)):
+            ax.plot(
+                sub_time_img, sub_dff[i,:] + i * scale,
+                color=[get_roi_label_color([i], 0)[2] for i in labels[act_idx]][i])
+        # adjust layout.
+        ax.tick_params(axis='y', tick1On=False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.set_yticks([])
+        ax.set_xlabel('time (ms)')
+        ax.set_title('example traces')
+        ax.set_ylim([-0.5*scale,len(act_idx)*scale])
+        ax.set_xlim([np.min(sub_time_img), np.max(sub_time_img)])
+        add_legend(
+            ax,
+            [get_roi_label_color([int(k)], 0)[2] for k in label_names.keys()],
+            [i[1] for i in label_names.items()], None, None, None,
+            'upper right')
+    except:
+        pass
 
 # calcium transient analysis.
 def plot_ca_transient(axs, list_labels, list_neural_trials, label_names, cate):

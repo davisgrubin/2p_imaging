@@ -43,4 +43,5 @@
 - Added cluster heatmap.
 - Combined all functions for subtypes in plot_main.
 - Changed canvas creation with loop.
+- Now read_dff can use both raw and smooth dff.
 

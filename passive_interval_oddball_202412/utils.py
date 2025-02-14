@@ -378,13 +378,13 @@ def get_ca_transient(dff, time_img):
             cn = [dff[i,t-l_frames:t+r_frames].reshape(1,-1)
                   for t in ca_event_time
                   if t > l_frames and t < len(time_img)-r_frames]
-            cn = np.concatenate(cn, axis=0)
+            cn = np.concatenate(cn, axis=0) if len(cn) > 0 else np.array([np.nan])
             # find time.
             ct = [time_img[t-l_frames:t+r_frames].reshape(1,-1)-time_img[t]
                   for t in ca_event_time
                   if t > l_frames and t < len(time_img)-r_frames]
-            ct = np.concatenate(ct, axis=0)
-            ct = np.nanmean(ct, axis=0)
+            ct = np.concatenate(ct, axis=0) if len(ct) > 0 else np.array([np.nan])
+            ct = np.nanmean(ct, axis=0) if not np.isnan(ct) else np.array([np.nan])
             # collect.
             dff_ca_neu.append(cn)
             dff_ca_time.append(ct)

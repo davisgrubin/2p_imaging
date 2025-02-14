@@ -58,9 +58,13 @@ def read_move_offset(ops):
 
 # read dff traces.
 def read_dff(ops):
+    target = 'raw'
     file_path = os.path.join(ops['save_path0'], 'dff.h5')
     with h5py.File(file_path, 'r') as f:
-        dff = np.array(f['dff'])
+        if target == 'smooth':
+            dff = np.array(f['dff_smooth'])
+        if target == 'raw':
+            dff = np.array(f['dff'])
     return dff
 
 # read trailized neural traces with stimulus alignment.

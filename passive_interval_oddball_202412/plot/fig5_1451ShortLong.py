@@ -680,7 +680,6 @@ class plotter_main(plotter_utils):
     
             except: pass
 
-
     def cluster(self, axs_all):
         for cate, axs in zip([[-1],[1],[-1,1]], axs_all):
             label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
