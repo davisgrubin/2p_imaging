@@ -6,6 +6,7 @@ import h5py
 import numpy as np
 import scipy.io as sio
 from tqdm import tqdm
+from scipy.signal import savgol_filter
 
 # read ops.npy
 def read_ops(list_session_data_path):
@@ -57,14 +58,19 @@ def read_move_offset(ops):
     return [xoff, yoff]
 
 # read dff traces.
-def read_dff(ops):
-    target = 'raw'
+def read_dff(ops, smooth):
     file_path = os.path.join(ops['save_path0'], 'dff.h5')
     with h5py.File(file_path, 'r') as f:
-        if target == 'filtered':
-            dff = np.array(f['dff_filtered'])
-        if target == 'raw':
-            dff = np.array(f['dff'])
+        dff = np.array(f['dff'])
+        if smooth:
+            window_length=9
+            polyorder=3
+            dff = np.apply_along_axis(
+                savgol_filter, 1, dff.copy(),
+                window_length=window_length,
+                polyorder=polyorder)
+        else:
+            pass
     return dff
 
 # read trailized neural traces with stimulus alignment.
@@ -142,7 +148,7 @@ def read_bpod_mat_data(ops):
     return bpod_sess_data
 
 # get session results for one subject.
-def read_subject(list_ops, sig_tag=None, force_label=None):
+def read_subject(list_ops, sig_tag=None, force_label=None, smooth=None):
     list_labels = []
     list_masks = []
     list_vol = []
@@ -156,7 +162,7 @@ def read_subject(list_ops, sig_tag=None, force_label=None):
         # voltages.
         vol = read_raw_voltages(ops)
         # dff.
-        dff = read_dff(ops)
+        dff = read_dff(ops, smooth)
         # trials.
         neural_trials = read_neural_trials(ops)
         # movement offset.
@@ -194,7 +200,7 @@ def read_subject(list_ops, sig_tag=None, force_label=None):
             list_neural_trials, list_move_offset, list_significance]
 
 # get session results for all subject.
-def read_all(session_config_list):
+def read_all(session_config_list, smooth=True):
     list_labels = []
     list_masks = []
     list_vol = []
@@ -213,7 +219,8 @@ def read_all(session_config_list):
         labels, masks, vol, dff, neural_trials, move_offset, significance = read_subject(
              list_ops,
              sig_tag=session_config_list['list_config'][i]['sig_tag'],
-             force_label=session_config_list['list_config'][i]['force_label'])
+             force_label=session_config_list['list_config'][i]['force_label'],
+             smooth=smooth)
         # append to list.
         list_labels += labels
         list_masks += masks

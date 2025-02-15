@@ -51,7 +51,7 @@ class plotter_utils(utils_basic):
         self.bin_win = [450,2550]
         self.bin_num = 3
         self.n_clusters = 4
-        self.max_clusters = 20
+        self.max_clusters = 10
 
     def run_clustering(self, cate):
         n_latents = 25

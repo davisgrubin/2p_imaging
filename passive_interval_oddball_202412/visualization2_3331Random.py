@@ -160,14 +160,14 @@ def run(
         def plot_clustering_heatmaps():
             title = 'clustering heatmaps on random interval'
             filename = '3331Random06_random_clustering_heatmaps'
-            n_row = 4
+            n_row = 8
             n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs = []
             for s in [0]:
-                a = [[plt.subplot(gs[s+0:s+2, i]) for i in range(3)],
-                     [plt.subplot(gs[s+2:s+4, i]) for i in range(3)]]
+                a = [[plt.subplot(gs[s+0:s+4, i]) for i in range(3)],
+                     [plt.subplot(gs[s+4:s+8, i]) for i in range(3)]]
                 axs.append(a)
             plotter.cluster_heatmaps(axs)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)

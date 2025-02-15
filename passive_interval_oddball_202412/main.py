@@ -150,6 +150,9 @@ if __name__ == "__main__":
             'VTYH01_PPC_20250206_1451ShortLong' : 'short_long',
             'VTYH01_PPC_20250207_1451ShortLong' : 'short_long',
             'VTYH01_PPC_20250208_1451ShortLong' : 'short_long',
+            'VTYH01_PPC_20250210_1451ShortLong' : 'short_long',
+            'VTYH01_PPC_20250211_1451ShortLong' : 'short_long',
+            'VTYH01_PPC_20250212_1451ShortLong' : 'short_long',
             },
         'session_folder' : 'YH01VT',
         'sig_tag' : 'all',
@@ -179,11 +182,14 @@ if __name__ == "__main__":
             'VTYH02_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
             'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
             'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH02_PPC_20250204_4131FixJitterOdd' : 'fix_jitter_odd',
             'VTYH02_PPC_20250205_1451ShortLong' : 'short_long',
             'VTYH02_PPC_20250206_1451ShortLong' : 'short_long',
             'VTYH02_PPC_20250207_1451ShortLong' : 'short_long',
             'VTYH02_PPC_20250208_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250210_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250211_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250212_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250213_1451ShortLong' : 'short_long',
             },
         'session_folder' : 'YH02VT',
         'sig_tag' : 'all',
@@ -199,7 +205,6 @@ if __name__ == "__main__":
             'VTYH03_PPC_20250111_3331Random' : 'random',
             'VTYH03_PPC_20250113_1451ShortLong' : 'short_long',
             'VTYH03_PPC_20250114_1451ShortLong' : 'short_long',
-            'VTYH03_PPC_20250115_1451ShortLong' : 'short_long',
             'VTYH03_PPC_20250116_1451ShortLong' : 'short_long',
             'VTYH03_PPC_20250117_1451ShortLong' : 'short_long',
             'VTYH03_PPC_20250118_4131FixJitterOdd' : 'fix_jitter_odd',
@@ -216,6 +221,8 @@ if __name__ == "__main__":
             'VTYH03_PPC_20250206_1451ShortLong' : 'short_long',
             'VTYH03_PPC_20250207_1451ShortLong' : 'short_long',
             'VTYH03_PPC_20250208_1451ShortLong' : 'short_long',
+            'VTYH03_PPC_20250210_1451ShortLong' : 'short_long',
+            'VTYH03_PPC_20250212_1451ShortLong' : 'short_long',
             },
         'session_folder' : 'YH03VT',
         'sig_tag' : 'all',
@@ -305,11 +312,11 @@ if __name__ == "__main__":
     
     session_config_test = {
         'list_session_name' : {
-            'FN14_PPC_20250102_3331Random_test' : 'random',
-            'FN14_PPC_20250102_1451ShortLong_test' : 'short_long',
-            'FN14_PPC_20250102_4131FixJitterOdd_test' : 'fix_jitter_odd',
+            'VTYH02_PPC_20250109_3331Random' : 'random',
+            'VTYH02_PPC_20250116_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250122_4131FixJitterOdd' : 'fix_jitter_odd',
             },
-        'session_folder' : 'FN14',
+        'session_folder' : 'test',
         'sig_tag' : 'all',
         'force_label' : None,
         }
@@ -322,8 +329,8 @@ if __name__ == "__main__":
             '1':'Inh_VIP',
             '2':'Inh_SST',
             },
-        'subject_name' : 'FN14',
-        'output_filename' : 'FN14_PPC_passive.html'
+        'subject_name' : 'test',
+        'output_filename' : 'test_PPC_passive.html'
         }
     run(session_config_list_test)
     
@@ -355,11 +362,11 @@ if __name__ == "__main__":
     
     session_config_test = {
         'list_session_name' : {
-            'VTYH03_PPC_20250106_3331Random' : 'random',
-            'VTYH03_PPC_20250117_1451ShortLong' : 'short_long',
-            'VTYH03_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',,
+            'VTYH01_PPC_20250108_3331Random' : 'random',
+            'VTYH01_PPC_20250116_1451ShortLong' : 'short_long',
+            'VTYH01_PPC_20250123_4131FixJitterOdd' : 'fix_jitter_odd',
             },
-        'session_folder' : 'YH03VT',
+        'session_folder' : 'test',
         'sig_tag' : 'all',
         'force_label' : None,
         }
@@ -372,8 +379,8 @@ if __name__ == "__main__":
             '1':'Inh_VIP',
             '2':'Inh_SST',
             },
-        'subject_name' : 'YH03VT',
-        'output_filename' : 'YH03VT_PPC_passive.html'
+        'subject_name' : 'test',
+        'output_filename' : 'test_PPC_passive.html'
         }
     run(session_config_list_test)
     

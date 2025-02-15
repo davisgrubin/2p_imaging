@@ -52,7 +52,7 @@ class plotter_utils(utils_basic):
         self.bin_win = [450,2550]
         self.bin_num = 3
         self.n_clusters = 4
-        self.max_clusters = 20
+        self.max_clusters = 10
         self.d_latent = 3
     
     def run_clustering(self, cate):
@@ -785,7 +785,6 @@ class plotter_utils(utils_basic):
             self.plot_cluster_heatmap(
                 axs[i], neu_x[i], neu_time, neu_x[0], cluster_id, colors)
             axs[i].set_xlabel('time since stim (ms)')
-
         
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):

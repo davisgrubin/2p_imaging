@@ -49,3 +49,7 @@
 - Now run_clustering is an independent function.
 - Added cluster heatmap sorting.
 - Added sorted cluster heatmaps.
+
+## 2025.02.16
+- Moved dff filtering into ReadResults.
+- Now time normalizing analysis plots before/within/after interval responses.

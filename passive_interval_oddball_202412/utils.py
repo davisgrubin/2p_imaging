@@ -854,40 +854,46 @@ class utils_basic:
     def plot_cluster_interval_norm(
             self, ax, cluster_bin_neu_mean, cluster_bin_neu_sem,
             norm_params, stim_seq, c_neu):
+        margin_time = 500
+        gap = 0.05
         len_scale_y = 0.5
         # plot interval.
-        ax.vlines([0,1], 0, self.n_clusters, color='#2C2C2C', linestyle=':')
+        ax.vlines([-gap,0,1,1+gap], 0, self.n_clusters, color='#2C2C2C', linestyle=':')
         for ci in range(self.n_clusters):
             # take binned data for each clsuter.
             a, b, c, d = norm_params[ci]
             nm = cluster_bin_neu_mean[:,ci,:]
             ns = cluster_bin_neu_sem[:,ci,:]
-            # plot neural traces.
             for bi in range(self.bin_num):
-                # normalize timestamps.
-                neu_time = - self.alignment['neu_time'] / stim_seq[bi,0,1]
-                # set margin values to nan.
-                l_idx, r_idx = get_frame_idx_from_time(neu_time, 0, 0, 1)
-                nm[bi,:l_idx] = np.nan
-                nm[bi,r_idx:] = np.nan
-                ns[bi,:l_idx] = np.nan
-                ns[bi,r_idx:] = np.nan
-                # plot results.
-                self.plot_mean_sem(
-                    ax, neu_time,
-                    (a*nm[bi,:]+b)+self.n_clusters-ci-1, np.abs(a)*ns[bi,:],
-                    c_neu[bi][ci], None)
+                # plot neural traces before/within/after interval.
+                for l_t, r_t, off in zip(
+                        [stim_seq[bi,0,0]-margin_time, stim_seq[bi,0,1], 0],
+                        [stim_seq[bi,0,1], 0, stim_seq[bi,1,1]+margin_time],
+                        [-1-gap, 0, 1+gap],
+                        ):
+                    # get indice.
+                    l_idx, r_idx = get_frame_idx_from_time(
+                        self.alignment['neu_time'], 0, l_t, r_t)
+                    # take data points.
+                    m = nm[bi,l_idx:r_idx]
+                    s = ns[bi,l_idx:r_idx]
+                    # normalize timestamps.
+                    t = norm01(self.alignment['neu_time'][l_idx:r_idx]) + off
+                    # plot results.
+                    self.plot_mean_sem(
+                        ax, t, (a*m+b)+self.n_clusters-ci-1, np.abs(a)*s,
+                        c_neu[bi][ci], None)
         # plot y scalebar.
         for ci in range(self.n_clusters):
             a, b, c, d = norm_params[ci]
             y_start = ci + 0.5 - len_scale_y/2
-            ax.vlines(-0.1, y_start, y_start+len_scale_y, color='#2C2C2C')
-            ax.text(-0.1, ci+0.5,
+            ax.vlines(-1.1, y_start, y_start+len_scale_y, color='#2C2C2C')
+            ax.text(-1.1, ci+0.5,
                 '{:.3f}'.format(len_scale_y*(d-c)),
                 va='center', ha='right', rotation=90, color='#2C2C2C')
         # adjust layout.
         ax.axis('off')
-        ax.set_xlim(-0.5,2)
+        ax.set_xlim(-1.5,3)
         ax.set_ylim([-0.2, self.n_clusters+0.1])
         
     def plot_cluster_heatmap(self, ax, neu_seq, neu_time, neu_seq_sort, cluster_id, colors):
