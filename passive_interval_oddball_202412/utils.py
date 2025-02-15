@@ -384,7 +384,7 @@ def get_ca_transient(dff, time_img):
                   for t in ca_event_time
                   if t > l_frames and t < len(time_img)-r_frames]
             ct = np.concatenate(ct, axis=0) if len(ct) > 0 else np.array([np.nan])
-            ct = np.nanmean(ct, axis=0) if not np.isnan(ct) else np.array([np.nan])
+            ct = np.nanmean(ct, axis=0) if not np.isnan(np.mean(ct)) else np.array([np.nan])
             # collect.
             dff_ca_neu.append(cn)
             dff_ca_time.append(ct)
@@ -703,7 +703,7 @@ class utils_basic:
         add_legend(ax, [color2,color1], ['model','chance'], 'upper left')
     
     def plot_cluster_info(
-            self, axs, colors, cmap, neu_seq, neu_x,
+            self, axs, colors, cmap, neu_seq,
             n_clusters, max_clusters,
             metrics, cluster_id, neu_labels, label_names, cate):
         # plot sorted correlation matrix.
@@ -890,7 +890,7 @@ class utils_basic:
         ax.set_xlim(-0.5,2)
         ax.set_ylim([-0.2, self.n_clusters+0.1])
         
-    def plot_cluster_heatmap(self, ax, neu_seq, neu_time, cluster_id, colors):
+    def plot_cluster_heatmap(self, ax, neu_seq, neu_time, neu_seq_sort, cluster_id, colors):
         win_conv = 5
         win_sort = [-500, 500]
         # create heatmap for all clusters.
@@ -900,11 +900,12 @@ class utils_basic:
             cmap, _ = get_cmap_color(2, base_color=colors[self.n_clusters-i-1], return_cmap=True)
             # get data within cluster.
             neu = neu_seq[cluster_id==(self.n_clusters-i-1),:].copy()
+            neu_sort = neu_seq_sort[cluster_id==(self.n_clusters-i-1),:].copy()
             # smooth the values in the sorting window.
             l_idx, r_idx = get_frame_idx_from_time(neu_time, 0, win_sort[0], win_sort[1])
             smoothed_mean = np.array(
                 [np.convolve(row, np.ones(win_conv)/win_conv, mode='same')
-                 for row in neu[:,l_idx:r_idx]])
+                 for row in neu_sort[:,l_idx:r_idx]])
             sort_idx_neu = np.argmax(smoothed_mean, axis=1).reshape(-1).argsort()
             # rearrange the matrix.
             neu = neu[sort_idx_neu,:]
@@ -919,8 +920,7 @@ class utils_basic:
             origin='lower')
         # adjust layout.
         adjust_layout_heatmap(ax)
-        ax.set_ylabel('neuron id (sorted)')
-        ax.axvline(np.searchsorted(neu_time, 0), color='black', lw=1, label='stim', linestyle='--')
+        ax.set_ylabel('neuron id (clustered and sorted)')
     
     def plot_3d_latent_dynamics(self, ax, neu_z, stim_seq, c_neu, c_stim):
         # plot dynamics.

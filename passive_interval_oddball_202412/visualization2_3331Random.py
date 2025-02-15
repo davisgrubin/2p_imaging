@@ -114,7 +114,7 @@ def run(
         print('Plotting neural traces alignments')
         def plot_random_alignment():
             title = 'neural traces alignment on random interval'
-            filename = '3331Random01_random_alignment'
+            filename = '3331Random04_random_alignment'
             n_row = 2
             n_col = 7
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -134,7 +134,7 @@ def run(
         print('Plotting clustering analysis')
         def plot_clustering():
             title = 'clustering on random interval'
-            filename = '3331Random01_random_clustering'
+            filename = '3331Random05_random_clustering'
             n_row = 12
             n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -142,10 +142,11 @@ def run(
             axs = []
             for s in [0,4,8]:
                 a = [plt.subplot(gs[s+0, 0]), plt.subplot(gs[s+1, 0]),
-                       plt.subplot(gs[s+2, 0]), plt.subplot(gs[s+3, 0]),
-                       plt.subplot(gs[s+0:s+2, 1])]
+                     plt.subplot(gs[s+2, 0]), plt.subplot(gs[s+3, 0]),
+                     plt.subplot(gs[s+0:s+2, 1])]
                 a+= [plt.subplot(gs[s+2:s+4, 1])]
-                a+= [plt.subplot(gs[s+0:s+2, 2]), plt.subplot(gs[s+2:s+4, 2])]
+                a+= [plt.subplot(gs[s+0:s+2, 2])]
+                a+= [plt.subplot(gs[s+2:s+4, 2])]
                 axs.append(a)
             plotter.cluster(axs)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -154,11 +155,32 @@ def run(
             plt.close(fig)
             return [filename, n_row, n_col, title]
         f5 = plot_clustering()
+        # clustering heatmaps.
+        print('Plotting clustering heatmaps')
+        def plot_clustering_heatmaps():
+            title = 'clustering heatmaps on random interval'
+            filename = '3331Random06_random_clustering_heatmaps'
+            n_row = 4
+            n_col = 3
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs = []
+            for s in [0]:
+                a = [[plt.subplot(gs[s+0:s+2, i]) for i in range(3)],
+                     [plt.subplot(gs[s+2:s+4, i]) for i in range(3)]]
+                axs.append(a)
+            plotter.cluster_heatmaps(axs)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        f6 = plot_clustering_heatmaps()
         # neural coding analysis.
         print('Plotting GLM analysis')
         def plot_glm():
             title = 'GLM analysis on random interval'
-            filename = '3331Random01_random_glm'
+            filename = '3331Random07_random_glm'
             n_row = 2
             n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -173,7 +195,7 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f6 = plot_glm()
+        f7 = plot_glm()
         # clear memory.
         print('Clearing memory usage')
         del list_labels
@@ -184,4 +206,4 @@ def run(
         del plotter
         gc.collect()
         # combine temp filenames
-        return [f1, f2, f3, f4, f5, f6]
+        return [f1, f2, f3, f4, f5, f6, f7]

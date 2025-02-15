@@ -61,8 +61,8 @@ def read_dff(ops):
     target = 'raw'
     file_path = os.path.join(ops['save_path0'], 'dff.h5')
     with h5py.File(file_path, 'r') as f:
-        if target == 'smooth':
-            dff = np.array(f['dff_smooth'])
+        if target == 'filtered':
+            dff = np.array(f['dff_filtered'])
         if target == 'raw':
             dff = np.array(f['dff'])
     return dff

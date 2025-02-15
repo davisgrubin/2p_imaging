@@ -48,10 +48,41 @@ class plotter_utils(utils_basic):
                 list_neural_trials, self.l_frames, self.r_frames, expected='none')
         self.list_stim_labels = self.alignment['list_stim_labels']
         self.list_significance = list_significance
-        self.bin_win = [500,2500]
-        self.bin_num = 4
+        self.bin_win = [450,2550]
+        self.bin_num = 3
         self.n_clusters = 4
         self.max_clusters = 20
+
+    def run_clustering(self, cate):
+        n_latents = 25
+        # collect data.
+        [[color0, color1, color2, cmap],
+         [neu_seq, stim_seq, stim_value, pre_isi], neu_labels,
+         [n_trials, n_neurons]] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_param=[[2,3,4,5], None, None, None, [1], [0]],
+            mean_sem=False,
+            cate=cate, roi_id=None)
+        # bin data based on isi.
+        [bins, bin_center, bin_neu_seq, _, _, bin_stim_seq, bin_stim_value] = get_isi_bin_neu(
+            neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
+        # get correlation matrix within each bin.
+        bin_corr = []
+        for i in range(self.bin_num):
+            # take timestamps with interval+image+interval.
+            l_idx, r_idx = get_frame_idx_from_time(
+                self.alignment['neu_time'], 0, -bins[i], self.bin_win[0])
+            # compute correlation matrix.
+            bin_corr.append(np.corrcoef(bin_neu_seq[i][:,l_idx:r_idx]))
+        # combine all correlation matrix.
+        bin_corr = np.concatenate(bin_corr, axis=1)
+        # extract features.
+        model = PCA(n_components=n_latents)
+        neu_x = model.fit_transform(bin_corr)
+        # run clustering on extracted correlation.
+        metrics, cluster_id = clustering_neu_response_mode(
+            neu_x, self.n_clusters, self.max_clusters)
+        return metrics, cluster_id
     
     def plot_random_stim(self, ax, cate=None, roi_id=None):
         # collect data.
@@ -288,48 +319,23 @@ class plotter_utils(utils_basic):
         add_legend(ax, None, None, n_trials, n_neurons, self.n_sess, 'upper right')
     
     def plot_random_cluster(self, axs, cate=None):
-        n_latents = 25
-        # collect data.
-        [[color0, color1, color2, cmap],
-         [neu_seq, stim_seq, stim_value, pre_isi], neu_labels,
-         [n_trials, n_neurons]] = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-            trial_param=[[2,3,4,5], None, None, None, [1], [0]],
-            mean_sem=False,
-            cate=cate, roi_id=None)
-        # bin data based on isi.
-        [bins, bin_center, bin_neu_seq, _, _, bin_stim_seq, bin_stim_value] = get_isi_bin_neu(
-            neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
-        colors = get_cmap_color(self.n_clusters, cmap=plt.cm.gist_ncar)
-        # construct features for clustering.
-        def prepare_data():
-            # get correlation matrix within each bin.
-            bin_corr = []
-            for i in range(self.bin_num):
-                # take timestamps with interval+image+interval.
-                l_idx, r_idx = get_frame_idx_from_time(
-                    self.alignment['neu_time'], 0, -bins[i], self.bin_win[0])
-                # compute correlation matrix.
-                bin_corr.append(np.corrcoef(bin_neu_seq[i][:,l_idx:r_idx]))
-            # combine all correlation matrix.
-            bin_corr = np.concatenate(bin_corr, axis=1)
-            # extract features.
-            model = PCA(n_components=n_latents)
-            neu_x = model.fit_transform(bin_corr)
-            return neu_x
-        neu_x = prepare_data()
-        # run clustering on extracted correlation.
-        def run_clustering():
-            metrics, cluster_id = clustering_neu_response_mode(
-                neu_x, self.n_clusters, self.max_clusters)
-            return metrics, cluster_id
-        metrics, cluster_id = run_clustering()
+        metrics, cluster_id = self.run_clustering(cate)
+        colors = get_cmap_color(self.n_clusters, cmap=plt.cm.nipy_spectral)
         # plot basic clustering results.
         def plot_info(axs):
+            # collect data.
+            [[color0, color1, color2, cmap],
+             [neu_seq, stim_seq, stim_value, pre_isi], neu_labels,
+             [n_trials, n_neurons]] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_param=[[2,3,4,5], None, None, None, [1], [0]],
+                mean_sem=False,
+                cate=cate, roi_id=None)
             neu = [np.nanmean(n, axis=0) for n in neu_seq]
             neu = np.concatenate(neu, axis=0)
+            # plot info.
             self.plot_cluster_info(
-                axs, colors, cmap, neu, neu_x,
+                axs, colors, cmap, neu,
                 self.n_clusters, self.max_clusters,
                 metrics, cluster_id, neu_labels, self.label_names, cate)
         plot_info(axs[:5])
@@ -373,6 +379,17 @@ class plotter_utils(utils_basic):
         # plot response on random for all clusters.
         def plot_random(ax):
             xlim = [-3500, 2500]
+            # collect data.
+            [[color0, color1, color2, cmap],
+             [neu_seq, stim_seq, stim_value, pre_isi], neu_labels,
+             [n_trials, n_neurons]] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_param=[[2,3,4,5], None, None, None, [1], [0]],
+                mean_sem=False,
+                cate=cate, roi_id=None)
+            # bin data based on isi.
+            [bins, bin_center, bin_neu_seq, _, _, bin_stim_seq, bin_stim_value] = get_isi_bin_neu(
+                neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
             # get response within cluster at each bin.
             cluster_bin_neu_mean = [get_mean_sem_cluster(neu, cluster_id)[0] for neu in bin_neu_seq]
             cluster_bin_neu_sem  = [get_mean_sem_cluster(neu, cluster_id)[1] for neu in bin_neu_seq]
@@ -414,9 +431,35 @@ class plotter_utils(utils_basic):
             neu_seq = neu_seq[:,l_idx:r_idx]
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
             # plot heatmap.
-            self.plot_cluster_heatmap(ax, neu_seq, neu_time, cluster_id, colors)
+            self.plot_cluster_heatmap(ax, neu_seq, neu_time, neu_seq, cluster_id, colors)
+            ax.set_xlabel('time since stim (ms)')
         plot_heatmap_random(axs[7])
-        
+
+    def plot_random_cluster_heatmaps(self, axs, sort_target, cate=None):
+        metrics, cluster_id = self.run_clustering(cate)
+        colors = get_cmap_color(self.n_clusters, cmap=plt.cm.nipy_spectral)
+        xlim = [-3500, 2500]
+        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
+        # collect data.
+        [_, [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons]] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_param=[None, None, None, None, None, [0]],
+            mean_sem=False,
+            cate=cate, roi_id=None)
+        neu_time = self.alignment['neu_time'][l_idx:r_idx]
+        # bin data based on isi.
+        [_, _, neu_x, _, _, _, _] = get_isi_bin_neu(
+            neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
+        if sort_target == 'shortest':
+            neu_seq_sort = neu_x[0].copy()
+        if sort_target == 'longest':
+            neu_seq_sort = neu_x[-1].copy()
+        # plot heatmaps.
+        for i in range(len(neu_x)):
+            self.plot_cluster_heatmap(
+                axs[i], neu_x[i], neu_time, neu_seq_sort, cluster_id, colors)
+            axs[i].set_xlabel('time since stim (ms)')
+            
     def plot_random_glm(self, axs, cate=None):
         win_kernal = 2500
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, win_kernal)
@@ -581,6 +624,21 @@ class plotter_main(plotter_utils):
                 axs[6].set_title(f'response to random preceeding interval with bins \n {label_name}')
                 axs[7].set_title(f'response to random interval \n {label_name}')
             
+            except: pass
+    
+    def cluster_heatmaps(self, axs_all):
+        for cate, axs in zip([[-1,1]], axs_all):
+            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+            try:
+                
+                self.plot_random_cluster_heatmaps(axs[0], 'shortest', cate=cate)
+                for i in range(3):
+                    axs[0][i].set_title(f'response to random preceeding interval bin#{i} \n (sorted by shortest) {label_name}')
+                
+                self.plot_random_cluster_heatmaps(axs[1], 'longest', cate=cate)
+                for i in range(3):
+                    axs[1][i].set_title(f'response to random preceeding interval bin#{i} \n (sorted by longest) {label_name}')
+                    
             except: pass
 
     def glm(self, axs_all):

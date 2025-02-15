@@ -45,3 +45,7 @@
 - Changed canvas creation with loop.
 - Now read_dff can use both raw and smooth dff.
 
+## 2025.02.14
+- Now run_clustering is an independent function.
+- Added cluster heatmap sorting.
+- Added sorted cluster heatmaps.

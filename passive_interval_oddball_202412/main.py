@@ -49,7 +49,6 @@ def run(session_config_list):
     print('Reading ops.npy')
     list_ops = read_ops(session_config_list['list_session_data_path'])
     
-
     print('===============================================')
     print('============= trials segmentation =============')
     print('===============================================')
@@ -299,14 +298,12 @@ if __name__ == "__main__":
 
 #%% start processing
 
-    run(session_config_list_YH01VT)
-    run(session_config_list_YH02VT)
-    run(session_config_list_YH03VT)
-    run(session_config_list_all)
+    #run(session_config_list_YH01VT)
+    #run(session_config_list_YH02VT)
+    #run(session_config_list_YH03VT)
+    #run(session_config_list_all)
     
-    '''
-    
-    session_config_FN14 = {
+    session_config_test = {
         'list_session_name' : {
             'FN14_PPC_20250102_3331Random_test' : 'random',
             'FN14_PPC_20250102_1451ShortLong_test' : 'short_long',
@@ -316,9 +313,9 @@ if __name__ == "__main__":
         'sig_tag' : 'all',
         'force_label' : None,
         }
-    session_config_list_FN14 = {
+    session_config_list_test = {
         'list_config': [
-            session_config_FN14,
+            session_config_test,
             ],
         'label_names' : {
             '-1':'Exc',
@@ -328,15 +325,39 @@ if __name__ == "__main__":
         'subject_name' : 'FN14',
         'output_filename' : 'FN14_PPC_passive.html'
         }
-    run(session_config_list_FN14)
+    run(session_config_list_test)
+    
+    '''
+    
+    session_config_test = {
+        'list_session_name' : {
+            'FN14_PPC_20250102_3331Random_test' : 'random',
+            'FN14_PPC_20250102_1451ShortLong_test' : 'short_long',
+            'FN14_PPC_20250102_4131FixJitterOdd_test' : 'fix_jitter_odd',
+            },
+        'session_folder' : 'FN14',
+        'sig_tag' : 'all',
+        'force_label' : None,
+        }
+    session_config_list_test = {
+        'list_config': [
+            session_config_test,
+            ],
+        'label_names' : {
+            '-1':'Exc',
+            '1':'Inh_VIP',
+            '2':'Inh_SST',
+            },
+        'subject_name' : 'FN14',
+        'output_filename' : 'FN14_PPC_passive.html'
+        }
+    run(session_config_list_test)
     
     session_config_test = {
         'list_session_name' : {
             'VTYH03_PPC_20250106_3331Random' : 'random',
-            'VTYH03_PPC_20250107_3331Random' : 'random',
-            'VTYH03_PPC_20250108_3331Random' : 'random',
-            'VTYH03_PPC_20250109_3331Random' : 'random',
-            'VTYH03_PPC_20250111_3331Random' : 'random',
+            'VTYH03_PPC_20250117_1451ShortLong' : 'short_long',
+            'VTYH03_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',,
             },
         'session_folder' : 'YH03VT',
         'sig_tag' : 'all',

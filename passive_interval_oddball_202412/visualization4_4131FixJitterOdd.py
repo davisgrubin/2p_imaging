@@ -177,6 +177,27 @@ def run(
             plt.close(fig)
             return [filename, n_row, n_col, title]
         f6 = plot_clustering()
+        # clustering heatmaps.
+        print('Plotting clustering heatmaps')
+        def plot_clustering_heatmaps():
+            title = 'clustering heatmaps on oddball fix jitter interval'
+            filename = '4131FixJitterOdd07_clustering_heatmaps'
+            n_row = 4
+            n_col = 4
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs = []
+            for s in [0]:
+                a = [[plt.subplot(gs[s+0:s+2, i]) for i in range(4)],
+                     [plt.subplot(gs[s+2:s+4, i]) for i in range(4)]]
+                axs.append(a)
+            plotter.cluster_heatmaps(axs)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        f7 = plot_clustering_heatmaps()
         # clear memory.
         print('Clearing memory usage')
         del list_labels
@@ -186,5 +207,5 @@ def run(
         del list_significance
         gc.collect()
         # combine temp filenames
-        return [f1, f2, f3, f4, f5, f6]
+        return [f1, f2, f3, f4, f5, f6, f7]
 
