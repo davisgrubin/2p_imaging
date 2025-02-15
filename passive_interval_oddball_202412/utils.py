@@ -921,7 +921,7 @@ class utils_basic:
         heatmap = np.concatenate(heatmap,axis=0)
         ax.imshow(
             heatmap,
-            extent=[neu_time[-1], neu_time[0], 1, heatmap.shape[0]],
+            extent=[neu_time[0], neu_time[-1], 1, heatmap.shape[0]],
             interpolation='nearest', aspect='auto',
             origin='lower')
         # adjust layout.

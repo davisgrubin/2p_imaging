@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --mem-per-cpu=1024G
+#SBATCH --mem-per-cpu=512G
 #SBATCH --time=4:00:00
 #SBATCH --output=Report_%A-%a.out
 #SBATCH --mail-user=hilberthuang05@gatech.edu

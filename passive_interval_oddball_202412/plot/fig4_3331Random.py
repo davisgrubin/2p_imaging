@@ -77,7 +77,7 @@ class plotter_utils(utils_basic):
         # combine all correlation matrix.
         bin_corr = np.concatenate(bin_corr, axis=1)
         # extract features.
-        model = PCA(n_components=n_latents)
+        model = PCA(n_components=n_latents if n_latents < n_neurons else n_neurons)
         neu_x = model.fit_transform(bin_corr)
         # run clustering on extracted correlation.
         metrics, cluster_id = clustering_neu_response_mode(
