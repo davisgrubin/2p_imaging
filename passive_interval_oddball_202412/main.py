@@ -283,34 +283,10 @@ if __name__ == "__main__":
 
 #%% start processing
 
-    #run(session_config_list_YH01VT)
-    #run(session_config_list_YH02VT)
-    #run(session_config_list_YH03VT)
-    #run(session_config_list_all)
-    
-    session_config_test = {
-        'list_session_name' : {
-            'VTYH02_PPC_20250109_3331Random' : 'random',
-            'VTYH02_PPC_20250116_1451ShortLong' : 'short_long',
-            'VTYH02_PPC_20250122_4131FixJitterOdd' : 'fix_jitter_odd',
-            },
-        'session_folder' : 'test',
-        'sig_tag' : 'all',
-        'force_label' : None,
-        }
-    session_config_list_test = {
-        'list_config': [
-            session_config_test,
-            ],
-        'label_names' : {
-            '-1':'Exc',
-            '1':'Inh_VIP',
-            '2':'Inh_SST',
-            },
-        'subject_name' : 'test',
-        'output_filename' : 'test_PPC_passive.html'
-        }
-    run(session_config_list_test)
+    run(session_config_list_YH01VT)
+    run(session_config_list_YH02VT)
+    run(session_config_list_YH03VT)
+    run(session_config_list_all)
   
     '''
 
