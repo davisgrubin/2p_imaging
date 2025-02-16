@@ -176,11 +176,31 @@ def run(
             plt.close(fig)
             return [filename, n_row, n_col, title]
         f6 = plot_clustering_heatmaps()
+        # clustering latents.
+        print('Plotting clustering latent dynamics')
+        def plot_clustering_latents():
+            title = 'clustering latent dynamics on random interval'
+            filename = '3331Random06_random_clustering_latents'
+            n_row = 1
+            n_col = 4
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs = []
+            for s in [0]:
+                a = [plt.subplot(gs[s+0, i], projection='3d') for i in range(4)]
+                axs.append(a)
+            plotter.cluster_latents(axs)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        f7 = plot_clustering_latents()
         # neural coding analysis.
         print('Plotting GLM analysis')
         def plot_glm():
             title = 'GLM analysis on random interval'
-            filename = '3331Random07_random_glm'
+            filename = '3331Random08_random_glm'
             n_row = 2
             n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -195,7 +215,7 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f7 = plot_glm()
+        f8 = plot_glm()
         # clear memory.
         print('Clearing memory usage')
         del list_labels
@@ -206,4 +226,4 @@ def run(
         del plotter
         gc.collect()
         # combine temp filenames
-        return [f1, f2, f3, f4, f5, f6, f7]
+        return [f1, f2, f3, f4, f5, f6, f7, f8]

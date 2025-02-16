@@ -52,6 +52,7 @@ class plotter_utils(utils_basic):
         self.bin_num = 3
         self.n_clusters = 4
         self.max_clusters = 10
+        self.d_latent = 3
 
     def run_clustering(self, cate):
         n_latents = 25
@@ -436,7 +437,7 @@ class plotter_utils(utils_basic):
         plot_heatmap_random(axs[7])
 
     def plot_random_cluster_heatmaps(self, axs, sort_target, cate=None):
-        metrics, cluster_id = self.run_clustering(cate)
+        _, cluster_id = self.run_clustering(cate)
         colors = get_cmap_color(self.n_clusters, cmap=plt.cm.nipy_spectral)
         xlim = [-3500, 2500]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
@@ -446,6 +447,7 @@ class plotter_utils(utils_basic):
             trial_param=[None, None, None, None, None, [0]],
             mean_sem=False,
             cate=cate, roi_id=None)
+        neu_seq = [ns[:,:,l_idx:r_idx] for ns in neu_seq]
         neu_time = self.alignment['neu_time'][l_idx:r_idx]
         # bin data based on isi.
         [_, _, neu_x, _, _, _, _] = get_isi_bin_neu(
@@ -459,7 +461,11 @@ class plotter_utils(utils_basic):
             self.plot_cluster_heatmap(
                 axs[i], neu_x[i], neu_time, neu_seq_sort, cluster_id, colors)
             axs[i].set_xlabel('time since stim (ms)')
-            
+    
+    def plot_cluster_latents(self, axs, cate=None):
+        _, cluster_id = self.run_clustering(cate)
+        self.plot_cluster_bin_3d_latents(axs, cluster_id, cate=cate)
+        
     def plot_random_glm(self, axs, cate=None):
         win_kernal = 2500
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, win_kernal)
@@ -573,7 +579,7 @@ class plotter_utils(utils_basic):
             ax.set_yticks(pos_tick)
             ax.set_yticklabels(['{}'.format(i) for i in range(self.n_clusters)])
             ax.set_ylabel('cluster id')
-        plot_glm_cluster_w(axs[2])
+        plot_glm_cluster_w(axs[2])        
 
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
@@ -639,6 +645,17 @@ class plotter_main(plotter_utils):
                 for i in range(3):
                     axs[1][i].set_title(f'response to random preceeding interval bin#{i} \n (sorted by longest) {label_name}')
                     
+            except: pass
+    
+    def cluster_latents(self, axs_all):
+        for cate, axs in zip([[-1,1]], axs_all):
+            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+            try:
+                
+                self.plot_cluster_latents(axs, cate=cate)
+                for i in range(self.n_clusters):
+                    axs[i].set_title(f'latent dynamics with binned interval for cluster # {i} \n {label_name}')
+
             except: pass
 
     def glm(self, axs_all):

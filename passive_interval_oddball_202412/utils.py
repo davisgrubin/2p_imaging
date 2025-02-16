@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial.distance import pdist
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.colors import to_hex
+from sklearn.manifold import TSNE
 
 from modeling.clustering import get_sorted_corr_mat
 
@@ -511,17 +512,18 @@ def adjust_layout_3d_latent(ax, neu_z, cmap, neu_time, cbar_label):
     ax.xaxis.pane.fill = False
     ax.yaxis.pane.fill = False
     ax.zaxis.pane.fill = False
-    cbar = ax.figure.colorbar(
-        plt.cm.ScalarMappable(cmap=cmap), ax=ax, ticks=[0.0,0.2,0.5,0.8,1.0],
-        shrink=0.5, aspect=25)
-    cbar.outline.set_visible(False)
-    cbar.ax.set_ylabel(cbar_label, rotation=-90, va='bottom')
-    cbar.ax.set_yticklabels(
-        ['\u2716',
-         str(int(neu_time[int(len(neu_time)*0.2)])),
-         str(int(neu_time[int(len(neu_time)*0.5)])),
-         str(int(neu_time[int(len(neu_time)*0.8)])),
-         '\u25CF'], rotation=-90)
+    if cmap != None:
+        cbar = ax.figure.colorbar(
+            plt.cm.ScalarMappable(cmap=cmap), ax=ax, ticks=[0.0,0.2,0.5,0.8,1.0],
+            shrink=0.5, aspect=25)
+        cbar.outline.set_visible(False)
+        cbar.ax.set_ylabel(cbar_label, rotation=-90, va='bottom')
+        cbar.ax.set_yticklabels(
+            ['\u2716',
+             str(int(neu_time[int(len(neu_time)*0.2)])),
+             str(int(neu_time[int(len(neu_time)*0.5)])),
+             str(int(neu_time[int(len(neu_time)*0.8)])),
+             '\u25CF'], rotation=-90)
 
 # add legend into subplots.
 def add_legend(ax, colors, labels, n_trials, n_neurons, n_sessions, loc, dim=2):
@@ -928,6 +930,50 @@ class utils_basic:
         adjust_layout_heatmap(ax)
         ax.set_ylabel('neuron id (clustered and sorted)')
     
+    def plot_cluster_bin_3d_latents(self, axs, cluster_id, cate=None):
+        colors = get_cmap_color(self.n_clusters, cmap=plt.cm.nipy_spectral)
+        # collect data.
+        [_, [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons]] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_param=[None, None, None, None, None, [0]],
+            mean_sem=False,
+            cate=cate, roi_id=None)
+        # bin data based on isi.
+        [bins, _, bin_neu_seq, _, _, bin_stim_seq, _] = get_isi_bin_neu(
+            neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
+        # get latent dynamics for each cluster.
+        neu_z = []
+        for i in range(self.n_clusters):
+            # reshape data within cluster.
+            neu_x = [np.expand_dims(bns[cluster_id==i,:],2) for bns in bin_neu_seq]
+            neu_x = np.concatenate(neu_x, axis=2)
+            neu_x = neu_x.reshape(-1, len(self.alignment['neu_time'])*self.bin_num)
+            # fit model.
+            model = TSNE(n_components=self.d_latent)
+            z = model.fit_transform(neu_x.T).T
+            z = z.reshape(self.d_latent, len(self.alignment['neu_time']), self.bin_num)
+            neu_z.append(z)
+        # get line colors for each cluster.
+        c_neu = [get_cmap_color(self.bin_num, base_color=c) for c in colors]
+        # convert to colors for each bin.
+        c_neu = [[c_neu[j][i] for i in range(self.bin_num)] for j in range(self.n_clusters)]
+        lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
+        # plot latent dynamics.
+        for ci in range(self.n_clusters):
+            for bi in range(self.bin_num):
+                c_idx = int(bin_stim_seq.shape[1]/2)
+                l_idx, r_idx = get_frame_idx_from_time(
+                    self.alignment['neu_time'], 0, bin_stim_seq[bi,c_idx-1,1], 0)
+                cn = [c_neu[ci][bi]]*(r_idx-l_idx)
+                nz = neu_z[ci][:,l_idx:r_idx,bi]
+                nz -= nz[:,0].reshape(-1,1)
+                self.plot_3d_latent_dynamics(axs[ci], nz, None, cn, None)
+            # adjust layout.
+            adjust_layout_3d_latent(
+                axs[ci], np.nanmean(neu_z,axis=2), None, None,
+                'time since interval onset (ms)')
+            add_legend(axs[ci], c_neu[ci], lbl, n_trials, n_neurons, self.n_sess, 'upper right', dim=3)
+    
     def plot_3d_latent_dynamics(self, ax, neu_z, stim_seq, c_neu, c_stim):
         # plot dynamics.
         for t in range(neu_z.shape[1]-1):
@@ -937,6 +983,9 @@ class utils_basic:
         ax.scatter(neu_z[0,0], neu_z[1,0], neu_z[2,0], color='black', marker='x')
         ax.scatter(neu_z[0,-1], neu_z[1,-1], neu_z[2,-1], color='black', marker='o')
         # stimulus.
-        for j in range(stim_seq.shape[0]):
-            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, stim_seq[j,0], stim_seq[j,1])
-            ax.plot(neu_z[0,l_idx:r_idx], neu_z[1,l_idx:r_idx], neu_z[2,l_idx:r_idx], lw=4, color=c_stim[j])
+        if stim_seq != None:
+            for j in range(stim_seq.shape[0]):
+                l_idx, r_idx = get_frame_idx_from_time(
+                    self.alignment['neu_time'], 0, stim_seq[j,0], stim_seq[j,1])
+                ax.plot(neu_z[0,l_idx:r_idx], neu_z[1,l_idx:r_idx], neu_z[2,l_idx:r_idx],
+                        lw=4, color=c_stim[j])

@@ -53,3 +53,7 @@
 ## 2025.02.16
 - Moved dff filtering into ReadResults.
 - Now time normalizing analysis plots before/within/after interval responses.
+
+## 2025.02.18
+- Fixed sorted clustering heatmap scale.
+- Added binned latent dynamics for clusters.
