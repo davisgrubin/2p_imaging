@@ -57,3 +57,8 @@
 ## 2025.02.18
 - Fixed sorted clustering heatmap scale.
 - Added binned latent dynamics for clusters.
+
+## 2025.02.19
+- Now get_neu_trial also returns significance test.
+- Replaced clustering heatmaps with population heatmaps.
+- Now temp folder will be removed with its content.

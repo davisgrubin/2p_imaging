@@ -50,7 +50,7 @@ class plotter_utils(utils_basic):
         self.list_block_start = [get_block_1st_idx(sl, 3) for sl in self.list_stim_labels]
         self.list_significance = list_significance
         self.bin_win = [450,2550]
-        self.bin_num = 3
+        self.bin_num = 2
         self.n_clusters = 4
         self.max_clusters = 10
         self.d_latent = 3
@@ -455,7 +455,6 @@ class plotter_utils(utils_basic):
                 axs, colors, cmap, neu_seq,
                 self.n_clusters, self.max_clusters,
                 metrics, cluster_id, neu_labels, self.label_names, cate)
-        plot_info(axs[:5])
         # plot bin normalized interval tracking for all clusters.
         def plot_interval_norm(ax):
             # collect data.
@@ -492,7 +491,6 @@ class plotter_utils(utils_basic):
                 norm_params, stim_seq, c_neu)
             # adjust layout.
             add_legend(ax, c_all, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
-        plot_interval_norm(axs[5])
         # plot fix standard response.
         def plot_standard_fix(ax):
             xlim = [-4000, 3000]
@@ -513,7 +511,6 @@ class plotter_utils(utils_basic):
             ax.set_xlim(xlim)
             ax.set_xlabel('time since stim (ms)')
             add_legend(ax, [c_stim[0]]+colors, ['stim']+lbl, n_trials, n_neurons, self.n_sess, 'upper left')
-        plot_standard_fix(axs[6])
         # plot fix oddball response.
         def plot_oddball_fix(ax, oddball):
             xlim = [-2500,5000]
@@ -555,8 +552,6 @@ class plotter_utils(utils_basic):
                 ax, [color1, color2]+colors+['#2C2C2C'],
                 ['pre oddball interval stim (short)', 'pre oddball interval stim (long)']+lbl+['jitter'],
                 n_trials, n_neurons, self.n_sess, 'upper left')
-        plot_oddball_fix(axs[7], 0)
-        plot_oddball_fix(axs[8], 1)
         # plot jitter standard response.
         def plot_standard_jitter(ax):
             xlim = [-4000, 3000]
@@ -598,7 +593,6 @@ class plotter_utils(utils_basic):
             ax.set_xlim(xlim)
             ax.set_xlabel('time since stim (ms)')
             add_legend(ax, cs_all, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
-        plot_standard_jitter(axs[9])
         # plot jitter oddball response.
         def plot_oddball_jitter(ax, oddball):
             xlim = [-2500,5000]
@@ -648,8 +642,6 @@ class plotter_utils(utils_basic):
                 ax, [color1, color2]+cs_all,
                 ['pre oddball interval stim (short)', 'pre oddball interval stim (long)']+lbl,
                 n_trials, n_neurons, self.n_sess, 'upper left')
-        plot_oddball_jitter(axs[10],0)
-        plot_oddball_jitter(axs[11],1)
         # plot fix standard response heatmap.
         def plot_heatmap_standard_fix(ax):
             xlim = [-4000, 3000]
@@ -664,7 +656,6 @@ class plotter_utils(utils_basic):
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
             # plot heatmap.
             self.plot_cluster_heatmap(ax, neu_seq, neu_time, neu_seq, cluster_id, colors)
-        plot_heatmap_standard_fix(axs[12])
         # plot fix oddball response heatmap.
         def plot_heatmap_oddball_fix(ax, oddball):
             xlim = [-2500,5000]
@@ -679,8 +670,6 @@ class plotter_utils(utils_basic):
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
             # plot heatmap.
             self.plot_cluster_heatmap(ax, neu_seq, neu_time, neu_seq, cluster_id, colors)
-        plot_heatmap_oddball_fix(axs[13], 0)
-        plot_heatmap_oddball_fix(axs[14], 1)
         # plot jitter standard response heatmap.
         def plot_heatmap_standard_jitter(ax):
             xlim = [-4000, 3000]
@@ -695,7 +684,6 @@ class plotter_utils(utils_basic):
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
             # plot heatmap.
             self.plot_cluster_heatmap(ax, neu_seq, neu_time, neu_seq, cluster_id, colors)
-        plot_heatmap_standard_jitter(axs[15])
         # plot jitter oddball response heatmap.
         def plot_heatmap_oddball_jitter(ax, oddball):
             xlim = [-2500,5000]
@@ -710,72 +698,115 @@ class plotter_utils(utils_basic):
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
             # plot heatmap.
             self.plot_cluster_heatmap(ax, neu_seq, neu_time, neu_seq, cluster_id, colors)
-        plot_heatmap_oddball_jitter(axs[16], 0)
-        plot_heatmap_oddball_jitter(axs[17], 1)
+        try: plot_info(axs[:5])
+        except: pass
+        try: plot_interval_norm(axs[5])
+        except: pass
+        try: plot_standard_fix(axs[6])
+        except: pass
+        try: plot_oddball_fix(axs[7], 0)
+        except: pass
+        try: plot_oddball_fix(axs[8], 1)
+        except: pass
+        try: plot_standard_jitter(axs[9])
+        except: pass
+        try: plot_oddball_jitter(axs[10],0)
+        except: pass
+        try: plot_oddball_jitter(axs[11],1)
+        except: pass
+        try: plot_heatmap_standard_fix(axs[12])
+        except: pass
+        try: plot_heatmap_oddball_fix(axs[13], 0)
+        except: pass
+        try: plot_heatmap_oddball_fix(axs[14], 1)
+        except: pass
+        try: plot_heatmap_standard_jitter(axs[15])
+        except: pass
+        try: plot_heatmap_oddball_jitter(axs[16], 0)
+        except: pass
+        try: plot_heatmap_oddball_jitter(axs[17], 1)
+        except: pass
     
-    def plot_cluster_heatmaps_fix(self, axs, cate=None):
-        metrics, cluster_id = self.run_clustering(cate)
-        colors = get_cmap_color(self.n_clusters, cmap=plt.cm.nipy_spectral)
-        xlim = [-3500, 5500]
+    def plot_sorted_heatmaps_fix(self, axs):
+        cate = [-1,1]
+        win_sort = [-500, 500]
+        xlim = [-2500, 5000]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
         # collect data.
         neu_x = []
+        stim_x = []
         neu_time = self.alignment['neu_time'][l_idx:r_idx]
         # fix standard.
-        _, [neu_seq, _, _, _], _, _ = get_neu_trial(
+        _, [neu_seq, _, stim_seq, _], [neu_labels, neu_sig], _ = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance,
             [exclude_odd_stim(sl) for sl in self.list_stim_labels],
             trial_param=[[2,3,4,5], [0], [0], None, [0], [0]],
             cate=cate, roi_id=None)
         neu_seq = neu_seq[:,l_idx:r_idx]
         neu_x.append(neu_seq)
+        stim_x.append(stim_seq)
         # jitter standard.
-        _, [neu_seq, _, _, _], _, _ = get_neu_trial(
+        _, [neu_seq, _, stim_seq, _], _, _ = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance,
             [exclude_odd_stim(sl) for sl in self.list_stim_labels],
             trial_param=[[2,3,4,5], [0], [1], None, [0], [0]],
             cate=cate, roi_id=None)
         neu_seq = neu_seq[:,l_idx:r_idx]
         neu_x.append(neu_seq)
+        stim_x.append(stim_seq)
         # fix short oddball.
-        _, [neu_seq, _, _, _], _, _ = get_neu_trial(
+        _, [neu_seq, _, stim_seq, _], _, _ = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_idx=[l[0] for l in self.list_odd_idx],
             trial_param=[None, None, [0], None, [0], [0]],
             cate=cate, roi_id=None)
         neu_seq = neu_seq[:,l_idx:r_idx]
         neu_x.append(neu_seq)
+        stim_x.append(stim_seq)
         # fix long oddball.
-        _, [neu_seq, _, _, _], _, _ = get_neu_trial(
+        _, [neu_seq, _, stim_seq, _], _, _ = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_idx=[l[1] for l in self.list_odd_idx],
             trial_param=[None, None, [0], None, [0], [0]],
             cate=cate, roi_id=None)
         neu_seq = neu_seq[:,l_idx:r_idx]
         neu_x.append(neu_seq)
+        stim_x.append(stim_seq)
         # plot heatmaps.
-        for i in range(len(neu_x)):
-            self.plot_cluster_heatmap(
-                axs[i], neu_x[i], neu_time, neu_x[0], cluster_id, colors)
-            axs[i].set_xlabel('time since stim (ms)')
-    
-    def plot_cluster_heatmaps_jitter(self, axs, cate=None):
-        _, cluster_id = self.run_clustering(cate)
-        colors = get_cmap_color(self.n_clusters, cmap=plt.cm.nipy_spectral)
-        xlim = [-3500, 5500]
+        for bi in range(len(neu_x)):
+            self.plot_heatmap_neuron(
+                axs[bi], neu_x[bi], neu_time, neu_x[0], win_sort, neu_labels, neu_sig)
+            axs[bi].set_xlabel('time since stim (ms)')
+            # add stimulus line.
+            c_idx = int(stim_seq.shape[0]/2)
+            xlines = [self.alignment['neu_time'][np.searchsorted(self.alignment['neu_time'], t)]
+                      for t in [stim_x[bi][c_idx+i,0]
+                                for i in [-2,-1,0,1,2]]]
+            for xl in xlines:
+                if xl>neu_time[0] and xl<neu_time[-1] and bi!=1:
+                    axs[bi].axvline(xl, color='black', lw=1, linestyle='--')
+        axs[1].axvline(self.alignment['neu_time'][np.searchsorted(self.alignment['neu_time'], 0)],
+                       color='black', lw=1, linestyle='--')
+
+    def plot_sorted_heatmaps_jitter(self, axs):
+        cate = [-1,1]
+        win_sort = [-500, 500]
+        xlim = [-3000, 5000]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
         # collect data.
         neu_x = []
+        stim_x = []
         neu_time = self.alignment['neu_time'][l_idx:r_idx]
         # fix standard.
-        _, [neu_seq, _, _, _], _, _ = get_neu_trial(
+        _, [neu_seq, _, stim_seq, _], [neu_labels, neu_sig], _ = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance,
             [exclude_odd_stim(sl) for sl in self.list_stim_labels],
             trial_param=[[2,3,4,5], [0], [0], None, [0], [0]],
             cate=cate, roi_id=None)
         neu_seq = neu_seq[:,l_idx:r_idx]
         neu_x.append(neu_seq)
-        # jitter bins.
+        stim_x.append(np.expand_dims(stim_seq,0))
+        # jitter standard bins.
         _, [neu_seq, stim_seq, stim_value, pre_isi], _, _ = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance,
             [exclude_odd_stim(sl) for sl in self.list_stim_labels],
@@ -783,14 +814,65 @@ class plotter_utils(utils_basic):
             mean_sem=False,
             cate=cate, roi_id=None)
         neu_seq = [ns[:,:,l_idx:r_idx] for ns in neu_seq]
-        [_, _, bin_neu_seq, _, _, _, _] = get_isi_bin_neu(
+        [_, _, bin_neu_seq, _, _, bin_stim_seq, _] = get_isi_bin_neu(
             neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
         neu_x += bin_neu_seq
+        stim_x.append(bin_stim_seq)
+        # jitter short oddball bins.
+        _, [neu_seq, stim_seq, stim_value, pre_isi], _, _ = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_idx=[l[0] for l in self.list_odd_idx],
+            trial_param=[None, None, [1], None, [0], [0]],
+            mean_sem=False,
+            cate=cate, roi_id=None)
+        neu_seq = [ns[:,:,l_idx:r_idx] for ns in neu_seq]
+        [_, _, bin_neu_seq, _, _, bin_stim_seq, _] = get_isi_bin_neu(
+            neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
+        neu_x += bin_neu_seq
+        stim_x.append(bin_stim_seq)
+        # jitter long oddball bins.
+        _, [neu_seq, stim_seq, stim_value, pre_isi], _, _ = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_idx=[l[1] for l in self.list_odd_idx],
+            trial_param=[None, None, [1], None, [0], [0]],
+            mean_sem=False,
+            cate=cate, roi_id=None)
+        neu_seq = [ns[:,:,l_idx:r_idx] for ns in neu_seq]
+        [_, _, bin_neu_seq, _, _, bin_stim_seq, _] = get_isi_bin_neu(
+            neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
+        neu_x += bin_neu_seq
+        stim_x.append(bin_stim_seq)
         # plot heatmaps.
-        for i in range(len(neu_x)):
-            self.plot_cluster_heatmap(
-                axs[i], neu_x[i], neu_time, neu_x[0], cluster_id, colors)
-            axs[i].set_xlabel('time since stim (ms)')
+        stim_x = np.concatenate(stim_x, axis=0)
+        for bi in range(len(neu_x)):
+            self.plot_heatmap_neuron(
+                axs[bi], neu_x[bi], neu_time, neu_x[0], win_sort, neu_labels, neu_sig)
+            axs[bi].set_xlabel('time since stim (ms)')
+        # add stimulus line.
+        for bi in [0]:
+            c_idx = int(bin_stim_seq.shape[1]/2)
+            xlines = [neu_time[np.searchsorted(neu_time, t)]
+                      for t in [stim_x[bi,c_idx+i,0]
+                                for i in [-2,-1,0,1,2]]]
+            for xl in xlines:
+                if xl>neu_time[0] and xl<neu_time[-1]:
+                    axs[bi].axvline(xl, color='black', lw=1, linestyle='--')
+        for bi in [1,2]:
+            c_idx = int(bin_stim_seq.shape[1]/2)
+            xlines = [neu_time[np.searchsorted(neu_time, t)]
+                      for t in [stim_x[bi,c_idx+i,0]
+                                for i in [-1,0]]]
+            for xl in xlines:
+                if xl>neu_time[0] and xl<neu_time[-1]:
+                    axs[bi].axvline(xl, color='black', lw=1, linestyle='--')
+        for bi in [3,4,5,6]:
+            c_idx = int(bin_stim_seq.shape[1]/2)
+            xlines = [neu_time[np.searchsorted(neu_time, t)]
+                      for t in [stim_x[bi,c_idx+i,0]
+                                for i in [-1,0,1]]]
+            for xl in xlines:
+                if xl>neu_time[0] and xl<neu_time[-1]:
+                    axs[bi].axvline(xl, color='black', lw=1, linestyle='--')
         
     def plot_cluster_latents(self, axs, cate=None):
         _, cluster_id = self.run_clustering(cate)
@@ -877,37 +959,18 @@ class plotter_main(plotter_utils):
                 axs[ 4].set_title(f'cluster fraction for subtypes \n {label_name}')
                 axs[ 5].set_title(f'time normalized reseponse to preceeding interval with bins \n {label_name}')
                 axs[ 6].set_title(f'response to standard interval \n (fix) {label_name}')
-                axs[ 7].set_title(f'response to standard interval \n (jitter) {label_name}')
-                axs[ 8].set_title(f'response to oddball interval \n (fix, short oddball) {label_name}')
-                axs[ 9].set_title(f'response to oddball interval \n (jitter, short oddball) {label_name}')
-                axs[10].set_title(f'response to oddball interval \n (fix, long oddball) {label_name}')
+                axs[ 7].set_title(f'response to oddball interval \n (fix, short oddball) {label_name}')
+                axs[ 8].set_title(f'response to oddball interval \n (fix, long oddball) {label_name}')
+                axs[ 9].set_title(f'response to standard interval \n (jitter) {label_name}')
+                axs[10].set_title(f'response to oddball interval \n (jitter, short oddball) {label_name}')
                 axs[11].set_title(f'response to oddball interval \n (jitter, long oddball) {label_name}')
                 axs[12].set_title(f'response to standard interval \n (fix) {label_name}')
-                axs[13].set_title(f'response to standard interval \n (jitter) {label_name}')
-                axs[14].set_title(f'response to oddball interval \n (fix, short oddball) {label_name}')
-                axs[15].set_title(f'response to oddball interval \n (jitter, short oddball) {label_name}')
-                axs[16].set_title(f'response to oddball interval \n (fix, long oddball) {label_name}')
+                axs[13].set_title(f'response to oddball interval \n (fix, short oddball) {label_name}')
+                axs[14].set_title(f'response to oddball interval \n (fix, long oddball) {label_name}')
+                axs[15].set_title(f'response to standard interval \n (jitter) {label_name}')
+                axs[16].set_title(f'response to oddball interval \n (jitter, short oddball) {label_name}')
                 axs[17].set_title(f'response to oddball interval \n (jitter, long oddball) {label_name}')
     
-            except: pass
-    
-    def cluster_heatmaps(self, axs_all):
-        for cate, axs in zip([[-1,1]], axs_all):
-            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
-            try:
-                
-                self.plot_cluster_heatmaps_fix(axs[0], cate=cate)
-                axs[0][0].set_title(f'response to standard interval \n (fix) {label_name}')
-                axs[0][1].set_title(f'response to standard interval \n (jitter) {label_name}')
-                axs[0][2].set_title(f'response to oddball interval \n (fix, short oddball) {label_name}')
-                axs[0][3].set_title(f'response to oddball interval \n (fix, long oddball) {label_name}')
-
-                self.plot_cluster_heatmaps_jitter(axs[1], cate=cate)
-                axs[1][0].set_title(f'response to standard interval \n (fix) {label_name}')
-                axs[1][1].set_title(f'response to standard interval \n (jitter, bin#1) {label_name}')
-                axs[1][2].set_title(f'response to standard interval \n (jitter, bin#2) {label_name}')
-                axs[1][3].set_title(f'response to standard interval \n (jitter, bin#3) {label_name}')
-
             except: pass
     
     def cluster_latents(self, axs_all):
@@ -920,3 +983,25 @@ class plotter_main(plotter_utils):
                     axs[i].set_title(f'latent dynamics with binned interval for cluster # {i} \n {label_name}')
 
             except: pass
+    
+    def sorted_heatmaps(self, axs_all):
+        for cate, axs in zip([[-1,1]], axs_all):
+            try:
+                
+                self.plot_sorted_heatmaps_fix(axs[0])
+                axs[0][0].set_title('response to standard interval \n (fix)')
+                axs[0][1].set_title('response to standard interval \n (jitter)')
+                axs[0][2].set_title('response to oddball interval \n (fix, short oddball)')
+                axs[0][3].set_title('response to oddball interval \n (fix, long oddball)')
+
+                self.plot_sorted_heatmaps_jitter(axs[1])
+                axs[1][0].set_title('response to standard interval \n (fix)')
+                axs[1][1].set_title('response to standard interval \n (jitter, bin#1)')
+                axs[1][2].set_title('response to standard interval \n (jitter, bin#2)')
+                axs[1][3].set_title('response to oddball interval \n (jitter, short oddball, bin#1)')
+                axs[1][4].set_title('response to oddball interval \n (jitter, short oddball, bin#2)')
+                axs[1][5].set_title('response to oddball interval \n (jitter, long oddball, bin#1)')
+                axs[1][6].set_title('response to oddball interval \n (jitter, long oddball, bin#2)')
+
+            except: pass
+    

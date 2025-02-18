@@ -3,6 +3,7 @@
 import numpy as np
 from scipy.interpolate import interp1d
 from sklearn.metrics import r2_score
+from sklearn.linear_model import Ridge
 
 # interpolate input trace to the same length as neural response.
 def interp_input_seq(input_value, input_time, neu_time):
@@ -14,28 +15,42 @@ def interp_input_seq(input_value, input_time, neu_time):
         input_seq[i,:] = model(neu_time)
     input_seq = np.nan_to_num(input_seq)
     return input_seq
+def filter_stimulus(factor_in, stim_label, target_labels):
+    # Copy to avoid modifying the original
+    factor_target = factor_in.copy()
+    # Pad with 0 at both ends and compute differences
+    diff = np.diff(np.concatenate(([0], factor_in, [0])))
+    # Rising edges mark onsets; falling edges mark offsets
+    onsets = np.where(diff == 1)[0]
+    offsets = np.where(diff == -1)[0]
+    # Iterate over blocks: if label not in target, zero out that block
+    for i, (start, end) in enumerate(zip(onsets, offsets)):
+        if stim_label[i] not in target_labels:
+            factor_target[start:end] = 0
+    return factor_target
 
-# build a toeplitz-like design matrix from input sequence [n_trials*n_times].
-def build_design_matrix(input_seq, len_kernel):
-    # pad the input sequence to allow shifting
-    input_padded = np.pad(input_seq, ((0, 0), (len_kernel - 1, 0)), mode='constant')
-    # use strides to efficiently create shifted views
-    input_seq = np.lib.stride_tricks.sliding_window_view(
-        input_padded, window_shape=len_kernel, axis=1)
-    # reshape to [n_trials*n_times, len_kernel].
-    input_seq = input_seq.reshape(-1, len_kernel)
-    return input_seq
 
-# fit general linear model to find kernal function.
-def fit_glm(neu_seq, input_seq, len_kernel):
-    # build the design matrix.
-    x = build_design_matrix(input_seq, len_kernel)
-    # reshape neural data for all neurons [n_trials*n_times, n_neurons].
-    n_trials, n_neurons, n_times = neu_seq.shape
-    y = neu_seq.transpose(1, 0, 2).reshape(neu_seq.shape[1], -1).T
-    # compute pseudo inverse for analytic solution [n_neurons, len_kernel].
-    w = (np.linalg.pinv(x.T @ x) @ x.T @ y).T
-    return w
+def construct_design_matrix(factor_target, l_idx, r_idx):
+    n = len(factor_target)
+    total_window = l_idx + r_idx
+    # Pad factor_target with zeros at the beginning and end
+    padded = np.pad(factor_target, (l_idx, r_idx), mode='constant')
+    # sliding_window_view returns a view of shape (len(padded)-total_window+1, total_window)
+    windows = np.lib.stride_tricks.sliding_window_view(padded, window_shape=total_window)
+    # Take the first n windows so that the design matrix has shape (n, total_window)
+    factor_design_matrix = windows[:n, :]
+    return factor_design_matrix
+
+
+def fit_ridge_regression(X, dff_neu):
+    # Fit ridge regression to recover the kernel
+    model = Ridge(alpha=1.0)
+    model.fit(X, dff_neu)
+    kernel_fit = model.coef_
+    dff_neu_fit = model.predict(X)
+    return kernel_fit, dff_neu_fit
+
+
 
 # compute coding score based on reconstruction r2.
 def get_coding_score(neu_seq, input_seq, w):

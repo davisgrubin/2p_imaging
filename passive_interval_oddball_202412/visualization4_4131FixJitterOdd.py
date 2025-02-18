@@ -119,13 +119,13 @@ def run(
             n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            axs = []
+            axs_all = []
             for s in [0,3]:
                 a = [plt.subplot(gs[s+0, i]) for i in range(3)]
                 a+= [plt.subplot(gs[s+1, i]) for i in range(3)]
                 a+= [plt.subplot(gs[s+2, i], projection='3d') for i in range(2)]
-                axs.append(a)
-            plotter.oddball_fix(axs)
+                axs_all.append(a)
+            plotter.oddball_fix(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
@@ -136,16 +136,16 @@ def run(
         print('Plotting jitter oddball analysis')
         def plot_oddball_jitter():
             title = 'neural traces alignment on oddball in jitter standard'
-            filename = '4131FixJitterOdd04_oddball_jitter'
+            filename = '4131FixJitterOdd05_oddball_jitter'
             n_row = 2
             n_col = 8
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            axs = []
+            axs_all = []
             for s in [0,1]:
                 a = [plt.subplot(gs[s+0, i]) for i in range(8)]
-                axs.append(a)
-            plotter.oddball_jitter(axs)
+                axs_all.append(a)
+            plotter.oddball_jitter(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
@@ -161,7 +161,7 @@ def run(
             n_col = 12
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            axs = []
+            axs_all = []
             for s in [0,4,8]:
                 a = [plt.subplot(gs[s+0, 0]), plt.subplot(gs[s+1, 0]),
                        plt.subplot(gs[s+2, 0]), plt.subplot(gs[s+3, 0]),
@@ -169,55 +169,55 @@ def run(
                        plt.subplot(gs[s+2:s+4, 1])]
                 a+= [plt.subplot(gs[s+0:s+2, i]) for i in [2,3,4,5,6,7]]
                 a+= [plt.subplot(gs[s+2:s+4, i]) for i in [2,3,4,5,6,7]]
-                axs.append(a)
-            plotter.cluster(axs)
+                axs_all.append(a)
+            #plotter.cluster(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         f6 = plot_clustering()
-        # clustering heatmaps.
-        print('Plotting clustering heatmaps')
-        def plot_clustering_heatmaps():
-            title = 'clustering heatmaps on oddball fix jitter interval'
-            filename = '4131FixJitterOdd07_clustering_heatmaps'
-            n_row = 8
-            n_col = 4
-            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
-            gs = GridSpec(n_row, n_col, figure=fig)
-            axs = []
-            for s in [0]:
-                a = [[plt.subplot(gs[s+0:s+4, i]) for i in range(4)],
-                     [plt.subplot(gs[s+4:s+8, i]) for i in range(4)]]
-                axs.append(a)
-            plotter.cluster_heatmaps(axs)
-            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
-            plt.close(fig)
-            return [filename, n_row, n_col, title]
-        f7 = plot_clustering_heatmaps()
         # clustering latents.
         print('Plotting clustering latent dynamics')
         def plot_clustering_latents():
             title = 'clustering latent dynamics on random interval'
-            filename = '4131FixJitterOdd08_clustering_latents'
+            filename = '4131FixJitterOdd07_clustering_latents'
             n_row = 1
             n_col = 4
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            axs = []
+            axs_all = []
             for s in [0]:
                 a = [plt.subplot(gs[s+0, i], projection='3d') for i in range(4)]
-                axs.append(a)
-            plotter.cluster_latents(axs)
+                axs_all.append(a)
+            #plotter.cluster_latents(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f8 = plot_clustering_latents()
+        f7 = plot_clustering_latents()
+        # sorted heatmaps.
+        print('Plotting sorted heatmaps')
+        def plot_sorted_heatmaps():
+            title = 'sorted heatmaps on oddball fix jitter interval'
+            filename = '4131FixJitterOdd08_sorted_heatmaps'
+            n_row = 4
+            n_col = 7
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in [0]:
+                a = [[plt.subplot(gs[s+0:s+2, i]) for i in range(4)],
+                     [plt.subplot(gs[s+2:s+4, i]) for i in range(7)]]
+                axs_all.append(a)
+            plotter.sorted_heatmaps(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        f8 = plot_sorted_heatmaps()
         # clear memory.
         print('Clearing memory usage')
         del list_labels

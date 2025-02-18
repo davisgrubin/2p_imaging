@@ -169,6 +169,9 @@ def get_neu_trial(
         neu_labels = np.concatenate([
             list_labels[i][np.in1d(list_labels[i],cate)*list_significance[i]['r_standard']]
             for i in range(len(list_stim_labels))])
+        neu_sig = np.concatenate([
+            list_significance[i]['r_standard'][np.in1d(list_labels[i],cate)]
+            for i in range(len(list_stim_labels))])
         neu_cate = [
             alignment['list_neu_seq'][i][:,np.in1d(list_labels[i],cate)*list_significance[i]['r_standard'],:]
             for i in range(len(list_stim_labels))]
@@ -179,7 +182,7 @@ def get_neu_trial(
     neu_trial, neu_num = get_multi_sess_neu_trial_average(
         list_stim_labels, neu_cate, alignment,
         trial_idx=trial_idx, trial_param=trial_param, mean_sem=mean_sem)
-    return colors, neu_trial, neu_labels, neu_num
+    return colors, neu_trial, [neu_labels, neu_sig], neu_num
 
 # compute indice with givn time window for df/f.
 def get_frame_idx_from_time(timestamps, c_time, l_time, r_time):
@@ -512,18 +515,17 @@ def adjust_layout_3d_latent(ax, neu_z, cmap, neu_time, cbar_label):
     ax.xaxis.pane.fill = False
     ax.yaxis.pane.fill = False
     ax.zaxis.pane.fill = False
-    if cmap != None:
-        cbar = ax.figure.colorbar(
-            plt.cm.ScalarMappable(cmap=cmap), ax=ax, ticks=[0.0,0.2,0.5,0.8,1.0],
-            shrink=0.5, aspect=25)
-        cbar.outline.set_visible(False)
-        cbar.ax.set_ylabel(cbar_label, rotation=-90, va='bottom')
-        cbar.ax.set_yticklabels(
-            ['\u2716',
-             str(int(neu_time[int(len(neu_time)*0.2)])),
-             str(int(neu_time[int(len(neu_time)*0.5)])),
-             str(int(neu_time[int(len(neu_time)*0.8)])),
-             '\u25CF'], rotation=-90)
+    cbar = ax.figure.colorbar(
+        plt.cm.ScalarMappable(cmap=cmap), ax=ax, ticks=[0.0,0.2,0.5,0.8,1.0],
+        shrink=0.5, aspect=25)
+    cbar.outline.set_visible(False)
+    cbar.ax.set_ylabel(cbar_label, rotation=-90, va='bottom')
+    cbar.ax.set_yticklabels(
+        ['\u2716',
+         str(int(neu_time[int(len(neu_time)*0.2)])),
+         str(int(neu_time[int(len(neu_time)*0.5)])),
+         str(int(neu_time[int(len(neu_time)*0.8)])),
+         '\u25CF'], rotation=-90)
 
 # add legend into subplots.
 def add_legend(ax, colors, labels, n_trials, n_neurons, n_sessions, loc, dim=2):
@@ -572,7 +574,6 @@ class utils_basic:
         if len(neu_seq) > 0:
             _, _, _, cmap_exc = get_roi_label_color([-1], 0)
             _, _, _, cmap_inh = get_roi_label_color([1], 0)
-            zero = np.searchsorted(neu_time, 0)
             # exclude nan.
             neu_idx = ~np.isnan(np.sum(neu_seq,axis=1))
             neu_seq = neu_seq[neu_idx,:].copy()
@@ -597,7 +598,6 @@ class utils_basic:
                 interpolation='nearest', aspect='auto')
             adjust_layout_heatmap(ax)
             ax.set_ylabel('neuron id (sorted)')
-            ax.axvline(zero, color='black', lw=1, label='stim', linestyle='--')
             # add coloarbar.
             if colorbar:
                 if heatmap_exc.shape[0] != 0:
@@ -967,14 +967,22 @@ class utils_basic:
                 cn = [c_neu[ci][bi]]*(r_idx-l_idx)
                 nz = neu_z[ci][:,l_idx:r_idx,bi]
                 nz -= nz[:,0].reshape(-1,1)
-                self.plot_3d_latent_dynamics(axs[ci], nz, None, cn, None)
+                self.plot_3d_latent_dynamics(axs[ci], nz, None, cn, None, add_stim=False)
             # adjust layout.
-            adjust_layout_3d_latent(
-                axs[ci], np.nanmean(neu_z,axis=2), None, None,
-                'time since interval onset (ms)')
+            axs[ci].grid(False)
+            axs[ci].view_init(elev=30, azim=30)
+            axs[ci].set_xticks([])
+            axs[ci].set_yticks([])
+            axs[ci].set_zticks([])
+            axs[ci].set_xlabel('latent 1')
+            axs[ci].set_ylabel('latent 2')
+            axs[ci].set_zlabel('latent 3')
+            axs[ci].xaxis.pane.fill = False
+            axs[ci].yaxis.pane.fill = False
+            axs[ci].zaxis.pane.fill = False
             add_legend(axs[ci], c_neu[ci], lbl, n_trials, n_neurons, self.n_sess, 'upper right', dim=3)
     
-    def plot_3d_latent_dynamics(self, ax, neu_z, stim_seq, c_neu, c_stim):
+    def plot_3d_latent_dynamics(self, ax, neu_z, stim_seq, c_neu, c_stim, add_stim=True):
         # plot dynamics.
         for t in range(neu_z.shape[1]-1):
             # trajaectory.
@@ -983,7 +991,7 @@ class utils_basic:
         ax.scatter(neu_z[0,0], neu_z[1,0], neu_z[2,0], color='black', marker='x')
         ax.scatter(neu_z[0,-1], neu_z[1,-1], neu_z[2,-1], color='black', marker='o')
         # stimulus.
-        if stim_seq != None:
+        if add_stim:
             for j in range(stim_seq.shape[0]):
                 l_idx, r_idx = get_frame_idx_from_time(
                     self.alignment['neu_time'], 0, stim_seq[j,0], stim_seq[j,1])

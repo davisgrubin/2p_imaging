@@ -119,14 +119,12 @@ def run(
             n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            axs = []
+            axs_all = []
             for s in [0,1]:
                 a = [plt.subplot(gs[s+0, i]) for i in range(4)]
                 a+= [plt.subplot(gs[s+0, i+4], projection='3d') for i in range(2)]
-                axs.append(a)
-            axs.append([plt.subplot(gs[0:2, i+6]) for i in range(4)])
-            plotter.standard(axs[:2])
-            plotter.standard_heatmap(axs[2])
+                axs_all.append(a)
+            plotter.standard(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
@@ -140,13 +138,13 @@ def run(
             n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            axs = []
+            axs_all = []
             for s in [0,2]:
                 a = [plt.subplot(gs[s+i, 0]) for i in range(2)]
                 a+= [plt.subplot(gs[s+i, 1]) for i in range(2)]
                 a+= [plt.subplot(gs[s+i, 2], projection='3d') for i in range(2)]
-                axs.append(a)
-            plotter.oddball(axs)
+                axs_all.append(a)
+            plotter.oddball(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
@@ -160,12 +158,12 @@ def run(
             n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            axs = []
+            axs_all = []
             for s in [0,2]:
                 a = [plt.subplot(gs[s+i, 0:2]) for i in [0,1]]
                 a+= [plt.subplot(gs[s+i, 2], projection='3d') for i in [0,1]]
-                axs.append(a)
-            plotter.block(axs)
+                axs_all.append(a)
+            plotter.block(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
@@ -181,7 +179,7 @@ def run(
             n_col = 12
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            axs = []
+            axs_all = []
             for s in [0,4,8]:
                 a = [plt.subplot(gs[s+0, 0]), plt.subplot(gs[s+1, 0]),
                      plt.subplot(gs[s+2, 0]), plt.subplot(gs[s+3, 0]),
@@ -191,55 +189,55 @@ def run(
                 a+= [plt.subplot(gs[s+0:s+2, 6:8]), plt.subplot(gs[s+0:s+2, 8:10])]
                 a+= [plt.subplot(gs[s+2:s+4, i]) for i in [2,3,4,5]]
                 a+= [plt.subplot(gs[s+2:s+4, 6:8]), plt.subplot(gs[s+2:s+4, 8:10])]
-                axs.append(a)
-            plotter.cluster(axs)
+                axs_all.append(a)
+            plotter.cluster(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         f7 = plot_clustering()
-        # clustering heatmaps.
-        print('Plotting clustering heatmaps')
-        def plot_clustering_heatmaps():
-            title = 'clustering heatmaps on short long interval'
-            filename = '1451ShortLong08_clustering_heatmaps'
-            n_row = 8
-            n_col = 4
-            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
-            gs = GridSpec(n_row, n_col, figure=fig)
-            axs = []
-            for s in [0]:
-                a = [[plt.subplot(gs[s+0:s+4, i]) for i in range(4)],
-                     [plt.subplot(gs[s+4:s+8, i]) for i in range(4)]]
-                axs.append(a)
-            plotter.cluster_heatmaps(axs)
-            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
-            plt.close(fig)
-            return [filename, n_row, n_col, title]
-        f8 = plot_clustering_heatmaps()
         # clustering latents.
         print('Plotting clustering latent dynamics')
         def plot_clustering_latents():
             title = 'clustering latent dynamics on random interval'
-            filename = '1451ShortLong09_clustering_latents'
+            filename = '1451ShortLong08_clustering_latents'
             n_row = 1
             n_col = 4
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            axs = []
+            axs_all = []
             for s in [0]:
                 a = [plt.subplot(gs[s+0, i], projection='3d') for i in range(4)]
-                axs.append(a)
-            plotter.cluster_latents(axs)
+                axs_all.append(a)
+            plotter.cluster_latents(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f9 = plot_clustering_latents()
+        f8 = plot_clustering_latents()
+        # sorted heatmaps.
+        print('Plotting sorted heatmaps')
+        def plot_sorted_heatmaps():
+            title = 'sorted heatmaps on short long interval'
+            filename = '1451ShortLong09_sorted_heatmaps'
+            n_row = 4
+            n_col = 4
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in [0]:
+                a = [[plt.subplot(gs[s+0:s+2, i]) for i in range(4)],
+                     [plt.subplot(gs[s+2:s+4, i]) for i in range(4)]]
+                axs_all.append(a)
+            plotter.sorted_heatmaps(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        f9 = plot_sorted_heatmaps()
         # clear memory.
         print('Clearing memory usage')
         del list_labels

@@ -1,5 +1,6 @@
 import os
 import base64
+import shutil
 
 from webpage.html_session_list import get_session_list_html
 from webpage.html_dropdown_menu import get_dropdown_menu_html
@@ -130,5 +131,5 @@ def run(session_config, fn1, fn2, fn3, fn4):
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html_output)
     # delete temp folder.
-    os.rmdir(os.path.join('results', session_config['subject_name']+'_temp'))
+    shutil.rmtree(os.path.join('results', session_config['subject_name']+'_temp'))
 

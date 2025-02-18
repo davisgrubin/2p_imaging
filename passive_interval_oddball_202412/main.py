@@ -48,7 +48,7 @@ def run(session_config_list):
         print(n)
     print('Reading ops.npy')
     list_ops = read_ops(session_config_list['list_session_data_path'])
-    
+
     print('===============================================')
     print('============= trials segmentation =============')
     print('===============================================')
@@ -64,7 +64,7 @@ def run(session_config_list):
         print('Running significance test for {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
         StatTest.run(list_ops[i])
-    
+
     print('===============================================')
     print('============ reading saved results ============')
     print('===============================================')
@@ -109,6 +109,7 @@ def run(session_config_list):
     print('============ saving session report ============')
     print('===============================================')
     print('Saving results')
+
     pack_webpage_main.run(session_config_list, fn1, fn2, fn3, fn4)
     for n in session_config_list['list_session_name']:
         print(n)
@@ -152,6 +153,7 @@ if __name__ == "__main__":
             'VTYH01_PPC_20250208_1451ShortLong' : 'short_long',
             'VTYH01_PPC_20250210_1451ShortLong' : 'short_long',
             'VTYH01_PPC_20250212_1451ShortLong' : 'short_long',
+            'VTYH01_PPC_20250214_1451ShortLong' : 'short_long',
             },
         'session_folder' : 'YH01VT',
         'sig_tag' : 'all',
@@ -189,6 +191,7 @@ if __name__ == "__main__":
             'VTYH02_PPC_20250211_1451ShortLong' : 'short_long',
             'VTYH02_PPC_20250212_1451ShortLong' : 'short_long',
             'VTYH02_PPC_20250213_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250214_1451ShortLong' : 'short_long',
             },
         'session_folder' : 'YH02VT',
         'sig_tag' : 'all',
@@ -222,6 +225,7 @@ if __name__ == "__main__":
             'VTYH03_PPC_20250208_1451ShortLong' : 'short_long',
             'VTYH03_PPC_20250210_1451ShortLong' : 'short_long',
             'VTYH03_PPC_20250212_1451ShortLong' : 'short_long',
+            'VTYH03_PPC_20250214_1451ShortLong' : 'short_long',
             },
         'session_folder' : 'YH03VT',
         'sig_tag' : 'all',
@@ -287,14 +291,14 @@ if __name__ == "__main__":
     run(session_config_list_YH02VT)
     run(session_config_list_YH03VT)
     run(session_config_list_all)
-  
+
     '''
 
     session_config_test = {
         'list_session_name' : {
-            'VTYH01_PPC_20250108_3331Random' : 'random',
-            'VTYH01_PPC_20250116_1451ShortLong' : 'short_long',
-            'VTYH01_PPC_20250123_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH02_PPC_20250109_3331Random' : 'random',
+            #'VTYH02_PPC_20250116_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250122_4131FixJitterOdd' : 'fix_jitter_odd',
             },
         'session_folder' : 'test',
         'sig_tag' : 'all',
@@ -313,10 +317,11 @@ if __name__ == "__main__":
         'output_filename' : 'test_PPC_passive.html'
         }
     run(session_config_list_test)
-    
+
     session_config_list = combine_session_config_list(session_config_list_test)
     list_ops = read_ops(session_config_list['list_session_data_path'])
     [list_labels, list_masks, list_vol, list_dff,
      list_neural_trials, list_move_offset, list_significance
      ] = read_all(session_config_list)
+
     '''

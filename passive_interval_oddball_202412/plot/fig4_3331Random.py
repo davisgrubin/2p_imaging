@@ -7,10 +7,6 @@ from sklearn.decomposition import PCA
 from modules.Alignment import run_get_stim_response
 from modeling.clustering import clustering_neu_response_mode
 from modeling.clustering import get_mean_sem_cluster
-from modeling.generative import interp_input_seq
-from modeling.generative import fit_glm
-from modeling.generative import get_coding_score
-from modeling.generative import get_explain_variance
 from utils import get_norm01_params
 from utils import get_bin_idx
 from utils import get_mean_sem
@@ -57,9 +53,7 @@ class plotter_utils(utils_basic):
     def run_clustering(self, cate):
         n_latents = 25
         # collect data.
-        [[color0, color1, color2, cmap],
-         [neu_seq, stim_seq, stim_value, pre_isi], neu_labels,
-         [n_trials, n_neurons]] = get_neu_trial(
+        [_, [neu_seq, stim_seq, stim_value, pre_isi], _, [_, n_neurons]] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             mean_sem=False,
@@ -339,7 +333,6 @@ class plotter_utils(utils_basic):
                 axs, colors, cmap, neu,
                 self.n_clusters, self.max_clusters,
                 metrics, cluster_id, neu_labels, self.label_names, cate)
-        plot_info(axs[:5])
         # plot bin normalized interval tracking for all clusters.
         def plot_interval_norm(ax):
             # collect data.
@@ -376,7 +369,6 @@ class plotter_utils(utils_basic):
                 norm_params, stim_seq, c_neu)
             # adjust layout.
             add_legend(ax, c_all, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
-        plot_interval_norm(axs[5])
         # plot response on random for all clusters.
         def plot_random(ax):
             xlim = [-3500, 2500]
@@ -419,7 +411,6 @@ class plotter_utils(utils_basic):
             ax.set_xlabel('time since stim (ms)')
             ax.set_xlim(xlim)
             add_legend(ax, cs_all, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
-        plot_random(axs[6])
         # plot response heatmap on random for all clusters.
         def plot_heatmap_random(ax):
             xlim = [-3500, 2500]
@@ -434,15 +425,27 @@ class plotter_utils(utils_basic):
             # plot heatmap.
             self.plot_cluster_heatmap(ax, neu_seq, neu_time, neu_seq, cluster_id, colors)
             ax.set_xlabel('time since stim (ms)')
-        plot_heatmap_random(axs[7])
+        try: plot_info(axs[:5])
+        except: pass
+        try: plot_interval_norm(axs[5])
+        except: pass
+        try: plot_random(axs[6])
+        except: pass
+        try: plot_heatmap_random(axs[7])
+        except: pass
 
-    def plot_random_cluster_heatmaps(self, axs, sort_target, cate=None):
+    def plot_cluster_latents(self, axs, cate=None):
         _, cluster_id = self.run_clustering(cate)
-        colors = get_cmap_color(self.n_clusters, cmap=plt.cm.nipy_spectral)
+        self.plot_cluster_bin_3d_latents(axs, cluster_id, cate=cate)
+
+    def plot_sorted_heatmaps(self, axs, sort_target):
+        cate = [-1,1]
+        win_sort = [-500, 500]
         xlim = [-3500, 2500]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
         # collect data.
-        [_, [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons]] = get_neu_trial(
+        [_, [neu_seq, stim_seq, stim_value, pre_isi],
+         [neu_labels, neu_sig], [n_trials, n_neurons]] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[None, None, None, None, None, [0]],
             mean_sem=False,
@@ -450,136 +453,25 @@ class plotter_utils(utils_basic):
         neu_seq = [ns[:,:,l_idx:r_idx] for ns in neu_seq]
         neu_time = self.alignment['neu_time'][l_idx:r_idx]
         # bin data based on isi.
-        [_, _, neu_x, _, _, _, _] = get_isi_bin_neu(
+        [_, _, neu_x, _, _, bin_stim_seq, _] = get_isi_bin_neu(
             neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
         if sort_target == 'shortest':
             neu_seq_sort = neu_x[0].copy()
         if sort_target == 'longest':
             neu_seq_sort = neu_x[-1].copy()
         # plot heatmaps.
-        for i in range(len(neu_x)):
-            self.plot_cluster_heatmap(
-                axs[i], neu_x[i], neu_time, neu_seq_sort, cluster_id, colors)
-            axs[i].set_xlabel('time since stim (ms)')
-    
-    def plot_cluster_latents(self, axs, cate=None):
-        _, cluster_id = self.run_clustering(cate)
-        self.plot_cluster_bin_3d_latents(axs, cluster_id, cate=cate)
-        
-    def plot_random_glm(self, axs, cate=None):
-        win_kernal = 2500
-        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, win_kernal)
-        len_kernel = r_idx - l_idx
-        # collect data.
-        [[color0, color1, color2, cmap],
-         [neu_seq, stim_seq, stim_value, pre_isi], _,
-         [n_trials, n_neurons]] = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-            trial_param=[[2,3,4,5], None, None, None, [1], [0]],
-            mean_sem=False,
-            cate=cate, roi_id=None)
-        input_seq = [interp_input_seq(sv, self.alignment['stim_time'], self.alignment['neu_time'])
-                     for sv in stim_value]
-        # fit glm model for all sessions.
-        def run_glm():
-            w_all = [fit_glm(x, y, len_kernel) for (x,y) in zip(neu_seq, input_seq)]
-            return w_all
-        w_all = run_glm()
-        # plot coding score across kernal window.
-        def plot_coding_score(ax):
-            win_kernal_range = np.arange(
-                self.bin_win[0], self.bin_win[1] + self.bin_win[0], self.bin_win[0])
-            # run all glm for different kernal window.
-            coding_score = []
-            for win in win_kernal_range:
-                # find kernal length.
-                l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, win)
-                len_kernel = r_idx - l_idx
-                # run glm.
-                w_all = [fit_glm(x, y, len_kernel) for (x,y) in zip(neu_seq, input_seq)]
-                r2 = [get_coding_score(x, y, w) for (x,y,w) in zip(neu_seq, input_seq, w_all)]
-                r2 = np.concatenate(r2)
-                coding_score.append(r2)
-            # plot errorbar.
-            score_mean = np.concatenate([get_mean_sem(s.reshape(-1,1))[0] for s in coding_score])
-            score_sem = np.concatenate([get_mean_sem(s.reshape(-1,1))[1] for s in coding_score])
-            ax.errorbar(
-                win_kernal_range,
-                score_mean,
-                score_sem,
-                color=color2, capsize=2, marker='o', linestyle='none',
-                markeredgecolor='white', markeredgewidth=1)
-            # adjust layout.
-            ax.tick_params(tick1On=False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
-            ax.set_xlabel('kernal window (ms)')
-            ax.set_ylabel(r'coding score ($R^2$)')
-            ax.set_xticks(win_kernal_range)
-            add_legend(ax, None, None, n_trials, n_neurons, self.n_sess, 'upper left')
-        plot_coding_score(axs[0])
-        # plot explain variance across kernal window.
-        def plot_explain_variance(ax):
-            win_kernal_range = np.arange(
-                self.bin_win[0], self.bin_win[1] + self.bin_win[0], self.bin_win[0])
-            # run all glm for different kernal window.
-            explain_var = []
-            for win in win_kernal_range:
-                # find kernal length.
-                l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, win)
-                len_kernel = r_idx - l_idx
-                # run glm.
-                w_all = [fit_glm(x, y, len_kernel) for (x,y) in zip(neu_seq, input_seq)]
-                ev = [get_explain_variance(x, y, w) for (x,y,w) in zip(neu_seq, input_seq, w_all)]
-                ev = np.concatenate(ev)
-                explain_var.append(ev)
-            # plot errorbar.
-            score_mean = np.concatenate([get_mean_sem(s.reshape(-1,1))[0] for s in explain_var])
-            score_sem = np.concatenate([get_mean_sem(s.reshape(-1,1))[1] for s in explain_var])
-            ax.errorbar(
-                win_kernal_range,
-                score_mean,
-                score_sem,
-                color=color2, capsize=2, marker='o', linestyle='none',
-                markeredgecolor='white', markeredgewidth=1)
-            # adjust layout.
-            ax.tick_params(tick1On=False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
-            ax.set_xlabel('kernal window (ms)')
-            ax.set_ylabel('explain variance')
-            ax.set_xticks(win_kernal_range)
-            add_legend(ax, None, None, n_trials, n_neurons, self.n_sess, 'upper left')
-        plot_explain_variance(axs[1])
-        # clustering on glm weights.
-        def plot_glm_cluster_w(ax):
-            gap = 5
-            w = np.concatenate(w_all)
-            # run clustering.
-            _, cluster_id = clustering_neu_response_mode(
-                w, self.n_clusters, self.max_clusters)
-            # group glm weights.
-            w_group = []
-            for i in range(self.n_clusters):
-                w_group.append(w[cluster_id==i,:])
-                w_group.append(np.zeros((gap,w.shape[1])))
-            w_group = np.concatenate(w_group[:-1],axis=0)
-            # plot heatmap.
-            heatmap = apply_colormap(w_group, cmap)
-            ax.imshow(
-                heatmap,
-                extent=[-win_kernal, 0, 1, heatmap.shape[0]],
-                interpolation='nearest', aspect='auto',
-                origin='lower')
-            # adjust layout.
-            adjust_layout_heatmap(ax)
-            ax.set_xlabel('time from kernal window (ms)')
-            pos_tick = [int(np.sum(cluster_id==i)/2 + i*gap + np.sum(cluster_id<i))
-                        for i in range(self.n_clusters)]
-            ax.set_yticks(pos_tick)
-            ax.set_yticklabels(['{}'.format(i) for i in range(self.n_clusters)])
-            ax.set_ylabel('cluster id')
-        plot_glm_cluster_w(axs[2])        
+        for bi in range(len(neu_x)):
+            self.plot_heatmap_neuron(
+                axs[bi], neu_x[bi], neu_time, neu_seq_sort, win_sort, neu_labels, neu_sig)
+            axs[bi].set_xlabel('time since stim (ms)')
+            # add stimulus line.
+            c_idx = int(bin_stim_seq.shape[1]/2)
+            xlines = [neu_time[np.searchsorted(neu_time, t)]
+                      for t in [bin_stim_seq[bi,c_idx+i,0]
+                                for i in [-1,0]]]
+            for xl in xlines:
+                if xl>neu_time[0] and xl<neu_time[-1]:
+                    axs[bi].axvline(xl, color='black', lw=1, linestyle='--')
 
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
@@ -632,18 +524,17 @@ class plotter_main(plotter_utils):
             
             except: pass
     
-    def cluster_heatmaps(self, axs_all):
+    def sorted_heatmaps(self, axs_all):
         for cate, axs in zip([[-1,1]], axs_all):
-            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
             try:
                 
-                self.plot_random_cluster_heatmaps(axs[0], 'shortest', cate=cate)
+                self.plot_sorted_heatmaps(axs[0], 'shortest')
                 for i in range(3):
-                    axs[0][i].set_title(f'response to random preceeding interval bin#{i} \n (sorted by shortest) {label_name}')
+                    axs[0][i].set_title(f'response to random preceeding interval bin#{i} \n (sorted by shortest)')
                 
-                self.plot_random_cluster_heatmaps(axs[1], 'longest', cate=cate)
+                self.plot_sorted_heatmaps(axs[1], 'longest')
                 for i in range(3):
-                    axs[1][i].set_title(f'response to random preceeding interval bin#{i} \n (sorted by longest) {label_name}')
+                    axs[1][i].set_title(f'response to random preceeding interval bin#{i} \n (sorted by longest)')
                     
             except: pass
     
@@ -656,16 +547,4 @@ class plotter_main(plotter_utils):
                 for i in range(self.n_clusters):
                     axs[i].set_title(f'latent dynamics with binned interval for cluster # {i} \n {label_name}')
 
-            except: pass
-
-    def glm(self, axs_all):
-        for cate, axs in zip([[-1],[1]], axs_all):
-            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
-            try:
-            
-                self.plot_random_glm(axs, cate=cate)
-                axs[0].set_title(f'coding score V.S. kernal window size \n {label_name}')
-                axs[1].set_title(f'explain variance V.S. kernal window size \n {label_name}')
-                axs[2].set_title(f'clustered kernal weights \n {label_name}')
-            
             except: pass

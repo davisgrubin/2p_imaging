@@ -12,7 +12,6 @@ from utils import get_norm01_params
 from utils import get_odd_stim_prepost_idx
 from utils import exclude_odd_stim
 from utils import get_mean_sem
-from utils import get_multi_sess_neu_trial_average
 from utils import get_neu_trial
 from utils import get_frame_idx_from_time
 from utils import get_block_1st_idx
@@ -197,7 +196,7 @@ class plotter_utils(utils_basic):
                    n_trials_short+n_trials_long, n_neurons, self.n_sess, 'upper right')
 
     def plot_standard_latent(self, ax, standard, cate=None):
-        win_eval = [-5000, 5000]
+        win_eval = [-3000, 3000]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_eval[0], win_eval[1])
         # collect data.
         [[color0, color1, color2, _],
@@ -231,7 +230,7 @@ class plotter_utils(utils_basic):
          [neu_seq, _, stim_seq, stim_value], _,
          [n_trials, n_neurons]] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-            trial_idx=[l[3-standard] for l in self.list_odd_idx],
+            trial_idx=[l[1-standard] for l in self.list_odd_idx],
             cate=cate, roi_id=None)
         neu_mean, neu_sem = get_mean_sem(neu_seq)
         c_idx = int(stim_seq.shape[0]/2)
@@ -269,7 +268,7 @@ class plotter_utils(utils_basic):
          [neu_x, _, stim_seq, _], _,
          [n_trials, n_neurons]] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-            trial_idx=[l[3-standard] for l in self.list_odd_idx],
+            trial_idx=[l[1-standard] for l in self.list_odd_idx],
             cate=cate, roi_id=None)
         neu_x = neu_x[:, l_idx:r_idx]
         cmap, c_neu = get_cmap_color(
@@ -413,7 +412,6 @@ class plotter_utils(utils_basic):
                 axs, colors, cmap, neu_seq,
                 self.n_clusters, self.max_clusters,
                 metrics, cluster_id, neu_labels, self.label_names, cate)
-        plot_info(axs[:5])
         # plot bin normalized interval tracking for all clusters.
         def plot_interval_norm(ax):
             # collect data.
@@ -450,7 +448,6 @@ class plotter_utils(utils_basic):
                 norm_params, stim_seq, c_neu)
             # adjust layout.
             add_legend(ax, c_all, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
-        plot_interval_norm(axs[5])
         # plot standard response.
         def plot_standard(ax, standard):
             xlim = [-3000, 3000]
@@ -472,8 +469,6 @@ class plotter_utils(utils_basic):
             ax.set_xlim(xlim)
             ax.set_xlabel('time since stim (ms)')
             add_legend(ax, [c_stim[0]]+colors, ['stim']+lbl, n_trials, n_neurons, self.n_sess, 'upper left')
-        plot_standard(axs[6], 0)
-        plot_standard(axs[7], 1)
         # plot oddball response.
         def plot_oddball(ax, standard):
             xlim = [-3500, 5500]
@@ -500,8 +495,6 @@ class plotter_utils(utils_basic):
                 ax, [color1, color2]+colors,
                 ['post interval stim (short)', 'post interval stim (long)']+lbl,
                 n_trials, n_neurons, self.n_sess, 'upper left')
-        plot_oddball(axs[8], 0)
-        plot_oddball(axs[9], 1)
         # plot transition response.
         def plot_block_transition(ax, standard):
             xlim = [-6000,15000]
@@ -528,8 +521,6 @@ class plotter_utils(utils_basic):
                 ax, [color1, color2]+colors,
                 ['post interval stim (short)', 'post interval stim (long)']+lbl,
                 n_trials, n_neurons, self.n_sess, 'upper left')
-        plot_block_transition(axs[10], 0)
-        plot_block_transition(axs[11], 1)
         # plot standard response heatmap.
         def plot_heatmap_standard(ax, standard):
             xlim = [-3000, 3000]
@@ -543,8 +534,6 @@ class plotter_utils(utils_basic):
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
             # plot heatmap.
             self.plot_cluster_heatmap(ax, neu_seq, neu_time, neu_seq, cluster_id, colors)
-        plot_heatmap_standard(axs[12], 0)
-        plot_heatmap_standard(axs[13], 1)
         # plot oddball response heatmap.
         def plot_heatmap_oddball(ax, standard):
             xlim = [-3500, 5500]
@@ -560,8 +549,6 @@ class plotter_utils(utils_basic):
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
             # plot heatmap.
             self.plot_cluster_heatmap(ax, neu_seq, neu_time, neu_seq, cluster_id, colors)
-        plot_heatmap_oddball(axs[14], 0)
-        plot_heatmap_oddball(axs[15], 1)
         # plot transition response.
         def plot_heatmap_block_transition(ax, standard):
             xlim = [-6000,15000]
@@ -575,56 +562,95 @@ class plotter_utils(utils_basic):
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
             # plot heatmap.
             self.plot_cluster_heatmap(ax, neu_seq, neu_time, neu_seq, cluster_id, colors)
-        plot_heatmap_block_transition(axs[16], 0)
-        plot_heatmap_block_transition(axs[17], 1)
-
-    def plot_cluster_heatmaps(self, axs, standard, cate=None):
+        try: plot_info(axs[:5])
+        except: pass
+        try: plot_interval_norm(axs[5])
+        except: pass
+        try: plot_standard(axs[6], 0)
+        except: pass
+        try: plot_standard(axs[7], 1)
+        except: pass
+        try: plot_oddball(axs[8], 0)
+        except: pass
+        try: plot_oddball(axs[9], 1)
+        except: pass
+        try: plot_block_transition(axs[10], 0)
+        except: pass
+        try: plot_block_transition(axs[11], 1)
+        except: pass
+        try: plot_heatmap_standard(axs[12], 0)
+        except: pass
+        try: plot_heatmap_standard(axs[13], 1)
+        except: pass
+        try: plot_heatmap_oddball(axs[14], 0)
+        except: pass
+        try: plot_heatmap_oddball(axs[15], 1)
+        except: pass
+        try: plot_heatmap_block_transition(axs[16], 0)
+        except: pass
+        try: plot_heatmap_block_transition(axs[17], 1)
+        except: pass
+    
+    def plot_cluster_latents(self, axs, cate=None):
         _, cluster_id = self.run_clustering(cate)
-        colors = get_cmap_color(self.n_clusters, cmap=plt.cm.nipy_spectral)
-        xlim = [-3500, 5500]
+        self.plot_cluster_bin_3d_latents(axs, cluster_id, cate=cate)
+
+    def plot_sorted_heatmaps(self, axs, standard):
+        cate = [-1,1]
+        win_sort = [-500, 500]
+        xlim = [-3000, 4000]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
         # collect data.
         neu_x = []
+        stim_x = []
         neu_time = self.alignment['neu_time'][l_idx:r_idx]
         # standard.
-        _, [neu_seq, _, _, _], _, _ = get_neu_trial(
+        _, [neu_seq, _, stim_seq, _], [neu_labels, neu_sig], _ = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance,
             [exclude_odd_stim(sl) for sl in self.list_stim_labels],
             trial_param=[[2,3,4,5], [standard], None, None, [0], [0]],
             cate=cate, roi_id=None)
         neu_seq = neu_seq[:,l_idx:r_idx]
         neu_x.append(neu_seq)
+        stim_x.append(stim_seq)
         # oddballs.
-        _, [neu_seq, _, _, _], _, _ = get_neu_trial(
+        _, [neu_seq, _, stim_seq, _], _, _ = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-            trial_idx=[l[3-standard] for l in self.list_odd_idx],
+            trial_idx=[l[1-standard] for l in self.list_odd_idx],
             cate=cate, roi_id=None)
         neu_seq = neu_seq[:,l_idx:r_idx]
         neu_x.append(neu_seq)
+        stim_x.append(stim_seq)
         # opposite standard.
-        _, [neu_seq, _, _, _], _, _ = get_neu_trial(
+        _, [neu_seq, _, stim_seq, _], _, _ = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance,
             [exclude_odd_stim(sl) for sl in self.list_stim_labels],
             trial_param=[[2,3,4,5], [1-standard], None, None, [0], [0]],
             cate=cate, roi_id=None)
         neu_seq = neu_seq[:,l_idx:r_idx]
         neu_x.append(neu_seq)
+        stim_x.append(stim_seq)
         # opposite oddballs.
-        _, [neu_seq, _, _, _], _, _ = get_neu_trial(
+        _, [neu_seq, _, stim_seq, _], _, _ = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-            trial_idx=[l[2+standard] for l in self.list_odd_idx],
+            trial_idx=[l[standard] for l in self.list_odd_idx],
             cate=cate, roi_id=None)
         neu_seq = neu_seq[:,l_idx:r_idx]
         neu_x.append(neu_seq)
+        stim_x.append(stim_seq)
         # plot heatmaps.
-        for i in range(len(neu_x)):
-            self.plot_cluster_heatmap(
-                axs[i], neu_x[i], neu_time, neu_x[0], cluster_id, colors)
-            axs[i].set_xlabel('time since stim (ms)')
-    
-    def plot_cluster_latents(self, axs, cate=None):
-        _, cluster_id = self.run_clustering(cate)
-        self.plot_cluster_bin_3d_latents(axs, cluster_id, cate=cate)
+        for bi in range(len(neu_x)):
+            self.plot_heatmap_neuron(
+                axs[bi], neu_x[bi], neu_time, neu_x[0], win_sort, neu_labels, neu_sig)
+            axs[bi].set_xlabel('time since stim (ms)')
+            # add stimulus line.
+            c_idx = int(stim_seq.shape[0]/2)
+            xlines = [self.alignment['neu_time'][np.searchsorted(self.alignment['neu_time'], t)]
+                      for t in [stim_x[bi][c_idx+i,0]
+                                for i in [-2,-1,0,1,2]]]
+            for xl in xlines:
+                if xl>neu_time[0] and xl<neu_time[-1]:
+                    axs[bi].axvline(xl, color='black', lw=1, linestyle='--')
         
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
@@ -656,41 +682,6 @@ class plotter_main(plotter_utils):
                 axs[5].set_title(f'latent dynamics to standard stim \n (long) {label_name}')
             
             except: pass
-
-    def standard_heatmap(self, axs):
-        try:
-            xlim = [-3000,3000]
-            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
-            neu_time = self.alignment['neu_time'][l_idx:r_idx]
-            win_sort = [-500, 1500]
-            labels = np.concatenate(self.list_labels)
-            sig = np.concatenate([self.list_significance[n]['r_oddball'] for n in range(self.n_sess)])
-            [neu_short, _, _, _], _ = get_multi_sess_neu_trial_average(
-                [exclude_odd_stim(sl) for sl in self.list_stim_labels],
-                self.alignment['list_neu_seq'], self.alignment,
-                trial_param=[[2,3,4,5], [0], None, None, [0], [0]])
-            [neu_long, _, _, _], _ = get_multi_sess_neu_trial_average(
-                [exclude_odd_stim(sl) for sl in self.list_stim_labels],
-                self.alignment['list_neu_seq'], self.alignment,
-                trial_param=[[2,3,4,5], [1], None, None, [0], [0]])
-            neu_short = neu_short[:,l_idx:r_idx]
-            neu_long  = neu_long[:,l_idx:r_idx]
-            for i in range(4):
-                axs[i].set_xlabel('time since stim (ms)')
-            
-            self.plot_heatmap_neuron(axs[0], neu_short, neu_time, neu_short, win_sort, labels, sig)
-            axs[0].set_title('response to standard stim \n (short sorted by short)')
-
-            self.plot_heatmap_neuron(axs[1], neu_long,  neu_time, neu_short, win_sort, labels, sig)
-            axs[1].set_title('response to standard stim \n (long sorted by short)')
-
-            self.plot_heatmap_neuron(axs[2], neu_short, neu_time, neu_long,  win_sort, labels, sig)
-            axs[2].set_title('response to standard stim \n (short sorted by long)')
-
-            self.plot_heatmap_neuron(axs[3], neu_long,  neu_time, neu_long,  win_sort, labels, sig)
-            axs[3].set_title('response to standard stim \n (long sorted by long)')
-                
-        except: pass
     
     def oddball(self, axs_all):
         for cate, axs in zip([[-1],[1]], axs_all):
@@ -763,25 +754,6 @@ class plotter_main(plotter_utils):
                 
             except: pass
 
-    def cluster_heatmaps(self, axs_all):
-        for cate, axs in zip([[-1,1]], axs_all):
-            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
-            try:
-
-                self.plot_cluster_heatmaps(axs[0], 0, cate=cate)
-                axs[0][0].set_title(f'response to standard interval \n (short, sorted by short standard) {label_name}')
-                axs[0][1].set_title(f'response to odball interval \n (long, sorted by short standard) {label_name}')
-                axs[0][2].set_title(f'response to standard interval \n (long, sorted by short standard) {label_name}')
-                axs[0][3].set_title(f'response to odball interval \n (short, sorted by short standard) {label_name}')
-                
-                self.plot_cluster_heatmaps(axs[1], 1, cate=cate)
-                axs[1][0].set_title(f'response to standard interval \n (long, sorted by long standard) {label_name}')
-                axs[1][1].set_title(f'response to odball interval \n (short, sorted by long standard) {label_name}')
-                axs[1][2].set_title(f'response to standard interval \n (short, sorted by long standard) {label_name}')
-                axs[1][3].set_title(f'response to odball interval \n (long, sorted by long standard) {label_name}')
-
-            except: pass
-    
     def cluster_latents(self, axs_all):
         for cate, axs in zip([[-1,1]], axs_all):
             label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
@@ -791,4 +763,23 @@ class plotter_main(plotter_utils):
                 for i in range(self.n_clusters):
                     axs[i].set_title(f'latent dynamics with binned interval for cluster # {i} \n {label_name}')
 
+            except: pass
+
+    def sorted_heatmaps(self, axs_all):
+        for cate, axs in zip([[-1,1]], axs_all):
+            self.plot_sorted_heatmaps(axs[0], 0)
+            axs[0][0].set_title('response to standard interval \n (short, sorted by short standard)')
+            axs[0][1].set_title('response to odball interval \n (long, sorted by short standard)')
+            axs[0][2].set_title('response to standard interval \n (long, sorted by short standard)')
+            axs[0][3].set_title('response to odball interval \n (short, sorted by short standard)')
+            
+            self.plot_sorted_heatmaps(axs[1], 1)
+            axs[1][0].set_title('response to standard interval \n (long, sorted by long standard)')
+            axs[1][1].set_title('response to odball interval \n (short, sorted by long standard)')
+            axs[1][2].set_title('response to standard interval \n (short, sorted by long standard)')
+            axs[1][3].set_title('response to odball interval \n (long, sorted by long standard)')
+
+            try:
+
+                0
             except: pass
