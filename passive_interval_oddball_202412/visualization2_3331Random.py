@@ -194,13 +194,13 @@ def run(
         def plot_glm():
             title = 'GLM neural coding analysis'
             filename = '3331Random08_glm_coding'
-            n_row = 3
+            n_row = 6
             n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,1,2]:
-                a = [plt.subplot(gs[s+0, i]) for i in range(3)]
+            for s in [0,2,4]:
+                a = [plt.subplot(gs[s+0:s+2, i]) for i in range(3)]
                 axs_all.append(a)
             plotter.glm(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
