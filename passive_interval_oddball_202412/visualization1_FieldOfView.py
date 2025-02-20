@@ -18,7 +18,7 @@ def run(
         session_config_list,
         list_labels, list_masks, list_vol, list_dff, list_neural_trials, list_move_offset
         ):
-    size_scale = 7
+    size_scale = 5
     # surgery window picture.
     print('Plotting surgery window picture')
     def plot_window():

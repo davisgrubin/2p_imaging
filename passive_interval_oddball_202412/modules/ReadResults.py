@@ -3,10 +3,26 @@
 import gc
 import os
 import h5py
+import shutil
 import numpy as np
 import scipy.io as sio
 from tqdm import tqdm
 from scipy.signal import savgol_filter
+
+# create a numpy memmap from an h5py dataset.
+def create_memmap(data, mmap_path):
+    memmap_arr = np.memmap(mmap_path, dtype=data.dtype, mode='w+', shape=data.shape)
+    memmap_arr[:] = data[...]
+    return memmap_arr
+
+# create folder for h5 data.
+def get_memmap_path(ops, h5_file_name):
+    mm_folder_name, _ = os.path.splitext(h5_file_name)
+    if not os.path.exists(os.path.join(ops['save_path0'], 'memmap', mm_folder_name)):
+        os.makedirs(os.path.join(ops['save_path0'], 'memmap', mm_folder_name))
+    mm_path = os.path.join(ops['save_path0'], 'memmap', mm_folder_name)
+    file_path = os.path.join(ops['save_path0'], h5_file_name)
+    return mm_path, file_path
 
 # read ops.npy
 def read_ops(list_session_data_path):
@@ -21,47 +37,46 @@ def read_ops(list_session_data_path):
 
 # read raw_voltages.h5.
 def read_raw_voltages(ops):
-    downsampling = 1
-    file_path = os.path.join(ops['save_path0'], 'raw_voltages.h5')
+    mm_path, file_path = get_memmap_path(ops, 'raw_voltages.h5')
     with h5py.File(file_path, 'r') as f:
-        vol_time = np.array(f['raw']['vol_time'])[::downsampling]
-        vol_start = np.array(f['raw']['vol_start'])[::downsampling]
-        vol_stim_vis = np.array(f['raw']['vol_stim_vis'])[::downsampling]
-        vol_hifi = np.array(f['raw']['vol_hifi'])[::downsampling]
-        vol_img = np.array(f['raw']['vol_img'])[::downsampling]
-        vol_stim_aud = np.array(f['raw']['vol_stim_aud'])[::downsampling]
-        vol_flir = np.array(f['raw']['vol_flir'])[::downsampling]
-        vol_pmt = np.array(f['raw']['vol_pmt'])[::downsampling]
-        vol_led = np.array(f['raw']['vol_led'])[::downsampling]
+        vol_time = create_memmap(f['raw']['vol_time'], os.path.join(mm_path, 'vol_time.mmap'))
+        vol_start = create_memmap(f['raw']['vol_start'], os.path.join(mm_path, 'vol_start.mmap'))
+        vol_stim_vis = create_memmap(f['raw']['vol_stim_vis'], os.path.join(mm_path, 'vol_stim_vis.mmap'))
+        vol_hifi = create_memmap(f['raw']['vol_hifi'], os.path.join(mm_path, 'vol_hifi.mmap'))
+        vol_img = create_memmap(f['raw']['vol_img'], os.path.join(mm_path, 'vol_img.mmap'))
+        vol_stim_aud = create_memmap(f['raw']['vol_stim_aud'], os.path.join(mm_path, 'vol_stim_aud.mmap'))
+        vol_flir = create_memmap(f['raw']['vol_flir'], os.path.join(mm_path, 'vol_flir.mmap'))
+        vol_pmt = create_memmap(f['raw']['vol_pmt'], os.path.join(mm_path, 'vol_pmt.mmap'))
+        vol_led = create_memmap(f['raw']['vol_led'], os.path.join(mm_path, 'vol_led.mmap'))
     return [vol_time, vol_start, vol_stim_vis, vol_img,
             vol_hifi, vol_stim_aud, vol_flir,
             vol_pmt, vol_led]
 
 # read masks.
 def read_masks(ops):
-    file_path = os.path.join(ops['save_path0'], 'masks.h5')
+    mm_path, file_path = get_memmap_path(ops, 'masks.h5')
     with h5py.File(file_path, 'r') as f:
-        labels = np.array(f['labels'])
-        masks = np.array(f['masks_func'])
-        mean_func = np.array(f['mean_func'])
-        max_func = np.array(f['max_func'])
-        mean_anat = np.array(f['mean_anat']) if ops['nchannels'] == 2 else None
-        masks_anat = np.array(f['masks_anat']) if ops['nchannels'] == 2 else None
+        labels = create_memmap(f['labels'], os.path.join(mm_path, 'labels.mmap'))
+        masks = create_memmap(f['masks_func'], os.path.join(mm_path, 'masks_func.mmap'))
+        mean_func = create_memmap(f['mean_func'], os.path.join(mm_path, 'mean_func.mmap'))
+        max_func = create_memmap(f['max_func'], os.path.join(mm_path, 'max_func.mmap'))
+        mean_anat = create_memmap(f['mean_anat'], os.path.join(mm_path, 'mean_anat.mmap')) if ops['nchannels'] == 2 else None
+        masks_anat = create_memmap(f['masks_anat'], os.path.join(mm_path, 'masks_anat.mmap')) if ops['nchannels'] == 2 else None
     return [labels, masks, mean_func, max_func, mean_anat, masks_anat]
 
 # read motion correction offsets.
 def read_move_offset(ops):
-    file_path = os.path.join(ops['save_path0'], 'move_offset.h5')
+    mm_path, file_path = get_memmap_path(ops, 'move_offset.h5')
     with h5py.File(file_path, 'r') as f:
-        xoff = np.array(f['xoff'])
-        yoff = np.array(f['yoff'])
+        xoff = create_memmap(f['xoff'], os.path.join(mm_path, 'xoff.mmap'))
+        yoff = create_memmap(f['yoff'], os.path.join(mm_path, 'yoff.mmap'))
     return [xoff, yoff]
 
 # read dff traces.
 def read_dff(ops, smooth):
-    file_path = os.path.join(ops['save_path0'], 'dff.h5')
+    mm_path, file_path = get_memmap_path(ops, 'dff.h5')
     with h5py.File(file_path, 'r') as f:
-        dff = np.array(f['dff'])
+        dff = create_memmap(f['dff'], os.path.join(mm_path, 'dff.mmap'))
         if smooth:
             window_length=9
             polyorder=3
@@ -75,18 +90,18 @@ def read_dff(ops, smooth):
 
 # read trailized neural traces with stimulus alignment.
 def read_neural_trials(ops):
-    file_path = os.path.join(ops['save_path0'], 'neural_trials.h5')
+    mm_path, file_path = get_memmap_path(ops, 'neural_trials.h5')
     with h5py.File(file_path, 'r') as f:
         neural_trials = dict()
-        neural_trials['time'] = np.array(f['neural_trials']['time'], dtype=np.float32)
-        neural_trials['dff'] = np.array(f['neural_trials']['dff'], dtype=np.float32)
-        neural_trials['stim_labels'] = np.array(f['neural_trials']['stim_labels'], dtype=np.float32)
-        neural_trials['vol_time'] = np.array(f['neural_trials']['vol_time'], dtype=np.float32)
-        neural_trials['vol_stim_vis'] = np.array(f['neural_trials']['vol_stim_vis'], dtype=np.float32)
-        neural_trials['vol_stim_aud'] = np.array(f['neural_trials']['vol_stim_aud'], dtype=np.float32)
-        neural_trials['vol_flir'] = np.array(f['neural_trials']['vol_flir'], dtype=np.float32)
-        neural_trials['vol_pmt'] = np.array(f['neural_trials']['vol_pmt'], dtype=np.float32)
-        neural_trials['vol_led'] = np.array(f['neural_trials']['vol_led'], dtype=np.float32)
+        neural_trials['time'] = create_memmap(f['neural_trials']['time'], os.path.join(mm_path, 'time.mmap'))
+        neural_trials['dff'] = create_memmap(f['neural_trials']['dff'], os.path.join(mm_path, 'dff.mmap'))
+        neural_trials['stim_labels'] = create_memmap(f['neural_trials']['stim_labels'], os.path.join(mm_path, 'stim_labels.mmap'))
+        neural_trials['vol_time'] = create_memmap(f['neural_trials']['vol_time'], os.path.join(mm_path, 'vol_time.mmap'))
+        neural_trials['vol_stim_vis'] = create_memmap(f['neural_trials']['vol_stim_vis'], os.path.join(mm_path, 'vol_stim_vis.mmap'))
+        neural_trials['vol_stim_aud'] = create_memmap(f['neural_trials']['vol_stim_aud'], os.path.join(mm_path, 'vol_stim_aud.mmap'))
+        neural_trials['vol_flir'] = create_memmap(f['neural_trials']['vol_flir'], os.path.join(mm_path, 'vol_flir.mmap'))
+        neural_trials['vol_pmt'] = create_memmap(f['neural_trials']['vol_pmt'], os.path.join(mm_path, 'vol_pmt.mmap'))
+        neural_trials['vol_led'] = create_memmap(f['neural_trials']['vol_led'], os.path.join(mm_path, 'vol_led.mmap'))
     return neural_trials
 
 # read significance test label results.
@@ -157,6 +172,8 @@ def read_subject(list_ops, sig_tag=None, force_label=None, smooth=None):
     list_move_offset = []
     list_significance = []
     for ops in tqdm(list_ops):
+        if not os.path.exists(os.path.join(ops['save_path0'], 'memmap')):
+            os.makedirs(os.path.join(ops['save_path0'], 'memmap'))
         # masks.
         labels, masks, mean_func, max_func, mean_anat, masks_anat = read_masks(ops)
         # voltages.
@@ -241,4 +258,10 @@ def read_all(session_config_list, smooth=True):
     return [list_labels, list_masks, list_vol, list_dff,
             list_neural_trials, list_move_offset, list_significance]
     
+# clean memory mapping files.
+def clean_memap_path(ops):
+    try:
+        if os.path.exists(os.path.join(ops['save_path0'], 'memmap')):
+            shutil.rmtree(os.path.join(ops['save_path0'], 'memmap'))
+    except: pass
     

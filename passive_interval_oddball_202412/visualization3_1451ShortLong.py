@@ -26,7 +26,7 @@ def run(
         session_config_list,
         list_labels, list_vol, list_dff, list_neural_trials, list_significance
         ):
-    size_scale = 7
+    size_scale = 5
     # filter data.
     target_sess = 'short_long'
     idx = np.array(list(session_config_list['list_session_name'].values())) == target_sess
@@ -59,7 +59,6 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f1 = plot_sess_significance()
         # stimulus types and interval distributions.
         print('Plotting stimulus types and interval distributions')
         def plot_intervals():
@@ -90,7 +89,6 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f2 = plot_intervals()
         # trial structure.
         print('Plotting trial structure')
         def plot_trial():
@@ -109,7 +107,6 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f3 = plot_trial()
         # neural alignments on standard.
         print('Plotting neural traces alignments on standard')
         def plot_standard():
@@ -130,7 +127,6 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f4 = plot_standard()
         def plot_oddball():
             title = 'neural traces alignment on oddball intervals'
             filename = '1451ShortLong05_oddball'
@@ -150,7 +146,6 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f5 = plot_oddball()
         def plot_block():
             title = 'neural traces alignment on block transition'
             filename = '1451ShortLong06_block'
@@ -169,7 +164,6 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f6 = plot_block()
         # clustering analysis.
         print('Plotting clustering analysis')
         def plot_clustering():
@@ -196,7 +190,6 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f7 = plot_clustering()
         # clustering latents.
         print('Plotting clustering latent dynamics')
         def plot_clustering_latents():
@@ -216,7 +209,6 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f8 = plot_clustering_latents()
         # sorted heatmaps.
         print('Plotting sorted heatmaps')
         def plot_sorted_heatmaps():
@@ -237,7 +229,38 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        f9 = plot_sorted_heatmaps()
+        # glm.
+        print('Plotting GLM analysis')
+        def plot_glm():
+            title = 'GLM neural coding analysis'
+            filename = '1451ShortLong10_glm_coding'
+            n_row = 3
+            n_col = 3
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in [0,1,2]:
+                a = [plt.subplot(gs[s+0, i]) for i in range(3)]
+                axs_all.append(a)
+            plotter.glm(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        # plot all.
+        fig_all = [
+            plot_sess_significance(),
+            plot_intervals(),
+            plot_trial(),
+            plot_standard(),
+            plot_oddball(),
+            plot_block(),
+            plot_clustering(),
+            plot_clustering_latents(),
+            plot_sorted_heatmaps(),
+            plot_glm(),
+            ]
         # clear memory.
         print('Clearing memory usage')
         del list_labels
@@ -248,4 +271,4 @@ def run(
         del plotter
         gc.collect()
         # combine temp filenames
-        return [f1, f2, f3, f4, f5, f6, f7, f8, f9]
+        return fig_all

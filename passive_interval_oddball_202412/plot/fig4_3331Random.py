@@ -7,6 +7,7 @@ from sklearn.decomposition import PCA
 from modules.Alignment import run_get_stim_response
 from modeling.clustering import clustering_neu_response_mode
 from modeling.clustering import get_mean_sem_cluster
+from modeling.generative import run_glm_multi_sess
 from utils import get_norm01_params
 from utils import get_bin_idx
 from utils import get_mean_sem
@@ -46,7 +47,7 @@ class plotter_utils(utils_basic):
         self.list_significance = list_significance
         self.bin_win = [450,2550]
         self.bin_num = 3
-        self.n_clusters = 4
+        self.n_clusters = 5
         self.max_clusters = 10
         self.d_latent = 3
 
@@ -79,7 +80,30 @@ class plotter_utils(utils_basic):
             neu_x, self.n_clusters, self.max_clusters)
         return metrics, cluster_id
     
-    def plot_random_stim(self, ax, cate=None, roi_id=None):
+    def run_glm(self, cate):
+        # define kernel window.
+        kernel_win = [-500,1500]
+        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, kernel_win[0], kernel_win[1])
+        kernel_time = self.alignment['neu_time'][l_idx:r_idx+1]
+        l_idx = np.searchsorted(self.alignment['neu_time'], 0) - l_idx
+        r_idx = r_idx - np.searchsorted(self.alignment['neu_time'], 0)
+        # collect data.
+        list_dff = [
+            self.list_neural_trials[i]['dff'][
+                np.in1d(self.list_labels[i],cate)*self.list_significance[i]['r_standard'],:]
+            for i in range(self.n_sess)]
+        list_neu_time = [nt['time'] for nt in self.list_neural_trials]
+        list_input_time  = [nt['vol_time'] for nt in self.list_neural_trials]
+        list_input_value = [nt['vol_stim_vis'] for nt in self.list_neural_trials]
+        list_stim_labels = [nt['stim_labels'] for nt in self.list_neural_trials]
+        # fit glm model.
+        kernel_all, exp_var_all = run_glm_multi_sess(
+            list_dff, list_neu_time,
+            list_input_time, list_input_value, list_stim_labels,
+            l_idx, r_idx)
+        return kernel_time, kernel_all, exp_var_all
+
+    def plot_stim(self, ax, cate=None, roi_id=None):
         # collect data.
         [color0, _, color2, _], [neu_seq, _, stim_seq, stim_value], _, [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
@@ -103,7 +127,7 @@ class plotter_utils(utils_basic):
         ax.set_xlabel('time since stim (ms)')
         add_legend(ax, [color0, color2], ['stim', 'dff'], n_trials, n_neurons, self.n_sess, 'upper right')
     
-    def plot_random_sync(self, ax, cate):
+    def plot_sync(self, ax, cate):
         win_width = 200
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, win_width)
         win_width = r_idx - l_idx
@@ -133,7 +157,7 @@ class plotter_utils(utils_basic):
         ax.set_xlabel('time since stim (ms)')
         add_legend(ax, [color0, color2], ['stim', 'sync'], n_trials, n_neurons, self.n_sess, 'upper right')
 
-    def plot_random_interval(self, ax, cate=None, roi_id=None):
+    def plot_interval(self, ax, cate=None, roi_id=None):
         # collect data.
         [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
@@ -168,7 +192,7 @@ class plotter_utils(utils_basic):
         lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
         add_legend(ax, colors, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
 
-    def plot_random_interval_box(self, ax, cate=None, roi_id=None):
+    def plot_interval_box(self, ax, cate=None, roi_id=None):
         win_base = [-self.bin_win[1],0]
         offsets = np.arange(self.bin_num)/20
         # collect data.
@@ -190,7 +214,7 @@ class plotter_utils(utils_basic):
         lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
         add_legend(ax, colors, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
 
-    def plot_random_interval_heatmap(self, ax, cate=None, roi_id=None):
+    def plot_interval_heatmap(self, ax, cate=None, roi_id=None):
         # collect data.
         [_, _, _, cmap], [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
@@ -223,7 +247,7 @@ class plotter_utils(utils_basic):
         ax.set_yticks(idx)
         ax.set_yticklabels(pre_isi[np.argsort(pre_isi)][idx][::-1].astype('int32'))
 
-    def plot_random_interval_curve(self, ax, cate=None, roi_id=None):
+    def plot_interval_curve(self, ax, cate=None, roi_id=None):
         win_base = [-self.bin_win[1],0]
         win_evoke = [200,400]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_evoke[0], win_evoke[1])
@@ -268,7 +292,7 @@ class plotter_utils(utils_basic):
         ax.set_xlim(self.bin_win)
         add_legend(ax, None, None, n_trials, n_neurons, self.n_sess, 'upper right')
 
-    def plot_random_interval_corr_epoch(self, ax, cate=None, roi_id=None):
+    def plot_interval_corr_epoch(self, ax, cate=None, roi_id=None):
         win_base = [-self.bin_win[1],0]
         win_evoke = [200,400]
         epoch_len = 500
@@ -313,14 +337,15 @@ class plotter_utils(utils_basic):
         ax.set_xlim([-1, np.nanmax(np.unique(epoch_idx))+1])
         add_legend(ax, None, None, n_trials, n_neurons, self.n_sess, 'upper right')
     
-    def plot_random_cluster(self, axs, cate=None):
+    def plot_cluster(self, axs, cate=None):
         metrics, cluster_id = self.run_clustering(cate)
         colors = get_cmap_color(self.n_clusters, cmap=plt.cm.nipy_spectral)
         # plot basic clustering results.
         def plot_info(axs):
             # collect data.
             [[color0, color1, color2, cmap],
-             [neu_seq, stim_seq, stim_value, pre_isi], neu_labels,
+             [neu_seq, stim_seq, stim_value, pre_isi],
+             [neu_labels, _],
              [n_trials, n_neurons]] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, None, None, [1], [0]],
@@ -344,37 +369,19 @@ class plotter_utils(utils_basic):
             # bin data based on isi.
             [bins, _, bin_neu_seq, _, _, bin_stim_seq, _] = get_isi_bin_neu(
                 neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
-            # get response within cluster at each bin.
-            cluster_bin_neu_mean = [get_mean_sem_cluster(neu, cluster_id)[0] for neu in bin_neu_seq]
-            cluster_bin_neu_sem  = [get_mean_sem_cluster(neu, cluster_id)[1] for neu in bin_neu_seq]
-            # organize into bin_num*n_clusters*time.
-            cluster_bin_neu_mean = [np.expand_dims(neu, axis=0) for neu in cluster_bin_neu_mean]
-            cluster_bin_neu_sem  = [np.expand_dims(neu, axis=0) for neu in cluster_bin_neu_sem]
-            cluster_bin_neu_mean = np.concatenate(cluster_bin_neu_mean, axis=0)
-            cluster_bin_neu_sem  = np.concatenate(cluster_bin_neu_sem, axis=0)
-            norm_params = [get_norm01_params(cluster_bin_neu_mean[:,i,:]) for i in range(self.n_clusters)]
-            # get line colors for each cluster.
-            c_neu = [get_cmap_color(self.bin_num, base_color=c) for c in colors]
-            # convert to colors for each bin.
-            c_neu = [[c_neu[i][j] for i in range(self.n_clusters)] for j in range(self.bin_num)]
+            # plot results.
             lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
             lbl+= ['cluster #'+str(i) for i in range(self.n_clusters)]
             c_all = get_cmap_color(self.bin_num, base_color='#2C2C2C') + colors
-            # only keep 2 stimulus.
-            c_idx = int(bin_stim_seq.shape[1]/2)
-            stim_seq = bin_stim_seq[:,c_idx-1:c_idx+1,:]
-            # plot results.
             self.plot_cluster_interval_norm(
-                ax, cluster_bin_neu_mean, cluster_bin_neu_sem,
-                norm_params, stim_seq, c_neu)
-            # adjust layout.
+                ax, cluster_id, bin_neu_seq, bin_stim_seq, colors)
             add_legend(ax, c_all, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
         # plot response on random for all clusters.
-        def plot_random(ax):
+        def plot_stim(ax):
             xlim = [-3500, 2500]
             # collect data.
-            [[color0, color1, color2, cmap],
-             [neu_seq, stim_seq, stim_value, pre_isi], neu_labels,
+            [[color0, color1, color2, _],
+             [neu_seq, stim_seq, stim_value, pre_isi], _,
              [n_trials, n_neurons]] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, None, None, [1], [0]],
@@ -405,14 +412,14 @@ class plotter_utils(utils_basic):
             # plot results.
             for i in range(self.bin_num):
                 self.plot_cluster_mean_sem(
-                    ax, cluster_bin_neu_mean[i,:,:], cluster_bin_neu_sem[i,:,:],
+                    ax, cluster_bin_neu_mean[i,:,:], cluster_bin_neu_sem[i,:,:], self.alignment['neu_time'],
                     norm_params, stim_seq[i,:,:], [cs_all[i]]*stim_seq.shape[-2], cs[i], xlim)
             # adjust layout.
             ax.set_xlabel('time since stim (ms)')
             ax.set_xlim(xlim)
             add_legend(ax, cs_all, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
         # plot response heatmap on random for all clusters.
-        def plot_heatmap_random(ax):
+        def plot_heatmap(ax):
             xlim = [-3500, 2500]
             l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
             # collect data.
@@ -425,13 +432,14 @@ class plotter_utils(utils_basic):
             # plot heatmap.
             self.plot_cluster_heatmap(ax, neu_seq, neu_time, neu_seq, cluster_id, colors)
             ax.set_xlabel('time since stim (ms)')
+        # plot all.
         try: plot_info(axs[:5])
         except: pass
         try: plot_interval_norm(axs[5])
         except: pass
-        try: plot_random(axs[6])
+        try: plot_stim(axs[6])
         except: pass
-        try: plot_heatmap_random(axs[7])
+        try: plot_heatmap(axs[7])
         except: pass
 
     def plot_cluster_latents(self, axs, cate=None):
@@ -472,6 +480,49 @@ class plotter_utils(utils_basic):
             for xl in xlines:
                 if xl>neu_time[0] and xl<neu_time[-1]:
                     axs[bi].axvline(xl, color='black', lw=1, linestyle='--')
+    
+    def plot_glm(self, axs, cate):
+        kernel_time, kernel_all, exp_var_all = self.run_glm(cate)
+        _, cluster_id = clustering_neu_response_mode(
+            kernel_all, self.n_clusters, self.max_clusters)
+        # collect data.
+        colors = get_cmap_color(self.n_clusters, cmap=plt.cm.nipy_spectral)
+        [[color0, _, _, _],
+         [_, _, stim_seq, _],
+         [neu_labels, neu_sig],
+         [n_trials, n_neurons]] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_param=[None, None, None, None, None, [0]],
+            cate=cate, roi_id=None)
+        # plot bin normalized interval tracking for all clusters.
+        def plot_interval_norm(ax):
+            # collect data.
+            [_, [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons]] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_param=[None, None, None, None, None, [0]],
+                mean_sem=False,
+                cate=cate, roi_id=None)
+            # bin data based on isi.
+            [bins, _, bin_neu_seq, _, _, bin_stim_seq, _] = get_isi_bin_neu(
+                neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
+            # plot results.
+            lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
+            lbl+= ['cluster #'+str(i) for i in range(self.n_clusters)]
+            c_all = get_cmap_color(self.bin_num, base_color='#2C2C2C') + colors
+            self.plot_cluster_interval_norm(
+                ax, cluster_id, bin_neu_seq, bin_stim_seq, colors)
+            add_legend(ax, c_all, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
+        # plot all.
+        try: self.plot_glm_heatmap(
+            axs[0], kernel_time, kernel_all, stim_seq,
+            neu_labels, neu_sig)
+        except: pass
+        try: self.plot_glm_kernel_cluster(
+            axs[1], kernel_time, kernel_all, cluster_id,
+            stim_seq, color0, colors)
+        except: pass
+        try: plot_interval_norm(axs[2])
+        except: pass
 
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
@@ -484,25 +535,25 @@ class plotter_main(plotter_utils):
             label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
             try:
                 
-                self.plot_random_stim(axs[0], cate=cate)
+                self.plot_stim(axs[0], cate=cate)
                 axs[0].set_title(f'response to random stim \n {label_name}')
                 
-                self.plot_random_sync(axs[1], cate=cate)
+                self.plot_sync(axs[1], cate=cate)
                 axs[1].set_title(f'response to random stim synchronization level \n {label_name}')
                 
-                self.plot_random_interval(axs[2], cate=cate)
+                self.plot_interval(axs[2], cate=cate)
                 axs[2].set_title(f'response to random preceeding interval with bins \n {label_name}')
                 
-                self.plot_random_interval_box(axs[3], cate=cate)
+                self.plot_interval_box(axs[3], cate=cate)
                 axs[3].set_title(f'response to random preceeding interval with bins \n {label_name}')
                 
-                self.plot_random_interval_heatmap(axs[4], cate=cate)
+                self.plot_interval_heatmap(axs[4], cate=cate)
                 axs[4].set_title(f'response to random preceeding interval heatmap \n {label_name}')
                 
-                self.plot_random_interval_curve(axs[5], cate=cate)
+                self.plot_interval_curve(axs[5], cate=cate)
                 axs[5].set_title(f'evoked response to random VS interval \n {label_name}')
                 
-                self.plot_random_interval_corr_epoch(axs[6], cate=cate)
+                self.plot_interval_corr_epoch(axs[6], cate=cate)
                 axs[6].set_title(f'response and interval correlation across epochs \n {label_name}')
 
             except: pass
@@ -512,7 +563,7 @@ class plotter_main(plotter_utils):
             label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
             try:
                 
-                self.plot_random_cluster(axs, cate=cate)
+                self.plot_cluster(axs, cate=cate)
                 axs[0].set_title(f'sorted correlation matrix \n {label_name}')
                 axs[1].set_title(f'clustering evaluation metrics \n {label_name}')
                 axs[2].set_title(f'cluster calcium transient \n (short) {label_name}')
@@ -548,3 +599,17 @@ class plotter_main(plotter_utils):
                     axs[i].set_title(f'latent dynamics with binned interval for cluster # {i} \n {label_name}')
 
             except: pass
+    
+    def glm(self, axs_all):
+        for cate, axs in zip([[-1],[1],[-1,1]], axs_all):
+            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+            try:
+                
+                self.plot_glm(axs, cate=cate)
+                axs[0].set_title(f'GLM kernel weights heatmap \n {label_name}')
+                axs[1].set_title(f'clustered GLM kernel weights \n {label_name}')
+                axs[2].set_title(f'clustered GLM kernel weights \n {label_name}')
+                axs[3].set_title(f'time normalized reseponse to preceeding interval with bins \n {label_name}')
+                
+            except: pass
+        

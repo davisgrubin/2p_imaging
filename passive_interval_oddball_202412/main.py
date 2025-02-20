@@ -9,6 +9,7 @@ from modules import Trialization
 from modules import StatTest
 from modules.ReadResults import read_ops
 from modules.ReadResults import read_all
+from modules.ReadResults import clean_memap_path
 
 def combine_session_config_list(session_config_list):
     list_session_data_path = []
@@ -41,6 +42,9 @@ def run(session_config_list):
     print('===============================================')
     print('============ Start Processing Data ============')
     print('===============================================')
+    if not os.path.exists(os.path.join('results', session_config_list['subject_name']+'_temp')):
+        os.makedirs(os.path.join('results', session_config_list['subject_name']+'_temp'))
+    print('Created canvas')
     session_config_list = combine_session_config_list(session_config_list)
     print('Processing {} sessions'.format(
         len(session_config_list['list_session_data_path'])))
@@ -74,13 +78,6 @@ def run(session_config_list):
     print('Read {} session results'.format(len(list_ops)))
 
     print('===============================================')
-    print('============= Start visualization =============')
-    print('===============================================')
-    if not os.path.exists(os.path.join('results', session_config_list['subject_name']+'_temp')):
-        os.makedirs(os.path.join('results', session_config_list['subject_name']+'_temp'))
-    print('Created canvas')
-
-    print('===============================================')
     print('======== plotting representative masks ========')
     print('===============================================')
     fn1 = visualization1_FieldOfView.run(
@@ -109,11 +106,14 @@ def run(session_config_list):
     print('============ saving session report ============')
     print('===============================================')
     print('Saving results')
-
     pack_webpage_main.run(session_config_list, fn1, fn2, fn3, fn4)
+    for i in range(len(list_ops)):
+        print('Cleaning memory mapping files for {}'.format(
+            list(session_config_list['list_session_name'].keys())[i]))
+        clean_memap_path(list_ops[i])
+    print('Processing completed for all sessions')
     for n in session_config_list['list_session_name']:
         print(n)
-    print('Processing completed')
     print('File saved as '+os.path.join('results', session_config_list['output_filename']))
 
 
@@ -287,17 +287,41 @@ if __name__ == "__main__":
 
 #%% start processing
 
-    run(session_config_list_YH01VT)
-    run(session_config_list_YH02VT)
-    run(session_config_list_YH03VT)
-    run(session_config_list_all)
+    #run(session_config_list_YH01VT)
+    #run(session_config_list_YH02VT)
+    #run(session_config_list_YH03VT)
+    #run(session_config_list_all)
+    
+    session_config_test = {
+        'list_session_name' : {
+            'VTYH02_PPC_20250109_3331Random' : 'random',
+            'VTYH02_PPC_20250116_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250122_4131FixJitterOdd' : 'fix_jitter_odd',
+            },
+        'session_folder' : 'test',
+        'sig_tag' : 'all',
+        'force_label' : None,
+        }
+    session_config_list_test = {
+        'list_config': [
+            session_config_test,
+            ],
+        'label_names' : {
+            '-1':'Exc',
+            '1':'Inh_VIP',
+            '2':'Inh_SST',
+            },
+        'subject_name' : 'test',
+        'output_filename' : 'test_PPC_passive.html'
+        }
+    run(session_config_list_test)
 
     '''
 
     session_config_test = {
         'list_session_name' : {
-            #'VTYH02_PPC_20250109_3331Random' : 'random',
-            #'VTYH02_PPC_20250116_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250109_3331Random' : 'random',
+            'VTYH02_PPC_20250116_1451ShortLong' : 'short_long',
             'VTYH02_PPC_20250122_4131FixJitterOdd' : 'fix_jitter_odd',
             },
         'session_folder' : 'test',
@@ -320,6 +344,7 @@ if __name__ == "__main__":
 
     session_config_list = combine_session_config_list(session_config_list_test)
     list_ops = read_ops(session_config_list['list_session_data_path'])
+    
     [list_labels, list_masks, list_vol, list_dff,
      list_neural_trials, list_move_offset, list_significance
      ] = read_all(session_config_list)

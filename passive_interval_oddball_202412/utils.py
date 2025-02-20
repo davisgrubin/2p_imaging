@@ -8,6 +8,7 @@ from matplotlib.colors import to_hex
 from sklearn.manifold import TSNE
 
 from modeling.clustering import get_sorted_corr_mat
+from modeling.clustering import get_mean_sem_cluster
 
 #%% general data processing
 
@@ -811,13 +812,13 @@ class utils_basic:
             add_legend(ax, colors, lbl, None, None, None, 'upper right')
         plot_cluster_cate_fraction(axs[4], cluster_id, neu_labels, label_names)
         
-    def plot_cluster_mean_sem(self, ax, neu_mean, neu_sem, norm_params, stim_seq, c_stim, c_neu, xlim):
+    def plot_cluster_mean_sem(self, ax, neu_mean, neu_sem, neu_time, norm_params, stim_seq, c_stim, c_neu, xlim):
         l_nan_margin = 5
         r_nan_margin = 5
         len_scale_x = 500
         len_scale_y = 0.5
         # set margin values to nan.
-        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
+        l_idx, r_idx = get_frame_idx_from_time(neu_time, 0, xlim[0], xlim[1])
         nm = neu_mean.copy()
         ns = neu_sem.copy()
         nm[:,:l_idx+l_nan_margin] = np.nan
@@ -837,7 +838,7 @@ class utils_basic:
             ax.hlines(i+b, xlim[0]*0.99, xlim[1]*0.99, linestyle=':', color='#2C2C2C', alpha=0.2)
             # plot neural traces.
             self.plot_mean_sem(
-                ax, self.alignment['neu_time'],
+                ax, neu_time,
                 (a*nm[i,:]+b)+nm.shape[0]-i-1, np.abs(a)*ns[i,:],
                 c_neu[i], None)
             # plot y scalebar.
@@ -847,18 +848,36 @@ class utils_basic:
                 '{:.3f}'.format(len_scale_y*(d-c)),
                 va='center', ha='right', rotation=90, color='#2C2C2C')
         # plot x scalebar.
-        ax.hlines(-0.01, xlim[0]*0.99, xlim[0]*0.99+len_scale_x, color='#2C2C2C')
-        ax.text(xlim[0]*0.99 + len_scale_x/2, -0.02, '{} ms'.format(int(len_scale_x)),
+        ax.hlines(-0.2, xlim[0]*0.99, xlim[0]*0.99+len_scale_x, color='#2C2C2C')
+        ax.text(xlim[0]*0.99 + len_scale_x/2, -0.2, '{} ms'.format(int(len_scale_x)),
             va='top', ha='center')
         ax.axis('off')
         ax.set_ylim([-0.2, neu_mean.shape[0]+0.1])
-    
+
     def plot_cluster_interval_norm(
-            self, ax, cluster_bin_neu_mean, cluster_bin_neu_sem,
-            norm_params, stim_seq, c_neu):
+            self, ax, cluster_id,
+            bin_neu_seq, bin_stim_seq,
+            colors,
+            ):
         margin_time = 500
         gap = 0.05
         len_scale_y = 0.5
+        # get response within cluster at each bin.
+        cluster_bin_neu_mean = [get_mean_sem_cluster(neu, cluster_id)[0] for neu in bin_neu_seq]
+        cluster_bin_neu_sem  = [get_mean_sem_cluster(neu, cluster_id)[1] for neu in bin_neu_seq]
+        # organize into bin_num*n_clusters*time.
+        cluster_bin_neu_mean = [np.expand_dims(neu, axis=0) for neu in cluster_bin_neu_mean]
+        cluster_bin_neu_sem  = [np.expand_dims(neu, axis=0) for neu in cluster_bin_neu_sem]
+        cluster_bin_neu_mean = np.concatenate(cluster_bin_neu_mean, axis=0)
+        cluster_bin_neu_sem  = np.concatenate(cluster_bin_neu_sem, axis=0)
+        norm_params = [get_norm01_params(cluster_bin_neu_mean[:,i,:]) for i in range(self.n_clusters)]
+        # get line colors for each cluster.
+        c_neu = [get_cmap_color(self.bin_num, base_color=c) for c in colors]
+        # convert to colors for each bin.
+        c_neu = [[c_neu[i][j] for i in range(self.n_clusters)] for j in range(self.bin_num)]
+        # only keep 2 stimulus.
+        c_idx = int(bin_stim_seq.shape[1]/2)
+        ss = bin_stim_seq[:,c_idx-1:c_idx+1,:]
         # plot interval.
         ax.vlines([-gap,0,1,1+gap], 0, self.n_clusters, color='#2C2C2C', linestyle=':')
         for ci in range(self.n_clusters):
@@ -869,8 +888,8 @@ class utils_basic:
             for bi in range(self.bin_num):
                 # plot neural traces before/within/after interval.
                 for l_t, r_t, off in zip(
-                        [stim_seq[bi,0,0]-margin_time, stim_seq[bi,0,1], 0],
-                        [stim_seq[bi,0,1], 0, stim_seq[bi,1,1]+margin_time],
+                        [ss[bi,0,0]-margin_time, ss[bi,0,1], 0],
+                        [ss[bi,0,1], 0, ss[bi,1,1]+margin_time],
                         [-1-gap, 0, 1+gap],
                         ):
                     # get indice.
@@ -997,3 +1016,35 @@ class utils_basic:
                     self.alignment['neu_time'], 0, stim_seq[j,0], stim_seq[j,1])
                 ax.plot(neu_z[0,l_idx:r_idx], neu_z[1,l_idx:r_idx], neu_z[2,l_idx:r_idx],
                         lw=4, color=c_stim[j])
+
+    def plot_glm_heatmap(
+            self, ax, kernel_time, kernel_all, stim_seq,
+            neu_labels, neu_sig,
+            ):
+        # plot heatmap.
+        win_sort = [kernel_time[0], 1000]
+        self.plot_heatmap_neuron(
+            ax, kernel_all, kernel_time, kernel_all, win_sort, neu_labels, neu_sig)
+        ax.set_xlabel('time since stim (ms)')
+        # add stimulus line.
+        c_idx = int(stim_seq.shape[0]/2)
+        xlines = [kernel_time[np.searchsorted(kernel_time, stim_seq[c_idx,0])],
+                  kernel_time[np.searchsorted(kernel_time, stim_seq[c_idx,1])]]
+        for xl in xlines:
+            ax.axvline(xl, color='black', lw=1, linestyle='--')
+
+    def plot_glm_kernel_cluster(
+            self, ax, kernel_time, kernel_all, cluster_id,
+            stim_seq, color0, colors,
+            ):
+        xlim = [kernel_time[0], kernel_time[-1]]
+        # get kernels within cluster.
+        neu_mean, neu_sem = get_mean_sem_cluster(kernel_all, cluster_id)
+        # get stimulus timing.
+        c_idx = int(stim_seq.shape[0]/2)
+        ss = stim_seq[c_idx,:].reshape(1,-1)
+        # plot results.
+        norm_params = [get_norm01_params(neu_mean[i,:]) for i in range(neu_mean.shape[0])]
+        self.plot_cluster_mean_sem(
+            ax, neu_mean, neu_sem, kernel_time,
+            norm_params, ss, [color0], colors, xlim)

@@ -62,3 +62,10 @@
 - Now get_neu_trial also returns significance test.
 - Replaced clustering heatmaps with population heatmaps.
 - Now temp folder will be removed with its content.
+- Now size_scale is set to 5.
+- Now all functions in ReadResults are using memory mapping.
+- Added memory mapping files cleaning.
+
+## 2025.02.20
+- Completed GLM full model fitting.
+- Added basic GLM kernel analysis.
