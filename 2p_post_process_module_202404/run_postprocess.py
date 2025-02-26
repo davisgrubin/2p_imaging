@@ -53,6 +53,7 @@ if __name__ == "__main__":
          range_footprint] = get_qc_args(args)
         ops = read_ops(args.session_data_path)
     else:
+        '''
         session_data_path_list = [
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250106_3331Random',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250107_3331Random',
@@ -79,11 +80,21 @@ if __name__ == "__main__":
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250204_4131FixJitterOdd',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250205_1451ShortLong',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250206_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250207_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250208_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250210_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250212_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250214_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250217_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250218_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250220_1451ShortLong',
+            ]
+        session_data_path_list = [
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250106_3331Random',
-            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH01_PPC_20250107_3331Random',
-            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH01_PPC_20250108_3331Random',
-            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH01_PPC_20250109_3331Random',
-            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH01_PPC_20250111_3331Random',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250107_3331Random',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250108_3331Random',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250109_3331Random',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250111_3331Random',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250113_1451ShortLong',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250114_1451ShortLong',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250115_1451ShortLong',
@@ -97,11 +108,23 @@ if __name__ == "__main__":
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250127_4131FixJitterOdd',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250129_4131FixJitterOdd',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250130_4131FixJitterOdd',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250131_4131FixJitterOdd',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250202_4131FixJitterOdd',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250203_4131FixJitterOdd',
-            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250204_4131FixJitterOdd',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250205_1451ShortLong',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250206_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250207_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250208_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250210_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250211_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250212_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250213_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250214_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250217_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250218_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250221_1451ShortLong',
+            ]
+        session_data_path_list = [
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250106_3331Random',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250107_3331Random',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250108_3331Random',
@@ -109,7 +132,6 @@ if __name__ == "__main__":
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250111_3331Random',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250113_1451ShortLong',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250114_1451ShortLong',
-            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250115_1451ShortLong',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250116_1451ShortLong',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250117_1451ShortLong',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250118_4131FixJitterOdd',
@@ -122,9 +144,32 @@ if __name__ == "__main__":
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250131_4131FixJitterOdd',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250201_4131FixJitterOdd',
             'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250203_4131FixJitterOdd',
-            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250205_4131FixJitterOdd',
-            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250206_4131FixJitterOdd',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250205_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250206_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250207_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250208_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250210_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250212_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250214_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250217_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250218_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250219_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250221_1451ShortLong',
             ]
+        '''
+        session_data_path_list = [
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250217_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250218_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH01VT/VTYH01_PPC_20250220_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250217_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250218_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH02VT/VTYH02_PPC_20250221_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250217_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250218_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250219_1451ShortLong',
+            'C:/Users/yhuang887/Projects/passive_interval_oddball_202412/results/YH03VT/VTYH03_PPC_20250221_1451ShortLong',
+            ]
+
         for session_data_path in session_data_path_list:
             ops = read_ops(session_data_path)
             '''
@@ -141,16 +186,16 @@ if __name__ == "__main__":
             range_footprint = [1,2]
             range_compact = [0,1.05]
             diameter = 6
-        '''
-        QualControlDataIO.run(
-            ops, range_skew, max_connect, max_aspect, range_compact, range_footprint,
-            run_qc=False)
-        '''
-    
-        QualControlDataIO.run(
-            ops,
-            range_skew, max_connect, max_aspect, range_compact, range_footprint)
-    
-        LabelExcInh.run(ops, diameter)
-    
-        DffTraces.run(ops, correct_pmt=False)
+            '''
+            QualControlDataIO.run(
+                ops, range_skew, max_connect, max_aspect, range_compact, range_footprint,
+                run_qc=False)
+            '''
+        
+            QualControlDataIO.run(
+                ops,
+                range_skew, max_connect, max_aspect, range_compact, range_footprint)
+        
+            LabelExcInh.run(ops, diameter)
+        
+            DffTraces.run(ops, correct_pmt=False)

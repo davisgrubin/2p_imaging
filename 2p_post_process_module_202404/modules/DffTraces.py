@@ -4,7 +4,6 @@ import os
 import h5py
 import numpy as np
 import pandas as pd
-from scipy.signal import savgol_filter
 from scipy.ndimage import gaussian_filter
 from scipy.ndimage import percentile_filter
 
@@ -30,15 +29,6 @@ def pmt_led_handler(fluo, dff):
     dff = dff.to_numpy()
     return dff
 
-# apply Savitzky-Golay filter to smooth dff.
-def smooth_dff(dff):
-    window_length=25
-    polyorder=5
-    dff_filtered = np.apply_along_axis(
-        savgol_filter, 1, dff.copy(),
-        window_length=window_length, polyorder=polyorder)
-    return dff_filtered
-
 # compute dff from raw fluorescence signals.
 def get_dff(
         ops,
@@ -57,10 +47,9 @@ def get_dff(
     return dff
 
 # save dff traces results.
-def save_dff(ops, dff, dff_filtered, fluo):
+def save_dff(ops, dff, fluo):
     f = h5py.File(os.path.join(ops['save_path0'], 'dff.h5'), 'w')
     f['dff'] = dff
-    f['dff_filtered'] = dff_filtered
     f['fluo'] = fluo
     f.close()
 
@@ -82,6 +71,5 @@ def run(ops, norm=True, correct_pmt=False):
     if correct_pmt:
         print('Running PMT/LED fluorescence correction.')
         dff = pmt_led_handler(fluo, dff)
-    dff_filtered = smooth_dff(dff)
     print('Results saved')
-    save_dff(ops, dff, dff_filtered, fluo)
+    save_dff(ops, dff, fluo)

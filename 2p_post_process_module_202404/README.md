@@ -37,4 +37,4 @@ sbatch run_postprocess.sh
 
 ## 2025.02.10
 - Now processing list of data is allowed.
-- Now both dff before and after smoothing are saved.
+- Now only raw dff is saved and moved filtering to downstream projects.
