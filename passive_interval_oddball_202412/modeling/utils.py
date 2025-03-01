@@ -20,3 +20,9 @@ def get_mean_sem(data, zero_start=False):
     count = np.nansum(~np.isnan(data.reshape(-1, data.shape[-1])), axis=0)
     s = std / np.sqrt(count)
     return m, s
+
+# compute indice with givn time window for df/f.
+def get_frame_idx_from_time(timestamps, c_time, l_time, r_time):
+    l_idx = np.searchsorted(timestamps, c_time+l_time)
+    r_idx = np.searchsorted(timestamps, c_time+r_time)
+    return l_idx, r_idx

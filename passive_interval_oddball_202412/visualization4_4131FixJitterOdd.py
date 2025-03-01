@@ -27,7 +27,6 @@ def run(
         list_labels, list_vol, list_dff, list_neural_trials, list_significance
         ):
     size_scale = 5
-    # filter data.
     target_sess = 'fix_jitter_odd'
     idx = np.array(list(session_config_list['list_session_name'].values())) == target_sess
     sess_names = np.array(list(session_config_list['list_session_name'].keys()))[idx].copy().tolist()
@@ -37,16 +36,14 @@ def run(
     list_neural_trials = np.array(list_neural_trials,dtype='object')[idx].copy().tolist()
     list_significance = np.array(list_significance,dtype='object')[idx].copy().tolist()
     print('Found {} {} sessions'.format(len(sess_names), target_sess))
-    if len(sess_names) == 0:
+    if (len(sess_names) == 0) or (len(idx)==1 and not idx[0]):
         return []
     else:
-        # create plotter.
         print('Initiating alignment results')
         plotter = plotter_main(list_neural_trials, list_labels, list_significance, session_config_list['label_names'])
-        # significance test.
-        print('Plotting significance test results')
         def plot_sess_significance():
             title = 'significance'
+            print(title)
             filename = '4131FixJitterOdd01_significance'
             n_row = 1
             n_col = 1
@@ -59,10 +56,9 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        # stimulus types and interval distributions.
-        print('Plotting stimulus types and interval distributions')
         def plot_intervals():
             title = 'interval distribution'
+            print(title)
             filename = '4131FixJitterOdd02_interval_distribution'
             n_row = 2
             n_col = 4
@@ -89,10 +85,9 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        # trial structure.
-        print('Plotting trial structure')
         def plot_trial():
             title = 'interval trial structure'
+            print(title)
             filename = '4131FixJitterOdd03_trial_structure'
             n_row = 1
             n_col = 6
@@ -107,10 +102,9 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        # fix oddball interval.
-        print('Plotting fix oddball analysis')
         def plot_oddball_fix():
             title = 'neural traces alignment on oddball in fix standard'
+            print(title)
             filename = '4131FixJitterOdd04_oddball_fix'
             n_row = 6
             n_col = 3
@@ -128,10 +122,9 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        # jitter oddball interval.
-        print('Plotting jitter oddball analysis')
         def plot_oddball_jitter():
             title = 'neural traces alignment on oddball in jitter standard'
+            print(title)
             filename = '4131FixJitterOdd05_oddball_jitter'
             n_row = 2
             n_col = 8
@@ -147,10 +140,9 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        # clustering analysis.
-        print('Plotting clustering analysis')
         def plot_clustering():
             title = 'clustering on standard oddball fix jitter interval'
+            print(title)
             filename = '4131FixJitterOdd06_clustering'
             n_row = 12
             n_col = 12
@@ -171,50 +163,72 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        # clustering latents.
-        print('Plotting clustering latent dynamics')
-        def plot_clustering_latents():
-            title = 'clustering latent dynamics on random interval'
-            filename = '4131FixJitterOdd07_clustering_latents'
-            n_row = 1
-            n_col = 4
-            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
-            gs = GridSpec(n_row, n_col, figure=fig)
-            axs_all = []
-            for s in [0]:
-                a = [plt.subplot(gs[s+0, i], projection='3d') for i in range(4)]
-                axs_all.append(a)
-            plotter.cluster_latents(axs_all)
-            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
-            plt.close(fig)
-            return [filename, n_row, n_col, title]
-        # sorted heatmaps.
-        print('Plotting sorted heatmaps')
-        def plot_sorted_heatmaps():
-            title = 'sorted heatmaps on oddball fix jitter interval'
-            filename = '4131FixJitterOdd08_sorted_heatmaps'
-            n_row = 4
+        def plot_feature_categorization():
+            title = 'feature categorization analysis'
+            print(title)
+            filename = '4131FixJitterOdd07_feature_categorization'
+            n_row = 7
             n_col = 7
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in [0]:
-                a = [[plt.subplot(gs[s+0:s+2, i]) for i in range(4)],
-                     [plt.subplot(gs[s+2:s+4, i]) for i in range(7)]]
+                a = [[plt.subplot(gs[s+0, i]) for i in [0,1,2,3]]]
+                a+= [[plt.subplot(gs[s+1, i]) for i in [0,1,2,3,4,5,6]]]
+                a+= [[plt.subplot(gs[s+2, i]) for i in [0,1,2,3,4,5,6]]]
+                a+= [[plt.subplot(gs[s+3, i]) for i in [0,1]]]
+                a+= [[plt.subplot(gs[s+4, i]) for i in [0,1,2,3,4,5,6]]]
+                a+= [[plt.subplot(gs[s+5, i]) for i in [0,1,2,3,4,5,6]]]
+                a+= [[plt.subplot(gs[s+6, i]) for i in [0,1]]]
                 axs_all.append(a)
-            plotter.sorted_heatmaps(axs_all)
+            plotter.categorization_features(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        # glm.
-        print('Plotting GLM analysis')
+        def plot_sorted_heatmaps_fix_jitter():
+            title = 'sorted heatmaps on oddball fix jitter interval'
+            print(title)
+            filename = '4131FixJitterOdd08_sorted_heatmaps_fix_jitter'
+            n_row = 12
+            n_col = 4
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in [0,4,8]:
+                a = [[plt.subplot(gs[s+0:s+2, i]) for i in range(4)],
+                     [plt.subplot(gs[s+2:s+4, i]) for i in range(4)]]
+                axs_all.append(a)
+            plotter.sorted_heatmaps_fix_jitter(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        def plot_sorted_heatmaps_local_isi():
+            title = 'sorted heatmaps on oddball interval with preceeding isi'
+            print(title)
+            filename = '4131FixJitterOdd09_sorted_heatmaps_local_isi'
+            n_row = 12
+            n_col = 4
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in [0,4,8]:
+                a = [[plt.subplot(gs[s+0:s+2, i]) for i in range(4)],
+                     [plt.subplot(gs[s+2:s+4, i]) for i in range(4)]]
+                axs_all.append(a)
+            plotter.sorted_heatmaps_local_isi(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
         def plot_glm():
             title = 'GLM neural coding analysis'
-            filename = '4131FixJitterOdd09_glm_coding'
+            print(title)
+            filename = '4131FixJitterOdd10_glm_coding'
             n_row = 6
             n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -229,19 +243,18 @@ def run(
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        # plot all.
         fig_all = [
-            plot_sess_significance(),
-            plot_intervals(),
+            #plot_sess_significance(),
+            #plot_intervals(),
             plot_trial(),
-            plot_oddball_fix(),
-            plot_oddball_jitter(),
-            plot_clustering(),
-            plot_clustering_latents(),
-            plot_sorted_heatmaps(),
-            plot_glm(),
+            #plot_oddball_fix(),
+            #plot_oddball_jitter(),
+            #plot_clustering(),
+            plot_feature_categorization(),
+            plot_sorted_heatmaps_fix_jitter(),
+            plot_sorted_heatmaps_local_isi(),
+            #plot_glm(),
         ]
-        # clear memory.
         print('Clearing memory usage')
         del list_labels
         del list_vol
@@ -249,6 +262,5 @@ def run(
         del list_neural_trials
         del list_significance
         gc.collect()
-        # combine temp filenames
         return fig_all
 

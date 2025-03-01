@@ -19,10 +19,9 @@ def run(
         list_labels, list_masks, list_vol, list_dff, list_neural_trials, list_move_offset
         ):
     size_scale = 5
-    # surgery window picture.
-    print('Plotting surgery window picture')
     def plot_window():
         title = 'surgery window'
+        print(title)
         filename = 'fov01_window'
         session_folder = [
             os.path.join('results', sc['session_folder'])
@@ -47,11 +46,9 @@ def run(
         fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
         plt.close(fig)
         return [filename, n_row, n_col, title]
-    f1 = plot_window()
-    # masks.
-    print('Plotting imaging fov projection with masks')
     def plot_masks():
         title = 'imaging fov'
+        print(title)
         filename = 'fov02_imaging'
         n_row = 4
         n_col = 12
@@ -65,11 +62,9 @@ def run(
             list_masks[-1][3],
             list_masks[-1][4])
         if len(session_config_list['label_names'])==1:
-            print('Plotting masks for 1 channel data')
             mask_axs = [plt.subplot(gs[0:2, j:j+2]) for j in range(0,10,2)]
             plotter.all_1chan(mask_axs)
         if len(session_config_list['label_names'])>1:
-            print('Plotting masks for 2 channel data')
             mask_axs = [plt.subplot(gs[i:i+2, j:j+2]) for j in range(0,12,2) for i in [0,2]]
             plotter.all_2chan(mask_axs)
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -79,11 +74,9 @@ def run(
         del plotter
         gc.collect()
         return [filename, n_row, n_col, title]
-    f2 = plot_masks()
-    # example traces.
-    print('Plotting example traces')
     def plot_example_traces():
         title = 'example traces'
+        print(title)
         filename = 'fov03_example_traces'
         n_row = 4
         n_col = 1
@@ -96,17 +89,14 @@ def run(
         fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
         plt.close(fig)
         return [filename, n_row, n_col, title]
-    f3 = plot_example_traces()
-    # calcium transient analysis.
     def plot_ca():
         title = 'calcium transient analysis'
+        print(title)
         filename = 'fov04_ca'
         n_row = 2
         n_col = 3
         fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
         gs = GridSpec(n_row, n_col, figure=fig)
-        # calcium transients.
-        print('Plotting calcium transients')
         ca_axs01 = [plt.subplot(gs[0, i]) for i in range(3)]
         ca_axs02 = [plt.subplot(gs[1, i]) for i in range(3)]
         plot_ca_transient(ca_axs01, list_labels, list_neural_trials, session_config_list['label_names'], [-1])
@@ -116,17 +106,14 @@ def run(
         fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
         plt.close(fig)
         return [filename, n_row, n_col, title]
-    f4 = plot_ca()
-    # misc.
     def plot_misc():
         title = 'misc imaging results'
+        print(title)
         filename = 'fov05_misc'
         n_row = 1
         n_col = 1
         fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
         gs = GridSpec(n_row, n_col, figure=fig)
-        # labels.
-        print('Plotting neural labels')
         label_ax = plt.subplot(gs[0, 0])
         plot_inh_exc_label_pc(label_ax, list_labels)
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -134,7 +121,12 @@ def run(
         fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
         plt.close(fig)
         return [filename, n_row, n_col, title]
-    f5 = plot_misc()
-    # combine temp filenames
-    return [f1, f2, f3, f4, f5]
+    fig_all = [
+        plot_window(),
+        #plot_masks(),
+        #plot_example_traces(),
+        #plot_ca(),
+        #plot_misc(),
+        ]
+    return fig_all
 

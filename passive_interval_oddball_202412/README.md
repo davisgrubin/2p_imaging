@@ -69,3 +69,32 @@
 ## 2025.02.20
 - Completed GLM full model fitting.
 - Added basic GLM kernel analysis.
+
+## 2025.02.22
+- Now sort_heatmap_neuron is an independent function.
+- Now add_heatmap_colorbar is an independent function.
+- Beautified heatmap and added colorbar.
+
+## 2025.02.25
+- Now heatmap can specify scale.
+
+## 2025.02.26
+- Added run_wilcoxon_trial.
+- Rewritten plot_sorted_heatmaps_fix_jitter.
+- Now apply_colormap can handle binary heatmaps.
+- Now plot_heatmap_neuron can plot binary heatmaps.
+- Now plot_heatmap_neuron only excludes rows with all nan.
+- Rewritten plot_sorted_heatmaps_standard.
+- Added get_temporal_scaling_data.
+
+## 2025.02.28
+- Added plot_cross_sess_adapt.
+- Completed run_features_categorization.
+- Completed feature_categorization.
+- Added get_bin_mean_sem_cluster.
+- Completed plot_categorization_features for all paradigms.
+- Deleted plot_interval_corr_epoch.
+- Added plot_heatmap_trial.
+- Added plot_block_adapatation_trial_heatmap.
+- Added get_slope_speeds.
+- Addded plot_slope_dist.

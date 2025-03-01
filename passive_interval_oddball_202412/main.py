@@ -129,11 +129,11 @@ if __name__ == "__main__":
             'VTYH01_PPC_20250108_3331Random' : 'random',
             'VTYH01_PPC_20250109_3331Random' : 'random',
             'VTYH01_PPC_20250111_3331Random' : 'random',
-            'VTYH01_PPC_20250113_1451ShortLong' : 'short_long',
-            'VTYH01_PPC_20250114_1451ShortLong' : 'short_long',
-            'VTYH01_PPC_20250115_1451ShortLong' : 'short_long',
-            'VTYH01_PPC_20250116_1451ShortLong' : 'short_long',
-            'VTYH01_PPC_20250117_1451ShortLong' : 'short_long',
+            #'VTYH01_PPC_20250113_1451ShortLong' : 'short_long',
+            #'VTYH01_PPC_20250114_1451ShortLong' : 'short_long',
+            #'VTYH01_PPC_20250115_1451ShortLong' : 'short_long',
+            #'VTYH01_PPC_20250116_1451ShortLong' : 'short_long',
+            #'VTYH01_PPC_20250117_1451ShortLong' : 'short_long',
             'VTYH01_PPC_20250118_4131FixJitterOdd' : 'fix_jitter_odd',
             'VTYH01_PPC_20250120_4131FixJitterOdd' : 'fix_jitter_odd',
             'VTYH01_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
@@ -154,6 +154,7 @@ if __name__ == "__main__":
             'VTYH01_PPC_20250210_1451ShortLong' : 'short_long',
             'VTYH01_PPC_20250212_1451ShortLong' : 'short_long',
             'VTYH01_PPC_20250214_1451ShortLong' : 'short_long',
+            'VTYH01_PPC_20250218_1451ShortLong' : 'short_long',
             },
         'session_folder' : 'YH01VT',
         'sig_tag' : 'all',
@@ -167,11 +168,11 @@ if __name__ == "__main__":
             'VTYH02_PPC_20250108_3331Random' : 'random',
             'VTYH02_PPC_20250109_3331Random' : 'random',
             'VTYH02_PPC_20250111_3331Random' : 'random',
-            'VTYH02_PPC_20250113_1451ShortLong' : 'short_long',
-            'VTYH02_PPC_20250114_1451ShortLong' : 'short_long',
-            'VTYH02_PPC_20250115_1451ShortLong' : 'short_long',
-            'VTYH02_PPC_20250116_1451ShortLong' : 'short_long',
-            'VTYH02_PPC_20250117_1451ShortLong' : 'short_long',
+            #'VTYH02_PPC_20250113_1451ShortLong' : 'short_long',
+            #'VTYH02_PPC_20250114_1451ShortLong' : 'short_long',
+            #'VTYH02_PPC_20250115_1451ShortLong' : 'short_long',
+            #'VTYH02_PPC_20250116_1451ShortLong' : 'short_long',
+            #'VTYH02_PPC_20250117_1451ShortLong' : 'short_long',
             'VTYH02_PPC_20250118_4131FixJitterOdd' : 'fix_jitter_odd',
             'VTYH02_PPC_20250120_4131FixJitterOdd' : 'fix_jitter_odd',
             'VTYH02_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
@@ -192,6 +193,9 @@ if __name__ == "__main__":
             'VTYH02_PPC_20250212_1451ShortLong' : 'short_long',
             'VTYH02_PPC_20250213_1451ShortLong' : 'short_long',
             'VTYH02_PPC_20250214_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250217_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250218_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250221_1451ShortLong' : 'short_long',
             },
         'session_folder' : 'YH02VT',
         'sig_tag' : 'all',
@@ -205,10 +209,10 @@ if __name__ == "__main__":
             'VTYH03_PPC_20250108_3331Random' : 'random',
             'VTYH03_PPC_20250109_3331Random' : 'random',
             'VTYH03_PPC_20250111_3331Random' : 'random',
-            'VTYH03_PPC_20250113_1451ShortLong' : 'short_long',
-            'VTYH03_PPC_20250114_1451ShortLong' : 'short_long',
-            'VTYH03_PPC_20250116_1451ShortLong' : 'short_long',
-            'VTYH03_PPC_20250117_1451ShortLong' : 'short_long',
+            #'VTYH03_PPC_20250113_1451ShortLong' : 'short_long',
+            #'VTYH03_PPC_20250114_1451ShortLong' : 'short_long',
+            #'VTYH03_PPC_20250116_1451ShortLong' : 'short_long',
+            #'VTYH03_PPC_20250117_1451ShortLong' : 'short_long',
             'VTYH03_PPC_20250118_4131FixJitterOdd' : 'fix_jitter_odd',
             'VTYH03_PPC_20250120_4131FixJitterOdd' : 'fix_jitter_odd',
             'VTYH03_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
@@ -226,6 +230,10 @@ if __name__ == "__main__":
             'VTYH03_PPC_20250210_1451ShortLong' : 'short_long',
             'VTYH03_PPC_20250212_1451ShortLong' : 'short_long',
             'VTYH03_PPC_20250214_1451ShortLong' : 'short_long',
+            'VTYH03_PPC_20250217_1451ShortLong' : 'short_long',
+            'VTYH03_PPC_20250218_1451ShortLong' : 'short_long',
+            'VTYH03_PPC_20250219_1451ShortLong' : 'short_long',
+            'VTYH03_PPC_20250221_1451ShortLong' : 'short_long',
             },
         'session_folder' : 'YH03VT',
         'sig_tag' : 'all',
@@ -290,15 +298,17 @@ if __name__ == "__main__":
     run(session_config_list_YH01VT)
     run(session_config_list_YH02VT)
     run(session_config_list_YH03VT)
-    #run(session_config_list_all)
+    run(session_config_list_all)
+    
     
     '''
-
     session_config_test = {
         'list_session_name' : {
-            'VTYH02_PPC_20250109_3331Random' : 'random',
-            'VTYH02_PPC_20250116_1451ShortLong' : 'short_long',
-            'VTYH02_PPC_20250122_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH02_PPC_20250109_3331Random' : 'random',
+            #'VTYH02_PPC_20250111_3331Random' : 'random',
+            #'VTYH02_PPC_20250122_4131FixJitterOdd' : 'fix_jitter_odd',
+            'VTYH02_PPC_20250212_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250210_1451ShortLong' : 'short_long',
             },
         'session_folder' : 'test',
         'sig_tag' : 'all',
@@ -320,9 +330,13 @@ if __name__ == "__main__":
 
     session_config_list = combine_session_config_list(session_config_list_test)
     list_ops = read_ops(session_config_list['list_session_data_path'])
-    
     [list_labels, list_masks, list_vol, list_dff,
      list_neural_trials, list_move_offset, list_significance
      ] = read_all(session_config_list)
-
+    
+    label_names = {'-1':'Exc', '1':'Inh_VIP', '2':'Inh_SST'}
+    cate = [-1,1]
+    roi_id = None
+    import matplotlib.pyplot as plt
+    cluster_cmap = plt.cm.hsv
     '''

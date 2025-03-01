@@ -69,7 +69,6 @@ def run_glm_multi_sess(
         list_input_time, list_input_value, list_stim_labels,
         l_idx, r_idx
         ):
-    l_idx, r_idx = 10,50
     # interpolate input data.
     list_factor_in = [
         interp_factor_in(iv, it, nt)
