@@ -273,6 +273,26 @@ def get_block_epochs_idx(stim_labels, epoch_len, block_combine=True):
         epoch_1s = result[1]
     return epoch_0s, epoch_1s
 
+# find index around transition.
+def get_block_transition_idx(stim_labels, trials_around):
+    n_trials = len(stim_labels)
+    # compute the difference to find transitions.
+    diff = np.diff(stim_labels, prepend=stim_labels[0])
+    trans_0to1 = np.where(diff == 1)[0]
+    trans_1to0 = np.where(diff == -1)[0]
+    # only keep transitions that allow a full window.
+    valid_0to1 = trans_0to1[(trans_0to1-trials_around>=0) & (trans_0to1+trials_around<n_trials)][1:]
+    valid_1to0 = trans_1to0[(trans_1to0-trials_around>=0) & (trans_1to0+trials_around<n_trials)][1:]
+    # preallocate boolean masks.
+    trans_0to1 = np.zeros((len(valid_0to1), n_trials), dtype=bool)
+    trans_1to0 = np.zeros((len(valid_1to0), n_trials), dtype=bool)
+    # mark the indices corresponding to the window:
+    for i, t in enumerate(valid_0to1):
+        trans_0to1[i, t-trials_around:t+trials_around] = True
+    for i, t in enumerate(valid_1to0):
+        trans_1to0[i, t-trials_around:t+trials_around] = True
+    return trans_0to1, trans_1to0
+
 # get index for pre/post short/long oddball.
 def get_odd_stim_prepost_idx(stim_labels):
     idx_pre_short = (stim_labels[:,2]==-1) * (stim_labels[:,5]==0) * (stim_labels[:,6]==0)
@@ -482,6 +502,65 @@ def get_temporal_scaling_data(data, t_org, t_target):
     right_vals = data[:, idx_right]
     data_scaled = left_vals + weights * (right_vals - left_vals)
     return data_scaled
+
+# compute scaled data for single trial response across sessions.
+def get_temporal_scaling_trial_multi_sess(neu_seq, stim_seq, neu_time, target_isi):
+    # compute mean time stamps.
+    stim_seq_target = np.nanmean(np.concatenate(stim_seq, axis=0),axis=0)
+    c_idx = int(stim_seq_target.shape[0]/2)
+    # target isi before.
+    target_l_pre, target_r_pre = get_frame_idx_from_time(
+        neu_time, 0,
+        -target_isi,
+        stim_seq_target[c_idx,0])
+    # target stimulus.
+    target_l_stim, target_r_stim = get_frame_idx_from_time(
+        neu_time, 0,
+        stim_seq_target[c_idx,0],
+        stim_seq_target[c_idx,1])
+    # target isi after.
+    target_l_post, target_r_post = get_frame_idx_from_time(
+        neu_time, 0,
+        stim_seq_target[c_idx,1],
+        stim_seq_target[c_idx,1]+target_isi)
+    # compute trial wise temporal scaling.
+    scale_neu_seq = []
+    for si in range(len(neu_seq)):
+        scale_ns = np.zeros((neu_seq[si].shape[0], neu_seq[si].shape[1], target_r_post-target_l_pre))
+        for ti in range(neu_seq[si].shape[0]):
+            # trial isi before.
+            l_pre, r_pre = get_frame_idx_from_time(
+                neu_time, 0,
+                stim_seq[si][ti,c_idx-1,1],
+                stim_seq[si][ti,c_idx,0])
+            # trial stimulus.
+            l_stim, r_stim = get_frame_idx_from_time(
+                neu_time, 0,
+                stim_seq[si][ti,c_idx,0],
+                stim_seq[si][ti,c_idx,1])
+            # trial isi after.
+            l_post, r_post = get_frame_idx_from_time(
+                neu_time, 0,
+                stim_seq[si][ti,c_idx,1],
+                stim_seq[si][ti,c_idx+1,0])
+            # compute scaled data.
+            scale_ns[ti,:,:] = np.concatenate([
+                get_temporal_scaling_data(
+                    neu_seq[si][ti,:,l_pre:r_pre],
+                    neu_time[l_pre:r_pre],
+                    neu_time[target_l_pre:target_r_pre]),
+                get_temporal_scaling_data(
+                    neu_seq[si][ti,:,l_stim:r_stim],
+                    neu_time[l_stim:r_stim],
+                    neu_time[target_l_stim:target_r_stim]),
+                get_temporal_scaling_data(
+                    neu_seq[si][ti,:,l_post:r_post],
+                    neu_time[l_post:r_post],
+                    neu_time[target_l_post:target_r_post]),
+                ], axis=1)
+        # collect single session results.
+        scale_neu_seq.append(scale_ns)
+    return scale_neu_seq
 
 # run wilcoxon signed rank test to compare response across neurons and time.
 def run_wilcoxon_trial(neu_seq_trial_1, neu_seq_trial_2, thres):
@@ -773,10 +852,9 @@ class utils_basic:
             interpolation='nearest', aspect='auto')
         # adjust layout.
         adjust_layout_heatmap(ax)
-        ax.set_ylabel('trial id')
         for tick in ax.get_yticklabels():
             tick.set_rotation(90)
-        add_heatmap_colorbar(ax, cmap, norm, None)        
+        add_heatmap_colorbar(ax, cmap, norm, None)
                 
     def plot_win_mag_box(
             self, ax, neu_seq, neu_time,
@@ -871,131 +949,124 @@ class utils_basic:
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         add_legend(ax, [color2,color1], ['model','chance'], 'upper left')
 
-    def plot_cluster_info(
-            self, axs, colors,
-            cluster_id, neu_labels, label_names, cate):
+    def plot_cluster_ca_transient(self, ax, colors, cluster_id, cate):
         n_clusters = len(np.unique(cluster_id))
-        # plot calcium transient of each cluster.
-        def plot_ca_transient(ax, cluster_id):
-            lbl = ['cluster #'+str(i) for i in range(n_clusters)]
-            # compute calcium transient.
-            _, dff_ca_neu, dff_ca_time = get_ca_transient_multi_sess(self.list_neural_trials)
-            # get category.
-            dff_ca_cate = np.array(dff_ca_neu,dtype='object')[
-                np.in1d(np.concatenate(self.list_labels), cate)].copy().tolist()
-            # average across trials.
-            dff_ca_cate = [get_mean_sem(d)[0].reshape(1,-1) for d in dff_ca_cate]
-            dff_ca_cate = np.concatenate(dff_ca_cate, axis=0)
-            # collect within cluster average.
-            neu_mean = [get_mean_sem(dff_ca_cate[cluster_id==i])[0] for i in range(n_clusters)]
-            neu_sem = [get_mean_sem(dff_ca_cate[cluster_id==i])[1] for i in range(n_clusters)]
-            # plot results.
-            for i in range(n_clusters): 
-                self.plot_mean_sem(ax, dff_ca_time, neu_mean[i], neu_sem[i], colors[i], None)
-            # adjust layout.
-            ax.tick_params(axis='y', tick1On=False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
-            ax.set_xlabel('time since calcium transient triggered (ms)')
-            ax.set_ylabel('df/f (z-scored)')
-            ax.set_title('calcium transient average')
-            add_legend(ax, colors, lbl, None, None, None, 'upper right')
-        # plot fraction of each cluster.
-        def plot_cluster_fraction(ax, cluster_id):
-            num = [np.nansum(cluster_id==i) for i in np.unique(cluster_id)]
-            ax.pie(
-                num,
-                labels=[str(num[i])+' cluster # '+str(i) for i in range(len(num))],
-                colors=colors,
-                autopct='%1.1f%%',
-                wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
-            ax.set_title('fraction of neurons in each cluster')
-        # plot fraction of clusters for neuron categories.
-        def plot_cluster_fraction_in_cate(ax, cluster_id, neu_labels, label_names):
-            bar_width = 0.5
-            lbl = ['cluster #'+str(i) for i in range(n_clusters)]
-            cate_eval = [int(k) for k in label_names.keys()]
-            cate_name = [v for v in label_names.values()]
-            # get fraction in each category.
-            fraction = np.zeros((n_clusters, len(cate_eval)))
-            for i in range(n_clusters):
-                for j in range(len(cate_eval)):
-                    nc = np.nansum((cluster_id==i)*(neu_labels==cate_eval[j]))
-                    nt = np.nansum(neu_labels==cate_eval[j]) + 1e-5
-                    fraction[i,j] = nc / nt
-            # plot bars.
-            bottom = 1-np.cumsum(fraction, axis=0)
+        lbl = ['cluster #'+str(i) for i in range(n_clusters)]
+        # compute calcium transient.
+        _, dff_ca_neu, dff_ca_time = get_ca_transient_multi_sess(self.list_neural_trials)
+        # get category.
+        dff_ca_cate = np.array(dff_ca_neu,dtype='object')[
+            np.in1d(np.concatenate(self.list_labels), cate)].copy().tolist()
+        # average across trials.
+        dff_ca_cate = [get_mean_sem(d)[0].reshape(1,-1) for d in dff_ca_cate]
+        dff_ca_cate = np.concatenate(dff_ca_cate, axis=0)
+        # collect within cluster average.
+        neu_mean = [get_mean_sem(dff_ca_cate[cluster_id==i])[0] for i in range(n_clusters)]
+        neu_sem = [get_mean_sem(dff_ca_cate[cluster_id==i])[1] for i in range(n_clusters)]
+        # plot results.
+        for i in range(n_clusters): 
+            self.plot_mean_sem(ax, dff_ca_time, neu_mean[i], neu_sem[i], colors[i], None)
+        # adjust layout.
+        ax.tick_params(axis='y', tick1On=False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.set_xlabel('time since calcium transient triggered (ms)')
+        ax.set_ylabel('df/f (z-scored)')
+        ax.set_title('calcium transient average')
+        add_legend(ax, colors, lbl, None, None, None, 'upper right')
+    
+    # plot fraction of each cluster.
+    def plot_cluster_fraction(self, ax, colors, cluster_id):
+        num = [np.nansum(cluster_id==i) for i in np.unique(cluster_id)]
+        ax.pie(
+            num,
+            labels=[str(num[i])+' cluster # '+str(i) for i in range(len(num))],
+            colors=colors,
+            autopct='%1.1f%%',
+            wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+        ax.set_title('fraction of neurons in each cluster')
+
+    def plot_cluster_cluster_fraction_in_cate(self, ax, colors, cluster_id, neu_labels, label_names):
+        bar_width = 0.5
+        n_clusters = len(np.unique(cluster_id))
+        lbl = ['cluster #'+str(i) for i in range(n_clusters)]
+        cate_eval = [int(k) for k in label_names.keys()]
+        cate_name = [v for v in label_names.values()]
+        # get fraction in each category.
+        fraction = np.zeros((n_clusters, len(cate_eval)))
+        for i in range(n_clusters):
             for j in range(len(cate_eval)):
-                for i in range(n_clusters):
-                    if fraction[i,j] != 0:
-                        ax.bar(
-                            j, fraction[i,j],
-                            bottom=bottom[i,j],
-                            edgecolor='white',
-                            width=bar_width,
-                            color=colors[i])
-                        ax.text(j, bottom[i,j]+fraction[i,j]/2,
-                                f'{fraction[i,j]:.2f}',
-                                ha='center', va='center', color='#2C2C2C')
-            # adjust layout.
-            ax.tick_params(tick1On=False)
-            ax.spines['left'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.set_xticks(np.arange(len(cate_eval)))
-            ax.set_xticklabels(cate_name, rotation='vertical')
-            ax.set_yticks([])
-            ax.set_xlim([-0.5,len(cate_eval)+0.5])
-            ax.set_ylim([0,1])
-            ax.set_title('fraction of cluster for each cell-type')
-            add_legend(ax, colors, lbl, None, None, None, 'upper right')
-        # plot fraction of neuron categories for clusters.
-        def plot_cate_fraction_in_cluster(ax, cluster_id, neu_labels, label_names):
-            bar_width = 0.5
-            lbl = [v for v in label_names.values()]
-            cluster_name = ['cluster #'+str(i) for i in range(n_clusters)]
-            cate_eval = [int(k) for k in label_names.keys()]
-            cate_color = [get_roi_label_color([c], 0)[2] for c in cate_eval]
-            # get fraction in each category.
-            fraction = np.zeros((len(cate_eval), n_clusters))
-            for i in range(len(cate_eval)):
-                for j in range(n_clusters):
-                    nc = np.nansum((cluster_id==j)*(neu_labels==cate_eval[i]))
-                    nt = np.nansum(neu_labels==cate_eval[i]) + 1e-5
-                    fraction[i,j] = nc / nt
-            fraction = fraction / np.nansum(fraction, axis=0)
-            # plot bars.
-            bottom = 1-np.cumsum(fraction, axis=0)
+                nc = np.nansum((cluster_id==i)*(neu_labels==cate_eval[j]))
+                nt = np.nansum(neu_labels==cate_eval[j]) + 1e-5
+                fraction[i,j] = nc / nt
+        # plot bars.
+        bottom = 1-np.cumsum(fraction, axis=0)
+        for j in range(len(cate_eval)):
+            for i in range(n_clusters):
+                if fraction[i,j] != 0:
+                    ax.bar(
+                        j, fraction[i,j],
+                        bottom=bottom[i,j],
+                        edgecolor='white',
+                        width=bar_width,
+                        color=colors[i])
+                    ax.text(j, bottom[i,j]+fraction[i,j]/2,
+                            f'{fraction[i,j]:.2f}',
+                            ha='center', va='center', color='#2C2C2C')
+        # adjust layout.
+        ax.tick_params(tick1On=False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.set_xticks(np.arange(len(cate_eval)))
+        ax.set_xticklabels(cate_name, rotation='vertical')
+        ax.set_yticks([0,0.25,0.5,0.75, 1])
+        ax.grid(True, axis='y', linestyle='--')
+        ax.set_xlim([-0.5,len(cate_eval)+0.5])
+        ax.set_ylim([0,1])
+        ax.set_title('fraction of cluster for each cell-type')
+        add_legend(ax, colors, lbl, None, None, None, 'upper right')
+
+    def plot_cluster_cate_fraction_in_cluster(self, ax, cluster_id, neu_labels, label_names):
+        bar_width = 0.5
+        n_clusters = len(np.unique(cluster_id))
+        lbl = [v for v in label_names.values()]
+        cluster_name = ['cluster #'+str(i) for i in range(n_clusters)]
+        cate_eval = [int(k) for k in label_names.keys()]
+        cate_color = [get_roi_label_color([c], 0)[2] for c in cate_eval]
+        # get fraction in each category.
+        fraction = np.zeros((len(cate_eval), n_clusters))
+        for i in range(len(cate_eval)):
             for j in range(n_clusters):
-                for i in range(len(cate_eval)):
-                    if fraction[i,j] != 0:
-                        ax.bar(
-                            j, fraction[i,j],
-                            bottom=bottom[i,j],
-                            edgecolor='white',
-                            width=bar_width,
-                            color=cate_color[i])
-                        ax.text(j, bottom[i,j]+fraction[i,j]/2,
-                                f'{fraction[i,j]:.2f}',
-                                ha='center', va='center', color='#2C2C2C')
-            # adjust layout.
-            ax.tick_params(tick1On=False)
-            ax.spines['left'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.set_xticks(np.arange(n_clusters))
-            ax.set_xticklabels(cluster_name, rotation='vertical')
-            ax.set_yticks([])
-            ax.set_xlim([-0.5,n_clusters+0.5])
-            ax.set_ylim([0,1])
-            ax.set_title('fraction of cell-type for each cluster')
-            add_legend(ax, cate_color, lbl, None, None, None, 'upper right')
-        try: plot_ca_transient(axs[0], cluster_id)
-        except: pass
-        try: plot_cluster_fraction(axs[1], cluster_id)
-        except: pass
-        try: plot_cluster_fraction_in_cate(axs[2], cluster_id, neu_labels, label_names)
-        except: pass
-        try: plot_cate_fraction_in_cluster(axs[3], cluster_id, neu_labels, label_names)
-        except: pass
+                nc = np.nansum((cluster_id==j)*(neu_labels==cate_eval[i]))
+                nt = np.nansum(neu_labels==cate_eval[i]) + 1e-5
+                fraction[i,j] = nc / nt
+        fraction = fraction / np.nansum(fraction, axis=0)
+        # plot bars.
+        bottom = 1-np.cumsum(fraction, axis=0)
+        for j in range(n_clusters):
+            for i in range(len(cate_eval)):
+                if fraction[i,j] != 0:
+                    ax.bar(
+                        j, fraction[i,j],
+                        bottom=bottom[i,j],
+                        edgecolor='white',
+                        width=bar_width,
+                        color=cate_color[i])
+                    ax.text(j, bottom[i,j]+fraction[i,j]/2,
+                            f'{fraction[i,j]:.2f}',
+                            ha='center', va='center', color='#2C2C2C')
+        # adjust layout.
+        ax.tick_params(tick1On=False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.set_xticks(np.arange(n_clusters))
+        ax.set_xticklabels(cluster_name, rotation='vertical')
+        ax.set_yticks([0,0.25,0.5,0.75, 1])
+        ax.grid(True, axis='y', linestyle='--')
+        ax.set_xlim([-0.5,n_clusters+0.5])
+        ax.set_ylim([0,1])
+        ax.set_title('fraction of cell-type for each cluster')
+        add_legend(ax, cate_color, lbl, None, None, None, 'upper right')
 
     def plot_cluster_mean_sem(self, ax, neu_mean, neu_sem, neu_time, norm_params, stim_seq, c_stim, c_neu, xlim):
         l_nan_margin = 5

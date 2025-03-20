@@ -54,7 +54,7 @@ class plotter_utils(utils_basic):
         self.list_significance = list_significance
         self.bin_win = [450,2550]
         self.bin_num = 2
-        self.n_clusters = 5
+        self.n_clusters = 7
         self.max_clusters = 10
         self.d_latent = 3
     
@@ -126,7 +126,7 @@ class plotter_utils(utils_basic):
     
     def run_glm(self, cate):
         # define kernel window.
-        kernel_win = [-500,1500]
+        kernel_win = [-500,3000]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, kernel_win[0], kernel_win[1])
         kernel_time = self.alignment['neu_time'][l_idx:r_idx+1]
         l_idx = np.searchsorted(self.alignment['neu_time'], 0) - l_idx
@@ -491,8 +491,14 @@ class plotter_utils(utils_basic):
                 trial_param=[[2,3,4,5], [0], None, None, [0], [0]],
                 cate=cate, roi_id=None)
             # plot info.
-            self.plot_cluster_info(
-                axs, colors, cluster_id, neu_labels, self.label_names, cate)
+            self.plot_cluster_ca_transient(
+                axs[0], colors, cluster_id, cate)
+            self.plot_cluster_fraction(
+                axs[1], colors, cluster_id)
+            self.plot_cluster_cluster_fraction_in_cate(
+                axs[2], colors, cluster_id, neu_labels, self.label_names)
+            self.plot_cluster_cate_fraction_in_cluster(
+                axs[3], cluster_id, neu_labels, self.label_names)
         # plot bin normalized interval tracking for all clusters.
         def plot_interval_norm(ax):
             # collect data.
@@ -739,10 +745,12 @@ class plotter_utils(utils_basic):
     
     def plot_categorization_features(self, axs):
         cate = [-1,1]
+        #kernel_time, kernel_all, exp_var_all = self.run_glm(cate)
+        #_, cluster_id = clustering_neu_response_mode(
+        #    kernel_all, self.n_clusters, self.max_clusters)
         results_all = self.run_features_categorization(cate)
         cluster_id = results_all['cluster_id'].to_numpy()
-        lbl = [np.unique(results_all['response_type'][cluster_id==i])[0] for i in np.unique(cluster_id)]
-        lbl = ['cluster #'+str(ci) for ci in range(len(lbl))]
+        lbl = ['cluster #'+str(ci) for ci in range(self.n_clusters)]
         colors = get_cmap_color(len(lbl), cmap=self.cluster_cmap)
         # collect data.
         _, _, [neu_labels, neu_sig], _ = get_neu_trial(
@@ -751,11 +759,17 @@ class plotter_utils(utils_basic):
             cate=cate, roi_id=None)
         # plot basic statistics.
         def plot_info(axs):
-            self.plot_cluster_info(
-                axs, colors, cluster_id, neu_labels, self.label_names, cate)
+            self.plot_cluster_ca_transient(
+                axs[0], colors, cluster_id, cate)
+            self.plot_cluster_fraction(
+                axs[1], colors, cluster_id)
+            self.plot_cluster_cluster_fraction_in_cate(
+                axs[2], colors, cluster_id, neu_labels, self.label_names)
+            self.plot_cluster_cate_fraction_in_cluster(
+                axs[3], cluster_id, neu_labels, self.label_names)
          # compare respons on fix and jitter.
         def plot_oddball_fix_jitter(axs, oddball):
-            xlim = [-2500, 5000]
+            xlim = [-2500, 4000]
             l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
             # collect data.
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
@@ -875,7 +889,7 @@ class plotter_utils(utils_basic):
             add_legend(ax, colors, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
         # comparison between short and long preceeding interval.
         def plot_oddball_local_isi(axs, oddball):
-            xlim = [-4000, 3000]
+            xlim = [-2500, 4000]
             l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
             # collect data.
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
@@ -931,7 +945,8 @@ class plotter_utils(utils_basic):
                 axs[ci].set_xlim(xlim)
                 axs[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
                 axs[ci].set_xlabel('time since pre oddball stim (ms)')
-                add_legend(axs[ci], [color1,color2], ['fix','jitter'],
+                add_legend(axs[ci], [color1,color2],
+                           ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)],
                            n_trials, n_neurons, self.n_sess, 'upper right')
         # significance test between local isi.
         def plot_sig_test_local_isi(ax, oddball):

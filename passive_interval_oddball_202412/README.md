@@ -98,3 +98,35 @@
 - Added plot_block_adapatation_trial_heatmap.
 - Added get_slope_speeds.
 - Addded plot_slope_dist.
+
+## 2025.03.05
+- Added get_block_transition_idx.
+- Now plot_block_adapatation_trial_heatmap shows trials around transition.
+- Added plot_dist_cluster_fraction_in_cate.
+- Now for random interval trials temporal scaling is computed before binning.
+
+## 2025.03.15
+- Now fraction of clusters in plot_cross_sess_adapt is a line plot.
+- Now by default dff smoothing is set to false.
+- Now trials_around is specified in plot_block_adapatation_trial_heatmap.
+
+## 2025.03.19
+- Added filter_session_config_list for session filtering.
+- Now session filtering is within each visualization file.
+- Now subject configs are in a separate file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

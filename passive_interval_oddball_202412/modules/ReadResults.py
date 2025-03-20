@@ -2,12 +2,22 @@
 
 import gc
 import os
+import copy
 import h5py
 import shutil
 import numpy as np
 import scipy.io as sio
 from tqdm import tqdm
 from scipy.signal import savgol_filter
+
+# filter configuration list for data reading.
+def filter_session_config_list(session_config_list, target_sess):
+    sub_session_config_list = copy.deepcopy(session_config_list)
+    for si in range(len(sub_session_config_list['list_config'])):
+        sub_session_config_list['list_config'][si]['list_session_name'] = {
+            k: v for k, v in session_config_list['list_config'][si]['list_session_name'].items()
+            if v == target_sess}
+    return sub_session_config_list
 
 # create a numpy memmap from an h5py dataset.
 def create_memmap(data, mmap_path):
@@ -217,7 +227,7 @@ def read_subject(list_ops, sig_tag=None, force_label=None, smooth=None):
             list_neural_trials, list_move_offset, list_significance]
 
 # get session results for all subject.
-def read_all(session_config_list, smooth=True):
+def read_all(session_config_list, smooth):
     list_labels = []
     list_masks = []
     list_vol = []

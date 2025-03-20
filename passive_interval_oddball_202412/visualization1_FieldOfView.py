@@ -5,20 +5,24 @@ warnings.filterwarnings('ignore')
 
 import gc
 import os
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
+from modules.ReadResults import read_all
 from plot.fig1_mask import plotter_main_masks
 from plot.fig2_raw_traces import plot_sess_example_traces
 from plot.fig2_raw_traces import plot_ca_transient
 from plot.misc import plot_surgery_window
 from plot.misc import plot_inh_exc_label_pc
 
-def run(
-        session_config_list,
-        list_labels, list_masks, list_vol, list_dff, list_neural_trials, list_move_offset
-        ):
+def run(session_config_list, smooth):
     size_scale = 5
+    n_examples = 3
+    n_sess = len(session_config_list['list_session_name'])
+    n_examples = n_examples if n_examples < n_sess else n_sess
+    [list_labels, list_masks, _, _, list_neural_trials, list_move_offset, _
+     ] = read_all(session_config_list, smooth)
     def plot_window():
         title = 'surgery window'
         print(title)
@@ -122,7 +126,7 @@ def run(
         plt.close(fig)
         return [filename, n_row, n_col, title]
     fig_all = [
-        plot_window(),
+        #plot_window(),
         #plot_masks(),
         #plot_example_traces(),
         #plot_ca(),
