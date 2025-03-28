@@ -48,8 +48,8 @@ class plotter_utils(utils_basic):
         self.list_stim_labels = self.alignment['list_stim_labels']
         self.list_significance = list_significance
         self.bin_win = [450,2550]
-        self.bin_num = 2
-        self.n_clusters = 10
+        self.bin_num = 5
+        self.n_clusters = 5
         self.max_clusters = 10
         self.d_latent = 3
 
@@ -403,7 +403,7 @@ class plotter_utils(utils_basic):
     
     def plot_categorization_features(self, axs):
         bin_num = 3
-        cate = [-1,1]
+        cate = [-1,1,2]
         n_latents = 15
         kernel_time, kernel_all, exp_var_all = self.run_glm(cate)
         model = PCA(n_components=n_latents if n_latents < kernel_all.shape[1] else kernel_all.shape[1])
@@ -770,7 +770,7 @@ class plotter_main(plotter_utils):
         self.label_names = label_names
     
     def random(self, axs_all):
-        for cate, axs in zip([[-1],[1]], axs_all):
+        for cate, axs in zip([[-1],[1],[2]], axs_all):
             label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
             try:
                 

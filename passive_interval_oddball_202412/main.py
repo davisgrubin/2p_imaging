@@ -72,7 +72,7 @@ def run(session_config_list):
     print('======== plotting representative masks ========')
     print('===============================================')
     #fn1 = visualization1_FieldOfView.run(session_config_list, smooth)
-    fn1=[]
+    fn1 = []
 
     print('===============================================')
     print('========= plotting 3331Random results =========')
@@ -107,7 +107,7 @@ def run(session_config_list):
 
 
 if __name__ == "__main__":
-    
+
     from session_configs import session_config_list_YH01VT
     from session_configs import session_config_list_YH02VT
     from session_configs import session_config_list_YH03VT
@@ -123,25 +123,25 @@ if __name__ == "__main__":
     #run(session_config_list_YH02VT)
     #run(session_config_list_YH03VT)
     #run(session_config_list_YH14SC)
-    run(session_config_list_PPC)
+    #run(session_config_list_PPC)
     #run(session_config_list_YH17VT)
     #run(session_config_list_YH18VT)
     #run(session_config_list_YH19VT)
     #run(session_config_list_YH20SC)
-    run(session_config_list_V1)
-    
+    #run(session_config_list_V1)
+
     '''
     session_config_test = {
         'list_session_name' : {
-            'VTYH02_PPC_20250108_3331Random' : 'random',
-            'VTYH02_PPC_20250109_3331Random' : 'random',
-            'VTYH02_PPC_20250111_3331Random' : 'random',
+            #'VTYH02_PPC_20250108_3331Random' : 'random',
+            #'VTYH02_PPC_20250109_3331Random' : 'random',
+            #'VTYH02_PPC_20250111_3331Random' : 'random',
             'VTYH02_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
             'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
             'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH02_PPC_20250225_1451ShortLong' : 'short_long',
-            'VTYH02_PPC_20250226_1415ShortLong' : 'short_long',
-            'VTYH02_PPC_20250228_1451ShortLong' : 'short_long',
+            #'VTYH02_PPC_20250225_1451ShortLong' : 'short_long',
+            #'VTYH02_PPC_20250226_1415ShortLong' : 'short_long',
+            #'VTYH02_PPC_20250228_1451ShortLong' : 'short_long',
             },
         'session_folder' : 'test',
         'sig_tag' : 'all',

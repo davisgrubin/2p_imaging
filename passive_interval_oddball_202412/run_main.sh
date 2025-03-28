@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=ImgProcess
 #SBATCH --account=gts-fnajafi3
-#SBATCH --nodes=4
-#SBATCH --ntasks=4
+#SBATCH --nodes=8
+#SBATCH --ntasks=8
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem-per-cpu=512G
 #SBATCH --time=12:00:00

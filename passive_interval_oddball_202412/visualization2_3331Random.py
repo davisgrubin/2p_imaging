@@ -104,12 +104,12 @@ def run(session_config_list, smooth):
             title = 'neural traces alignment on random interval'
             print(title)
             filename = '3331Random04_random_alignment'
-            n_row = 2
+            n_row = 3
             n_col = 6
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,1]:
+            for s in [0,1,2]:
                 a = [plt.subplot(gs[s+0, i]) for i in range(6)]
                 axs_all.append(a)
             plotter.random(axs_all)
@@ -227,9 +227,9 @@ def run(session_config_list, smooth):
             plot_random_alignment(),
             #plot_clustering(),
             plot_feature_categorization(),
-            plot_sorted_heatmaps(),
+            #plot_sorted_heatmaps(),
             #plot_glm(),
-            plot_cross_sess_adapt(),
+            #plot_cross_sess_adapt(),
             ]
         print('Clearing memory usage')
         del list_labels

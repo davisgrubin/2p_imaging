@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 
+#%% YH01VT
 
-
-#%% subject configs
-
-# YH01VT.
 session_config_YH01VT = {
     'list_session_name' : {
         'VTYH01_PPC_20250106_3331Random' : 'random',
@@ -42,7 +39,8 @@ session_config_YH01VT = {
     'force_label' : None,
     }
 
-# YH02VT.
+#%% YH02VT
+
 session_config_YH02VT = {
     'list_session_name' : {
         'VTYH02_PPC_20250106_3331Random' : 'random',
@@ -81,7 +79,8 @@ session_config_YH02VT = {
     'force_label' : None,
     }
 
-# YH03VT.
+#%% YH03VT
+
 session_config_YH03VT = {
     'list_session_name' : {
         'VTYH03_PPC_20250106_3331Random' : 'random',
@@ -119,59 +118,119 @@ session_config_YH03VT = {
     'force_label' : None,
     }
 
-# YH14SC.
+#%% YH14SC
+
 session_config_YH14SC = {
     'list_session_name' : {
         'YH14SC_PPC_20250305_3331Random' : 'random',
         'YH14SC_PPC_20250306_3331Random' : 'random',
         'YH14SC_PPC_20250318_3331Random' : 'random',
+        'YH14SC_PPC_20250321_3331Random' : 'random',
+        'YH14SC_PPC_20250325_3331Random' : 'random',
+        'YH14SC_PPC_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
+        'YH14SC_PPC_20250327_4131FixJitterOdd' : 'fix_jitter_odd',
         },
     'session_folder' : 'YH14SC',
     'sig_tag' : 'all',
     'force_label' : 2,
     }
-# YH17VT.
+
+#%% YH16SC
+
+session_config_YH16SC = {
+    'list_session_name' : {
+        'YH16SC_PPC_20250321_3331Random' : 'random',
+        'YH16SC_PPC_20250324_3331Random' : 'random',
+        'YH16SC_PPC_20250325_3331Random' : 'random',
+        'YH16SC_PPC_20250327_3331Random' : 'random',
+        },
+    'session_folder' : 'YH16SC',
+    'sig_tag' : 'all',
+    'force_label' : 2,
+    }
+
+#%% YH17VT
+
 session_config_YH17VT = {
     'list_session_name' : {
         'YH17VT_V1_20250311_3331Random' : 'random',
         'YH17VT_V1_20250313_3331Random' : 'random',
         'YH17VT_V1_20250317_3331Random' : 'random',
         'YH17VT_V1_20250318_3331Random' : 'random',
+        'YH17VT_V1_20250319_3331Random' : 'random',
+        'YH17VT_V1_20250321_3331Random' : 'random',
+        'YH17VT_V1_20250325_3331Random' : 'random',
+        'YH17VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
+        'YH17VT_V1_20250327_4131FixJitterOdd' : 'fix_jitter_odd',
         },
     'session_folder' : 'YH17VT',
     'sig_tag' : 'all',
     'force_label' : None,
     }
 
-# YH18VT.
+#%% YH18VT
+
 session_config_YH18VT = {
     'list_session_name' : {
         'YH18VT_V1_20250317_3331Random' : 'random',
+        'YH18VT_V1_20250319_3331Random' : 'random',
+        'YH18VT_V1_20250320_3331Random' : 'random',
+        'YH18VT_V1_20250321_3331Random' : 'random',
+        'YH18VT_V1_20250325_3331Random' : 'random',
+        'YH18VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
+        'YH18VT_V1_20250327_4131FixJitterOdd' : 'fix_jitter_odd',
         },
     'session_folder' : 'YH18VT',
     'sig_tag' : 'all',
     'force_label' : None,
     }
 
-# YH19VT.
+#%% YH19VT
+
 session_config_YH19VT = {
     'list_session_name' : {
         'YH19VT_V1_20250305_3331Random' : 'random',
+        'YH19VT_V1_20250318_3331Random' : 'random',
+        'YH19VT_V1_20250319_3331Random' : 'random',
+        'YH19VT_V1_20250320_3331Random' : 'random',
+        'YH19VT_V1_20250321_3331Random' : 'random',
+        'YH19VT_V1_20250325_3331Random' : 'random',
+        'YH19VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
+        'YH19VT_V1_20250327_4131FixJitterOdd' : 'fix_jitter_odd',
         },
-    'session_folder' : 'YH18VT',
+    'session_folder' : 'YH19VT',
     'sig_tag' : 'all',
     'force_label' : None,
     }
 
-# YH20SC.
+#%% YH20SC
+
 session_config_YH20SC = {
     'list_session_name' : {
         'YH20SC_V1_20250306_3331Random' : 'random',
         'YH20SC_V1_20250307_3331Random' : 'random',
         'YH20SC_V1_20250313_3331Random' : 'random',
         'YH20SC_V1_20250318_3331Random' : 'random',
+        'YH20SC_V1_20250319_3331Random' : 'random',
+        'YH20SC_V1_20250321_3331Random' : 'random',
+        'YH20SC_V1_20250325_3331Random' : 'random',
+        'YH20SC_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
+        'YH20SC_V1_20250327_4131FixJitterOdd' : 'fix_jitter_odd',
         },
     'session_folder' : 'YH20SC',
+    'sig_tag' : 'all',
+    'force_label' : 2,
+    }
+
+#%% YH21SC
+
+session_config_YH21SC = {
+    'list_session_name' : {
+        'YH21SC_V1_20250322_3331Random' : 'random',
+        'YH21SC_V1_20250324_3331Random' : 'random',
+        'YH21SC_V1_20250325_3331Random' : 'random',
+        },
+    'session_folder' : 'YH21SC',
     'sig_tag' : 'all',
     'force_label' : 2,
     }
@@ -234,6 +293,20 @@ session_config_list_YH14SC = {
     'output_filename' : 'YH14SC_PPC_passive.html'
     }
 
+# YH16SC.
+session_config_list_YH16SC = {
+    'list_config': [
+        session_config_YH16SC,
+        ],
+    'label_names' : {
+        '-1':'Exc',
+        '1':'Inh_VIP',
+        '2':'Inh_SST',
+        },
+    'subject_name' : 'YH16SC',
+    'output_filename' : 'YH16SC_PPC_passive.html'
+    }
+
 # all ppc.
 session_config_list_PPC = {
     'list_config': [
@@ -241,6 +314,7 @@ session_config_list_PPC = {
         session_config_YH02VT,
         session_config_YH03VT,
         session_config_YH14SC,
+        session_config_YH16SC,
         ],
     'label_names' : {
         '-1':'Exc',
@@ -267,6 +341,7 @@ session_config_list_YH17VT = {
     'output_filename' : 'YH17VT_V1_passive.html'
     }
 
+# YH18VT.
 session_config_list_YH18VT = {
     'list_config': [
         session_config_YH18VT,
@@ -280,6 +355,7 @@ session_config_list_YH18VT = {
     'output_filename' : 'YH18VT_V1_passive.html'
     }
 
+# YH19VT.
 session_config_list_YH19VT = {
     'list_config': [
         session_config_YH19VT,
@@ -307,6 +383,20 @@ session_config_list_YH20SC = {
     'output_filename' : 'YH20SC_V1_passive.html'
     }
 
+# YH21SC.
+session_config_list_YH21SC = {
+    'list_config': [
+        session_config_YH21SC,
+        ],
+    'label_names' : {
+        '-1':'Exc',
+        '1':'Inh_VIP',
+        '2':'Inh_SST',
+        },
+    'subject_name' : 'YH21SC',
+    'output_filename' : 'YH21SC_V1_passive.html'
+    }
+
 # all v1.
 session_config_list_V1 = {
     'list_config': [
@@ -314,6 +404,7 @@ session_config_list_V1 = {
         session_config_YH18VT,
         session_config_YH19VT,
         session_config_YH20SC,
+        session_config_YH21SC,
         ],
     'label_names' : {
         '-1':'Exc',

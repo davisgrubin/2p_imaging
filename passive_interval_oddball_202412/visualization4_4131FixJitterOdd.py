@@ -165,7 +165,7 @@ def run(session_config_list, smooth):
             title = 'feature categorization analysis'
             print(title)
             filename = '4131FixJitterOdd07_feature_categorization'
-            n_row = 7
+            n_row = 9
             n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
@@ -173,11 +173,17 @@ def run(session_config_list, smooth):
             for s in [0]:
                 a = [[plt.subplot(gs[s+0, i]) for i in [0,1,2,3]]]
                 a+= [[plt.subplot(gs[s+1, i]) for i in [0,1,2,3,4,5,6,7,8,9]]]
-                a+= [[plt.subplot(gs[s+2, i]) for i in [0,1,2,3,4,5,6,7,8,9]]]
-                a+= [[plt.subplot(gs[s+3, i]) for i in [0,1]]]
-                a+= [[plt.subplot(gs[s+4, i]) for i in [0,1,2,3,4,5,6,7,8,9]]]
+                a+= [plt.subplot(gs[s+2, 0])]
+                a+= [[plt.subplot(gs[s+2, i]) for i in [1,2,3,4,5]]]
+                a+= [[plt.subplot(gs[s+3, i]) for i in [0,1,2,3,4,5,6,7,8,9]]]
+                a+= [plt.subplot(gs[s+4, 0])]
+                a+= [[plt.subplot(gs[s+4, i]) for i in [1,2,3,4,5]]]
                 a+= [[plt.subplot(gs[s+5, i]) for i in [0,1,2,3,4,5,6,7,8,9]]]
-                a+= [[plt.subplot(gs[s+6, i]) for i in [0,1]]]
+                a+= [plt.subplot(gs[s+6, 0])]
+                a+= [[plt.subplot(gs[s+6, i]) for i in [1,2,3,4,5]]]
+                a+= [[plt.subplot(gs[s+7, i]) for i in [0,1,2,3,4,5,6,7,8,9]]]
+                a+= [plt.subplot(gs[s+8, 0])]
+                a+= [[plt.subplot(gs[s+8, i]) for i in [1,2,3,4,5]]]
                 axs_all.append(a)
             plotter.categorization_features(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -249,8 +255,8 @@ def run(session_config_list, smooth):
             #plot_oddball_jitter(),
             #plot_clustering(),
             plot_feature_categorization(),
-            plot_sorted_heatmaps_fix_jitter(),
-            plot_sorted_heatmaps_local_isi(),
+            #plot_sorted_heatmaps_fix_jitter(),
+            #plot_sorted_heatmaps_local_isi(),
             #plot_glm(),
         ]
         print('Clearing memory usage')

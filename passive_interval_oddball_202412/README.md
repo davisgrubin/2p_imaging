@@ -115,8 +115,11 @@
 - Now session filtering is within each visualization file.
 - Now subject configs are in a separate file.
 
-
-
+## 2025.03.28
+- Improved memory management in fitting GLM.
+- Completed basic quantification funcitons.
+- Added plot_cluster_metric_box to plot metrics for clusters under conditions.
+- Added plot_oddball_fix_jitter_box.
 
 
 

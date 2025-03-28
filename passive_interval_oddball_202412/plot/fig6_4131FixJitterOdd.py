@@ -10,6 +10,7 @@ from modeling.clustering import get_mean_sem_cluster
 from modeling.clustering import get_bin_mean_sem_cluster
 from modeling.clustering import feature_categorization
 from modeling.generative import run_glm_multi_sess
+from modeling.quantifications import get_all_metrics
 from utils import get_norm01_params
 from utils import get_odd_stim_prepost_idx
 from utils import exclude_odd_stim
@@ -54,7 +55,7 @@ class plotter_utils(utils_basic):
         self.list_significance = list_significance
         self.bin_win = [450,2550]
         self.bin_num = 2
-        self.n_clusters = 7
+        self.n_clusters = 10                                                                             
         self.max_clusters = 10
         self.d_latent = 3
     
@@ -744,16 +745,16 @@ class plotter_utils(utils_basic):
         except: pass
     
     def plot_categorization_features(self, axs):
-        cate = [-1,1]
-        #kernel_time, kernel_all, exp_var_all = self.run_glm(cate)
-        #_, cluster_id = clustering_neu_response_mode(
-        #    kernel_all, self.n_clusters, self.max_clusters)
-        results_all = self.run_features_categorization(cate)
-        cluster_id = results_all['cluster_id'].to_numpy()
+        cate = [-1,1,2]
+        kernel_time, kernel_all, exp_var_all = self.run_glm(cate)
+        _, cluster_id = clustering_neu_response_mode(
+            kernel_all, self.n_clusters, self.max_clusters)
+        #results_all = self.run_features_categorization(cate)
+        #cluster_id = results_all['cluster_id'].to_numpy()
         lbl = ['cluster #'+str(ci) for ci in range(self.n_clusters)]
         colors = get_cmap_color(len(lbl), cmap=self.cluster_cmap)
         # collect data.
-        _, _, [neu_labels, neu_sig], _ = get_neu_trial(
+        [color0, _, _, _], _, [neu_labels, neu_sig], _ = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], [0], [0], None, [0], [0]],
             cate=cate, roi_id=None)
@@ -767,7 +768,7 @@ class plotter_utils(utils_basic):
                 axs[2], colors, cluster_id, neu_labels, self.label_names)
             self.plot_cluster_cate_fraction_in_cluster(
                 axs[3], cluster_id, neu_labels, self.label_names)
-         # compare respons on fix and jitter.
+        # compare respons on fix and jitter.
         def plot_oddball_fix_jitter(axs, oddball):
             xlim = [-2500, 4000]
             l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
@@ -805,33 +806,27 @@ class plotter_utils(utils_basic):
                 upper = np.nanmax(neu_mean) + np.nanmax(neu_sem)
                 lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
                 # find class colors.
-                cs = get_cmap_color(3, base_color=colors[ci])
-                color1, color2 = cs[0], cs[-1]
+                cs = get_cmap_color(7, base_color=colors[ci])
+                cs = [cs[1], cs[5]]
                 # plot stimulus.
                 for i in range(stim_seq_fix.shape[0]):
                     axs[ci].fill_between(
                         stim_seq_fix[i,:],
                         lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                        color=color1, edgecolor='none', alpha=0.25, step='mid')
-                self.plot_vol(
-                    axs[ci], self.alignment['stim_time'],
-                    stim_value_fix.reshape(1,-1), color1, upper, lower)
-                self.plot_vol(
-                    axs[ci], self.alignment['stim_time'],
-                    stim_value_jitter.reshape(1,-1), color2, upper, lower)
+                        color=color0, edgecolor='none', alpha=0.25, step='mid')
                 # plot neural traces.
                 self.plot_mean_sem(
                     axs[ci], neu_time,
-                    mean_fix, sem_fix, color1, None)
+                    mean_fix, sem_fix, cs[0], None)
                 self.plot_mean_sem(
                     axs[ci], neu_time,
-                    mean_jitter, sem_jitter, color2, None)
+                    mean_jitter, sem_jitter, cs[1], None)
                 # adjust layouts.
                 adjust_layout_neu(axs[ci])
                 axs[ci].set_xlim(xlim)
                 axs[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
                 axs[ci].set_xlabel('time since pre oddball stim (ms)')
-                add_legend(axs[ci], [color1,color2], ['fix','jitter'],
+                add_legend(axs[ci], cs, ['fix','jitter'],
                            n_trials, n_neurons, self.n_sess, 'upper right')
         # significance test between fix and jitter.
         def plot_sig_test_fix_jitter(ax, oddball):
@@ -887,6 +882,35 @@ class plotter_utils(utils_basic):
             ax.set_xticklabels(lbl, rotation='vertical')
             ax.set_xlim([-0.5,len(lbl)+2])
             add_legend(ax, colors, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
+        # quantification comparison between fix and jitter.
+        def plot_oddball_fix_jitter_box(axs, oddball):
+            list_target_metric = ['response_latency', 'peak_amp', 'ramp_slope', 'decay_rate']
+            time_eval = 500
+            # collect data.
+            [_, [neu_seq_fix, _, stim_seq_fix, stim_value_fix],
+             [neu_labels, neu_sig], [n_trials_fix, n_neurons]] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[oddball] for l in self.list_odd_idx],
+                trial_param=[None, None, [0], None, [0], [0]],
+                cate=cate, roi_id=None)
+            [_, [neu_seq_jitter, _, stim_seq_jitter, stim_value_jitter],
+             [neu_labels, neu_sig], [n_trials_jitter, n_neurons]] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[oddball] for l in self.list_odd_idx],
+                trial_param=[None, None, [1], None, [0], [0]],
+                cate=cate, roi_id=None)
+            # find time range to evaluate.
+            c_idx = int(stim_seq_fix.shape[0]/2)
+            win_eval = [stim_seq_fix[c_idx, 1], stim_seq_fix[c_idx+1, 0] + time_eval]
+            # get quantification results.
+            list_metrics = get_all_metrics(
+                [neu_seq_fix, neu_seq_jitter], self.alignment['neu_time'], win_eval)
+            # plot results for each class.
+            for mi in range(len(list_target_metric)):
+                m = [lm[list_target_metric[mi]] for lm in list_metrics]
+                self.plot_cluster_metric_box(
+                    axs[mi], m, list_target_metric[mi], cluster_id, colors)
+            
         # comparison between short and long preceeding interval.
         def plot_oddball_local_isi(axs, oddball):
             xlim = [-2500, 4000]
@@ -995,24 +1019,58 @@ class plotter_utils(utils_basic):
             ax.set_xticklabels(lbl, rotation='vertical')
             ax.set_xlim([-0.5,len(lbl)+2])
             add_legend(ax, colors, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
+        # quantification comparison between local isi.
+        def plot_oddball_local_isi_box(axs, oddball):
+            list_target_metric = ['response_latency', 'peak_amp', 'ramp_slope', 'decay_rate']
+            time_eval = 500
+            # collect data.
+            _, [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[oddball] for l in self.list_odd_idx],
+                trial_param=[None, None, [1], None, [0], [0]],
+                mean_sem=False,
+                cate=cate, roi_id=None)
+            # bin data based on isi.
+            [_, _, _, bin_neu_seq, _, _, bin_stim_seq, _] = get_isi_bin_neu(
+                neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
+            # find time range to evaluate.
+            c_idx = int(bin_stim_seq.shape[1]/2)
+            win_eval = [bin_stim_seq[0,c_idx, 1], bin_stim_seq[0,c_idx+1, 0] + time_eval]
+            # get quantification results.
+            list_metrics = get_all_metrics(
+                bin_neu_seq, self.alignment['neu_time'], win_eval)
+            # plot results for each class.
+            for mi in range(len(list_target_metric)):
+                m = [lm[list_target_metric[mi]] for lm in list_metrics]
+                self.plot_cluster_metric_box(
+                    axs[mi], m, list_target_metric[mi], cluster_id, colors)
+                
         # plot all.
         try: plot_info(axs[0])
         except: pass
         try: plot_oddball_fix_jitter(axs[1], 0)
         except: pass
-        try: plot_oddball_fix_jitter(axs[2], 1)
+        try: plot_sig_test_fix_jitter(axs[2], 0)
         except: pass
-        try: plot_sig_test_fix_jitter(axs[3][0], 0)
+        try: plot_oddball_fix_jitter_box(axs[3], 0)
         except: pass
-        try: plot_sig_test_fix_jitter(axs[3][1], 1)
+        try: plot_oddball_fix_jitter(axs[4], 1)
         except: pass
-        try: plot_oddball_local_isi(axs[4], 0)
+        try: plot_sig_test_fix_jitter(axs[5], 1)
         except: pass
-        try: plot_oddball_local_isi(axs[5], 1)
+        try: plot_oddball_fix_jitter_box(axs[6], 1)
         except: pass
-        try: plot_sig_test_local_isi(axs[6][0], 0)
+        try: plot_oddball_local_isi(axs[7], 0)
         except: pass
-        try: plot_sig_test_local_isi(axs[6][1], 1)
+        try: plot_sig_test_local_isi(axs[8], 0)
+        except: pass
+        try: plot_oddball_local_isi_box(axs[9], 0)
+        except: pass
+        try: plot_oddball_local_isi(axs[10], 1)
+        except: pass
+        try: plot_sig_test_local_isi(axs[11], 1)
+        except: pass
+        try: plot_oddball_local_isi_box(axs[12], 1)
         except: pass
     
     def plot_sorted_heatmaps_fix_jitter(self, axs, norm_mode, oddball):

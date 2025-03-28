@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import gc
 import numpy as np
 from tqdm import tqdm
 from scipy.interpolate import interp1d
@@ -52,6 +53,8 @@ def fit_ridge_regression(factor_target, l_idx, r_idx, dff_neu):
     model.fit(factor_design_matrix, dff_neu)
     kernel_fit = np.flip(model.coef_)[1:-1]
     dff_neu_fit = get_factor_dff_neu(factor_target, kernel_fit, l_idx, r_idx)
+    del factor_design_matrix
+    gc.collect()
     return kernel_fit, dff_neu_fit
 
 # compute explain variance.
@@ -88,7 +91,7 @@ def run_glm_multi_sess(
         exp_var_sess = np.zeros((list_dff[si].shape[0]))
         # fit glm kernel for each neuron in a session.
         for ni in tqdm(range(list_dff[si].shape[0])):
-            dff_neu = list_dff[si][ni,stim_l_idx:stim_r_idx]
+            dff_neu = list_dff[si][ni,stim_l_idx:stim_r_idx].copy()
             # fit full model.
             target_labels = [2,3,4,5,-2,-3,-4,-5,-1]
             factor_target = filter_stimulus(factor_in, stim_label, target_labels)
@@ -96,6 +99,9 @@ def run_glm_multi_sess(
                 factor_target, l_idx, r_idx, dff_neu)
             kernel_sess[ni,:] = kernel_fit
             exp_var_sess[ni] = get_exp_var(dff_neu, dff_neu_fit)
+            del dff_neu
+            del dff_neu_fit
+            gc.collect()
         # collect session results.
         kernel_all.append(kernel_sess)
         exp_var_all.append(exp_var_sess)

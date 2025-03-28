@@ -126,8 +126,8 @@ def run(session_config_list, smooth):
         plt.close(fig)
         return [filename, n_row, n_col, title]
     fig_all = [
-        #plot_window(),
-        #plot_masks(),
+        plot_window(),
+        plot_masks(),
         #plot_example_traces(),
         #plot_ca(),
         #plot_misc(),

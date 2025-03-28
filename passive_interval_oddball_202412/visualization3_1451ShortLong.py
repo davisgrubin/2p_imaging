@@ -273,8 +273,8 @@ def run(session_config_list, smooth):
             #plot_block(),
             #plot_clustering(),
             plot_feature_categorization(),
-            #plot_sorted_heatmaps_standard(),
-            #plot_temporal_scaling(),
+            plot_sorted_heatmaps_standard(),
+            plot_temporal_scaling(),
             #plot_glm(),
             ]
         print('Clearing memory usage')

@@ -1068,7 +1068,10 @@ class utils_basic:
         ax.set_title('fraction of cell-type for each cluster')
         add_legend(ax, cate_color, lbl, None, None, None, 'upper right')
 
-    def plot_cluster_mean_sem(self, ax, neu_mean, neu_sem, neu_time, norm_params, stim_seq, c_stim, c_neu, xlim):
+    def plot_cluster_mean_sem(
+            self, ax, neu_mean, neu_sem, neu_time,
+            norm_params, stim_seq, c_stim, c_neu, xlim
+            ):
         l_nan_margin = 5
         r_nan_margin = 5
         len_scale_x = 500
@@ -1109,7 +1112,32 @@ class utils_basic:
             va='top', ha='center')
         ax.axis('off')
         ax.set_ylim([-0.2, neu_mean.shape[0]+0.1])
-
+    
+    def plot_cluster_metric_box(self, ax, list_metrics, target_metric, cluster_id, colors):
+        offset = 0.1
+        n_clusters = len(np.unique(cluster_id))
+        lbl = ['cluster #'+str(i) for i in range(n_clusters)]
+        # plot results for each class.
+        for ci in range(len(lbl)):
+            cs = get_cmap_color(len(list_metrics)+2, base_color=colors[ci])[2:]
+            for mi in range(len(list_metrics)):
+                m, s = get_mean_sem(list_metrics[mi][cluster_id==ci].reshape(-1,1))
+                ax.errorbar(
+                    ci+offset*mi, m, s,
+                    color=cs[mi],
+                    capsize=2, marker='o', linestyle='none',
+                    markeredgecolor='white', markeredgewidth=0.1)
+        # adjust layout.
+        ax.tick_params(tick1On=False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.set_xlabel('cluster id')
+        ax.set_ylabel('{} (mean$\pm$sem)'.format(target_metric))
+        ax.set_xticks(np.arange(len(lbl)))
+        ax.set_xticklabels(lbl, rotation='vertical')
+        ax.set_xlim([-0.5,len(lbl)+2])
+        add_legend(ax, colors, lbl, None, None, None, 'upper right')
+        
     def plot_cluster_interval_norm(
             self, ax, cluster_id,
             bin_neu_seq, bin_stim_seq,
