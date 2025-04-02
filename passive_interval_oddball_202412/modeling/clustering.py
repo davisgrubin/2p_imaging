@@ -19,26 +19,29 @@ def clustering_neu_response_mode(x_in, n_clusters, max_clusters):
     x_in -= np.nanmean(x_in, axis=1, keepdims=True)
     # cluster number must be less than sample number.
     n_clusters = n_clusters if n_clusters < x_in.shape[0] else x_in.shape[0]
-    max_clusters = max_clusters if max_clusters < x_in.shape[0] else x_in.shape[0]
     # compute evaluation metrics.
-    silhouette_scores = []
-    calinski_harabasz_scores = []
-    davies_bouldin_scores = []
-    inertia_values = []
-    for n in tqdm(range(2, max_clusters+1)):
-        model = KMeans(n_clusters=n)
-        cluster_id = model.fit_predict(x_in)
-        silhouette_scores.append(silhouette_score(x_in, cluster_id))
-        calinski_harabasz_scores.append(calinski_harabasz_score(x_in, cluster_id))
-        davies_bouldin_scores.append(davies_bouldin_score(x_in, cluster_id))
-        inertia_values.append(model.inertia_)
-    metrics = {
-        'n_clusters': np.arange(2,max_clusters+1),
-        'silhouette': norm01(np.array(silhouette_scores)),
-        'calinski_harabasz': norm01(np.array(calinski_harabasz_scores)),
-        'davies_bouldin': norm01(np.array(davies_bouldin_scores)),
-        'inertia': norm01(np.array(inertia_values)),
-        }
+    if max_clusters != None:
+        max_clusters = max_clusters if max_clusters < x_in.shape[0] else x_in.shape[0]
+        silhouette_scores = []
+        calinski_harabasz_scores = []
+        davies_bouldin_scores = []
+        inertia_values = []
+        for n in tqdm(range(2, max_clusters+1)):
+            model = KMeans(n_clusters=n)
+            cluster_id = model.fit_predict(x_in)
+            silhouette_scores.append(silhouette_score(x_in, cluster_id))
+            calinski_harabasz_scores.append(calinski_harabasz_score(x_in, cluster_id))
+            davies_bouldin_scores.append(davies_bouldin_score(x_in, cluster_id))
+            inertia_values.append(model.inertia_)
+        metrics = {
+            'n_clusters': np.arange(2,max_clusters+1),
+            'silhouette': norm01(np.array(silhouette_scores)),
+            'calinski_harabasz': norm01(np.array(calinski_harabasz_scores)),
+            'davies_bouldin': norm01(np.array(davies_bouldin_scores)),
+            'inertia': norm01(np.array(inertia_values)),
+            }
+    else:
+        metrics = None
     # run clustering model.
     model = KMeans(n_clusters)
     cluster_id = model.fit_predict(x_in)

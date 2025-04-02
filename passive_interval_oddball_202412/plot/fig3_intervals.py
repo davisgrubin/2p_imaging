@@ -213,7 +213,7 @@ def plot_stim_label(ax, list_neural_trials):
     ax.spines['left'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    ax.yaxis.grid(True, linewidth=0.05)
+    ax.yaxis.grid(True, linewidth=0.25)
     ax.set_xlabel('trial #')
     ax.set_ylabel('interval (ms)')
     ax.set_ylim(isi_range)

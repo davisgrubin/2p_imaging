@@ -112,23 +112,23 @@ if __name__ == "__main__":
     from session_configs import session_config_list_YH02VT
     from session_configs import session_config_list_YH03VT
     from session_configs import session_config_list_YH14SC
-    from session_configs import session_config_list_PPC
     from session_configs import session_config_list_YH17VT
     from session_configs import session_config_list_YH18VT
     from session_configs import session_config_list_YH19VT
     from session_configs import session_config_list_YH20SC
+    from session_configs import session_config_list_PPC
     from session_configs import session_config_list_V1
 
-    #run(session_config_list_YH01VT)
-    #run(session_config_list_YH02VT)
-    #run(session_config_list_YH03VT)
-    #run(session_config_list_YH14SC)
-    #run(session_config_list_PPC)
-    #run(session_config_list_YH17VT)
-    #run(session_config_list_YH18VT)
-    #run(session_config_list_YH19VT)
-    #run(session_config_list_YH20SC)
-    #run(session_config_list_V1)
+    run(session_config_list_YH01VT)
+    run(session_config_list_YH02VT)
+    run(session_config_list_YH03VT)
+    run(session_config_list_YH14SC)
+    run(session_config_list_YH17VT)
+    run(session_config_list_YH18VT)
+    run(session_config_list_YH19VT)
+    run(session_config_list_YH20SC)
+    run(session_config_list_PPC)
+    run(session_config_list_V1)
 
     '''
     session_config_test = {
@@ -136,12 +136,12 @@ if __name__ == "__main__":
             #'VTYH02_PPC_20250108_3331Random' : 'random',
             #'VTYH02_PPC_20250109_3331Random' : 'random',
             #'VTYH02_PPC_20250111_3331Random' : 'random',
-            'VTYH02_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH02_PPC_20250225_1451ShortLong' : 'short_long',
-            #'VTYH02_PPC_20250226_1415ShortLong' : 'short_long',
-            #'VTYH02_PPC_20250228_1451ShortLong' : 'short_long',
+            #'VTYH02_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
+            'VTYH02_PPC_20250225_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250226_1415ShortLong' : 'short_long',
+            'VTYH02_PPC_20250228_1451ShortLong' : 'short_long',
             },
         'session_folder' : 'test',
         'sig_tag' : 'all',
@@ -156,8 +156,8 @@ if __name__ == "__main__":
             '1':'Inh_VIP',
             '2':'Inh_SST',
             },
-        'subject_name' : 'test',
-        'output_filename' : 'test_PPC_passive.html'
+        'subject_name' : 'ppc_test',
+        'output_filename' : 'test_passive.html'
         }
     #run(session_config_list_test)
 
@@ -169,7 +169,7 @@ if __name__ == "__main__":
      ] = read_all(session_config_list, smooth=False)
 
     label_names = {'-1':'Exc', '1':'Inh_VIP', '2':'Inh_SST'}
-    cate = [-1,1]
+    cate = [-1,1,2]
     roi_id = None
     norm_mode='none'
     import matplotlib.pyplot as plt

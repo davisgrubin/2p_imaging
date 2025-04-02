@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import functools
+import tracemalloc
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -10,6 +12,18 @@ from sklearn.manifold import TSNE
 from modeling.clustering import get_mean_sem_cluster
 
 #%% general data processing
+
+# monitor memory usage.
+def show_memory_usage(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        tracemalloc.start()
+        result = func(*args, **kwargs)
+        current, peak = tracemalloc.get_traced_memory()
+        print(f"{func.__name__} - Current: {current/1024/1024:.6f} MB, Peak: {peak/1024/1024:.6f} MB")
+        tracemalloc.stop()
+        return result
+    return wrapper
 
 # rescale voltage recordings.
 def rescale(data, upper, lower):
@@ -71,15 +85,6 @@ def get_mean_sem(data, zero_start=False):
     count = np.nansum(~np.isnan(data.reshape(-1, data.shape[-1])), axis=0)
     s = std / np.sqrt(count)
     return m, s
-
-# compute increasing and decreasing speed based on derivative.
-def get_slope_speeds(data):
-    diffs = np.diff(data)
-    inc_diffs = diffs[diffs > 0]
-    dec_diffs = -diffs[diffs < 0]
-    inc_speed = np.nanmean(inc_diffs) if len(inc_diffs) > 0 else 0
-    dec_speed = -np.nanmean(dec_diffs) if len(dec_diffs) > 0 else 0
-    return inc_speed, dec_speed
 
 #%% retreating neural data
 
@@ -1136,6 +1141,25 @@ class utils_basic:
         ax.set_xticks(np.arange(len(lbl)))
         ax.set_xticklabels(lbl, rotation='vertical')
         ax.set_xlim([-0.5,len(lbl)+2])
+        add_legend(ax, colors, lbl, None, None, None, 'upper right')
+    
+    def plot_cluster_metric_line(self, ax, metrics, neu_time, target_metric, cluster_id, colors):
+        offset = 0.01
+        n_clusters = len(np.unique(cluster_id))
+        lbl = ['cluster #'+str(i) for i in range(n_clusters)]
+        # plot results for each class.
+        for ci in range(len(lbl)):
+            m, s = get_mean_sem(metrics[cluster_id==ci,:])
+            ax.errorbar(
+                neu_time+ci*offset, m, s,
+                color=colors[ci],
+                capsize=2, marker='o', linestyle='none',
+                markeredgecolor='white', markeredgewidth=0.1)
+        # adjust layout.
+        ax.tick_params(tick1On=False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.set_ylabel('{} (mean$\pm$sem)'.format(target_metric))
         add_legend(ax, colors, lbl, None, None, None, 'upper right')
         
     def plot_cluster_interval_norm(

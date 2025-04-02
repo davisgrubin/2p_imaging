@@ -108,7 +108,7 @@ def run_get_stim_response(
         list_neural_trials,
         l_frames, r_frames,
         expected='None',
-        n_stim=10,
+        n_stim=5,
         ):
     # run alignment for each session.
     list_stim_labels = []

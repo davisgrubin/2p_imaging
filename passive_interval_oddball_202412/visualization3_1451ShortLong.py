@@ -51,7 +51,6 @@ def run(session_config_list, smooth):
             plot_significance(sign_ax, list_significance, list_labels)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_intervals():
@@ -80,7 +79,6 @@ def run(session_config_list, smooth):
             plot_random_isi_distribution(isi_ax04, list_neural_trials)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_trial():
@@ -97,7 +95,6 @@ def run(session_config_list, smooth):
             plot_stim_label(trial_ax02, list_neural_trials)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_standard():
@@ -116,7 +113,6 @@ def run(session_config_list, smooth):
             plotter.standard(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_oddball():
@@ -136,7 +132,6 @@ def run(session_config_list, smooth):
             plotter.oddball(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_block():
@@ -155,7 +150,6 @@ def run(session_config_list, smooth):
             plotter.block(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_clustering():
@@ -180,33 +174,36 @@ def run(session_config_list, smooth):
             plotter.cluster(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_feature_categorization():
             title = 'feature categorization analysis'
             print(title)
             filename = '1451ShortLong08_feature_categorization'
-            n_row = 9
-            n_col = 10
+            n_row = 15
+            n_col = 20
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in [0]:
                 a = [[plt.subplot(gs[s+0, i]) for i in [0,1,2,3]]]
-                a+= [[plt.subplot(gs[s+1, i]) for i in [0,1,2,3,4,5,6,7,8,9]]]
-                a+= [[plt.subplot(gs[s+2, i]) for i in [0,1,2,3,4,5,6,7,8,9]]]
-                a+= [[plt.subplot(gs[s+3, i]) for i in [0,1,2,3,4,5,6,7,8,9]]]
-                a+= [[plt.subplot(gs[s+4, i]) for i in [0,1,2,3,4,5,6,7,8,9]]]
-                a+= [[plt.subplot(gs[s+5, i]) for i in [0,1,2,3,4,5,6,7,8,9]]]
-                a+= [[plt.subplot(gs[s+6, i]) for i in [0,1,2,3,4,5,6,7,8,9]]]
-                a+= [[plt.subplot(gs[s+7, i]) for i in [0,1,2,3,4,5,6,7,8,9]]]
-                a+= [plt.subplot(gs[s+8, 0])]
+                a+= [[plt.subplot(gs[s+1, i]) for i in range(20)]]
+                a+= [[plt.subplot(gs[s+2, i:i+2]) for i in [0,2,4,6,8]]]
+                a+= [[plt.subplot(gs[s+3, i]) for i in range(20)]]
+                a+= [[plt.subplot(gs[s+4, i:i+2]) for i in [0,2,4,6,8]]]
+                a+= [[plt.subplot(gs[s+5, i]) for i in range(20)]]
+                a+= [[plt.subplot(gs[s+6, i:i+2]) for i in [0,2,4,6,8]]]
+                a+= [[plt.subplot(gs[s+7, i]) for i in range(20)]]
+                a+= [[plt.subplot(gs[s+8, i:i+2]) for i in [0,2,4,6,8]]]
+                a+= [[plt.subplot(gs[s+9, i]) for i in range(20)]]
+                a+= [[plt.subplot(gs[s+10, i]) for i in range(20)]]
+                a+= [[plt.subplot(gs[s+11, i]) for i in range(20)]]
+                a+= [[plt.subplot(gs[s+12, i]) for i in range(5)]]
+                a+= [[plt.subplot(gs[s+13, i]) for i in range(5)]]
                 axs_all.append(a)
             plotter.categorization_features(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_sorted_heatmaps_standard():
@@ -225,7 +222,6 @@ def run(session_config_list, smooth):
             plotter.sorted_heatmaps_standard(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_temporal_scaling():
@@ -243,7 +239,6 @@ def run(session_config_list, smooth):
             plotter.temporal_scaling(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_glm():
@@ -261,7 +256,6 @@ def run(session_config_list, smooth):
             plotter.glm(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-            fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         fig_all = [
@@ -273,8 +267,8 @@ def run(session_config_list, smooth):
             #plot_block(),
             #plot_clustering(),
             plot_feature_categorization(),
-            plot_sorted_heatmaps_standard(),
-            plot_temporal_scaling(),
+            #plot_sorted_heatmaps_standard(),
+            #plot_temporal_scaling(),
             #plot_glm(),
             ]
         print('Clearing memory usage')

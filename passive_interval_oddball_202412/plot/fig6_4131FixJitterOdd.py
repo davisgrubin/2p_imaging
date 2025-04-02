@@ -11,6 +11,7 @@ from modeling.clustering import get_bin_mean_sem_cluster
 from modeling.clustering import feature_categorization
 from modeling.generative import run_glm_multi_sess
 from modeling.quantifications import get_all_metrics
+from utils import show_memory_usage
 from utils import get_norm01_params
 from utils import get_odd_stim_prepost_idx
 from utils import exclude_odd_stim
@@ -747,8 +748,7 @@ class plotter_utils(utils_basic):
     def plot_categorization_features(self, axs):
         cate = [-1,1,2]
         kernel_time, kernel_all, exp_var_all = self.run_glm(cate)
-        _, cluster_id = clustering_neu_response_mode(
-            kernel_all, self.n_clusters, self.max_clusters)
+        _, cluster_id = clustering_neu_response_mode(kernel_all, self.n_clusters, None)
         #results_all = self.run_features_categorization(cate)
         #cluster_id = results_all['cluster_id'].to_numpy()
         lbl = ['cluster #'+str(ci) for ci in range(self.n_clusters)]
@@ -760,8 +760,8 @@ class plotter_utils(utils_basic):
             cate=cate, roi_id=None)
         # plot basic statistics.
         def plot_info(axs):
-            self.plot_cluster_ca_transient(
-                axs[0], colors, cluster_id, cate)
+            #self.plot_cluster_ca_transient(
+            #    axs[0], colors, cluster_id, cate)
             self.plot_cluster_fraction(
                 axs[1], colors, cluster_id)
             self.plot_cluster_cluster_fraction_in_cate(
@@ -901,10 +901,11 @@ class plotter_utils(utils_basic):
                 cate=cate, roi_id=None)
             # find time range to evaluate.
             c_idx = int(stim_seq_fix.shape[0]/2)
-            win_eval = [stim_seq_fix[c_idx, 1], stim_seq_fix[c_idx+1, 0] + time_eval]
+            list_win_eval = [[stim_seq_fix[c_idx, 1], stim_seq_fix[c_idx+1, 0] + time_eval],
+                             [stim_seq_fix[c_idx, 1], stim_seq_fix[c_idx+1, 0] + time_eval]]
             # get quantification results.
             list_metrics = get_all_metrics(
-                [neu_seq_fix, neu_seq_jitter], self.alignment['neu_time'], win_eval)
+                [neu_seq_fix, neu_seq_jitter], self.alignment['neu_time'], list_win_eval)
             # plot results for each class.
             for mi in range(len(list_target_metric)):
                 m = [lm[list_target_metric[mi]] for lm in list_metrics]
@@ -1044,7 +1045,6 @@ class plotter_utils(utils_basic):
                 m = [lm[list_target_metric[mi]] for lm in list_metrics]
                 self.plot_cluster_metric_box(
                     axs[mi], m, list_target_metric[mi], cluster_id, colors)
-                
         # plot all.
         try: plot_info(axs[0])
         except: pass
@@ -1205,8 +1205,7 @@ class plotter_utils(utils_basic):
     
     def plot_glm(self, axs, cate):
         kernel_time, kernel_all, exp_var_all = self.run_glm(cate)
-        _, cluster_id = clustering_neu_response_mode(
-            kernel_all, self.n_clusters, self.max_clusters)
+        _, cluster_id = clustering_neu_response_mode(kernel_all, self.n_clusters, None)
         # collect data.
         colors = get_cmap_color(self.n_clusters, cmap=self.cluster_cmap)
         [[color0, _, _, _],

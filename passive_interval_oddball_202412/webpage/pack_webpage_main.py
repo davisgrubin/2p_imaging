@@ -19,12 +19,11 @@ def run(session_config, fn1, fn2, fn3, fn4):
                   'r', encoding="utf-8") as svg_file:
             svg_str = svg_file.read()
         svg_file.close()
-        # read pdf content and encode in base64.
-        with open(os.path.join('results', session_config['subject_name']+'_temp', filename[0]+'.pdf'),
-                  'rb') as pdf_file:
-            pdf_bytes = pdf_file.read()
-        pdf_b64 = base64.b64encode(pdf_bytes).decode('utf-8')
-        pdf_file.close()
+        with open(os.path.join('results', session_config['subject_name']+'_temp', filename[0]+'.svg'),
+                  'rb') as svg_file:
+            svg_bytes = svg_file.read()
+            svg_b64 = base64.b64encode(svg_bytes).decode('utf-8')
+        svg_file.close()
         # read discription in txt file.
         try:
             with open(os.path.join('results', 'notes', filename[0]+'.txt'),
@@ -33,7 +32,7 @@ def run(session_config, fn1, fn2, fn3, fn4):
             text_file.close()
         except:
             discription = ''
-        # create a figure block for a pdf file.
+        # create a figure block for a svg file.
         html_block = f"""
         <div class="figure-block">
             <div class="left-panel">
@@ -43,8 +42,8 @@ def run(session_config, fn1, fn2, fn3, fn4):
             </div>
                 <div class="right-panel">
                     <div class="figure-title">
-                        <a href="data:application/pdf;base64,{pdf_b64}"
-                            download="{os.path.basename(filename[0]+'.pdf')}"
+                        <a href="data:application/svg;base64,{svg_b64}"
+                            download="{os.path.basename(filename[0]+'.svg')}"
                             class="download-title"> {filename[3]}
                         </a>
                     </div>
@@ -57,7 +56,6 @@ def run(session_config, fn1, fn2, fn3, fn4):
         """
         # clear space.
         os.remove(os.path.join('results', session_config['subject_name']+'_temp', filename[0]+'.svg'))
-        os.remove(os.path.join('results', session_config['subject_name']+'_temp', filename[0]+'.pdf'))
         return html_block
     
     # create html code for a page given list of figure filenames.

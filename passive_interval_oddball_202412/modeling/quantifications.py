@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import pandas as pd
-
 from modeling.utils import get_frame_idx_from_time
-from modeling.utils import get_mean_sem_win
 
 def get_response_onset(nsm, neu_time, win_eval):
     win_base = [-500,0]
@@ -196,7 +193,6 @@ def get_inh_depth(nsm, neu_time, win_eval):
         if len(stim_resp) <= 3:
             inh_depth = np.nan
         else:
-            min_idx = stim_onset_idx + int(np.argmin(stim_resp))
             min_val = np.min(stim_resp)
             pre_start, _ = get_frame_idx_from_time(neu_time, neu_time[stim_onset_idx], -500, 0)
             pre_baseline = nsm[pre_start:stim_onset_idx]
@@ -214,7 +210,6 @@ def get_recovery_amp(nsm, neu_time, win_eval):
         if len(stim_resp) <= 3:
             recovery_amp = np.nan
         else:
-            min_idx = stim_onset_idx + int(np.argmin(stim_resp))
             min_val = np.min(stim_resp)
             recovery_amp = nsm[response_onset_idx] - min_val
     return recovery_amp
@@ -347,30 +342,30 @@ def get_ramp_slope(nsm, neu_time, win_eval):
     return slope_val
 
 # compute all metrics for list of all traces.
-def get_all_metrics(list_neu_seq_mean, neu_time, win_eval):
+def get_all_metrics(list_neu_seq_mean, neu_time, list_win_eval):
     list_metrics = []
-    for neu_seq_mean in list_neu_seq_mean:
+    for ni in range(len(list_neu_seq_mean)):
         m = {
-            'response_latency'   : np.apply_along_axis(get_response_latency,   1, neu_seq_mean, neu_time, win_eval),
-            'peak_time'          : np.apply_along_axis(get_peak_time,          1, neu_seq_mean, neu_time, win_eval),
-            'peak_amp'           : np.apply_along_axis(get_peak_amp,           1, neu_seq_mean, neu_time, win_eval),
-            'pre_stim_peak_time' : np.apply_along_axis(get_pre_stim_peak_time, 1, neu_seq_mean, neu_time, win_eval),
-            'pre_stim_peak_amp'  : np.apply_along_axis(get_pre_stim_peak_amp,  1, neu_seq_mean, neu_time, win_eval),
-            'rise_slope'         : np.apply_along_axis(get_rise_slope,         1, neu_seq_mean, neu_time, win_eval),
-            'decay_rate'         : np.apply_along_axis(get_decay_rate,         1, neu_seq_mean, neu_time, win_eval),
-            'final_amp'          : np.apply_along_axis(get_final_amp,          1, neu_seq_mean, neu_time, win_eval),
-            'amp_reduction'      : np.apply_along_axis(get_amp_reduction,      1, neu_seq_mean, neu_time, win_eval),
-            'inh_depth'          : np.apply_along_axis(get_inh_depth,          1, neu_seq_mean, neu_time, win_eval),
-            'recovery_amp'       : np.apply_along_axis(get_recovery_amp,       1, neu_seq_mean, neu_time, win_eval),
-            'inh_latency'        : np.apply_along_axis(get_inh_latency,        1, neu_seq_mean, neu_time, win_eval),
-            'recovery_latency'   : np.apply_along_axis(get_recovery_latency,   1, neu_seq_mean, neu_time, win_eval),
-            'min_value'          : np.apply_along_axis(get_min_value,          1, neu_seq_mean, neu_time, win_eval),
-            'min_time'           : np.apply_along_axis(get_min_time,           1, neu_seq_mean, neu_time, win_eval),
-            'ramp_r2'            : np.apply_along_axis(get_ramp_r2,            1, neu_seq_mean, neu_time, win_eval),
-            'ramp_relative_dev'  : np.apply_along_axis(get_ramp_relative_dev,  1, neu_seq_mean, neu_time, win_eval),
-            'ramp_amp_change'    : np.apply_along_axis(get_ramp_amp_change,    1, neu_seq_mean, neu_time, win_eval),
-            'ramp_mono'          : np.apply_along_axis(get_ramp_mono,          1, neu_seq_mean, neu_time, win_eval),
-            'ramp_slope'         : np.apply_along_axis(get_ramp_slope,         1, neu_seq_mean, neu_time, win_eval)
+            'response_latency'   : np.apply_along_axis(get_response_latency,   1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'peak_time'          : np.apply_along_axis(get_peak_time,          1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'peak_amp'           : np.apply_along_axis(get_peak_amp,           1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'pre_stim_peak_time' : np.apply_along_axis(get_pre_stim_peak_time, 1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'pre_stim_peak_amp'  : np.apply_along_axis(get_pre_stim_peak_amp,  1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'rise_slope'         : np.apply_along_axis(get_rise_slope,         1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'decay_rate'         : np.apply_along_axis(get_decay_rate,         1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'final_amp'          : np.apply_along_axis(get_final_amp,          1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'amp_reduction'      : np.apply_along_axis(get_amp_reduction,      1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'inh_depth'          : np.apply_along_axis(get_inh_depth,          1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'recovery_amp'       : np.apply_along_axis(get_recovery_amp,       1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'inh_latency'        : np.apply_along_axis(get_inh_latency,        1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'recovery_latency'   : np.apply_along_axis(get_recovery_latency,   1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'min_value'          : np.apply_along_axis(get_min_value,          1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'min_time'           : np.apply_along_axis(get_min_time,           1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'ramp_r2'            : np.apply_along_axis(get_ramp_r2,            1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'ramp_relative_dev'  : np.apply_along_axis(get_ramp_relative_dev,  1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'ramp_amp_change'    : np.apply_along_axis(get_ramp_amp_change,    1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'ramp_mono'          : np.apply_along_axis(get_ramp_mono,          1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni]),
+            'ramp_slope'         : np.apply_along_axis(get_ramp_slope,         1, list_neu_seq_mean[ni], neu_time, list_win_eval[ni])
             }
         list_metrics.append(m)
     return list_metrics

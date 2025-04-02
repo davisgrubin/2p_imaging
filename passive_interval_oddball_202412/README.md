@@ -120,11 +120,17 @@
 - Completed basic quantification funcitons.
 - Added plot_cluster_metric_box to plot metrics for clusters under conditions.
 - Added plot_oddball_fix_jitter_box.
+- Now get_all_metrics receives list_win_eval for different evaluation windows.
+- Added plot_standard_box.
+- Added plot_temporal_scaling_box.
+- Deleted get_slope_speeds.
 
-
-
-
-
+## 2025.04.02
+- Now clustering_neu_response_mode has option not to collect clustering metrics.
+- Improved GLM fitting efficiency with analytical solution.
+- Removed all pdf file.
+- Now all functions in ReadResults can specify dtype to reduce memory usage.
+- Assigned all memory efficient dtype when running memory mapping.
 
 
 

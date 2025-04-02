@@ -47,7 +47,6 @@ def run(session_config_list, smooth):
         plot_surgery_window(win_ax02, img_note)
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
         fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
         plt.close(fig)
         return [filename, n_row, n_col, title]
     def plot_masks():
@@ -73,7 +72,6 @@ def run(session_config_list, smooth):
             plotter.all_2chan(mask_axs)
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
         fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
         plt.close(fig)
         del plotter
         gc.collect()
@@ -90,7 +88,6 @@ def run(session_config_list, smooth):
         plot_sess_example_traces(example_ax, list_labels, list_neural_trials, session_config_list['label_names'])
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
         fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
         plt.close(fig)
         return [filename, n_row, n_col, title]
     def plot_ca():
@@ -107,7 +104,6 @@ def run(session_config_list, smooth):
         plot_ca_transient(ca_axs02, list_labels, list_neural_trials, session_config_list['label_names'], [1])
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
         fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
         plt.close(fig)
         return [filename, n_row, n_col, title]
     def plot_misc():
@@ -122,7 +118,6 @@ def run(session_config_list, smooth):
         plot_inh_exc_label_pc(label_ax, list_labels)
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
         fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
-        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.pdf'), dpi=300, format='pdf')
         plt.close(fig)
         return [filename, n_row, n_col, title]
     fig_all = [

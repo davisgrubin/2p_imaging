@@ -9,6 +9,7 @@ from modeling.clustering import clustering_neu_response_mode
 from modeling.clustering import get_bin_mean_sem_cluster
 from modeling.clustering import feature_categorization
 from modeling.generative import run_glm_multi_sess
+from utils import show_memory_usage
 from utils import get_norm01_params
 from utils import get_bin_idx
 from utils import get_mean_sem
@@ -406,10 +407,9 @@ class plotter_utils(utils_basic):
         cate = [-1,1,2]
         n_latents = 15
         kernel_time, kernel_all, exp_var_all = self.run_glm(cate)
-        model = PCA(n_components=n_latents if n_latents < kernel_all.shape[1] else kernel_all.shape[1])
+        model = PCA(n_components=n_latents if n_latents < np.min(kernel_all.shape) else np.min(kernel_all.shape))
         neu_x = model.fit_transform(kernel_all)
-        _, cluster_id = clustering_neu_response_mode(
-            neu_x, self.n_clusters, self.max_clusters)
+        _, cluster_id = clustering_neu_response_mode(neu_x, self.n_clusters, None)
         #results_all = self.run_features_categorization(cate)
         #cluster_id = results_all['cluster_id'].to_numpy()
         lbl = ['cluster #'+str(ci) for ci in range(self.n_clusters)]
@@ -421,8 +421,8 @@ class plotter_utils(utils_basic):
             cate=cate, roi_id=None)
         # plot basic statistics.
         def plot_info(axs):
-            self.plot_cluster_ca_transient(
-                axs[0], colors, cluster_id, cate)
+            #self.plot_cluster_ca_transient(
+            #    axs[0], colors, cluster_id, cate)
             self.plot_cluster_fraction(
                 axs[1], colors, cluster_id)
             self.plot_cluster_cluster_fraction_in_cate(
@@ -584,8 +584,7 @@ class plotter_utils(utils_basic):
     
     def plot_glm(self, axs, cate):
         kernel_time, kernel_all, exp_var_all = self.run_glm(cate)
-        _, cluster_id = clustering_neu_response_mode(
-            kernel_all, self.n_clusters, self.max_clusters)
+        _, cluster_id = clustering_neu_response_mode(kernel_all, self.n_clusters, None)
         # collect data.
         colors = get_cmap_color(self.n_clusters, cmap=self.cluster_cmap)
         [[color0, _, _, _],
@@ -632,8 +631,7 @@ class plotter_utils(utils_basic):
         kernel_time, kernel_all, exp_var_all = self.run_glm(cate)
         model = PCA(n_components=n_latents if n_latents < kernel_all.shape[1] else kernel_all.shape[1])
         neu_x = model.fit_transform(kernel_all)
-        _, cluster_id = clustering_neu_response_mode(
-            neu_x, self.n_clusters, self.max_clusters)
+        _, cluster_id = clustering_neu_response_mode(neu_x, self.n_clusters, None)
         lbl = ['cluster #'+str(ci) for ci in range(self.n_clusters)]
         colors = get_cmap_color(len(lbl), cmap=self.cluster_cmap)
         def plot_sorted_heatmaps(axs, norm_mode):
