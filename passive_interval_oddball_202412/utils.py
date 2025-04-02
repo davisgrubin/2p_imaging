@@ -491,6 +491,7 @@ def get_ca_transient_multi_sess(list_neural_trials):
     return list_n_ca, list_dff_ca_neu, list_dff_ca_time
 
 # strech data to target time stamps for temporal scaling for 2d data.
+@show_memory_usage
 def get_temporal_scaling_data(data, t_org, t_target):
     # map to target time stamps.
     t_mapped = (t_target - t_target[0]) / (t_target[-1] - t_target[0]) * (t_org[-1] - t_org[0]) + t_org[0]
@@ -785,6 +786,7 @@ class utils_basic:
         v = rescale(v, u, l)
         ax.plot(st, v, color=c, lw=0.5, linestyle=':')
 
+    @show_memory_usage
     def plot_heatmap_neuron(
             self, ax, neu_seq, neu_time, neu_seq_sort,
             win_sort, neu_labels, neu_sig,

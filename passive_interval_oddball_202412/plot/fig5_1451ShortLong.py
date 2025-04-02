@@ -127,7 +127,6 @@ class plotter_utils(utils_basic):
         results_all = feature_categorization(neu_seq_mean, neu_seq_sem, neu_time)
         return results_all
 
-    @show_memory_usage
     def run_glm(self, cate):
         # define kernel window.
         kernel_win = [-500,3000]
@@ -664,7 +663,6 @@ class plotter_utils(utils_basic):
             cate=cate, roi_id=None)
         n_trials = n_trials_short + n_trials_long
         # plot basic statistics.
-        @show_memory_usage
         def plot_info(axs):
             #self.plot_cluster_ca_transient(
             #    axs[0], colors, cluster_id, cate)
@@ -675,7 +673,6 @@ class plotter_utils(utils_basic):
             self.plot_cluster_cate_fraction_in_cluster(
                 axs[3], cluster_id, neu_labels, self.label_names)
         # compare respons on short and long standard.
-        @show_memory_usage
         def plot_standard(axs):
             xlim = [-3000,3000]
             # plot results for each class.
@@ -729,7 +726,7 @@ class plotter_utils(utils_basic):
                            n_trials, n_neurons, self.n_sess, 'upper right')
         # quantification comparison between short and long.
         @show_memory_usage
-        def plot_standard_box(axs, oddball):
+        def plot_standard_box(axs):
             # find time range to evaluate.
             c_idx = int(stim_seq_long.shape[0]/2)
             list_win_eval = [[0, stim_seq_short[c_idx+1,1]],
@@ -825,7 +822,6 @@ class plotter_utils(utils_basic):
                 self.plot_cluster_metric_box(
                     axs[mi], m, list_target_metric[mi], cluster_id, colors)
         # block adaptation with epoches.
-        @show_memory_usage
         def plot_block_adapatation(axs, standard):
             n_epoch = 2
             xlim = [-1500,3000]
@@ -891,7 +887,6 @@ class plotter_utils(utils_basic):
                            ['oddball']+[f'epoch #{ei}' for ei in range(n_epoch)],
                            n_trials, n_neurons, self.n_sess, 'upper right')
         # quantification comparison between epochs.
-        @show_memory_usage
         def plot_block_adapatation_box(axs, standard):
             n_epoch = 2
             # find epoch indices.

@@ -119,16 +119,16 @@ if __name__ == "__main__":
     from session_configs import session_config_list_PPC
     from session_configs import session_config_list_V1
 
-    run(session_config_list_YH01VT)
-    run(session_config_list_YH02VT)
-    run(session_config_list_YH03VT)
-    run(session_config_list_YH14SC)
-    run(session_config_list_YH17VT)
-    run(session_config_list_YH18VT)
-    run(session_config_list_YH19VT)
-    run(session_config_list_YH20SC)
-    run(session_config_list_PPC)
-    run(session_config_list_V1)
+    #run(session_config_list_YH01VT)
+    #run(session_config_list_YH02VT)
+    #run(session_config_list_YH03VT)
+    #run(session_config_list_YH14SC)
+    #run(session_config_list_YH17VT)
+    #run(session_config_list_YH18VT)
+    #run(session_config_list_YH19VT)
+    #run(session_config_list_YH20SC)
+    #run(session_config_list_PPC)
+    #run(session_config_list_V1)
 
     '''
     session_config_test = {
