@@ -29,11 +29,13 @@ from utils import get_temporal_scaling_data
 from utils import run_wilcoxon_trial
 from utils import get_cmap_color
 from utils import adjust_layout_neu
+from utils import adjust_layout_cluster_neu
 from utils import adjust_layout_3d_latent
 from utils import add_legend
 from utils import utils_basic
 
 # fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+# fig, ax = plt.subplots(1, 1, figsize=(2, 20))
 # fig, axs = plt.subplots(1, 7, figsize=(28, 4))
 # fig, ax = plt.subplots(1, 1, figsize=(6, 6), subplot_kw={"projection": "3d"})
 
@@ -131,7 +133,7 @@ class plotter_utils(utils_basic):
         # define kernel window.
         kernel_win = [-500,3000]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, kernel_win[0], kernel_win[1])
-        kernel_time = self.alignment['neu_time'][l_idx:r_idx+1]
+        kernel_time = self.alignment['neu_time'][l_idx:r_idx]
         l_idx = np.searchsorted(self.alignment['neu_time'], 0) - l_idx
         r_idx = r_idx - np.searchsorted(self.alignment['neu_time'], 0)
         # collect data.
@@ -450,192 +452,8 @@ class plotter_utils(utils_basic):
         add_legend(ax, [color1,color2], ['post short interval stim','post long interval stim'],
                    n_trials, n_neurons, self.n_sess, 'upper right', dim=3)
 
-    def plot_cluster(self, axs, cate=None):
-        metrics, cluster_id = self.run_clustering(cate)
-        colors = get_cmap_color(self.n_clusters, cmap=self.cluster_cmap)
-        lbl = ['cluster #'+str(i) for i in range(self.n_clusters)]
-        # plot basic clustering results.
-        def plot_info(axs):
-            # collect data.
-            [color0, color1, color2, cmap], [neu_seq, _, _, _], [neu_labels, _], _ = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_param=[[2,3,4,5], [0], None, None, [0], [0]],
-                cate=cate, roi_id=None)
-            # plot info.
-            self.plot_cluster_ca_transient(
-                axs[0], colors, cluster_id, cate)
-            self.plot_cluster_fraction(
-                axs[1], colors, cluster_id)
-            self.plot_cluster_cluster_fraction_in_cate(
-                axs[2], colors, cluster_id, neu_labels, self.label_names)
-            self.plot_cluster_cate_fraction_in_cluster(
-                axs[3], cluster_id, neu_labels, self.label_names)
-        # plot bin normalized interval tracking for all clusters.
-        def plot_interval_norm(ax):
-            # collect data.
-            [_, [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_param=[None, None, None, None, None, [0]],
-                mean_sem=False,
-                cate=cate, roi_id=None)
-            # bin data based on isi.
-            [bins, _, _, bin_neu_seq, _, _, bin_stim_seq, _] = get_isi_bin_neu(
-                neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
-            # plot results.
-            lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
-            lbl+= ['cluster #'+str(i) for i in range(self.n_clusters)]
-            c_all = get_cmap_color(self.bin_num, base_color='#2C2C2C') + colors
-            self.plot_cluster_interval_norm(
-                ax, cluster_id, bin_neu_seq, bin_stim_seq, colors)
-            add_legend(ax, c_all, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
-        # plot standard response.
-        def plot_standard(ax, standard):
-            xlim = [-3000, 3000]
-            # collect data.
-            [[color0, color1, color2, _],
-             [neu_seq, _, stim_seq, stim_value], _,
-             [n_trials, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_param=[[2,3,4,5], [standard], None, None, [0], [0]],
-                cate=cate, roi_id=None)
-            c_stim = [[color1, color2][standard]] * stim_seq.shape[-2]
-            # get response within cluster.
-            neu_mean, neu_sem = get_mean_sem_cluster(neu_seq, cluster_id)
-            # plot results.
-            norm_params = [get_norm01_params(neu_mean[i,:]) for i in range(neu_mean.shape[0])]
-            self.plot_cluster_mean_sem(
-                ax, neu_mean, neu_sem, self.alignment['neu_time'],
-                norm_params, stim_seq, c_stim, colors, xlim)
-            # adjust layout.
-            ax.set_xlim(xlim)
-            ax.set_xlabel('time since stim (ms)')
-            add_legend(ax, [c_stim[0]]+colors, ['stim']+lbl, n_trials, n_neurons, self.n_sess, 'upper left')
-        # plot oddball response.
-        def plot_oddball(ax, standard):
-            xlim = [-3500, 5500]
-            # collect data.
-            [[_, color1, color2, _],
-             [neu_seq, _, stim_seq, stim_value], _,
-             [n_trials, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_idx=[l[3-standard] for l in self.list_odd_idx],
-                cate=cate, roi_id=None)
-            c_idx = int(stim_seq.shape[0]/2)
-            c_stim = [[color1, color2][standard]] * stim_seq.shape[-2]
-            c_stim[c_idx] = [color1, color2][1-standard]
-            # get response within cluster.
-            neu_mean, neu_sem = get_mean_sem_cluster(neu_seq, cluster_id)
-            # plot results.
-            norm_params = [get_norm01_params(neu_mean[i,:]) for i in range(neu_mean.shape[0])]
-            self.plot_cluster_mean_sem(
-                ax, neu_mean, neu_sem, self.alignment['neu_time'],
-                norm_params, stim_seq, c_stim, colors, xlim)
-            # adjust layout.
-            ax.set_xlim(xlim)
-            ax.set_xlabel('time since stim after oddball interval (ms)')
-            add_legend(
-                ax, [color1, color2]+colors,
-                ['post interval stim (short)', 'post interval stim (long)']+lbl,
-                n_trials, n_neurons, self.n_sess, 'upper left')
-        # plot transition response.
-        def plot_block_transition(ax, standard):
-            xlim = [-6000,15000]
-            # collect data.
-            [[color0, color1, color2, _],
-             [neu_seq, _, stim_seq, stim_value], _,
-             [n_trials, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_idx=[l[1-standard] for l in self.list_block_start],
-                cate=cate, roi_id=None)
-            c_idx = int(stim_seq.shape[0]/2)
-            c_stim = [[color1, color2][standard]] * (c_idx)
-            c_stim+= [[color1, color2][1-standard]] * (stim_seq.shape[0]-c_idx)
-            # get response within cluster.
-            neu_mean, neu_sem = get_mean_sem_cluster(neu_seq, cluster_id)
-            # plot results.
-            norm_params = [get_norm01_params(neu_mean[i,:]) for i in range(neu_mean.shape[0])]
-            self.plot_cluster_mean_sem(
-                ax, neu_mean, neu_sem, self.alignment['neu_time'],
-                norm_params, stim_seq, c_stim, colors, xlim)
-            # adjust layout.
-            ax.set_xlim(xlim)
-            ax.set_xlabel('time since stim after interval block change (ms)')
-            add_legend(
-                ax, [color1, color2]+colors,
-                ['post interval stim (short)', 'post interval stim (long)']+lbl,
-                n_trials, n_neurons, self.n_sess, 'upper left')
-        # plot standard response heatmap.
-        def plot_heatmap_standard(ax, standard):
-            xlim = [-3000, 3000]
-            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
-            # collect data.
-            _, [neu_seq, _, _, _], _, _ = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_param=[[2,3,4,5], [standard], None, None, [0], [0]],
-                cate=cate, roi_id=None)
-            neu_seq = neu_seq[:,l_idx:r_idx]
-            neu_time = self.alignment['neu_time'][l_idx:r_idx]
-            # plot heatmap.
-            self.plot_cluster_heatmap(ax, neu_seq, neu_time, neu_seq, cluster_id, colors)
-        # plot oddball response heatmap.
-        def plot_heatmap_oddball(ax, standard):
-            xlim = [-3500, 5500]
-            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
-            # collect data.
-            [[_, color1, color2, _],
-             [neu_seq, _, stim_seq, stim_value], _,
-             [n_trials, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_idx=[l[3-standard] for l in self.list_odd_idx],
-                cate=cate, roi_id=None)
-            neu_seq = neu_seq[:,l_idx:r_idx]
-            neu_time = self.alignment['neu_time'][l_idx:r_idx]
-            # plot heatmap.
-            self.plot_cluster_heatmap(ax, neu_seq, neu_time, neu_seq, cluster_id, colors)
-        # plot transition response.
-        def plot_heatmap_block_transition(ax, standard):
-            xlim = [-6000,15000]
-            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
-            # collect data.
-            _, [neu_seq, _, stim_seq, stim_value], _, [n_trials, n_neurons] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_idx=[l[1-standard] for l in self.list_block_start],
-                cate=cate, roi_id=None)
-            neu_seq = neu_seq[:,l_idx:r_idx]
-            neu_time = self.alignment['neu_time'][l_idx:r_idx]
-            # plot heatmap.
-            self.plot_cluster_heatmap(ax, neu_seq, neu_time, neu_seq, cluster_id, colors)
-        # plot all.
-        try: plot_info(axs[:5])
-        except: pass
-        try: plot_interval_norm(axs[5])
-        except: pass
-        try: plot_standard(axs[6], 0)
-        except: pass
-        try: plot_standard(axs[7], 1)
-        except: pass
-        try: plot_oddball(axs[8], 0)
-        except: pass
-        try: plot_oddball(axs[9], 1)
-        except: pass
-        try: plot_block_transition(axs[10], 0)
-        except: pass
-        try: plot_block_transition(axs[11], 1)
-        except: pass
-        try: plot_heatmap_standard(axs[12], 0)
-        except: pass
-        try: plot_heatmap_standard(axs[13], 1)
-        except: pass
-        try: plot_heatmap_oddball(axs[14], 0)
-        except: pass
-        try: plot_heatmap_oddball(axs[15], 1)
-        except: pass
-        try: plot_heatmap_block_transition(axs[16], 0)
-        except: pass
-        try: plot_heatmap_block_transition(axs[17], 1)
-        except: pass
-
     def plot_categorization_features(self, axs):
+        color_neu = ['royalblue', 'crimson']
         list_target_metric = ['response_latency', 'peak_amp', 'ramp_slope', 'decay_rate']
         bin_num = 2
         cate = [-1,1,2]
@@ -672,76 +490,59 @@ class plotter_utils(utils_basic):
                 axs[2], colors, cluster_id, neu_labels, self.label_names)
             self.plot_cluster_cate_fraction_in_cluster(
                 axs[3], cluster_id, neu_labels, self.label_names)
+        # plot glm kernels.
+        def plot_glm_kernel(ax):
+            xlim = [np.nanmin(kernel_time), np.nanmax(kernel_time)]
+            c_idx = int(stim_seq_short.shape[0]/2)
+            # get cluster average.
+            glm_mean, glm_sem = get_mean_sem_cluster(kernel_all, cluster_id)
+            # plot results.
+            norm_params = [get_norm01_params(glm_mean[i,:]) for i in range(self.n_clusters)]
+            self.plot_cluster_mean_sem(
+                ax, glm_mean, glm_sem, kernel_time,
+                norm_params, stim_seq_short[c_idx,:].reshape(1,-1),
+                [color0], [color0]*self.n_clusters, xlim)
+            # adjust layout.
+            adjust_layout_cluster_neu(ax, self.n_clusters, xlim)
         # compare respons on short and long standard.
-        def plot_standard(axs):
+        def plot_standard(ax):
             xlim = [-3000,3000]
-            # plot results for each class.
-            for ci in range(len(lbl)):
-                neu_mean = []
-                neu_sem = []
-                # get class data.
-                mean_short, sem_short = get_mean_sem(neu_seq_short[cluster_id==ci,:])
-                neu_mean.append(mean_short)
-                neu_sem.append(sem_short)
-                mean_long, sem_long = get_mean_sem(neu_seq_long[cluster_id==ci,:])
-                neu_mean.append(mean_long)
-                neu_sem.append(sem_long)
-                # find bounds.
-                upper = np.nanmax(neu_mean) + np.nanmax(neu_sem)
-                lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
-                # find class colors.
-                cs = get_cmap_color(3, base_color=colors[ci])
-                color1, color2 = cs[0], cs[-1]
-                # plot stimulus.
-                for i in range(stim_seq_short.shape[0]):
-                    axs[ci].fill_between(
-                        stim_seq_short[i,:],
-                        lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                        color=color1, edgecolor='none', alpha=0.25, step='mid')
-                self.plot_vol(
-                    axs[ci], self.alignment['stim_time'],
-                    stim_value_short.reshape(1,-1), color1, upper, lower)
-                for i in range(stim_seq_long.shape[0]):
-                    axs[ci].fill_between(
-                        stim_seq_long[i,:],
-                        lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                        color=color2, edgecolor='none', alpha=0.25, step='mid')
-                self.plot_vol(
-                    axs[ci], self.alignment['stim_time'],
-                    stim_value_long.reshape(1,-1), color2, upper, lower)
-                # plot neural traces.
-                self.plot_mean_sem(
-                    axs[ci], self.alignment['neu_time'],
-                    mean_short, sem_short, color1, 'short')
-                self.plot_mean_sem(
-                    axs[ci], self.alignment['neu_time'],
-                    mean_long, sem_long, color2, 'long')
-                # adjust layouts.
-                adjust_layout_neu(axs[ci])
-                axs[ci].set_xlim(xlim)
-                axs[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
-                axs[ci].set_xlabel('time since stim (ms)')
-                axs[ci].set_title(f'response comparison for cluster #{ci}')
-                add_legend(axs[ci], [color1,color2], ['short','long'],
-                           n_trials, n_neurons, self.n_sess, 'upper right')
+            neu_all = [neu_seq_short, neu_seq_long]
+            stim_seq_all = [stim_seq_short, stim_seq_long]
+            # get response within cluster at each bin.
+            cluster_bin_neu_mean = [get_mean_sem_cluster(neu, cluster_id)[0] for neu in neu_all]
+            cluster_bin_neu_sem  = [get_mean_sem_cluster(neu, cluster_id)[1] for neu in neu_all]
+            # organize into bin_num*n_clusters*time.
+            cluster_bin_neu_mean = [np.expand_dims(neu, axis=0) for neu in cluster_bin_neu_mean]
+            cluster_bin_neu_sem  = [np.expand_dims(neu, axis=0) for neu in cluster_bin_neu_sem]
+            cluster_bin_neu_mean = np.concatenate(cluster_bin_neu_mean, axis=0)
+            cluster_bin_neu_sem  = np.concatenate(cluster_bin_neu_sem, axis=0)
+            # plot results.
+            norm_params = [get_norm01_params(cluster_bin_neu_mean[:,i,:]) for i in range(self.n_clusters)]
+            for bi in range(self.bin_num):
+                self.plot_cluster_mean_sem(
+                    ax, cluster_bin_neu_mean[bi,:,:], cluster_bin_neu_sem[bi,:,:],
+                    self.alignment['neu_time'], norm_params, stim_seq_all[bi],
+                    [color_neu[bi]]*stim_seq_all[bi].shape[0], [color_neu[bi]]*self.n_clusters, xlim)
+            # adjust layout.
+            adjust_layout_cluster_neu(ax, self.n_clusters, xlim)
         # quantification comparison between short and long.
-        @show_memory_usage
         def plot_standard_box(axs):
             # find time range to evaluate.
             c_idx = int(stim_seq_long.shape[0]/2)
-            list_win_eval = [[0, stim_seq_short[c_idx+1,1]],
-                             [0, stim_seq_long[c_idx+1,1]]]
+            list_win_eval = [[stim_seq_short[c_idx-1,0], stim_seq_short[c_idx+1,1]],
+                             [stim_seq_long[c_idx-1,0], stim_seq_long[c_idx+1,1]]]
             # get quantification results.
             list_metrics = get_all_metrics(
                 [neu_seq_short, neu_seq_long], self.alignment['neu_time'], list_win_eval)
-            # plot results for each class.
+            # plot results for each metric.
             for mi in range(len(list_target_metric)):
                 m = [lm[list_target_metric[mi]] for lm in list_metrics]
                 self.plot_cluster_metric_box(
-                    axs[mi], m, list_target_metric[mi], cluster_id, colors)
+                    axs[mi], m, list_target_metric[mi], cluster_id, color_neu)
         # compare temporal scaling.
         @show_memory_usage
-        def plot_temporal_scaling(axs):
+        def plot_temporal_scaling(ax):
             target_isi = 1500
             # collect data.
             [[color0, _, _, _], [neu_seq, stim_seq, stim_value, pre_isi],
@@ -752,43 +553,26 @@ class plotter_utils(utils_basic):
                 cate=cate, roi_id=None)
             c_idx = int(stim_seq[0][0,:,:].shape[0]/2)
             # compute mean time stamps.
-            stim_seq_target = np.nanmean(np.concatenate(stim_seq, axis=0),axis=0)
+            stim_seq_target = np.nanmean(np.concatenate(stim_seq, axis=0),axis=0)[c_idx,:].reshape(1,-1)
             neu_seq = get_temporal_scaling_trial_multi_sess(
                 neu_seq, stim_seq, self.alignment['neu_time'], target_isi)
             # bin data based on isi.
             [_, _, _, neu_seq, _, _, _, _] = get_isi_bin_neu(
                 neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, bin_num)
             cluster_bin_neu_mean, cluster_bin_neu_sem = get_bin_mean_sem_cluster(neu_seq, cluster_id)
-            # plot results for each class.
-            l_idx, r_idx = get_frame_idx_from_time(
-                self.alignment['neu_time'], 0, -target_isi, stim_seq_target[c_idx,1]+target_isi)
+            # plot results.
+            xlim = [-target_isi, stim_seq_target[0,1]+target_isi]
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
-            for ci in range(len(lbl)):
-                # find bounds.
-                upper = np.nanmax(cluster_bin_neu_mean[:,ci,:]) + np.nanmax(cluster_bin_neu_sem[:,ci,:])
-                lower = np.nanmin(cluster_bin_neu_mean[:,ci,:]) - np.nanmax(cluster_bin_neu_sem[:,ci,:])
-                # find class colors.
-                cs = get_cmap_color(bin_num+2, base_color=colors[ci])
-                cs = [cs[0], cs[1]]
-                # plot stimulus.
-                for si in range(stim_seq_target.shape[0]):
-                    axs[ci].fill_between(
-                        stim_seq_target[si,:],
-                        lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                        color=color0, edgecolor='none', alpha=0.25, step='mid')
-                # plot neural traces.
-                for bi in range(bin_num):
-                    self.plot_mean_sem(
-                        axs[ci], neu_time,
-                        cluster_bin_neu_mean[bi,ci,:], cluster_bin_neu_sem[bi,ci,:], cs[bi], None)
-                # adjust layouts.
-                adjust_layout_neu(axs[ci])
-                axs[ci].set_xlim([-target_isi-stim_seq_target[c_idx,1], 2*stim_seq_target[c_idx,1]+target_isi])
-                axs[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
-                axs[ci].set_xlabel('time since stim (ms)')
-                axs[ci].set_title(f'response comparison with scaling for cluster #{ci}')
-                add_legend(axs[ci], cs, ['short','long'], None, None, None, 'upper right')
-        # quantification comparison between short and long with temporal scaling.
+            norm_params = [get_norm01_params(cluster_bin_neu_mean[:,i,:]) for i in range(self.n_clusters)]
+            for bi in range(bin_num):
+                self.plot_cluster_mean_sem(
+                    ax, cluster_bin_neu_mean[bi,:,:], cluster_bin_neu_sem[bi,:,:],
+                    neu_time, norm_params, stim_seq_target,
+                    [color0], [color_neu[bi]]*self.n_clusters, xlim)
+            # adjust layout.
+            adjust_layout_cluster_neu(ax, self.n_clusters, xlim)
+        # quantificat ion comparison between short and long with temporal scaling.
         @show_memory_usage
         def plot_temporal_scaling_box(axs):
             target_isi = 1500
@@ -816,12 +600,13 @@ class plotter_utils(utils_basic):
             # get quantification results.
             list_metrics = get_all_metrics(
                 neu_seq, neu_time, list_win_eval)
-            # plot results for each class.
+            # plot results for each metric.
             for mi in range(len(list_target_metric)):
                 m = [lm[list_target_metric[mi]] for lm in list_metrics]
                 self.plot_cluster_metric_box(
-                    axs[mi], m, list_target_metric[mi], cluster_id, colors)
+                    axs[mi], m, list_target_metric[mi], cluster_id, color_neu)
         # block adaptation with epoches.
+        @show_memory_usage
         def plot_block_adapatation(axs, standard):
             n_epoch = 2
             xlim = [-1500,3000]
@@ -887,6 +672,7 @@ class plotter_utils(utils_basic):
                            ['oddball']+[f'epoch #{ei}' for ei in range(n_epoch)],
                            n_trials, n_neurons, self.n_sess, 'upper right')
         # quantification comparison between epochs.
+        @show_memory_usage
         def plot_block_adapatation_box(axs, standard):
             n_epoch = 2
             # find epoch indices.
@@ -1071,29 +857,31 @@ class plotter_utils(utils_basic):
         # plot all.
         try: plot_info(axs[0])
         except: pass
-        try: plot_standard(axs[1])
+        try: plot_glm_kernel(axs[1])
         except: pass
-        try: plot_standard_box(axs[2])
+        try: plot_standard(axs[2])
         except: pass
-        try: plot_temporal_scaling(axs[3])
+        try: plot_standard_box(axs[3])
         except: pass
-        try: plot_temporal_scaling_box(axs[4])
+        try: plot_temporal_scaling(axs[4])
         except: pass
-        try: plot_block_adapatation(axs[5], 0)
+        try: plot_temporal_scaling_box(axs[5])
         except: pass
-        try: plot_block_adapatation_box(axs[6], 1)
+        try: plot_block_adapatation(axs[6], 0)
         except: pass
-        try: plot_block_adapatation(axs[7], 0)
+        try: plot_block_adapatation_box(axs[7], 0)
         except: pass
-        try: plot_block_adapatation_box(axs[8], 1)
+        try: plot_block_adapatation(axs[8], 1)
         except: pass
-        try: plot_block_adapatation_trial_heatmap(axs[9], 'none')
+        try: plot_block_adapatation_box(axs[9], 1)
         except: pass
-        try: plot_block_adapatation_trial_heatmap(axs[10], 'minmax')
+        try: plot_block_adapatation_trial_heatmap(axs[10], 'none')
         except: pass
-        try: plot_block_adapatation_trial_heatmap(axs[11], 'share')
+        try: plot_block_adapatation_trial_heatmap(axs[11], 'minmax')
         except: pass
-        try: plot_block_adapatation_trial_box([axs[12],axs[13]])
+        try: plot_block_adapatation_trial_heatmap(axs[12], 'share')
+        except: pass
+        try: plot_block_adapatation_trial_box([axs[13],axs[14]])
         except: pass
 
     def plot_sorted_heatmaps_standard(self, axs, norm_mode, standard):

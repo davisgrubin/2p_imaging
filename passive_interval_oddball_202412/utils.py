@@ -106,8 +106,8 @@ def pick_trial(
     idx = (idx1*idx2*idx3*idx4*idx5*idx6).astype('bool')
     return idx
 
-# for multi session settings find trials based on stim_labels and trial avergae.
-def get_multi_sess_neu_trial_average(
+# for multi session settings find trials based on stim_labels.
+def get_multi_sess_neu_trial(
         list_stim_labels,
         neu_cate,
         alignment,
@@ -193,7 +193,7 @@ def get_neu_trial(
         colors = get_roi_label_color(list_labels, roi_id)
         neu_labels = None
         neu_cate = [np.expand_dims(alignment['list_neu_seq'][0][:,roi_id,:], axis=1)]
-    neu_trial, neu_num = get_multi_sess_neu_trial_average(
+    neu_trial, neu_num = get_multi_sess_neu_trial(
         list_stim_labels, neu_cate, alignment,
         trial_idx=trial_idx, trial_param=trial_param, mean_sem=mean_sem)
     return colors, neu_trial, [neu_labels, neu_sig], neu_num
@@ -400,6 +400,7 @@ def get_expect_time(stim_labels):
     return expect_short, expect_long
 
 # compute calcium transient event timing and average.
+@show_memory_usage
 def get_ca_transient(dff, time_img):
     pct = 95
     win_peak = 25
@@ -474,6 +475,7 @@ def get_ca_transient(dff, time_img):
     return n_ca, dff_ca_neu, dff_ca_time
 
 # compute calcium transient event timing and average with multiple sessions.
+@show_memory_usage
 def get_ca_transient_multi_sess(list_neural_trials):
     list_dff = [nt['dff'] for nt in list_neural_trials] 
     list_time = [nt['time'] for nt in list_neural_trials]
@@ -491,7 +493,6 @@ def get_ca_transient_multi_sess(list_neural_trials):
     return list_n_ca, list_dff_ca_neu, list_dff_ca_time
 
 # strech data to target time stamps for temporal scaling for 2d data.
-@show_memory_usage
 def get_temporal_scaling_data(data, t_org, t_target):
     # map to target time stamps.
     t_mapped = (t_target - t_target[0]) / (t_target[-1] - t_target[0]) * (t_org[-1] - t_org[0]) + t_org[0]
@@ -569,6 +570,7 @@ def get_temporal_scaling_trial_multi_sess(neu_seq, stim_seq, neu_time, target_is
     return scale_neu_seq
 
 # run wilcoxon signed rank test to compare response across neurons and time.
+@show_memory_usage
 def run_wilcoxon_trial(neu_seq_trial_1, neu_seq_trial_2, thres):
     p_all = []
     for si in range(len(neu_seq_trial_1)):
@@ -696,6 +698,19 @@ def adjust_layout_neu(ax):
     ax.spines['top'].set_visible(False)
     ax.set_ylabel('df/f (z-scored)')
 
+# adjust layout for grand average neural traces for clustering.
+def adjust_layout_cluster_neu(ax, n_clusters, xlim):
+    ax.tick_params(tick1On=False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.set_xlim(xlim)
+    ax.set_ylabel('cluster #', rotation=90)
+    ax.set_xticks([])
+    ax.set_yticks(np.arange(n_clusters)+0.5)
+    ax.set_yticklabels(np.arange(n_clusters))
+    
 # adjust layout for heatmap.
 def adjust_layout_heatmap(ax):
     ax.spines['right'].set_visible(False)
@@ -766,7 +781,7 @@ def add_heatmap_colorbar(ax, cmap, norm, label):
             tick.set_rotation(90)
         cbar.ax.yaxis.set_label_coords(-1, 1.06)
         cbar.outline.set_linewidth(0.25)
-    
+
 
 #%% basic plotting utils class
 
@@ -1117,53 +1132,27 @@ class utils_basic:
         ax.hlines(-0.2, xlim[0]*0.99, xlim[0]*0.99+len_scale_x, color='#2C2C2C')
         ax.text(xlim[0]*0.99 + len_scale_x/2, -0.2, '{} ms'.format(int(len_scale_x)),
             va='top', ha='center')
-        ax.axis('off')
         ax.set_ylim([-0.2, neu_mean.shape[0]+0.1])
     
     def plot_cluster_metric_box(self, ax, list_metrics, target_metric, cluster_id, colors):
         offset = 0.1
         n_clusters = len(np.unique(cluster_id))
-        lbl = ['cluster #'+str(i) for i in range(n_clusters)]
         # plot results for each class.
-        for ci in range(len(lbl)):
-            cs = get_cmap_color(len(list_metrics)+2, base_color=colors[ci])[2:]
+        for ci in range(n_clusters):
             for mi in range(len(list_metrics)):
                 m, s = get_mean_sem(list_metrics[mi][cluster_id==ci].reshape(-1,1))
                 ax.errorbar(
-                    ci+offset*mi, m, s,
-                    color=cs[mi],
+                    m, ci+offset*mi, None, s,
+                    color=colors[mi],
                     capsize=2, marker='o', linestyle='none',
                     markeredgecolor='white', markeredgewidth=0.1)
         # adjust layout.
-        ax.tick_params(tick1On=False)
+        ax.tick_params(axis='x', tick1On=False)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
-        ax.set_xlabel('cluster id')
-        ax.set_ylabel('{} (mean$\pm$sem)'.format(target_metric))
-        ax.set_xticks(np.arange(len(lbl)))
-        ax.set_xticklabels(lbl, rotation='vertical')
-        ax.set_xlim([-0.5,len(lbl)+2])
-        add_legend(ax, colors, lbl, None, None, None, 'upper right')
-    
-    def plot_cluster_metric_line(self, ax, metrics, neu_time, target_metric, cluster_id, colors):
-        offset = 0.01
-        n_clusters = len(np.unique(cluster_id))
-        lbl = ['cluster #'+str(i) for i in range(n_clusters)]
-        # plot results for each class.
-        for ci in range(len(lbl)):
-            m, s = get_mean_sem(metrics[cluster_id==ci,:])
-            ax.errorbar(
-                neu_time+ci*offset, m, s,
-                color=colors[ci],
-                capsize=2, marker='o', linestyle='none',
-                markeredgecolor='white', markeredgewidth=0.1)
-        # adjust layout.
-        ax.tick_params(tick1On=False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.set_ylabel('{} (mean$\pm$sem)'.format(target_metric))
-        add_legend(ax, colors, lbl, None, None, None, 'upper right')
-        
+        ax.set_yticks(np.arange(n_clusters))
+        ax.set_yticklabels(np.arange(n_clusters))
+
     def plot_cluster_interval_norm(
             self, ax, cluster_id,
             bin_neu_seq, bin_stim_seq,

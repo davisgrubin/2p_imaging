@@ -41,8 +41,8 @@ def run(session_config_list):
     print('===============================================')
     print('============ Start Processing Data ============')
     print('===============================================')
-    if not os.path.exists(os.path.join('results', session_config_list['subject_name']+'_temp')):
-        os.makedirs(os.path.join('results', session_config_list['subject_name']+'_temp'))
+    if not os.path.exists(os.path.join('results', 'temp')):
+        os.makedirs(os.path.join('results', 'temp'))
     print('Created canvas')
     session_config_list = combine_session_config_list(session_config_list)
     print('Processing {} sessions'.format(
@@ -119,16 +119,21 @@ if __name__ == "__main__":
     from session_configs import session_config_list_PPC
     from session_configs import session_config_list_V1
 
-    #run(session_config_list_YH01VT)
-    #run(session_config_list_YH02VT)
-    #run(session_config_list_YH03VT)
-    #run(session_config_list_YH14SC)
-    #run(session_config_list_YH17VT)
-    #run(session_config_list_YH18VT)
-    #run(session_config_list_YH19VT)
-    #run(session_config_list_YH20SC)
-    #run(session_config_list_PPC)
-    #run(session_config_list_V1)
+    for session_config_list in [
+        #session_config_list_YH01VT,
+        #session_config_list_YH02VT,
+        #session_config_list_YH03VT,
+        #session_config_list_YH14SC,
+        #session_config_list_YH17VT,
+        #session_config_list_YH18VT,
+        #session_config_list_YH19VT,
+        #session_config_list_YH20SC,
+        #session_config_list_PPC,
+        #session_config_list_V1,
+            ]:
+        try: run(session_config_list)
+        except: pass
+
 
     '''
     session_config_test = {
@@ -159,7 +164,8 @@ if __name__ == "__main__":
         'subject_name' : 'ppc_test',
         'output_filename' : 'test_passive.html'
         }
-    #run(session_config_list_test)
+
+    run(session_config_list_test)
 
     session_config_list = combine_session_config_list(session_config_list_test)
     list_ops = read_ops(session_config_list['list_session_data_path'])

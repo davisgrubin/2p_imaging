@@ -132,10 +132,11 @@
 - Now all functions in ReadResults can specify dtype to reduce memory usage.
 - Assigned all memory efficient dtype when running memory mapping.
 
+## 2025.04.05
+- Added back axis to plot_cluster_mean_sem.
+- Rewritten plot_categorization_features in fig5_1451ShortLong.
 
-
-
-
-
-
+## 2025.04.07
+- Now one common temp folder is used.
+- Now Alignment is using memory mapping with files in the temp folder.
 

@@ -15,11 +15,11 @@ def run(session_config, fn1, fn2, fn3, fn4):
     def generate_div(filename):
         scale_pixel = 256
         # read svg content.
-        with open(os.path.join('results', session_config['subject_name']+'_temp', filename[0]+'.svg'),
+        with open(os.path.join('results', 'temp', filename[0]+'.svg'),
                   'r', encoding="utf-8") as svg_file:
             svg_str = svg_file.read()
         svg_file.close()
-        with open(os.path.join('results', session_config['subject_name']+'_temp', filename[0]+'.svg'),
+        with open(os.path.join('results', 'temp', filename[0]+'.svg'),
                   'rb') as svg_file:
             svg_bytes = svg_file.read()
             svg_b64 = base64.b64encode(svg_bytes).decode('utf-8')
@@ -55,7 +55,7 @@ def run(session_config, fn1, fn2, fn3, fn4):
         </div>
         """
         # clear space.
-        os.remove(os.path.join('results', session_config['subject_name']+'_temp', filename[0]+'.svg'))
+        os.remove(os.path.join('results', 'temp', filename[0]+'.svg'))
         return html_block
     
     # create html code for a page given list of figure filenames.
@@ -129,5 +129,5 @@ def run(session_config, fn1, fn2, fn3, fn4):
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html_output)
     # delete temp folder.
-    shutil.rmtree(os.path.join('results', session_config['subject_name']+'_temp'))
+    shutil.rmtree(os.path.join('results', 'temp'))
 

@@ -3,33 +3,81 @@
 import numpy as np
 from modeling.utils import get_frame_idx_from_time
 
+'''
+ci = 15
+nsm, _ = get_mean_sem(neu_seq_long[cluster_id==ci,:])
+neu_time = alignment['neu_time']
+win_eval = [stim_seq_long[c_idx-1,0], stim_seq_long[c_idx+1,1]]
+'''
 def get_response_onset(nsm, neu_time, win_eval):
-    win_base = [-500,0]
+    pct = 25
     window_size = 3
     max_attempts = 4
     threshold_factor = 0.2
-    mask = (neu_time >= win_eval[0]) & (neu_time <= win_eval[1])
-    w_response = nsm[mask]
-    w_time = neu_time[mask]
-    zero_idx = np.argmin(np.abs(w_time))
-    deriv = np.gradient(w_response, w_time)
-    baseline = np.gradient(nsm, neu_time)[(neu_time >= win_base[0]) & (neu_time <= win_base[1])]
-    std_baseline = np.std(baseline)
-    threshold = abs(np.mean(baseline)) + std_baseline / 3
-    for _ in range(max_attempts):
-        onset_idx = np.where(deriv > threshold)[0]
-        if onset_idx.size:
-            groups = np.split(onset_idx, np.where(np.diff(onset_idx) != 1)[0] + 1)
-            groups = [g for g in groups if len(g) >= window_size]
-            if groups:
-                max_len = max(len(g) for g in groups)
-                best = max(((0.2 / (1 + np.min(np.abs(g - zero_idx))) +
-                             0.4 * (np.mean(deriv[g]) / np.max(deriv)) +
-                             0.4 * (len(g) / max_len), g[0])
-                            for g in groups), key=lambda x: x[0])[1]
-                idx_in_mask = np.flatnonzero(mask)[best]
-                return idx_in_mask
-        threshold -= std_baseline * threshold_factor
+    # apply time window to the data.
+    win_mask = (neu_time >= win_eval[0]) & (neu_time <= win_eval[1])
+    win_nsm = nsm[win_mask]
+    wind_nt = neu_time[win_mask]
+    # adjust target_index for windowed data.
+    stim_onset_idx, _ = get_frame_idx_from_time(neu_time, 0, 0, 0)
+    # compute the derivative for windowed data.
+    derivative = np.gradient(win_nsm, wind_nt)
+    # compute initial threshold using pre-stimulus period.
+    baseline_derivative = derivative[win_nsm<np.nanpercentile(win_nsm, pct)]
+    threshold = abs(np.mean(baseline_derivative)) + abs(np.std(baseline_derivative))
+    attempt = 0
+    while attempt < max_attempts:
+        # detect the ramping onset indices.
+        ramping_onset_index = np.where(derivative > threshold)[0]
+        if len(ramping_onset_index) > 0:
+            # group consecutive indices.
+            groups = []
+            current_group = [ramping_onset_index[0]]
+            # group consecutive indices.
+            for i in range(1, len(ramping_onset_index)):
+                if ramping_onset_index[i] == ramping_onset_index[i - 1] + 1:
+                    current_group.append(ramping_onset_index[i])
+                else:
+                    # only add groups that meet the minimum window size.
+                    if len(current_group) >= window_size:
+                        groups.append(current_group)
+                    current_group = [ramping_onset_index[i]]
+            if len(current_group) >= window_size:
+                groups.append(current_group)
+            if not groups:
+                threshold -= np.std(baseline_derivative) * threshold_factor
+                attempt += 1
+                continue
+            # find the max length among all groups for normalization.
+            max_group_length = max([len(group) for group in groups])
+            # calculate metrics for remaining groups.
+            group_metrics = []
+            for group in groups:
+                # calculate distance metric.
+                dist_to_target = min(abs(np.array(group) - stim_onset_idx))
+                distance_score = 1 / (1 + dist_to_target)
+                # calculate intensity metric.
+                group_derivatives = derivative[group]
+                intensity_score = np.mean(group_derivatives) / np.max(derivative)
+                # calculate length metric.
+                length_score = len(group) / max_group_length
+                # combined score.
+                combined_score = (0.2* distance_score + 0.4* intensity_score + 0.4 * length_score)
+                group_metrics.append({
+                    'group': group,
+                    'combined_score': combined_score,
+                    'distance_score': distance_score,
+                    'intensity_score': intensity_score,
+                    'length_score': length_score
+                })
+            # sort groups by combined score.
+            group_metrics.sort(key=lambda x: x['combined_score'], reverse=True)
+            if group_metrics:
+                # convert back to original index space.
+                return np.where(win_mask)[0][group_metrics[0]['group'][0]]
+        # reduce threshold and try again.
+        threshold -= np.std(baseline_derivative) * threshold_factor
+        attempt += 1
     return None
 
 def get_response_latency(nsm, neu_time, win_eval):

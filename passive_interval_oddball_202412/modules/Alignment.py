@@ -1,7 +1,16 @@
 #!/usr/bin/env python3
 
+import os
+import gc
 import numpy as np
 from tqdm import tqdm
+
+# create a numpy memmap from numpy array.
+def create_memmap(data, file_name, ni):
+    file_path = os.path.join('results', 'temp', 'alignment_memmap', file_name+'_'+str(ni).zfill(5)+'.mmap')
+    memmap_arr = np.memmap(file_path, dtype=data.dtype, mode='w+', shape=data.shape)
+    memmap_arr[:] = data[...]
+    return memmap_arr
 
 # cut sequence into the same length as the shortest one given pivots.
 def trim_seq(
@@ -27,13 +36,13 @@ def get_stim_response(
         expected,
         n_stim,
         ):
+    # initialization.
     stim_labels = neural_trials['stim_labels']
-    dff = neural_trials['dff']
-    time = neural_trials['time']
-    vol_stim = neural_trials['vol_stim_vis']
-    vol_led = neural_trials['vol_led']
-    vol_time = neural_trials['vol_time']
-    # initialize list.
+    dff         = neural_trials['dff']
+    time        = neural_trials['time']
+    vol_stim    = neural_trials['vol_stim_vis']
+    vol_led     = neural_trials['vol_led']
+    vol_time    = neural_trials['vol_time']
     neu_seq    = []
     neu_time   = []
     stim_seq   = []
@@ -110,6 +119,8 @@ def run_get_stim_response(
         expected='None',
         n_stim=5,
         ):
+    if not os.path.exists(os.path.join('results', 'temp', 'alignment_memmap')):
+        os.makedirs(os.path.join('results', 'temp', 'alignment_memmap'))
     # run alignment for each session.
     list_stim_labels = []
     list_neu_seq     = []
@@ -119,14 +130,22 @@ def run_get_stim_response(
     list_stim_time   = []
     list_led_value   = []
     list_pre_isi     = []
-    for neural_trials in list_neural_trials:
+    for ni in range(len(list_neural_trials)):
         [stim_labels, neu_seq, neu_time,
          stim_seq, stim_value, stim_time,
          led_value, pre_isi
          ] = get_stim_response(
-             neural_trials,
+             list_neural_trials[ni],
              l_frames, r_frames,
              expected, n_stim)
+        stim_labels = create_memmap(stim_labels, 'stim_labels', ni)
+        neu_seq     = create_memmap(neu_seq,     'neu_seq',     ni)
+        neu_time    = create_memmap(neu_time,    'neu_time',    ni)
+        stim_seq    = create_memmap(stim_seq,    'stim_seq',    ni)
+        stim_value  = create_memmap(stim_value,  'stim_value',  ni)
+        stim_time   = create_memmap(stim_time,   'stim_time',   ni)
+        led_value   = create_memmap(led_value,   'led_value',   ni)
+        pre_isi     = create_memmap(pre_isi,     'pre_isi',     ni)
         list_stim_labels.append(stim_labels)
         list_neu_seq.append(neu_seq)
         list_neu_time.append(neu_time)
@@ -135,6 +154,15 @@ def run_get_stim_response(
         list_stim_time.append(stim_time)
         list_led_value.append(led_value)
         list_pre_isi.append(pre_isi)
+        del stim_labels
+        del neu_seq
+        del neu_time
+        del stim_seq
+        del stim_value
+        del stim_time
+        del led_value
+        del pre_isi
+        gc.collect()
     # combine neu_time.
     neu_time = np.nanmean(np.concatenate([nt.reshape(1,-1) for nt in list_neu_time]),axis=0)
     # combine stim_time.

@@ -5,7 +5,6 @@ warnings.filterwarnings('ignore')
 
 import gc
 import os
-import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
@@ -46,7 +45,7 @@ def run(session_config_list, smooth):
         plot_surgery_window(win_ax01, img_window)
         plot_surgery_window(win_ax02, img_note)
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+        fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
         plt.close(fig)
         return [filename, n_row, n_col, title]
     def plot_masks():
@@ -71,7 +70,7 @@ def run(session_config_list, smooth):
             mask_axs = [plt.subplot(gs[i:i+2, j:j+2]) for j in range(0,12,2) for i in [0,2]]
             plotter.all_2chan(mask_axs)
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+        fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
         plt.close(fig)
         del plotter
         gc.collect()
@@ -87,7 +86,7 @@ def run(session_config_list, smooth):
         example_ax = plt.subplot(gs[0:4, 0])
         plot_sess_example_traces(example_ax, list_labels, list_neural_trials, session_config_list['label_names'])
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+        fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
         plt.close(fig)
         return [filename, n_row, n_col, title]
     def plot_ca():
@@ -103,7 +102,7 @@ def run(session_config_list, smooth):
         plot_ca_transient(ca_axs01, list_labels, list_neural_trials, session_config_list['label_names'], [-1])
         plot_ca_transient(ca_axs02, list_labels, list_neural_trials, session_config_list['label_names'], [1])
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+        fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
         plt.close(fig)
         return [filename, n_row, n_col, title]
     def plot_misc():
@@ -117,7 +116,7 @@ def run(session_config_list, smooth):
         label_ax = plt.subplot(gs[0, 0])
         plot_inh_exc_label_pc(label_ax, list_labels)
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-        fig.savefig(os.path.join('results', session_config_list['subject_name']+'_temp', filename+'.svg'), dpi=300, format='svg')
+        fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
         plt.close(fig)
         return [filename, n_row, n_col, title]
     fig_all = [
