@@ -210,26 +210,17 @@ class plotter_utils(utils_basic):
         add_legend(ax, colors, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
 
     def plot_interval_box(self, ax, cate=None, roi_id=None):
-        win_base = [-self.bin_win[1],0]
-        offsets = np.arange(self.bin_num)/20
         # collect data.
         [_, _, color2, _], [neu_seq, stim_seq, stim_value, pre_isi], _, [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             mean_sem=False,
             cate=cate, roi_id=roi_id)
-        colors = get_cmap_color(self.bin_num, base_color=color2)
         # bin data based on isi.
-        [bins, bin_center, _, bin_neu_seq, _, _, _, _] = get_isi_bin_neu(
+        [bins, bin_center, _, _, bin_neu_mean, _, bin_stim_seq, _] = get_isi_bin_neu(
             neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
-        # plot errorbar.
-        for i in range(self.bin_num):
-            self.plot_win_mag_box(
-                ax, bin_neu_seq[i], self.alignment['neu_time'], win_base,
-                colors[i], 0, offsets[i])
-        # adjust layout.
-        lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
-        add_legend(ax, colors, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
+        
+
 
     def plot_interval_heatmap(self, ax, cate=None, roi_id=None):
         # collect data.

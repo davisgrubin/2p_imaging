@@ -138,15 +138,15 @@ if __name__ == "__main__":
     '''
     session_config_test = {
         'list_session_name' : {
-            #'VTYH02_PPC_20250108_3331Random' : 'random',
-            #'VTYH02_PPC_20250109_3331Random' : 'random',
-            #'VTYH02_PPC_20250111_3331Random' : 'random',
+            'VTYH02_PPC_20250108_3331Random' : 'random',
+            'VTYH02_PPC_20250109_3331Random' : 'random',
+            'VTYH02_PPC_20250111_3331Random' : 'random',
             #'VTYH02_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH02_PPC_20250225_1451ShortLong' : 'short_long',
-            'VTYH02_PPC_20250226_1415ShortLong' : 'short_long',
-            'VTYH02_PPC_20250228_1451ShortLong' : 'short_long',
+            #'VTYH02_PPC_20250225_1451ShortLong' : 'short_long',
+            #'VTYH02_PPC_20250226_1415ShortLong' : 'short_long',
+            #'VTYH02_PPC_20250228_1451ShortLong' : 'short_long',
             },
         'session_folder' : 'test',
         'sig_tag' : 'all',
@@ -165,7 +165,7 @@ if __name__ == "__main__":
         'output_filename' : 'test_passive.html'
         }
 
-    run(session_config_list_test)
+    #run(session_config_list_test)
 
     session_config_list = combine_session_config_list(session_config_list_test)
     list_ops = read_ops(session_config_list['list_session_data_path'])

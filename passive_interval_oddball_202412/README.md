@@ -140,3 +140,8 @@
 - Now one common temp folder is used.
 - Now Alignment is using memory mapping with files in the temp folder.
 
+## 2025.04.09
+- Complete wavelet denoising for ramping and dropping onset detection.
+
+## 2025.04.13
+- Finalized onset detection.

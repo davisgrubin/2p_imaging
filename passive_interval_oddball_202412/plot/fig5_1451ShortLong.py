@@ -530,8 +530,8 @@ class plotter_utils(utils_basic):
         def plot_standard_box(axs):
             # find time range to evaluate.
             c_idx = int(stim_seq_long.shape[0]/2)
-            list_win_eval = [[stim_seq_short[c_idx-1,0], stim_seq_short[c_idx+1,1]],
-                             [stim_seq_long[c_idx-1,0], stim_seq_long[c_idx+1,1]]]
+            list_win_eval = [[stim_seq_short[c_idx-1,1], stim_seq_short[c_idx+1,0]],
+                             [stim_seq_long[c_idx-1,1], stim_seq_long[c_idx+1,0]]]
             # get quantification results.
             list_metrics = get_all_metrics(
                 [neu_seq_short, neu_seq_long], self.alignment['neu_time'], list_win_eval)
@@ -1159,33 +1159,6 @@ class plotter_main(plotter_utils):
 
                 self.plot_block_transition_latent(axs[3], 1, cate=cate)
                 axs[3].set_title(f'latent dynamics to block transition \n (long to short) {label_name}')
-
-            except: pass
-
-    def cluster(self, axs_all):
-        for cate, axs in zip([[-1],[1],[-1,1]], axs_all):
-            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
-            try:
-
-                self.plot_cluster(axs, cate=cate)
-                axs[ 0].set_title(f'sorted correlation matrix \n (short) {label_name}')
-                axs[ 1].set_title(f'clustering evaluation metrics \n (short) {label_name}')
-                axs[ 2].set_title(f'cluster calcium transient \n (short) {label_name}')
-                axs[ 3].set_title(f'cluster fraction \n {label_name}')
-                axs[ 4].set_title(f'cluster fraction for subtypes \n {label_name}')
-                axs[ 5].set_title(f'time normalized reseponse to preceeding interval with bins \n {label_name}')
-                axs[ 6].set_title(f'response to standard interval \n (short) {label_name}')
-                axs[ 7].set_title(f'response to standard interval \n (long) {label_name}')
-                axs[ 8].set_title(f'response to oddball interval \n (short standard) {label_name}')
-                axs[ 9].set_title(f'response to oddball interval \n (long standard) {label_name}')
-                axs[10].set_title(f'response to block transition \n (short to long) {label_name}')
-                axs[11].set_title(f'response to block transition \n (long to short) {label_name}')
-                axs[12].set_title(f'response to standard interval \n (short) {label_name}')
-                axs[13].set_title(f'response to standard interval \n (long) {label_name}')
-                axs[14].set_title(f'response to oddball interval \n (short standard) {label_name}')
-                axs[15].set_title(f'response to oddball interval \n (long standard) {label_name}')
-                axs[16].set_title(f'response to block transition \n (short to long) {label_name}')
-                axs[17].set_title(f'response to block transition \n (long to short) {label_name}')
 
             except: pass
 
