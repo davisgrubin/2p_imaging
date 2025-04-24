@@ -187,13 +187,13 @@ def plot_stim_type(ax, list_neural_trials):
     num_img4 = np.sum((stim_labels[:,2]==5)*(stim_labels[:,6]==0))
     ax.pie(
         [num_random, num_odd, num_change, num_img1, num_img2, num_img3, num_img4],
-        labels=['{} random'.format(num_random),
-                '{} odd'.format(num_odd),
-                '{} change'.format(num_change),
-                '{} img#1'.format(num_img1),
-                '{} img#2'.format(num_img2),
-                '{} img#3'.format(num_img3),
-                '{} img#4'.format(num_img4)],
+        labels=['{}'.format(num_random),
+                '{}'.format(num_odd),
+                '{}'.format(num_change),
+                '{}'.format(num_img1),
+                '{}'.format(num_img2),
+                '{}'.format(num_img3),
+                '{}'.format(num_img4)],
         colors=['silver', 'black', 'yellow', 'cornflowerblue', 'mediumseagreen', 'hotpink', 'coral'],
         autopct='%1.1f%%',
         wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
@@ -202,13 +202,13 @@ def plot_stim_type(ax, list_neural_trials):
 
 # trial labels.
 def plot_stim_label(ax, list_neural_trials):
-    isi_range = [0,3000]
+    isi_range = [500,2500]
+    trial_range = [0,2000]
     colors = ['black', 'cornflowerblue', 'mediumseagreen', 'hotpink', 'coral']
-    labels = ['oddball', 'img#1', 'img#2', 'img#3', 'img#4']
     stim_labels = list_neural_trials[-1]['stim_labels']
     img_seq_label = np.abs(stim_labels[:-1,2]).astype('int32')
     isi = stim_labels[1:,0] - stim_labels[:-1,1]
-    ax.scatter(np.arange(len(isi)), isi, c=[colors[l-1] for l in img_seq_label])
+    ax.scatter(np.arange(len(isi)), isi, c=[colors[l-1] for l in img_seq_label], s=5)
     ax.tick_params(tick1On=False)
     ax.spines['left'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -216,10 +216,17 @@ def plot_stim_label(ax, list_neural_trials):
     ax.yaxis.grid(True, linewidth=0.25)
     ax.set_xlabel('trial #')
     ax.set_ylabel('interval (ms)')
-    ax.set_ylim(isi_range)
-    ax.set_yticks(500*np.arange(isi_range[0], isi_range[1]/500+1).astype('int32'))
+    ax.set_xlim(trial_range)
+    ax.set_ylim([450,2550])
+    ax.set_yticks(500*np.arange(isi_range[0]/500, isi_range[1]/500+1).astype('int32'))
     ax.set_yticklabels(
-        500*np.arange(isi_range[0], isi_range[1]/500+1).astype('int32'))
+        500*np.arange(isi_range[0]/500, isi_range[1]/500+1).astype('int32'))
     ax.set_title('single trial interval distribution')
+
+# plot legend.
+def plot_trial_legend(ax):
+    colors=['silver', 'black', 'yellow', 'cornflowerblue', 'mediumseagreen', 'hotpink', 'coral']
+    labels = ['random', 'oddball', 'change', 'img#1', 'img#2', 'img#3', 'img#4']
     add_legend(ax, colors, labels, None, None, None, 'upper right')
+    ax.axis('off')
     

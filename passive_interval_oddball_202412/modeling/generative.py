@@ -5,6 +5,9 @@ from tqdm import tqdm
 from scipy.interpolate import interp1d
 from sklearn.metrics import explained_variance_score
 
+from sklearn.decomposition import PCA
+from scipy.linalg import orthogonal_procrustes
+
 #%% generalized linear model
 
 # interpolate input trace to the same length as neural response.
@@ -86,3 +89,40 @@ def run_glm_multi_sess(
     kernel_all = np.concatenate(kernel_all, axis=0)
     exp_var_all = np.concatenate(exp_var_all)
     return kernel_all, exp_var_all
+
+# retrieve glm kernels for category.
+def get_glm_cate(glm, list_labels, list_significance, cate):
+    idx = np.concatenate([np.in1d(list_labels[i],cate)*list_significance[i]['r_standard']
+           for i in range(len(list_labels))])
+    kernel_all = glm['kernel_all'][idx,:]
+    exp_var_all = glm['exp_var_all'][idx]
+    return kernel_all, exp_var_all
+
+#%% latent dynamics
+
+# find single trial latent alignment across sessions.
+def latent_align(neu_x, d_latent):
+    n_times = neu_x[0].shape[2]
+    # reshape into n_sess*[n_neurons*n_trials*n_times].
+    neu_permute = [np.transpose(nx, [1,0,2]) for nx in neu_x]
+    # fit mode.
+    neu_z = [
+        PCA(n_components=d_latent).fit_transform(
+            neu.reshape(neu.shape[0],-1).T
+            ).T.reshape(d_latent, -1, n_times)
+        for neu in neu_permute]
+    # find alignment transform.
+    neu_permute = [np.transpose(np.nanmean(nz, axis=1), [1,0]) for nz in neu_z]
+    align_func = [orthogonal_procrustes(
+        neu_permute[0], nz)[0] for nz in neu_permute]
+    # align latent dynamics.
+    neu_z_align = [
+        np.matmul(nz.reshape(d_latent,-1).T, af).T.reshape(d_latent,-1,n_times)
+        for nz,af in zip(neu_z,align_func)]
+    return neu_z_align
+    
+    
+
+
+
+

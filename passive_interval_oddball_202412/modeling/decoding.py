@@ -2,68 +2,45 @@
 
 import numpy as np
 from tqdm import tqdm
-
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
-# single trial decoding by sampling subset of neurons. 
-def multi_sess_decoding_num_neu(
-        neu_x, neu_y,
-        num_step, n_decode,
-        mode
-        ):
-    n_sess = len(neu_x)
-    # define sampling numbers.
-    max_num = np.nanmax([neu_x[i].shape[1] for i in range(n_sess)])
-    sampling_nums = np.arange(num_step, ((max_num//num_step)+1)*num_step, num_step)
-    # run decoding.
-    acc_model  = []
-    acc_chance = []
-    for n_neu in tqdm(sampling_nums):
-        results_model = []
-        results_chance = []
-        for s in range(n_sess):
-            # not enough neurons.
-            if n_neu > neu_x[s].shape[1]:
-                results_model.append(np.nan)
-                results_chance.append(np.nan)
-            # random sampling n_decode times.
-            else:
-                for _ in range(n_decode):
-                    sub_idx = np.random.choice(neu_x[s].shape[1], n_neu, replace=False)
-                    x = neu_x[s][:,sub_idx].copy()
-                    y = neu_y[s].copy()
-                    am, ac = decoding_spatial_temporal(x, y, mode)
-                    results_model.append(am)
-                    results_chance.append(ac)
-        acc_model.append(np.array(results_model).reshape(-1,1))
-        acc_chance.append(np.array(results_chance).reshape(-1,1))
-    return sampling_nums, acc_model, acc_chance
+from modeling.utils import get_frame_idx_from_time
+from modeling.utils import get_mean_sem
 
 # single trial decoding by sliding window.
 def multi_sess_decoding_slide_win(
-        neu_x, neu_y,
-        start_idx, end_idx, win_step,
-        n_decode, num_frames,
+        neu_x, neu_y, neu_time,
+        win_decode, win_sample, win_step,
         ):
     mode = 'spatial'
     n_sess = len(neu_x)
+    start_idx, end_idx = get_frame_idx_from_time(neu_time, 0, win_decode[0], win_decode[1])
+    l_idx, r_idx = get_frame_idx_from_time(neu_time, 0, 0, win_sample)
+    n_sample = r_idx - l_idx
     # run decoding.
+    acc_time   = []
     acc_model  = []
     acc_chance = []
     for i in tqdm(range(start_idx, end_idx, win_step)):
         results_model = []
         results_chance = []
         for s in range(n_sess):
-            x = neu_x[s][:,:,i-num_frames:i].copy()
+            x = neu_x[s][:,:,i-n_sample:i].copy()
             y = neu_y[s].copy()
             am, ac = decoding_spatial_temporal(x, y, mode)
             results_model.append(am)
             results_chance.append(ac)
+        acc_time.append(i)
         acc_model.append(np.array(results_model).reshape(-1,1))
         acc_chance.append(np.array(results_chance).reshape(-1,1))
-    return acc_model, acc_chance
+    acc_model = np.concatenate(acc_model, axis=1)
+    acc_chance = np.concatenate(acc_chance, axis=1)
+    acc_time = neu_time[np.array(acc_time)]
+    acc_model_mean, acc_model_sem = get_mean_sem(acc_model)
+    acc_chance_mean, acc_chance_sem = get_mean_sem(acc_chance)
+    return acc_time, acc_model_mean, acc_model_sem, acc_chance_mean, acc_chance_sem
 
 # run spatial-temporal model for single trial decoding.
 def decoding_spatial_temporal(x, y, mode):

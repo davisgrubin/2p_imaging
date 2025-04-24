@@ -13,7 +13,7 @@ def run(session_config, fn1, fn2, fn3, fn4):
     
     # helper function to embed figures into an html block.
     def generate_div(filename):
-        scale_pixel = 256
+        scale_pixel = 196
         # read svg content.
         with open(os.path.join('results', 'temp', filename[0]+'.svg'),
                   'r', encoding="utf-8") as svg_file:

@@ -62,6 +62,18 @@ def read_raw_voltages(ops):
             vol_hifi, vol_stim_aud, vol_flir,
             vol_pmt, vol_led]
 
+# read camera dlc results.
+def read_camera(ops):
+    mm_path, file_path = get_memmap_path(ops, 'camera.h5')
+    try:
+        with h5py.File(file_path, 'r') as f:
+            camera_time = create_memmap(f['camera']['camera_time'], 'float32', os.path.join(mm_path, 'camera_time.mmap'))
+            pupil       = create_memmap(f['camera']['pupil'],       'float32', os.path.join(mm_path, 'pupil.mmap'))
+    except:
+        camera_time = create_memmap(np.array([np.nan]), 'float32', os.path.join(mm_path, 'camera_time.mmap'))
+        pupil       = create_memmap(np.array([np.nan]),       'float32', os.path.join(mm_path, 'pupil.mmap'))
+    return [camera_time, pupil]
+
 # read masks.
 def read_masks(ops):
     mm_path, file_path = get_memmap_path(ops, 'masks.h5')

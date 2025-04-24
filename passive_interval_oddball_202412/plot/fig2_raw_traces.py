@@ -16,8 +16,8 @@ def plot_sess_example_traces(ax, list_labels, list_neural_trials, label_names):
         max_ms = 150000
         n = 20
         r = 0.75
-        _, _, c1, _ = get_roi_label_color([-1], 0)
-        _, _, c2, _ = get_roi_label_color([1], 0)
+        _, _, c1, _ = get_roi_label_color(cate=[-1])
+        _, _, c2, _ = get_roi_label_color(cate=[1])
         # organize data.
         dff = [nt['dff'] for nt in list_neural_trials] 
         time = [nt['time'] for nt in list_neural_trials]
@@ -65,7 +65,7 @@ def plot_sess_example_traces(ax, list_labels, list_neural_trials, label_names):
         for i in range(len(act_idx)):
             ax.plot(
                 sub_time_img, sub_dff[i,:] + i * scale,
-                color=[get_roi_label_color([i], 0)[2] for i in labels[act_idx]][i])
+                color=[get_roi_label_color(cate=[i])[2] for i in labels[act_idx]][i])
         # adjust layout.
         ax.tick_params(axis='y', tick1On=False)
         ax.spines['left'].set_visible(False)
@@ -78,7 +78,7 @@ def plot_sess_example_traces(ax, list_labels, list_neural_trials, label_names):
         ax.set_xlim([np.min(sub_time_img), np.max(sub_time_img)])
         add_legend(
             ax,
-            [get_roi_label_color([int(k)], 0)[2] for k in label_names.keys()],
+            [get_roi_label_color(cate=[int(k)])[2] for k in label_names.keys()],
             [i[1] for i in label_names.items()], None, None, None,
             'upper right')
     except:
@@ -87,7 +87,7 @@ def plot_sess_example_traces(ax, list_labels, list_neural_trials, label_names):
 # calcium transient analysis.
 def plot_ca_transient(axs, list_labels, list_neural_trials, label_names, cate):
     try:
-        color0, _, color2, _ = get_roi_label_color(cate, 0)
+        color0, _, color2, _ = get_roi_label_color(cate=cate)
         label_name = label_names[str(cate[0])]
         # compute calcium transient.
         _, dff_ca_neu, dff_ca_time = get_ca_transient_multi_sess(list_neural_trials)

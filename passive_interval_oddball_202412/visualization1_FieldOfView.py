@@ -16,7 +16,7 @@ from plot.misc import plot_surgery_window
 from plot.misc import plot_inh_exc_label_pc
 
 def run(session_config_list, smooth):
-    size_scale = 5
+    size_scale = 3
     n_examples = 3
     n_sess = len(session_config_list['list_session_name'])
     n_examples = n_examples if n_examples < n_sess else n_sess
@@ -24,6 +24,7 @@ def run(session_config_list, smooth):
      ] = read_all(session_config_list, smooth)
     def plot_window():
         title = 'surgery window'
+        print('-----------------------------------------------')
         print(title)
         filename = 'fov01_window'
         session_folder = [
@@ -38,7 +39,7 @@ def run(session_config_list, smooth):
         img_note = [plt.imread(wp) for wp in path_note]
         n_row = 2
         n_col = len(path_window)
-        fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='constrained')
+        fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
         gs = GridSpec(n_row, n_col, figure=fig)
         win_ax01 = [plt.subplot(gs[0, i]) for i in range(len(path_window))]
         win_ax02 = [plt.subplot(gs[1, i]) for i in range(len(path_note))]
@@ -50,6 +51,7 @@ def run(session_config_list, smooth):
         return [filename, n_row, n_col, title]
     def plot_masks():
         title = 'imaging fov'
+        print('-----------------------------------------------')
         print(title)
         filename = 'fov02_imaging'
         n_row = 4
@@ -77,6 +79,7 @@ def run(session_config_list, smooth):
         return [filename, n_row, n_col, title]
     def plot_example_traces():
         title = 'example traces'
+        print('-----------------------------------------------')
         print(title)
         filename = 'fov03_example_traces'
         n_row = 4
@@ -91,6 +94,7 @@ def run(session_config_list, smooth):
         return [filename, n_row, n_col, title]
     def plot_ca():
         title = 'calcium transient analysis'
+        print('-----------------------------------------------')
         print(title)
         filename = 'fov04_ca'
         n_row = 2
@@ -107,6 +111,7 @@ def run(session_config_list, smooth):
         return [filename, n_row, n_col, title]
     def plot_misc():
         title = 'misc imaging results'
+        print('-----------------------------------------------')
         print(title)
         filename = 'fov05_misc'
         n_row = 1

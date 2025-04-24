@@ -50,6 +50,7 @@ def get_stim_response(
     stim_time  = []
     led_value  = []
     pre_isi    = []
+    post_isi   = []
     # loop over stimulus.
     for stim_id in tqdm(range(n_stim, stim_labels.shape[0]-n_stim)):
         # find alignment offset.
@@ -81,8 +82,9 @@ def get_stim_response(
                 [[stim_labels[stim_id+i,0]-stim_labels[stim_id,0],
                  stim_labels[stim_id+i,1]-stim_labels[stim_id,0]]
                 for i in np.arange(-n_stim,n_stim+1)]).reshape(1,2*n_stim+1,2))
-            # preceeding isi.
+            # interval around.
             pre_isi.append(np.array([stim_labels[stim_id,0]-stim_labels[stim_id-1,1]]))
+            post_isi.append(np.array([stim_labels[stim_id+1,0]-stim_labels[stim_id,1]]))
     # correct stimulus labels.
     stim_labels = neural_trials['stim_labels'][n_stim:-n_stim,:]
     # correct neural data centering at zero.
@@ -106,11 +108,12 @@ def get_stim_response(
     led_value  = [lv.reshape(1,-1) for lv in led_value]
     led_value  = np.concatenate(led_value, axis=0)
     pre_isi    = np.concatenate(pre_isi, axis=0)
+    post_isi   = np.concatenate(post_isi, axis=0)
     # get mean time stamps.
     neu_time  = np.mean(neu_time, axis=0)
     stim_time = np.mean(stim_time, axis=0)
     # combine results.
-    return [stim_labels, neu_seq, neu_time, stim_seq, stim_value, stim_time, led_value, pre_isi]
+    return [stim_labels, neu_seq, neu_time, stim_seq, stim_value, stim_time, led_value, pre_isi, post_isi]
 
 # run alignment for all sessions
 def run_get_stim_response(
@@ -130,10 +133,11 @@ def run_get_stim_response(
     list_stim_time   = []
     list_led_value   = []
     list_pre_isi     = []
+    list_post_isi    = []
     for ni in range(len(list_neural_trials)):
         [stim_labels, neu_seq, neu_time,
          stim_seq, stim_value, stim_time,
-         led_value, pre_isi
+         led_value, pre_isi, post_isi
          ] = get_stim_response(
              list_neural_trials[ni],
              l_frames, r_frames,
@@ -146,6 +150,7 @@ def run_get_stim_response(
         stim_time   = create_memmap(stim_time,   'stim_time',   ni)
         led_value   = create_memmap(led_value,   'led_value',   ni)
         pre_isi     = create_memmap(pre_isi,     'pre_isi',     ni)
+        post_isi    = create_memmap(post_isi,    'post_isi',    ni)
         list_stim_labels.append(stim_labels)
         list_neu_seq.append(neu_seq)
         list_neu_time.append(neu_time)
@@ -154,6 +159,7 @@ def run_get_stim_response(
         list_stim_time.append(stim_time)
         list_led_value.append(led_value)
         list_pre_isi.append(pre_isi)
+        list_post_isi.append(post_isi)
         del stim_labels
         del neu_seq
         del neu_time
@@ -162,6 +168,7 @@ def run_get_stim_response(
         del stim_time
         del led_value
         del pre_isi
+        del post_isi
         gc.collect()
     # combine neu_time.
     neu_time = np.nanmean(np.concatenate([nt.reshape(1,-1) for nt in list_neu_time]),axis=0)
@@ -193,7 +200,8 @@ def run_get_stim_response(
         'list_stim_value':  list_stim_value,
         'stim_time':        stim_time,
         'list_led_value':   list_led_value,
-        'list_pre_isi':     list_pre_isi
+        'list_pre_isi':     list_pre_isi,
+        'list_post_isi':    list_post_isi,
         }
     return alignment
 

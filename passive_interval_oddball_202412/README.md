@@ -145,3 +145,65 @@
 
 ## 2025.04.13
 - Finalized onset detection.
+
+## 2025.04.15
+- Now get_roi_label_color accepts cate as input.
+- Now get_neu_trial and get_stim_response returns post_isi as wel.
+- Deleted relabeling in clustering_neu_response_mode.
+- Added remap_cluster_id.
+- Rewritten plot_interval_bin in 3331Random.
+- Rewritten plot_interval_bin_box in 3331Random
+- In quantifications added get_evoke_value.
+- In quantifications added get_evoke_time.
+- In quantifications added run_quantification.
+- Rewritten plot_cluster_metric_box.
+
+## 2025.04.16
+- Now filter_candidate_linearity is a separate function.
+- Set the default wavelet scale in get_change_onset to 64.
+- Moved run_glm into utils_basic.
+- Now plot_cluster_mean_sem can set stim_seq to None to avoid plotting stimulus.
+- Rewritten plot_cluster_oddball_fix_all in 4131FixJitterOdd.
+
+## 2025.04.18
+- Added plot_cluster_oddball_fix_individual.
+- Added plot_cluster_oddball_fix_all.
+- All layout set to constrained.
+- Removed plot_sorted_heatmaps_fix_jitter.
+- Added plot_sorted_heatmaps_fix_all.
+- Separate plot_heatmap_neuron and plot_heatmap_neuron_cate.
+- Added plot_sorted_heatmaps_fix_all.
+
+## 2025.04.20
+- Now get_cmap_color gives uniformly distributed colors.
+- Added plot_oddball_latent_fix_all.
+- Rewritten multi_sess_decoding_slide_win.
+
+## 2025.04.22
+- Now get_change_onset receives win_eval_c as the evaluation center and has the window predefined inside the function.
+- Added run_quantification into quantifications.
+- Added plot_trial_legend into intervals.
+- Added get_stim_evoke_mag into quantifications.
+- Added get_stim_evoke_slope into quantifications.
+
+## 2025.04.23
+- Added get_stim_evoke_latency into quantifications.
+- Rewritten remap_cluster_id in clustering.
+- Now run_glm is initialized and run at the beginning.
+- Added get_glm_cate into generative.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

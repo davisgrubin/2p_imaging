@@ -10,6 +10,7 @@ from scipy.spatial.distance import pdist
 from sklearn.manifold import TSNE
 
 from modeling.clustering import get_mean_sem_cluster
+from modeling.generative import run_glm_multi_sess
 
 #%% general data processing
 
@@ -119,6 +120,7 @@ def get_multi_sess_neu_trial(
     stim_seq = []
     stim_value = []
     pre_isi = []
+    post_isi = []
     # use stim_labels to find trials.
     if trial_param != None and trial_idx == None:
         for i in range(len(neu_cate)):
@@ -134,6 +136,7 @@ def get_multi_sess_neu_trial(
             stim_seq.append(alignment['list_stim_seq'][i][idx,:,:])
             stim_value.append(alignment['list_stim_value'][i][idx,:])
             pre_isi.append(alignment['list_pre_isi'][i][idx])
+            post_isi.append(alignment['list_post_isi'][i][idx])
     # use given idx to find trials.
     if trial_param == None and trial_idx != None:
         for i in range(len(neu_cate)):
@@ -141,6 +144,7 @@ def get_multi_sess_neu_trial(
             stim_seq.append(alignment['list_stim_seq'][i][trial_idx[i],:,:])
             stim_value.append(alignment['list_stim_value'][i][trial_idx[i],:])
             pre_isi.append(alignment['list_pre_isi'][i][trial_idx[i]])
+            post_isi.append(alignment['list_post_isi'][i][trial_idx[i]])
     # use both.
     if trial_param != None and trial_idx != None:
         for i in range(len(neu_cate)):
@@ -156,6 +160,7 @@ def get_multi_sess_neu_trial(
             stim_seq.append(alignment['list_stim_seq'][i][trial_idx[i]*idx,:,:])
             stim_value.append(alignment['list_stim_value'][i][trial_idx[i]*idx,:])
             pre_isi.append(alignment['list_pre_isi'][i][trial_idx[i]*idx])
+            post_isi.append(alignment['list_post_isi'][i][trial_idx[i]*idx])
     # get numbers.
     n_trials = np.nansum([n.shape[0] for n in neu])
     n_neurons = np.nansum([n.shape[1] for n in neu])
@@ -170,7 +175,7 @@ def get_multi_sess_neu_trial(
         return [mean, sem, stim_seq, stim_value], [n_trials, n_neurons]
     # return single trial response.
     else:
-        return [neu, stim_seq, stim_value, pre_isi], [n_trials, n_neurons]
+        return [neu, stim_seq, stim_value, pre_isi, post_isi], [n_trials, n_neurons]
 
 # find neuron category and trial data.
 def get_neu_trial(
@@ -179,7 +184,7 @@ def get_neu_trial(
         cate=None, roi_id=None,
         ):
     if cate != None:
-        colors = get_roi_label_color(cate, 0)
+        colors = get_roi_label_color(cate=cate)
         neu_labels = np.concatenate([
             list_labels[i][np.in1d(list_labels[i],cate)*list_significance[i]['r_standard']]
             for i in range(len(list_stim_labels))])
@@ -190,7 +195,7 @@ def get_neu_trial(
             alignment['list_neu_seq'][i][:,np.in1d(list_labels[i],cate)*list_significance[i]['r_standard'],:]
             for i in range(len(list_stim_labels))]
     if roi_id != None:
-        colors = get_roi_label_color(list_labels, roi_id)
+        colors = get_roi_label_color(list_labels, roi_id=roi_id)
         neu_labels = None
         neu_cate = [np.expand_dims(alignment['list_neu_seq'][0][:,roi_id,:], axis=1)]
     neu_trial, neu_num = get_multi_sess_neu_trial(
@@ -333,7 +338,7 @@ def exclude_odd_stim(stim_labels):
 
 # get isi based binning average neural response.
 def get_isi_bin_neu(
-        neu_seq, stim_seq, stim_value, pre_isi,
+        neu_seq, stim_seq, stim_value, isi,
         bin_win, bin_num,
         mean_sem=True
         ):
@@ -341,7 +346,7 @@ def get_isi_bin_neu(
     bin_size = (bin_win[1] - bin_win[0]) / bin_num
     bins = np.arange(bin_win[0], bin_win[1] + bin_size, bin_size)
     bin_center = bins[:-1] + bin_size / 2
-    list_bin_idx = [np.digitize(i, bins) - 1 for i in pre_isi]
+    list_bin_idx = [np.digitize(i, bins) - 1 for i in isi]
     # compute binned results.
     bin_neu_seq_trial = []
     bin_neu_seq = []
@@ -370,7 +375,8 @@ def get_isi_bin_neu(
         bin_stim_seq[i,:,:] = s_seq
         bin_stim_value[i,:] = s_value
     bin_center = bin_center.astype('int32')
-    return bins, bin_center, bin_neu_seq_trial, bin_neu_seq, bin_neu_mean, bin_neu_sem, bin_stim_seq, bin_stim_value
+    return [bins, bin_center, bin_neu_seq_trial, bin_neu_seq,
+            bin_neu_mean, bin_neu_sem, bin_stim_seq, bin_stim_value]
 
 # compute synchrnization across time.
 def get_neu_sync(neu, win_width):
@@ -594,45 +600,46 @@ def run_wilcoxon_trial(neu_seq_trial_1, neu_seq_trial_2, thres):
 #%% plotting
 
 # get color from label.
-def get_roi_label_color(labels, roi_id):
-    if labels[roi_id] == -1:
+def get_roi_label_color(labels=None, cate=None, roi_id=None):
+    if (roi_id != None and labels[roi_id] == -1) or (cate == [-1]):
         color0 = 'dimgrey'
         color1 = 'deepskyblue'
         color2 = 'royalblue'
         cmap = mcolors.LinearSegmentedColormap.from_list(
             'yicong_will_love_you_forever',
-            ['white', 'royalblue', 'black'])
-    if labels[roi_id] == 0:
-        color0 = 'dimgrey'
-        color1 = 'hotpink'
-        color2 = 'violet'
-        cmap = mcolors.LinearSegmentedColormap.from_list(
-            'yicong_will_love_you_forever',
-            ['white', 'forestgreen', 'black'])
-    if labels[roi_id] == 1:
+            ['lemonchiffon', 'royalblue', 'black'])
+    if (roi_id != None and labels[roi_id] == 1) or (cate == [1]):
         color0 = 'dimgrey'
         color1 = 'chocolate'
         color2 = 'crimson'
         cmap = mcolors.LinearSegmentedColormap.from_list(
             'yicong_will_love_you_forever',
-            ['white', 'crimson', 'black'])
-    if labels[roi_id] == 2:
+            ['lemonchiffon', 'crimson', 'black'])
+    if (roi_id != None and labels[roi_id] == 2) or (cate == [2]):
         color0 = 'dimgrey'
         color1 = 'mediumseagreen'
         color2 = 'forestgreen'
         cmap = mcolors.LinearSegmentedColormap.from_list(
             'yicong_will_love_you_forever',
-            ['white', 'forestgreen', 'black'])
+            ['lemonchiffon', 'forestgreen', 'black'])
+    if len(cate) > 1:
+        color0 = 'dimgrey'
+        color1 = 'hotpink'
+        color2 = 'darkviolet'
+        cmap = mcolors.LinearSegmentedColormap.from_list(
+            'yicong_will_love_you_forever',
+            ['lemonchiffon', 'violet', 'black'])
     return color0, color1, color2, cmap
 
 # return colors from dim to dark with a base color.
 def get_cmap_color(n_colors, base_color=None, cmap=None, return_cmap=False):
+    c_margin = 0.2
     if base_color != None:
         cmap = mcolors.LinearSegmentedColormap.from_list(
-            None, ['#FCFCFC', base_color, '#2C2C2C'])
+            None, ['lemonchiffon', base_color, 'black'])
     if cmap != None:
         pass
-    colors = cmap((np.arange(n_colors+1)+1)/(n_colors+1))[:-1,:]
+    colors = cmap(np.linspace(c_margin, 1 - c_margin, n_colors))
     colors = [mcolors.to_hex(color, keep_alpha=True) for color in colors]
     if return_cmap:
         return cmap, colors
@@ -659,37 +666,37 @@ def sort_heatmap_neuron(neu_seq_sort_s, neu_time, win_sort):
     return sorted_idx
 
 # apply colormap.
-def apply_colormap(data, cmap, norm_mode, data_share):
+def apply_colormap(data, hm_cmap, norm_mode, data_share):
     # no valid data found.
     if len(data) == 0:
-        data_heatmap = np.zeros((0, data.shape[1], 3))
-        norm = None
-        return data_heatmap, norm, cmap
+        hm_data = np.zeros((0, data.shape[1], 3))
+        hm_norm = None
+        return hm_data, hm_norm, hm_cmap
     else:
         # binary heatmap.
         if norm_mode == 'binary':
-            norm = mcolors.Normalize(vmin=0, vmax=1)
-            cs = get_cmap_color(3, cmap=cmap)
-            cmap = mcolors.LinearSegmentedColormap.from_list(None, ['#FCFCFC', cs[1]])
+            hm_norm = mcolors.Normalize(vmin=0, vmax=1)
+            cs = get_cmap_color(3, cmap=hm_cmap)
+            hm_cmap = mcolors.LinearSegmentedColormap.from_list(None, ['#FCFCFC', cs[1]])
         else:
             # no normalization.
             if norm_mode == 'none':
-                norm = mcolors.Normalize(vmin=np.nanmin(data), vmax=np.nanmax(data))
+                hm_norm = mcolors.Normalize(vmin=np.nanmin(data), vmax=np.nanmax(data))
             # normalized into [0,1].
             elif norm_mode == 'minmax':
                 for i in range(data.shape[0]):
                     data[i,:] = norm01(data[i,:])
-                norm = mcolors.Normalize(vmin=0, vmax=1)
+                hm_norm = mcolors.Normalize(vmin=0, vmax=1)
             # share the global scale.
             elif norm_mode == 'share':
-                norm = mcolors.Normalize(vmin=np.nanmin(data_share), vmax=np.nanmax(data_share))
+                hm_norm = mcolors.Normalize(vmin=np.nanmin(data_share), vmax=np.nanmax(data_share))
             # handle errors.
             else:
                 raise ValueError('norm_mode can only be [binary, none, minmax, share].')
-        cmap.set_bad(color='white')
-        data_heatmap = cmap(data)
-        data_heatmap = data_heatmap[..., :3]
-    return data_heatmap, norm, cmap
+        hm_cmap.set_bad(color='white')
+        hm_data = hm_cmap(data)
+        hm_data = hm_data[..., :3]
+    return hm_data, hm_norm, hm_cmap
 
 # adjust layout for grand average neural traces.
 def adjust_layout_neu(ax):
@@ -706,10 +713,8 @@ def adjust_layout_cluster_neu(ax, n_clusters, xlim):
     ax.spines['top'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
     ax.set_xlim(xlim)
-    ax.set_ylabel('cluster #', rotation=90)
     ax.set_xticks([])
-    ax.set_yticks(np.arange(n_clusters)+0.5)
-    ax.set_yticklabels(np.arange(n_clusters))
+    ax.set_yticks([])
     
 # adjust layout for heatmap.
 def adjust_layout_heatmap(ax):
@@ -720,7 +725,7 @@ def adjust_layout_heatmap(ax):
 def adjust_layout_3d_latent(ax, neu_z, cmap, neu_time, cbar_label):
     scale = 0.9
     ax.grid(False)
-    ax.view_init(elev=30, azim=30)
+    ax.view_init(elev=15, azim=15)
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_zticks([])
@@ -789,7 +794,32 @@ class utils_basic:
 
     def __init__(self):
         self.min_num_trial = 5
-        self.cluster_cmap = plt.cm.hsv
+        self.latent_cmap = plt.cm.gnuplot2_r
+    
+    def run_glm(self):
+        # define kernel window.
+        kernel_win = [-500,3000]
+        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, kernel_win[0], kernel_win[1])
+        kernel_time = self.alignment['neu_time'][l_idx:r_idx]
+        l_idx = np.searchsorted(self.alignment['neu_time'], 0) - l_idx
+        r_idx = r_idx - np.searchsorted(self.alignment['neu_time'], 0)
+        # collect data.
+        list_dff = [nt['dff'] for nt in self.list_neural_trials]
+        list_neu_time = [nt['time'] for nt in self.list_neural_trials]
+        list_input_time  = [nt['vol_time'] for nt in self.list_neural_trials]
+        list_input_value = [nt['vol_stim_vis'] for nt in self.list_neural_trials]
+        list_stim_labels = [nt['stim_labels'] for nt in self.list_neural_trials]
+        # fit glm model.
+        kernel_all, exp_var_all = run_glm_multi_sess(
+            list_dff, list_neu_time,
+            list_input_time, list_input_value, list_stim_labels,
+            l_idx, r_idx)
+        glm = {
+            'kernel_time': kernel_time,
+            'kernel_all': kernel_all,
+            'exp_var_all': exp_var_all,
+            }
+        return glm
 
     def plot_mean_sem(self, ax, t, m, s, c, l, a=1.0):
         ax.plot(t, m, color=c, label=l, alpha=a)
@@ -800,16 +830,49 @@ class utils_basic:
         v = np.mean(sv, axis=0)
         v = rescale(v, u, l)
         ax.plot(st, v, color=c, lw=0.5, linestyle=':')
+    
+    def plot_heatmap_neuron(
+            self, ax, neu_seq, neu_time, neu_seq_sort, cmap,
+            win_sort, norm_mode=None, neu_seq_share=None,
+            cbar_label=None,
+            ):
+        if len(neu_seq) > 0:
+            # exclude pure nan row.
+            neu_idx = np.where(~np.all(np.isnan(neu_seq), axis=1))[0]
+            neu_seq = neu_seq[neu_idx,:].copy()
+            neu_seq_sort = neu_seq_sort[neu_idx,:].copy()
+            # sort heatmap.
+            sorted_idx = sort_heatmap_neuron(neu_seq_sort, neu_time, win_sort)
+            # rearrange the matrix.
+            data = neu_seq[sorted_idx,:].copy()
+            # compute share scale if give.
+            if neu_seq_share != None:
+                data_share = np.concatenate(neu_seq_share, axis=0)
+            else: 
+                data_share = np.nan
+            # prepare heatmap.
+            hm_data, hm_norm, hm_cmap = apply_colormap(data, cmap, norm_mode, data_share)
+            # plot heatmap.
+            ax.imshow(
+                hm_data,
+                extent=[neu_time[0], neu_time[-1], 1, hm_data.shape[0]],
+                interpolation='nearest', aspect='auto')
+            # adjust layout.
+            adjust_layout_heatmap(ax)
+            ax.set_ylabel('neuron id (sorted)')
+            for tick in ax.get_yticklabels():
+                tick.set_rotation(90)
+            add_heatmap_colorbar(ax, hm_cmap, hm_norm, cbar_label)
 
     @show_memory_usage
-    def plot_heatmap_neuron(
+    def plot_heatmap_neuron_cate(
             self, ax, neu_seq, neu_time, neu_seq_sort,
             win_sort, neu_labels, neu_sig,
             norm_mode=None,
             neu_seq_share=None, neu_labels_share=None, neu_sig_share=None,
             cate=[[-1],[1],[2]]):
         if len(neu_seq) > 0:
-            list_cmap = [get_roi_label_color(c, 0)[3] for c in cate]
+            list_cmap = [get_roi_label_color(cate=c)[3] for c in cate]
             # exclude pure nan row.
             neu_idx = np.where(~np.all(np.isnan(neu_seq), axis=1))[0]
             neu_seq = neu_seq[neu_idx,:].copy()
@@ -832,7 +895,7 @@ class utils_basic:
                          for ni in range(len(neu_seq_share))], axis=0)
                 else: 
                     data_share = np.nan
-                cmap = get_roi_label_color(cate[ci], 0)[3]
+                cmap = get_roi_label_color(cate=cate[ci])[3]
                 list_data.append(data)
                 list_data_share.append(data_share)
                 list_cmap.append(cmap)
@@ -878,7 +941,7 @@ class utils_basic:
             tick.set_rotation(90)
         add_heatmap_colorbar(ax, cmap, norm, None)
                 
-    def plot_win_mag_box(
+    def plot_win_mag_quant(
             self, ax, neu_seq, neu_time,
             win_base, color, c_time, offset,
             ):
@@ -1049,12 +1112,10 @@ class utils_basic:
         add_legend(ax, colors, lbl, None, None, None, 'upper right')
 
     def plot_cluster_cate_fraction_in_cluster(self, ax, cluster_id, neu_labels, label_names):
-        bar_width = 0.5
+        bar_width = 0.2
         n_clusters = len(np.unique(cluster_id))
-        lbl = [v for v in label_names.values()]
-        cluster_name = ['cluster #'+str(i) for i in range(n_clusters)]
         cate_eval = [int(k) for k in label_names.keys()]
-        cate_color = [get_roi_label_color([c], 0)[2] for c in cate_eval]
+        cate_color = [get_roi_label_color(cate=[c])[2] for c in cate_eval]
         # get fraction in each category.
         fraction = np.zeros((len(cate_eval), n_clusters))
         for i in range(len(cate_eval)):
@@ -1068,27 +1129,28 @@ class utils_basic:
         for j in range(n_clusters):
             for i in range(len(cate_eval)):
                 if fraction[i,j] != 0:
-                    ax.bar(
-                        j, fraction[i,j],
-                        bottom=bottom[i,j],
+                    ax.barh(
+                        j+0.5, fraction[i,j],
+                        left=bottom[i,j],
                         edgecolor='white',
-                        width=bar_width,
+                        height=bar_width,
                         color=cate_color[i])
-                    ax.text(j, bottom[i,j]+fraction[i,j]/2,
+                    ax.text(bottom[i,j]+fraction[i,j]/2, j+0.8,
                             f'{fraction[i,j]:.2f}',
-                            ha='center', va='center', color='#2C2C2C')
+                            ha='center', va='center', rotation=90, color='#2C2C2C')
         # adjust layout.
         ax.tick_params(tick1On=False)
+        ax.tick_params(axis='x', labelrotation=90)
         ax.spines['left'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.set_xticks(np.arange(n_clusters))
-        ax.set_xticklabels(cluster_name, rotation='vertical')
-        ax.set_yticks([0,0.25,0.5,0.75, 1])
-        ax.grid(True, axis='y', linestyle='--')
-        ax.set_xlim([-0.5,n_clusters+0.5])
-        ax.set_ylim([0,1])
-        ax.set_title('fraction of cell-type for each cluster')
-        add_legend(ax, cate_color, lbl, None, None, None, 'upper right')
+        ax.spines['top'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.set_xticks([0,0.5,1])
+        ax.set_yticks([])
+        ax.grid(True, axis='x', linestyle='--')
+        ax.set_xlim([-0.1,1.1])
+        ax.set_ylim([-0.2, n_clusters+0.1])
+        ax.set_xlabel('fraction of cell-type')
 
     def plot_cluster_mean_sem(
             self, ax, neu_mean, neu_sem, neu_time,
@@ -1096,7 +1158,7 @@ class utils_basic:
             ):
         l_nan_margin = 5
         r_nan_margin = 5
-        len_scale_x = 500
+        len_scale_x = 1000
         len_scale_y = 0.5
         # set margin values to nan.
         l_idx, r_idx = get_frame_idx_from_time(neu_time, 0, xlim[0], xlim[1])
@@ -1107,11 +1169,12 @@ class utils_basic:
         ns[:,:l_idx+l_nan_margin] = np.nan
         ns[:,r_idx-r_nan_margin-1:] = np.nan
         # plot stimulus.
-        for i in range(stim_seq.shape[0]):
-            ax.fill_between(
-                stim_seq[i,:],
-                0, nm.shape[0],
-                color=c_stim[i], edgecolor='none', alpha=0.25, step='mid')
+        if not stim_seq is None:
+            for i in range(stim_seq.shape[0]):
+                ax.fill_between(
+                    stim_seq[i,:],
+                    0, nm.shape[0],
+                    color=c_stim[i], edgecolor='none', alpha=0.25, step='mid')
         # plot cluster average.
         for i in range(nm.shape[0]):
             a, b, c, d = norm_params[i]
@@ -1129,29 +1192,39 @@ class utils_basic:
                 '{:.3f}'.format(len_scale_y*(d-c)),
                 va='center', ha='right', rotation=90, color='#2C2C2C')
         # plot x scalebar.
-        ax.hlines(-0.2, xlim[0]*0.99, xlim[0]*0.99+len_scale_x, color='#2C2C2C')
-        ax.text(xlim[0]*0.99 + len_scale_x/2, -0.2, '{} ms'.format(int(len_scale_x)),
-            va='top', ha='center')
+        adjust_layout_cluster_neu(ax, nm.shape[0], xlim)
+        ax.hlines(-0.1, xlim[0]*0.99, xlim[0]*0.99+len_scale_x, color='#2C2C2C')
+        ax.text(xlim[0]*0.99 + len_scale_x/2, -0.15, '{} ms'.format(int(len_scale_x)),
+            va='top', ha='center', color='#2C2C2C')
         ax.set_ylim([-0.2, neu_mean.shape[0]+0.1])
     
-    def plot_cluster_metric_box(self, ax, list_metrics, target_metric, cluster_id, colors):
+    def plot_cluster_metric_quant(self, ax, quant_cluster, metric_target, colors):
         offset = 0.1
-        n_clusters = len(np.unique(cluster_id))
+        n_clusters = len(quant_cluster)
+        n_conditions = len(quant_cluster[0])
+        # collect target metrics into n_clusters*[n_conditions*n_neurons]
+        metric_cluster = [
+            np.concatenate(
+                [quant_cluster[ci][di][metric_target].reshape(1,-1)
+                 for di in range(n_conditions)], axis=0)
+            for ci in range(len(quant_cluster))]
+        offsets = (np.arange(len(quant_cluster[0])) - int(len(quant_cluster[0])/2)) * offset
         # plot results for each class.
         for ci in range(n_clusters):
-            for mi in range(len(list_metrics)):
-                m, s = get_mean_sem(list_metrics[mi][cluster_id==ci].reshape(-1,1))
+            for di in range(n_conditions):
+                m, s = get_mean_sem(metric_cluster[ci][di,:].reshape(-1,1))
                 ax.errorbar(
-                    m, ci+offset*mi, None, s,
-                    color=colors[mi],
+                    m, ci+offsets[di], None, s,
+                    color=colors[di],
                     capsize=2, marker='o', linestyle='none',
                     markeredgecolor='white', markeredgewidth=0.1)
         # adjust layout.
-        ax.tick_params(axis='x', tick1On=False)
+        ax.tick_params(axis='y', tick1On=False)
+        ax.tick_params(axis='x', labelrotation=90)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.set_yticks(np.arange(n_clusters))
-        ax.set_yticklabels(np.arange(n_clusters))
+        ax.set_yticklabels([])
 
     def plot_cluster_interval_norm(
             self, ax, cluster_id,
@@ -1300,7 +1373,8 @@ class utils_basic:
             axs[ci].zaxis.pane.fill = False
             add_legend(axs[ci], c_neu[ci], lbl, n_trials, n_neurons, self.n_sess, 'upper right', dim=3)
     
-    def plot_3d_latent_dynamics(self, ax, neu_z, stim_seq, c_neu, c_stim, add_stim=True):
+    def plot_3d_latent_dynamics(self, ax, neu_z, stim_seq, neu_time, c_stim, add_stim=True):
+        c_neu = get_cmap_color(neu_z.shape[1], cmap=self.latent_cmap)
         # plot dynamics.
         for t in range(neu_z.shape[1]-1):
             # trajaectory.
@@ -1312,9 +1386,9 @@ class utils_basic:
         if add_stim:
             for j in range(stim_seq.shape[0]):
                 l_idx, r_idx = get_frame_idx_from_time(
-                    self.alignment['neu_time'], 0, stim_seq[j,0], stim_seq[j,1])
+                    neu_time, 0, stim_seq[j,0], stim_seq[j,1])
                 ax.plot(neu_z[0,l_idx:r_idx], neu_z[1,l_idx:r_idx], neu_z[2,l_idx:r_idx],
-                        lw=4, color=c_stim[j])
+                        lw=3, color=c_stim[j])
 
     def plot_glm_heatmap(
             self, ax, kernel_time, kernel_all, stim_seq,
@@ -1322,7 +1396,7 @@ class utils_basic:
             ):
         # plot heatmap.
         win_sort = [kernel_time[0], 1000]
-        self.plot_heatmap_neuron(
+        self.plot_heatmap_neuron_cate(
             ax, kernel_all, kernel_time, kernel_all, win_sort, neu_labels, neu_sig)
         ax.set_xlabel('time since stim (ms)')
         # add stimulus line.
@@ -1347,3 +1421,6 @@ class utils_basic:
         self.plot_cluster_mean_sem(
             ax, neu_mean, neu_sem, kernel_time,
             norm_params, ss, [color0], colors, xlim)
+        
+        
+        

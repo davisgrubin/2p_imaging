@@ -5,6 +5,7 @@ warnings.filterwarnings('ignore')
 
 import gc
 import os
+from datetime import datetime
 
 from modules import Trialization
 from modules import StatTest
@@ -36,7 +37,7 @@ import visualization4_4131FixJitterOdd
 from webpage import pack_webpage_main
 
 def run(session_config_list):
-    smooth = False
+    smooth = True
 
     print('===============================================')
     print('============ Start Processing Data ============')
@@ -58,7 +59,7 @@ def run(session_config_list):
     for i in range(len(list_ops)):
         print('Trializing {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
-        #Trialization.run(list_ops[i])
+        Trialization.run(list_ops[i])
 
     print('===============================================')
     print('============== significance test ==============')
@@ -66,13 +67,13 @@ def run(session_config_list):
     for i in range(len(list_ops)):
         print('Running significance test for {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
-        #StatTest.run(list_ops[i])
+        StatTest.run(list_ops[i])
 
     print('===============================================')
     print('======== plotting representative masks ========')
     print('===============================================')
-    #fn1 = visualization1_FieldOfView.run(session_config_list, smooth)
-    fn1 = []
+    fn1 = visualization1_FieldOfView.run(session_config_list, smooth)
+    #fn1 = []
 
     print('===============================================')
     print('========= plotting 3331Random results =========')
@@ -102,6 +103,7 @@ def run(session_config_list):
     for n in session_config_list['list_session_name']:
         print(n)
     print('File saved as '+os.path.join('results', session_config_list['output_filename']))
+    print('Finished at '+datetime.now().strftime("%Y.%m.%d %H:%M:%S"))
     del list_ops
     gc.collect()
 
@@ -120,15 +122,15 @@ if __name__ == "__main__":
     from session_configs import session_config_list_V1
 
     for session_config_list in [
-        #session_config_list_YH01VT,
-        #session_config_list_YH02VT,
-        #session_config_list_YH03VT,
+        session_config_list_YH01VT,
+        session_config_list_YH02VT,
+        session_config_list_YH03VT,
         #session_config_list_YH14SC,
         #session_config_list_YH17VT,
         #session_config_list_YH18VT,
         #session_config_list_YH19VT,
         #session_config_list_YH20SC,
-        #session_config_list_PPC,
+        session_config_list_PPC,
         #session_config_list_V1,
             ]:
         try: run(session_config_list)
@@ -138,12 +140,12 @@ if __name__ == "__main__":
     '''
     session_config_test = {
         'list_session_name' : {
-            'VTYH02_PPC_20250108_3331Random' : 'random',
-            'VTYH02_PPC_20250109_3331Random' : 'random',
-            'VTYH02_PPC_20250111_3331Random' : 'random',
-            #'VTYH02_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH02_PPC_20250108_3331Random' : 'random',
+            #'VTYH02_PPC_20250109_3331Random' : 'random',
+            #'VTYH02_PPC_20250111_3331Random' : 'random',
+            'VTYH02_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
+            'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
+            'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH02_PPC_20250225_1451ShortLong' : 'short_long',
             #'VTYH02_PPC_20250226_1415ShortLong' : 'short_long',
             #'VTYH02_PPC_20250228_1451ShortLong' : 'short_long',
@@ -165,7 +167,7 @@ if __name__ == "__main__":
         'output_filename' : 'test_passive.html'
         }
 
-    #run(session_config_list_test)
+    # run(session_config_list_test)
 
     session_config_list = combine_session_config_list(session_config_list_test)
     list_ops = read_ops(session_config_list['list_session_data_path'])
@@ -180,4 +182,8 @@ if __name__ == "__main__":
     norm_mode='none'
     import matplotlib.pyplot as plt
     cluster_cmap = plt.cm.hsv
+    standard = 1
+    oddball = 1
+    mode = 'post'
+
     '''
