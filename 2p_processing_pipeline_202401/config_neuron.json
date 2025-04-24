@@ -63,7 +63,7 @@
 		"sparse_mode": true,
 		"spatial_scale": 1,
 		"connected": true,
-		"nbinned": 16384,
+		"nbinned": 19961106,
 		"max_iterations": 20,
 		"threshold_scaling": 1.0,
 		"max_overlap": 0.75,

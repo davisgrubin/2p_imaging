@@ -183,3 +183,6 @@ Results will be in ./Results
 ## 2025.01.07
 - Replaced brain_region with target_structure and modifiedw json files.
 - Deleted figures folder creation.
+
+## 2025.04.22
+- Added config_neuron_1chan.

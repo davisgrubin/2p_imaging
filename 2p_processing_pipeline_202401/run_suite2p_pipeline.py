@@ -32,6 +32,9 @@ def set_params(args):
     elif args.target_structure == 'neuron':
         with open('./config_neuron.json', 'r') as file:
             params = json.load(file)
+    elif args.target_structure == 'neuron_1chan':
+        with open('./config_neuron_1chan.json', 'r') as file:
+            params = json.load(file)
     elif args.target_structure == 'dendrite':
         with open('./config_dendrite.json', 'r') as file:
             params = json.load(file)
