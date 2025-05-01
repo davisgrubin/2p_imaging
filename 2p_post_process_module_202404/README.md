@@ -38,3 +38,6 @@ sbatch run_postprocess.sh
 ## 2025.02.10
 - Now processing list of data is allowed.
 - Now only raw dff is saved and moved filtering to downstream projects.
+
+## 2025.05.01
+- Changed max_aspect to range_aspect.

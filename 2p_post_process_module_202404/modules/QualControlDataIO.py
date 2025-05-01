@@ -42,7 +42,7 @@ def thres_stat(
         ops, stat,
         range_skew,
         max_connect,
-        max_aspect,
+        range_aspect,
         range_compact,
         range_footprint
         ):
@@ -57,7 +57,7 @@ def thres_stat(
         np.where((skew<range_skew[0]) | (skew>range_skew[1]))[0])
     bad_roi_id = bad_roi_id.union(
         bad_roi_id,
-        np.where(aspect>max_aspect)[0])
+        np.where((aspect<range_aspect[0]) | (aspect>range_aspect[1]))[0])
     bad_roi_id = bad_roi_id.union(
         bad_roi_id,
         np.where((compact<range_compact[0]) | (compact>range_compact[1]))[0])
@@ -120,7 +120,7 @@ def save_move_offset(ops):
 # main function for quality control.
 def run(
         ops,
-        range_skew, max_connect, max_aspect, range_compact, range_footprint,
+        range_skew, max_connect, range_aspect, range_compact, range_footprint,
         run_qc=True
         ):
     print('===============================================')
@@ -133,7 +133,7 @@ def run(
     print('Found max number of connectivity components as {}'.format(
         max_connect))
     print('Found maximum aspect ratio as {}'.format(
-        max_aspect))
+        range_aspect))
     print('Found range of campact as {}'.format(
         range_compact))
     [F, Fneu, stat] = read_raw(ops)
@@ -141,7 +141,7 @@ def run(
     if run_qc:
         bad_roi_id = thres_stat(
             ops, stat,
-            range_skew, max_connect, max_aspect, range_compact, range_footprint)
+            range_skew, max_connect, range_aspect, range_compact, range_footprint)
         print('Found {} bad ROIs'.format(len(bad_roi_id)))
     else:
         bad_roi_id = []
