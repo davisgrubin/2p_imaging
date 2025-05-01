@@ -9,17 +9,17 @@ from webpage.css_styles import get_css_styles
 from webpage.java_scripts import get_java_scripts
 
 # main process to combine results.
-def run(session_config, fn1, fn2, fn3, fn4):
+def run(session_config_list, fn1, fn2, fn3, fn4):
     
     # helper function to embed figures into an html block.
     def generate_div(filename):
         scale_pixel = 196
         # read svg content.
-        with open(os.path.join('results', 'temp', filename[0]+'.svg'),
+        with open(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename[0]+'.svg'),
                   'r', encoding="utf-8") as svg_file:
             svg_str = svg_file.read()
         svg_file.close()
-        with open(os.path.join('results', 'temp', filename[0]+'.svg'),
+        with open(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename[0]+'.svg'),
                   'rb') as svg_file:
             svg_bytes = svg_file.read()
             svg_b64 = base64.b64encode(svg_bytes).decode('utf-8')
@@ -55,7 +55,7 @@ def run(session_config, fn1, fn2, fn3, fn4):
         </div>
         """
         # clear space.
-        os.remove(os.path.join('results', 'temp', filename[0]+'.svg'))
+        os.remove(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename[0]+'.svg'))
         return html_block
     
     # create html code for a page given list of figure filenames.
@@ -85,7 +85,7 @@ def run(session_config, fn1, fn2, fn3, fn4):
         return page_html
     
     # finalize all html output.
-    def get_full_html(session_config, table_html, pages_html):
+    def get_full_html(session_config_list, table_html, pages_html):
         n_pages = 4
         # generate other codes.
         dropdown_menu_html = get_dropdown_menu_html()
@@ -97,13 +97,13 @@ def run(session_config, fn1, fn2, fn3, fn4):
         <html>
             <head>
                 <meta charset="utf-8"/>
-                <title>Passive session report for {session_config['subject_name']}</title>
+                <title>Passive session report for {session_config_list['subject_name']}</title>
                 {css_styles}
                 {java_scripts}
             </head>
             <body>
                 {logo_html}
-                <h1 style="text-align:left;">Passive session report for {session_config['subject_name']}</h1>
+                <h1 style="text-align:left;">Passive session report for {session_config_list['subject_name']}</h1>
                 {table_html}
                 <hr style="border:1px solid #ccc; margin: 10px 0;"/>
                 {dropdown_menu_html}
@@ -121,13 +121,13 @@ def run(session_config, fn1, fn2, fn3, fn4):
     pages_html += get_page_html(fn3, 2, 'short_long')
     pages_html += get_page_html(fn4, 3, 'fix_jitter_odd')
     # generate list of session name html codes.
-    session_list_html = get_session_list_html(session_config)
+    session_list_html = get_session_list_html(session_config_list)
     # get full html output.
-    html_output = get_full_html(session_config, session_list_html, pages_html)
+    html_output = get_full_html(session_config_list, session_list_html, pages_html)
     # save result.
-    output_path = os.path.join('results', session_config['output_filename'])
+    output_path = os.path.join('results', session_config_list['output_filename'])
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html_output)
     # delete temp folder.
-    shutil.rmtree(os.path.join('results', 'temp'))
+    shutil.rmtree(os.path.join('results', 'temp_'+session_config_list['subject_name']))
 

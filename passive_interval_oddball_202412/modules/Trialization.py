@@ -117,7 +117,7 @@ def save_trials(
 # main function for trialization.
 def run(ops):
     print('Reading dff traces and voltage recordings')
-    dff = read_dff(ops, False)
+    dff = read_dff(ops)
     [vol_time, vol_start, vol_stim_vis, vol_img,
      vol_hifi, vol_stim_aud, vol_flir,
      vol_pmt, vol_led] = read_raw_voltages(ops)

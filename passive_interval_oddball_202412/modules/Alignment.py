@@ -6,8 +6,8 @@ import numpy as np
 from tqdm import tqdm
 
 # create a numpy memmap from numpy array.
-def create_memmap(data, file_name, ni):
-    file_path = os.path.join('results', 'temp', 'alignment_memmap', file_name+'_'+str(ni).zfill(5)+'.mmap')
+def create_memmap(temp_folder, data, file_name, ni):
+    file_path = os.path.join('results', temp_folder, 'alignment_memmap', file_name+'_'+str(ni).zfill(5)+'.mmap')
     memmap_arr = np.memmap(file_path, dtype=data.dtype, mode='w+', shape=data.shape)
     memmap_arr[:] = data[...]
     return memmap_arr
@@ -117,13 +117,12 @@ def get_stim_response(
 
 # run alignment for all sessions
 def run_get_stim_response(
+        temp_folder,
         list_neural_trials,
         l_frames, r_frames,
         expected='None',
         n_stim=5,
         ):
-    if not os.path.exists(os.path.join('results', 'temp', 'alignment_memmap')):
-        os.makedirs(os.path.join('results', 'temp', 'alignment_memmap'))
     # run alignment for each session.
     list_stim_labels = []
     list_neu_seq     = []
@@ -142,15 +141,15 @@ def run_get_stim_response(
              list_neural_trials[ni],
              l_frames, r_frames,
              expected, n_stim)
-        stim_labels = create_memmap(stim_labels, 'stim_labels', ni)
-        neu_seq     = create_memmap(neu_seq,     'neu_seq',     ni)
-        neu_time    = create_memmap(neu_time,    'neu_time',    ni)
-        stim_seq    = create_memmap(stim_seq,    'stim_seq',    ni)
-        stim_value  = create_memmap(stim_value,  'stim_value',  ni)
-        stim_time   = create_memmap(stim_time,   'stim_time',   ni)
-        led_value   = create_memmap(led_value,   'led_value',   ni)
-        pre_isi     = create_memmap(pre_isi,     'pre_isi',     ni)
-        post_isi    = create_memmap(post_isi,    'post_isi',    ni)
+        stim_labels = create_memmap(temp_folder,stim_labels, 'stim_labels', ni)
+        neu_seq     = create_memmap(temp_folder,neu_seq,     'neu_seq',     ni)
+        neu_time    = create_memmap(temp_folder,neu_time,    'neu_time',    ni)
+        stim_seq    = create_memmap(temp_folder,stim_seq,    'stim_seq',    ni)
+        stim_value  = create_memmap(temp_folder,stim_value,  'stim_value',  ni)
+        stim_time   = create_memmap(temp_folder,stim_time,   'stim_time',   ni)
+        led_value   = create_memmap(temp_folder,led_value,   'led_value',   ni)
+        pre_isi     = create_memmap(temp_folder,pre_isi,     'pre_isi',     ni)
+        post_isi    = create_memmap(temp_folder,post_isi,    'post_isi',    ni)
         list_stim_labels.append(stim_labels)
         list_neu_seq.append(neu_seq)
         list_neu_time.append(neu_time)

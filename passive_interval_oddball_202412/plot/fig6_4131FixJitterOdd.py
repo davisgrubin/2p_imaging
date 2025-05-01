@@ -35,17 +35,19 @@ class plotter_utils(utils_basic):
 
     def __init__(
             self,
-            list_neural_trials, list_labels, list_significance
+            list_neural_trials, list_labels, list_significance,
+            temp_folder,
             ):
         super().__init__()
         timescale = 1.0
         self.n_sess = len(list_neural_trials)
         self.l_frames = int(200*timescale)
-        self.r_frames = int(250*timescale)
+        self.r_frames = int(200*timescale)
         self.list_labels = list_labels
         self.list_neural_trials = list_neural_trials
         self.alignment = run_get_stim_response(
-                list_neural_trials, self.l_frames, self.r_frames, expected='none')
+            temp_folder,
+            list_neural_trials, self.l_frames, self.r_frames, expected='none')
         self.list_stim_labels = self.alignment['list_stim_labels']
         self.list_odd_idx = [
             get_odd_stim_prepost_idx(sl) for sl in self.list_stim_labels]
@@ -143,7 +145,17 @@ class plotter_utils(utils_basic):
                 [color0]*stim_seq.shape[0], [[color1,color2][oddball]]*self.n_clusters, xlim)
             # adjust layout.
             ax.set_xlabel('time since pre oddball stim (ms)')
-        def plot_fraction(ax):
+        def plot_neu_fraction(ax):
+            # collect data.
+            [[_, _, color2, _], _, _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_param=[None, None, [0], None, [0], [0]],
+                cate=cate, roi_id=None)
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 0.4, 1], transform=ax.transAxes)
+            # plot results.
+            self.plot_cluster_neu_fraction_in_cluster(ax, cluster_id, color2)
+        def plot_cate_fraction(ax):
             ax.axis('off')
             ax = ax.inset_axes([0, 0, 0.4, 1], transform=ax.transAxes)
             # plot results.
@@ -167,7 +179,9 @@ class plotter_utils(utils_basic):
         except: pass
         try: plot_oddball_fix(axs[3], 1)
         except: pass
-        try: plot_fraction(axs[5])
+        try: plot_neu_fraction(axs[4])
+        except: pass
+        try: plot_cate_fraction(axs[5])
         except: pass
         try: plot_legend(axs[6])
         except: pass
@@ -211,7 +225,8 @@ class plotter_utils(utils_basic):
             self.plot_heatmap_neuron(
                 axs[bi], neu_x[bi], neu_time, neu_x[0], cmap, win_sort,
                 norm_mode=norm_mode,
-                neu_seq_share=neu_x)
+                neu_seq_share=neu_x,
+                cbar_label='dF/F')
             axs[bi].set_xlabel('time since pre oddball stim (ms) \n sorting window [{},{}] ms'.format(
                 win_sort[0], win_sort[1]))
         # add stimulus line.
@@ -425,12 +440,13 @@ class plotter_utils(utils_basic):
                         lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
                         color=color0, edgecolor='none', alpha=0.25, step='mid')
                 # plot neural traces.
+                l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
                 self.plot_mean_sem(
-                    axs[ci], self.alignment['neu_time'],
-                    mean_fix, sem_fix, color0, None)
+                    axs[ci], self.alignment['neu_time'][l_idx:r_idx],
+                    mean_fix[l_idx:r_idx], sem_fix[l_idx:r_idx], color0, None)
                 self.plot_mean_sem(
-                    axs[ci], self.alignment['neu_time'],
-                    mean_jitter, sem_jitter, [color1, color2][oddball], None)
+                    axs[ci], self.alignment['neu_time'][l_idx:r_idx],
+                    mean_jitter[l_idx:r_idx], sem_jitter[l_idx:r_idx], [color1, color2][oddball], None)
                 # adjust layouts.
                 adjust_layout_neu(axs[ci])
                 axs[ci].set_xlim(xlim)
@@ -494,9 +510,11 @@ class plotter_utils(utils_basic):
                         color=color0, edgecolor='none', alpha=0.25, step='mid')
                 # plot neural traces.
                 for bi in range(self.bin_num):
+                    l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
                     self.plot_mean_sem(
-                        axs[ci], self.alignment['neu_time'],
-                        cluster_bin_neu_mean[bi,ci,:], cluster_bin_neu_sem[bi,ci,:], cs[bi], None)
+                        axs[ci], self.alignment['neu_time'][l_idx:r_idx],
+                        cluster_bin_neu_mean[bi,ci,l_idx:r_idx], cluster_bin_neu_sem[bi,ci,l_idx:r_idx],
+                        cs[bi], None)
                 # adjust layouts.
                 adjust_layout_neu(axs[ci])
                 axs[ci].set_xlim(xlim)
@@ -533,7 +551,6 @@ class plotter_utils(utils_basic):
         bin_num = 2
         def plot_win_decode(ax, oddball):
             # collect data.
-            fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             [[color0, color1, color2, _],
              [neu_seq, stim_seq, stim_value, pre_isi, _], _, _] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
@@ -636,7 +653,34 @@ class plotter_utils(utils_basic):
                 neu_time, 0, stim_seq[c_idx+1,0], stim_seq[c_idx,1]+self.expect)[oddball]
             ax.scatter(neu_z[0,idx_unexpect], neu_z[1,idx_unexpect], neu_z[2,idx_unexpect], color='gold', marker='o', lw=5)
             # adjust layout.
-            adjust_layout_3d_latent(ax, neu_z, self.latent_cmap, neu_time, 'time since pre oddball stim (ms)')           
+            adjust_layout_3d_latent(ax, neu_z, self.latent_cmap, neu_time, 'time since pre oddball stim (ms)')
+        def plot_mean_dynamics(ax):
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 1, 0.4], transform=ax.transAxes)
+            neu_mean, neu_sem = get_mean_sem(neu_x)
+            c_neu = get_cmap_color(neu_mean.shape[0], cmap=self.latent_cmap)
+            # find bounds.
+            upper = np.nanmax(neu_mean) + np.nanmax(neu_sem)
+            lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
+            # plot stimulus.
+            for si in range(stim_seq.shape[0]):
+                ax.fill_between(
+                    stim_seq[si,:],
+                    lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+                    color=color0, edgecolor='none', alpha=0.25, step='mid')
+            if oddball == 0:
+                ax.axvline(stim_seq[c_idx+1,0], color='gold', lw=1, linestyle='--')
+            if oddball == 1:
+                ax.axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
+            # plot neural traces.
+            self.plot_mean_sem(ax, neu_time, neu_mean, neu_sem, color0, None)
+            for t in range(neu_mean.shape[0]-1):
+                ax.plot(neu_time[t:t+2], neu_mean[t:t+2], color=c_neu[t])
+            # adjust layouts.
+            adjust_layout_neu(ax)
+            ax.set_xlim(xlim)
+            ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+            ax.set_xlabel('time since pre oddball stim (ms)')
         def plot_legend(ax):
             [[color0, color1, color2, _], _, _,
              [n_trials, n_neurons]] = get_neu_trial(
@@ -650,7 +694,9 @@ class plotter_utils(utils_basic):
         # plot all.
         try: plot_3d_dynamics(axs[0])
         except: pass
-        try: plot_legend(axs[1])
+        try: plot_mean_dynamics(axs[1])
+        except: pass
+        try: plot_legend(axs[2])
         except: pass
     
     def plot_sorted_heatmaps_local_isi(self, axs, norm_mode, oddball):
@@ -705,8 +751,8 @@ class plotter_utils(utils_basic):
         
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
-    def __init__(self, neural_trials, labels, significance, label_names):
-        super().__init__(neural_trials, labels, significance)
+    def __init__(self, neural_trials, labels, significance, label_names, temp_folder):
+        super().__init__(neural_trials, labels, significance, temp_folder)
         self.label_names = label_names
 
     def cluster_oddball_fix_all(self, axs_all):

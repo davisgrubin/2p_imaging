@@ -35,11 +35,13 @@ def run(session_config_list, smooth):
     else:
         print('Reading saved results')
         sub_session_config_list = filter_session_config_list(session_config_list, target_sess)
-        [list_labels, _, _, _, list_neural_trials, _, list_significance
+        [list_labels, _, list_neural_trials, _, list_significance
          ] = read_all(sub_session_config_list, smooth)
         print('Read {} session results'.format(np.sum(idx_target_sess)))
         print('Initiating alignment results')
-        plotter = plotter_main(list_neural_trials, list_labels, list_significance, session_config_list['label_names'])
+        plotter = plotter_main(
+            list_neural_trials, list_labels, list_significance,
+            session_config_list['label_names'], 'temp_'+session_config_list['subject_name'])
         def plot_sess_significance():
             title = 'significance'
             print('-----------------------------------------------')
@@ -52,7 +54,7 @@ def run(session_config_list, smooth):
             sign_ax = plt.subplot(gs[0, 0])
             plot_significance(sign_ax, list_significance, list_labels)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_intervals():
@@ -81,7 +83,7 @@ def run(session_config_list, smooth):
             plot_oddball_isi_distribution(isi_ax03, list_neural_trials)
             plot_random_isi_distribution(isi_ax04, list_neural_trials)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_trial():
@@ -100,7 +102,7 @@ def run(session_config_list, smooth):
             plot_stim_label(trial_ax02, list_neural_trials)
             plot_trial_legend(trial_ax03)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_cluster_oddball_fix_all():
@@ -108,18 +110,18 @@ def run(session_config_list, smooth):
             print('-----------------------------------------------')
             print(title)
             filename = '4131FixJitterOdd04_cluster_oddball_fix_all'
-            n_row = 20
-            n_col = 6
+            n_row = 16
+            n_col = 7
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,5,10,15]:
-                a = [plt.subplot(gs[s:s+4, i]) for i in [0,1,2,3,4]]
-                a+= [plt.subplot(gs[s+0, 5])]
+            for s in [0,4,8,12]:
+                a = [plt.subplot(gs[s:s+4, i]) for i in [0,1,2,3,4,5]]
+                a+= [plt.subplot(gs[s+0, 6])]
                 axs_all.append(a)
             plotter.cluster_oddball_fix_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_sorted_heatmaps_fix_all():
@@ -137,7 +139,7 @@ def run(session_config_list, smooth):
                 axs_all.append(a)
             plotter.sorted_heatmaps_fix_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_cluster_oddball_fix_individual():
@@ -161,7 +163,7 @@ def run(session_config_list, smooth):
                 axs_all.append(a)
             plotter.cluster_oddball_fix_individual(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_cluster_oddball_jitter_global_individual():
@@ -181,7 +183,7 @@ def run(session_config_list, smooth):
                 axs_all.append(a)
             plotter.cluster_oddball_jitter_global_individual(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_cluster_oddball_jitter_local_individual():
@@ -201,7 +203,7 @@ def run(session_config_list, smooth):
                 axs_all.append(a)
             plotter.cluster_oddball_jitter_local_individual(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_oddball_win_decode_local():
@@ -219,7 +221,7 @@ def run(session_config_list, smooth):
                 axs_all.append(a)
             plotter.oddball_win_decode_local(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_oddball_latent_fix_all():
@@ -234,13 +236,13 @@ def run(session_config_list, smooth):
             axs_all = []
             for s in [0,2,4,6]:
                 a = [[plt.subplot(gs[s+0:s+2, 0:2], projection='3d'),
-                      plt.subplot(gs[s+0, 2])]]
-                a+= [[plt.subplot(gs[s+0:s+2, 2:4], projection='3d'),
-                      plt.subplot(gs[s+0, 4])]]
+                      plt.subplot(gs[s+0, 2]), plt.subplot(gs[s+1, 2])]]
+                a+= [[plt.subplot(gs[s+0:s+2, 3:5], projection='3d'),
+                      plt.subplot(gs[s+0, 5]), plt.subplot(gs[s+1, 5])]]
                 axs_all.append(a)
             plotter.oddball_latent_fix_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_sorted_heatmaps_fix_jitter():
@@ -259,7 +261,7 @@ def run(session_config_list, smooth):
                 axs_all.append(a)
             plotter.sorted_heatmaps_fix_jitter(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_sorted_heatmaps_local_isi():
@@ -278,19 +280,19 @@ def run(session_config_list, smooth):
                 axs_all.append(a)
             plotter.sorted_heatmaps_local_isi(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         fig_all = [
             #plot_sess_significance(),
             #plot_intervals(),
-            plot_trial(),
+            #plot_trial(),
             plot_cluster_oddball_fix_all(),
             plot_sorted_heatmaps_fix_all(),
-            plot_cluster_oddball_fix_individual(),
-            plot_cluster_oddball_jitter_global_individual(),
-            plot_cluster_oddball_jitter_local_individual(),
-            plot_oddball_win_decode_local(),
+            #plot_cluster_oddball_fix_individual(),
+            #plot_cluster_oddball_jitter_global_individual(),
+            #plot_cluster_oddball_jitter_local_individual(),
+            #plot_oddball_win_decode_local(),
             plot_oddball_latent_fix_all(),            
         ]
         print('Clearing memory usage')

@@ -161,7 +161,7 @@ def run_quantification(neu_seq, neu_time, win_eval_c, samping_size=0.2):
     if samping_size > 0:
         sampling_time = 10
         n_samples = int(samping_size*neu_seq.shape[0])+1
-        for qi in tqdm(range(sampling_time)):
+        for qi in range(sampling_time):
             sub_idx = np.random.choice(neu_seq.shape[0], n_samples, replace=False)
             nsm = np.nanmean(neu_seq[sub_idx,:], axis=0)
             q = get_all_metrics(nsm, neu_time, win_eval_c)

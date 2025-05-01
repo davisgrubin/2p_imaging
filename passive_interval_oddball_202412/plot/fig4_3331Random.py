@@ -36,7 +36,8 @@ class plotter_utils(utils_basic):
 
     def __init__(
             self,
-            list_neural_trials, list_labels, list_significance
+            list_neural_trials, list_labels, list_significance,
+            temp_folder,
             ):
         super().__init__()
         timescale = 1.0
@@ -46,12 +47,13 @@ class plotter_utils(utils_basic):
         self.list_labels = list_labels
         self.list_neural_trials = list_neural_trials
         self.alignment = run_get_stim_response(
-                list_neural_trials, self.l_frames, self.r_frames, expected='none')
+            temp_folder,
+            list_neural_trials, self.l_frames, self.r_frames, expected='none')
         self.list_stim_labels = self.alignment['list_stim_labels']
         self.list_significance = list_significance
         self.bin_win = [450,2550]
         self.bin_num = 5
-        self.n_clusters = 6
+        self.n_clusters = 9
         self.max_clusters = 10
         self.d_latent = 3
         self.glm = self.run_glm()
@@ -197,10 +199,12 @@ class plotter_utils(utils_basic):
                         lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
                         color=cs[bi], edgecolor='none', alpha=0.25, step='mid')
                 # plot neural traces.
+                l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
                 for bi in range(self.bin_num):
                     self.plot_mean_sem(
-                        axs[ci], self.alignment['neu_time'],
-                        cluster_bin_neu_mean[bi,ci,:], cluster_bin_neu_sem[bi,ci,:], cs[bi], None)
+                        axs[ci], self.alignment['neu_time'][l_idx:r_idx],
+                        cluster_bin_neu_mean[bi,ci,l_idx:r_idx], cluster_bin_neu_sem[bi,ci,l_idx:r_idx],
+                        cs[bi], None)
                 # adjust layouts.
                 adjust_layout_neu(axs[ci])
                 axs[ci].set_xlim(xlim)
@@ -643,8 +647,8 @@ class plotter_utils(utils_basic):
 
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
-    def __init__(self, neural_trials, labels, significance, label_names):
-        super().__init__(neural_trials, labels, significance)
+    def __init__(self, neural_trials, labels, significance, label_names, temp_folder):
+        super().__init__(neural_trials, labels, significance, temp_folder)
         self.label_names = label_names
 
     def cluster_all_pre(self, axs_all):

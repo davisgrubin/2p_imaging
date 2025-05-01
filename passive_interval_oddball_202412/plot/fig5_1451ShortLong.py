@@ -33,17 +33,19 @@ class plotter_utils(utils_basic):
 
     def __init__(
             self,
-            list_neural_trials, list_labels, list_significance
+            list_neural_trials, list_labels, list_significance,
+            temp_folder,
             ):
         super().__init__()
         timescale = 1.0
         self.n_sess = len(list_neural_trials)
         self.l_frames = int(200*timescale)
-        self.r_frames = int(500*timescale)
+        self.r_frames = int(200*timescale)
         self.list_labels = list_labels
         self.list_neural_trials = list_neural_trials
         self.alignment = run_get_stim_response(
-                list_neural_trials, self.l_frames, self.r_frames, expected='none')
+            temp_folder,
+            list_neural_trials, self.l_frames, self.r_frames, expected='none')
         self.list_stim_labels = self.alignment['list_stim_labels']
         self.list_odd_idx = [
             get_odd_stim_prepost_idx(sl) for sl in self.list_stim_labels]
@@ -56,7 +58,7 @@ class plotter_utils(utils_basic):
         self.max_clusters = 10
         self.d_latent = 3
         self.glm = self.run_glm()
-    
+
     def run_clustering(self, cate):
         n_latents = 15
         # get glm kernels.
@@ -201,7 +203,7 @@ class plotter_utils(utils_basic):
                 adjust_layout_neu(axs[ci])
                 axs[ci].set_xlim(xlim)
                 axs[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
-                axs[ci].set_xlabel('time since stim after interval block change (ms)')
+                axs[ci].set_xlabel('time since block transition (ms)')
                 axs[ci].set_title(lbl[ci])
         def plot_trial_quant(axs, standard):
             trials_eval = 5
@@ -473,8 +475,8 @@ class plotter_utils(utils_basic):
 
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
-    def __init__(self, neural_trials, labels, significance, label_names):
-        super().__init__(neural_trials, labels, significance)
+    def __init__(self, neural_trials, labels, significance, label_names, temp_folder):
+        super().__init__(neural_trials, labels, significance, temp_folder)
         self.label_names = label_names
 
     def cluster_block_adapt_individual(self, axs_all):

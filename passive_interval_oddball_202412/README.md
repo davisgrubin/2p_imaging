@@ -192,8 +192,13 @@
 - Now run_glm is initialized and run at the beginning.
 - Added get_glm_cate into generative.
 
-
-
+## 2025.04.25
+- Removed reading vol and dff independently.
+- Fixed dff smoothing.
+- Now temporal files are separeted into subjects.
+- Now all individual plot xlim is applied before plotting.
+- Added a factor in apply_colormap to remap data distribution.
+- Added plot_cluster_neu_fraction_in_cluster.
 
 
 

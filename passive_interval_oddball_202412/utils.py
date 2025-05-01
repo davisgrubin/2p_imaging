@@ -667,12 +667,16 @@ def sort_heatmap_neuron(neu_seq_sort_s, neu_time, win_sort):
 
 # apply colormap.
 def apply_colormap(data, hm_cmap, norm_mode, data_share):
+    factor = 1
     # no valid data found.
     if len(data) == 0:
         hm_data = np.zeros((0, data.shape[1], 3))
         hm_norm = None
         return hm_data, hm_norm, hm_cmap
     else:
+        # remap data range.
+        m = np.nanmean(data)
+        data = (data - m) * factor + m
         # binary heatmap.
         if norm_mode == 'binary':
             hm_norm = mcolors.Normalize(vmin=0, vmax=1)
@@ -780,7 +784,7 @@ def add_heatmap_colorbar(ax, cmap, norm, label):
             plt.cm.ScalarMappable(
                 cmap=cmap,
                 norm=norm),
-            ax=ax, aspect=100, shrink=0.85, fraction=0.1)
+            ax=ax, aspect=100, shrink=0.75, fraction=0.1)
         cbar.ax.set_ylabel(label, rotation=90, labelpad=10)
         for tick in cbar.ax.get_yticklabels():
             tick.set_rotation(90)
@@ -939,7 +943,7 @@ class utils_basic:
         adjust_layout_heatmap(ax)
         for tick in ax.get_yticklabels():
             tick.set_rotation(90)
-        add_heatmap_colorbar(ax, cmap, norm, None)
+        add_heatmap_colorbar(ax, cmap, norm, 'dF/F')
                 
     def plot_win_mag_quant(
             self, ax, neu_seq, neu_time,
@@ -1110,6 +1114,37 @@ class utils_basic:
         ax.set_ylim([0,1])
         ax.set_title('fraction of cluster for each cell-type')
         add_legend(ax, colors, lbl, None, None, None, 'upper right')
+    
+    def plot_cluster_neu_fraction_in_cluster(self, ax, cluster_id, color):
+        bar_width = 0.2
+        n_clusters = len(np.unique(cluster_id))
+        # get fraction in each cluster.
+        num = np.array([np.nansum(cluster_id==i) for i in np.unique(cluster_id)])
+        fraction = num / np.nansum(num)
+        # plot bars.
+        ax.axis('off')
+        ax = ax.inset_axes([0, 0, 0.4, 1], transform=ax.transAxes)
+        for ci in range(n_clusters):
+            ax.barh(
+                ci+0.5, fraction[ci],
+                left=0,
+                edgecolor='white',
+                height=bar_width,
+                color=color)
+            ax.text(fraction[ci]+0.02, ci+0.48,
+                    f'{fraction[ci]:.2f}, n={num[ci]}',
+                    ha='left', va='center', color='#2C2C2C')
+        # adjust layouts.
+        ax.tick_params(tick1On=False)
+        ax.tick_params(axis='y', labelrotation=90)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xlim([0,np.nanmax(fraction)+0.05])
+        ax.set_ylim([-0.2, n_clusters+0.1])
+        ax.set_xlabel('fraction of neurons')
 
     def plot_cluster_cate_fraction_in_cluster(self, ax, cluster_id, neu_labels, label_names):
         bar_width = 0.2

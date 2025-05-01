@@ -35,11 +35,13 @@ def run(session_config_list, smooth):
     else:
         print('Reading saved results')
         sub_session_config_list = filter_session_config_list(session_config_list, target_sess)
-        [list_labels, _, _, _, list_neural_trials, _, list_significance
+        [list_labels, _, list_neural_trials, _, list_significance
          ] = read_all(sub_session_config_list, smooth)
         print('Read {} session results'.format(np.sum(idx_target_sess)))
         print('Initiating alignment results')
-        plotter = plotter_main(list_neural_trials, list_labels, list_significance, session_config_list['label_names'])
+        plotter = plotter_main(
+            list_neural_trials, list_labels, list_significance,
+            session_config_list['label_names'], 'temp_'+session_config_list['subject_name'])
         def plot_sess_significance():
             title = 'significance'
             print('-----------------------------------------------')
@@ -52,7 +54,7 @@ def run(session_config_list, smooth):
             sign_ax = plt.subplot(gs[0, 0])
             plot_significance(sign_ax, list_significance, list_labels)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_intervals():
@@ -81,7 +83,7 @@ def run(session_config_list, smooth):
             plot_oddball_isi_distribution(isi_ax03, list_neural_trials)
             plot_random_isi_distribution(isi_ax04, list_neural_trials)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_trial():
@@ -100,7 +102,7 @@ def run(session_config_list, smooth):
             plot_stim_label(trial_ax02, list_neural_trials)
             plot_trial_legend(trial_ax03)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_cluster_block_adapt_individual():
@@ -127,7 +129,7 @@ def run(session_config_list, smooth):
                 axs_all.append(a)
             plotter.cluster_block_adapt_individual(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_sorted_heatmaps_standard():
@@ -146,7 +148,7 @@ def run(session_config_list, smooth):
                 axs_all.append(a)
             plotter.sorted_heatmaps_standard(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_temporal_scaling():
@@ -164,7 +166,7 @@ def run(session_config_list, smooth):
                 axs_all.append(a)
             plotter.temporal_scaling(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         fig_all = [

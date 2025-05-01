@@ -35,11 +35,13 @@ def run(session_config_list, smooth):
     else:
         print('Reading saved results')
         sub_session_config_list = filter_session_config_list(session_config_list, target_sess)
-        [list_labels, _, _, _, list_neural_trials, _, list_significance
+        [list_labels, _, list_neural_trials, _, list_significance
          ] = read_all(sub_session_config_list, smooth)
         print('Read {} session results'.format(np.sum(idx_target_sess)))
         print('Initiating alignment results')
-        plotter = plotter_main(list_neural_trials, list_labels, list_significance, session_config_list['label_names'])
+        plotter = plotter_main(
+            list_neural_trials, list_labels, list_significance,
+            session_config_list['label_names'], 'temp_'+session_config_list['subject_name'])
         def plot_sess_significance():
             title = 'significance'
             print('-----------------------------------------------')
@@ -52,7 +54,7 @@ def run(session_config_list, smooth):
             sign_ax = plt.subplot(gs[0, 0])
             plot_significance(sign_ax, list_significance, list_labels)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_intervals():
@@ -81,7 +83,7 @@ def run(session_config_list, smooth):
             plot_oddball_isi_distribution(isi_ax03, list_neural_trials)
             plot_random_isi_distribution(isi_ax04, list_neural_trials)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_trial():
@@ -100,7 +102,7 @@ def run(session_config_list, smooth):
             plot_stim_label(trial_ax02, list_neural_trials)
             plot_trial_legend(trial_ax03)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_cluster_all_pre():
@@ -108,17 +110,17 @@ def run(session_config_list, smooth):
             print('-----------------------------------------------')
             print(title)
             filename = '3331Random04_cluster_all_pre'
-            n_row = 20
+            n_row = 16
             n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,5,10,15]:
-                a = [plt.subplot(gs[s:s+5, i]) for i in [0,1,2,3,4]]
+            for s in [0,4,8,12]:
+                a = [plt.subplot(gs[s:s+4, i]) for i in [0,1,2,3,4]]
                 axs_all.append(a)
             plotter.cluster_all_pre(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_cluster_all_post():
@@ -126,17 +128,17 @@ def run(session_config_list, smooth):
             print('-----------------------------------------------')
             print(title)
             filename = '3331Random05_cluster_all_post'
-            n_row = 20
+            n_row = 16
             n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,5,10,15]:
-                a = [plt.subplot(gs[s:s+5, i]) for i in [0,1,2,3,4]]
+            for s in [0,4,8,12]:
+                a = [plt.subplot(gs[s:s+4, i]) for i in [0,1,2,3,4]]
                 axs_all.append(a)
             plotter.cluster_all_post(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_cluster_individual_pre():
@@ -158,7 +160,7 @@ def run(session_config_list, smooth):
                 axs_all.append(a)
             plotter.cluster_individual_pre(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_cluster_individual_post():
@@ -180,7 +182,7 @@ def run(session_config_list, smooth):
                 axs_all.append(a)
             plotter.cluster_individual_post(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_sorted_heatmaps():
@@ -199,7 +201,7 @@ def run(session_config_list, smooth):
                 axs_all.append(a)
             plotter.sorted_heatmaps(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_glm():
@@ -217,7 +219,7 @@ def run(session_config_list, smooth):
                 axs_all.append(a)
             plotter.glm(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_cross_sess_adapt():
@@ -239,14 +241,14 @@ def run(session_config_list, smooth):
                 axs_all.append(a)
             plotter.cross_sess_adapt(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp', filename+'.svg'), dpi=300, format='svg')
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         fig_all = [
             plot_trial(),
-            plot_cluster_all_pre(),
+            #plot_cluster_all_pre(),
             plot_cluster_all_post(),
-            plot_cluster_individual_pre(),
+            #plot_cluster_individual_pre(),
             plot_cluster_individual_post(),
             ]
         print('Clearing memory usage')

@@ -62,6 +62,13 @@ def read_raw_voltages(ops):
             vol_hifi, vol_stim_aud, vol_flir,
             vol_pmt, vol_led]
 
+# read dff traces.
+def read_dff(ops):
+    mm_path, file_path = get_memmap_path(ops, 'dff.h5')
+    with h5py.File(file_path, 'r') as f:
+        dff = create_memmap(f['dff'], 'float32', os.path.join(mm_path, 'dff.mmap'))
+    return dff
+
 # read camera dlc results.
 def read_camera(ops):
     mm_path, file_path = get_memmap_path(ops, 'camera.h5')
@@ -94,29 +101,22 @@ def read_move_offset(ops):
         yoff = create_memmap(f['yoff'], 'int8', os.path.join(mm_path, 'yoff.mmap'))
     return [xoff, yoff]
 
-# read dff traces.
-def read_dff(ops, smooth):
-    mm_path, file_path = get_memmap_path(ops, 'dff.h5')
+# read trailized neural traces with stimulus alignment.
+def read_neural_trials(ops, smooth):
+    mm_path, file_path = get_memmap_path(ops, 'neural_trials.h5')
     with h5py.File(file_path, 'r') as f:
-        dff = create_memmap(f['dff'], 'float32', os.path.join(mm_path, 'dff.mmap'))
+        neural_trials = dict()
+        dff = np.array(f['neural_trials']['dff'])
         if smooth:
             window_length=9
             polyorder=3
             dff = np.apply_along_axis(
-                savgol_filter, 1, dff.copy(),
+                savgol_filter, 1, dff,
                 window_length=window_length,
                 polyorder=polyorder)
-        else:
-            pass
-    return dff
-
-# read trailized neural traces with stimulus alignment.
-def read_neural_trials(ops):
-    mm_path, file_path = get_memmap_path(ops, 'neural_trials.h5')
-    with h5py.File(file_path, 'r') as f:
-        neural_trials = dict()
+        else: pass
+        neural_trials['dff']          = create_memmap(dff,                                'float32', os.path.join(mm_path, 'dff.mmap'))
         neural_trials['time']         = create_memmap(f['neural_trials']['time'],         'float32', os.path.join(mm_path, 'time.mmap'))
-        neural_trials['dff']          = create_memmap(f['neural_trials']['dff'],          'float32', os.path.join(mm_path, 'dff.mmap'))
         neural_trials['stim_labels']  = create_memmap(f['neural_trials']['stim_labels'],  'int32'  , os.path.join(mm_path, 'stim_labels.mmap'))
         neural_trials['vol_time']     = create_memmap(f['neural_trials']['vol_time'],     'float32', os.path.join(mm_path, 'vol_time.mmap'))
         neural_trials['vol_stim_vis'] = create_memmap(f['neural_trials']['vol_stim_vis'], 'int8',    os.path.join(mm_path, 'vol_stim_vis.mmap'))
@@ -185,11 +185,9 @@ def read_bpod_mat_data(ops):
     return bpod_sess_data
 
 # get session results for one subject.
-def read_subject(list_ops, sig_tag=None, force_label=None, smooth=None):
+def read_subject(list_ops, sig_tag, force_label, smooth):
     list_labels = []
     list_masks = []
-    list_vol = []
-    list_dff = []
     list_neural_trials = []
     list_move_offset = []
     list_significance = []
@@ -198,12 +196,8 @@ def read_subject(list_ops, sig_tag=None, force_label=None, smooth=None):
             os.makedirs(os.path.join(ops['save_path0'], 'memmap'))
         # masks.
         labels, masks, mean_func, max_func, mean_anat, masks_anat = read_masks(ops)
-        # voltages.
-        vol = read_raw_voltages(ops)
-        # dff.
-        dff = read_dff(ops, smooth)
         # trials.
-        neural_trials = read_neural_trials(ops)
+        neural_trials = read_neural_trials(ops, smooth)
         # movement offset.
         xoff, yoff = read_move_offset(ops)
         # significance.
@@ -221,29 +215,23 @@ def read_subject(list_ops, sig_tag=None, force_label=None, smooth=None):
             [masks,
              mean_func, max_func,
              mean_anat, masks_anat])
-        list_vol.append(vol)
-        list_dff.append(dff)
         list_neural_trials.append(neural_trials)
         list_move_offset.append([xoff, yoff])
         list_significance.append(significance)
         # clear memory usages.
         del labels
         del masks, mean_func, max_func, mean_anat, masks_anat
-        del vol
-        del dff
         del neural_trials
         del xoff, yoff
         del significance
         gc.collect()
-    return [list_labels, list_masks, list_vol, list_dff,
+    return [list_labels, list_masks,
             list_neural_trials, list_move_offset, list_significance]
 
 # get session results for all subject.
 def read_all(session_config_list, smooth):
     list_labels = []
     list_masks = []
-    list_vol = []
-    list_dff = []
     list_neural_trials = []
     list_move_offset = []
     list_significance = []
@@ -255,7 +243,7 @@ def read_all(session_config_list, smooth):
             for n in session_config_list['list_config'][i]['list_session_name']]
         list_ops = read_ops(list_session_data_path)
         # read results for each subject.
-        labels, masks, vol, dff, neural_trials, move_offset, significance = read_subject(
+        labels, masks, neural_trials, move_offset, significance = read_subject(
              list_ops,
              sig_tag=session_config_list['list_config'][i]['sig_tag'],
              force_label=session_config_list['list_config'][i]['force_label'],
@@ -263,21 +251,17 @@ def read_all(session_config_list, smooth):
         # append to list.
         list_labels += labels
         list_masks += masks
-        list_vol += vol
-        list_dff += dff
         list_neural_trials += neural_trials
         list_move_offset += move_offset
         list_significance += significance
         # clear memory usages.
         del labels
         del masks
-        del vol
-        del dff
         del neural_trials
         del move_offset
         del significance
         gc.collect()
-    return [list_labels, list_masks, list_vol, list_dff,
+    return [list_labels, list_masks,
             list_neural_trials, list_move_offset, list_significance]
     
 # clean memory mapping files.
