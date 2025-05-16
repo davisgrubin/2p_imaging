@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
-def get_dropdown_menu_html():
-    labels = ['field_of_view', 'random', 'short_long', 'fix_jitter_odd']
-    n_pages=4
+def get_dropdown_menu_html(list_page_name):
     dropdown_options = ""
-    for i in range(n_pages):
+    for i in range(len(list_page_name)):
         checked = "checked" if i == 0 else ""
         dropdown_options += f"""
         <label>
@@ -14,7 +12,7 @@ def get_dropdown_menu_html():
                 value="page{i+1}"
                 onchange="radioChanged(this)"
                 {checked}>
-                {labels[i]}
+                {list_page_name[i]}
                 </label>
         """
     dropdown_html = f"""

@@ -39,15 +39,10 @@ class plotter_utils(utils_basic):
             temp_folder,
             ):
         super().__init__()
-        timescale = 1.0
         self.n_sess = len(list_neural_trials)
-        self.l_frames = int(200*timescale)
-        self.r_frames = int(200*timescale)
         self.list_labels = list_labels
         self.list_neural_trials = list_neural_trials
-        self.alignment = run_get_stim_response(
-            temp_folder,
-            list_neural_trials, self.l_frames, self.r_frames, expected='none')
+        self.alignment = run_get_stim_response(temp_folder, list_neural_trials, expected='none')
         self.list_stim_labels = self.alignment['list_stim_labels']
         self.list_odd_idx = [
             get_odd_stim_prepost_idx(sl) for sl in self.list_stim_labels]
@@ -56,7 +51,7 @@ class plotter_utils(utils_basic):
         self.list_significance = list_significance
         self.bin_win = [450,2550]
         self.bin_num = 2
-        self.n_clusters = 10
+        self.n_clusters = 12
         self.max_clusters = 10
         self.d_latent = 3
         self.glm = self.run_glm()
@@ -104,7 +99,7 @@ class plotter_utils(utils_basic):
         def plot_standard_fix(ax):
             # collect data.
             [[color0, color1, color2, _],
-             [neu_seq, _, stim_seq, stim_value],
+             [neu_seq, _, stim_seq, _],
              [neu_labels, neu_sig], _] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, [0], None, [0], [0]],
@@ -123,7 +118,7 @@ class plotter_utils(utils_basic):
         def plot_oddball_fix(ax, oddball):
             # collect data.
             [[color0, color1, color2, _],
-             [neu_seq, _, stim_seq, stim_value],
+             [neu_seq, _, stim_seq, _],
              [neu_labels, neu_sig], _] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
@@ -151,14 +146,9 @@ class plotter_utils(utils_basic):
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
-            ax.axis('off')
-            ax = ax.inset_axes([0, 0, 0.4, 1], transform=ax.transAxes)
             # plot results.
             self.plot_cluster_neu_fraction_in_cluster(ax, cluster_id, color2)
         def plot_cate_fraction(ax):
-            ax.axis('off')
-            ax = ax.inset_axes([0, 0, 0.4, 1], transform=ax.transAxes)
-            # plot results.
             self.plot_cluster_cate_fraction_in_cluster(ax, cluster_id, neu_labels, self.label_names)
         def plot_legend(ax):
             [[color0, color1, color2, _], _, _,
@@ -255,7 +245,7 @@ class plotter_utils(utils_basic):
         def plot_standard_fix(axs):
             # collect data.
             [[color0, color1, color2, _],
-             [neu_seq, _, stim_seq, stim_value],
+             [neu_seq, _, stim_seq, _],
              [neu_labels, neu_sig], _] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, [0], None, [0], [0]],
@@ -286,7 +276,7 @@ class plotter_utils(utils_basic):
         def plot_oddball_fix(axs, oddball):
             # collect data.
             [[color0, color1, color2, _],
-             [neu_seq, _, stim_seq, stim_value],
+             [neu_seq, _, stim_seq, _],
              [neu_labels, neu_sig], _] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
@@ -478,15 +468,15 @@ class plotter_utils(utils_basic):
         def plot_oddball_jitter(axs, oddball):
             # collect data.
             [[color0, color1, color2, _],
-             [neu_seq, stim_seq, stim_value, pre_isi, _], _, _] = get_neu_trial(
+             [neu_seq, stim_seq, _, pre_isi, _], _, _] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [1], None, [0], [0]],
                 mean_sem=False,
                 cate=cate, roi_id=None)
             # bin data based on isi.
-            [bins, bin_center, _, bin_neu_seq, _, _, bin_stim_seq, _] = get_isi_bin_neu(
-                neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
+            [bins, bin_center, _, bin_neu_seq, _, _, bin_stim_seq] = get_isi_bin_neu(
+                neu_seq, stim_seq, pre_isi, self.bin_win, self.bin_num)
             cluster_bin_neu_mean, cluster_bin_neu_sem = get_bin_mean_sem_cluster(bin_neu_seq, cluster_id)
             # plot results for each class.
             for ci in range(len(lbl)):
@@ -523,15 +513,15 @@ class plotter_utils(utils_basic):
                 axs[ci].set_title(lbl[ci])
         def plot_legend(ax):
             [[color0, _, color2, _],
-             [neu_seq, stim_seq, stim_value, pre_isi, _], _,
+             [neu_seq, stim_seq, _, pre_isi, _], _,
              [n_trials, n_neurons]] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[0] for l in self.list_odd_idx],
                 trial_param=[None, None, [1], None, [0], [0]],
                 mean_sem=False,
                 cate=cate, roi_id=None)
-            [bins, _, _, _, _, _, _, _] = get_isi_bin_neu(
-                neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
+            [bins, _, _, _, _, _, _] = get_isi_bin_neu(
+                neu_seq, stim_seq, pre_isi, self.bin_win, self.bin_num)
             lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
             cs = get_cmap_color(self.bin_num, base_color=color2)
             add_legend(ax, cs, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
@@ -552,15 +542,15 @@ class plotter_utils(utils_basic):
         def plot_win_decode(ax, oddball):
             # collect data.
             [[color0, color1, color2, _],
-             [neu_seq, stim_seq, stim_value, pre_isi, _], _, _] = get_neu_trial(
+             [neu_seq, stim_seq, _, pre_isi, _], _, _] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [1], None, [0], [0]],
                 mean_sem=False,
                 cate=cate, roi_id=None)
             # bin data based on isi.
-            [_, bin_center, bin_neu_seq_trial, _, _, _, bin_stim_seq, _] = get_isi_bin_neu(
-                neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, bin_num)
+            [_, bin_center, bin_neu_seq_trial, _, _, _, bin_stim_seq] = get_isi_bin_neu(
+                neu_seq, stim_seq, pre_isi, self.bin_win, bin_num)
             # prepare data for decoding.
             bss = np.nanmean(bin_stim_seq, axis=0)
             c_idx = bss.shape[0]//2
@@ -627,7 +617,7 @@ class plotter_utils(utils_basic):
         xlim = [-2500, 6000]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
         [[color0, color1, color2, _],
-         [neu_x, _, stim_seq, stim_value], _,
+         [neu_x, _, stim_seq, _], _,
          [n_trials, n_neurons]] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_idx=[l[oddball] for l in self.list_odd_idx],
@@ -698,56 +688,6 @@ class plotter_utils(utils_basic):
         except: pass
         try: plot_legend(axs[2])
         except: pass
-    
-    def plot_sorted_heatmaps_local_isi(self, axs, norm_mode, oddball):
-        thres = 0.05
-        cate = [-1,1]
-        win_sort = [-500, 500]
-        xlim = [-2500, 5000]
-        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
-        # collect data.
-        neu_x = []
-        stim_x = []
-        neu_time = self.alignment['neu_time'][l_idx:r_idx]
-        # oddball with bins.
-        _, [neu_seq, stim_seq, stim_value, pre_isi], [neu_labels, neu_sig], _ = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-            trial_idx=[l[oddball] for l in self.list_odd_idx],
-            trial_param=[None, None, [1], None, [0], [0]],
-            mean_sem=False,
-            cate=cate, roi_id=None)
-        neu_seq = [ns[:,:,l_idx:r_idx] for ns in neu_seq]
-        [_, _, bin_neu_seq_trial, bin_neu_seq, _, _, bin_stim_seq, _] = get_isi_bin_neu(
-            neu_seq, stim_seq, stim_value, pre_isi, self.bin_win, self.bin_num)
-        neu_x += bin_neu_seq
-        stim_x += [bin_stim_seq[bi,:,:] for bi in range(self.bin_num)]
-        # difference between short and long bins.
-        neu_x.append(bin_neu_seq[0][:,:]-bin_neu_seq[1][:,:])
-        stim_x.append(bin_stim_seq[0,:,:])
-        # wilcoxon test results.
-        _, p_bin = run_wilcoxon_trial(bin_neu_seq_trial[0], bin_neu_seq_trial[1], thres)
-        neu_x.append(p_bin)
-        stim_x.append(bin_stim_seq[0,:,:])
-        # plot heatmaps.
-        for bi in range(len(neu_x)):
-            self.plot_heatmap_neuron_cate(
-                axs[bi], neu_x[bi], neu_time, neu_x[0], win_sort, neu_labels, neu_sig,
-                norm_mode=norm_mode if bi!=3 else 'binary',
-                neu_seq_share=neu_x,
-                neu_labels_share=[neu_labels]*len(neu_x),
-                neu_sig_share=[neu_sig]*len(neu_x))
-            axs[bi].set_xlabel('time since pre oddball stim (ms) \n sorting window [{},{}] ms'.format(
-                win_sort[0], win_sort[1]))
-        # add stimulus line.
-        for bi in [0,1,2,3]:
-            c_idx = bin_stim_seq[0,:,:].shape[0]//2
-            xlines = [neu_time[np.searchsorted(neu_time, t)]
-                      for t in [stim_x[bi][c_idx+i,0]
-                                for i in [0,1]]]
-            for xl in xlines:
-                if xl>neu_time[0] and xl<neu_time[-1]:
-                    axs[bi].axvline(xl, color='black', lw=1, linestyle='--')
-
         
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
@@ -757,9 +697,9 @@ class plotter_main(plotter_utils):
 
     def cluster_oddball_fix_all(self, axs_all):
         for cate, axs in zip([[-1,1,2],[-1],[1],[2]], axs_all):
-            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
-            print(f'plotting results for {label_name}')
             try:
+                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+                print(f'plotting results for {label_name}')
                 
                 self.plot_cluster_oddball_fix_all(axs, cate=cate)
                 axs[0].set_title(f'reponse to standard interval \n {label_name}')
@@ -770,9 +710,10 @@ class plotter_main(plotter_utils):
         
     def sorted_heatmaps_fix_all(self, axs_all):
         for cate, axs in zip([[-1,1,2],[-1],[1],[2]], axs_all):
-            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
-            print(f'plotting results for {label_name}')
             try:
+                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+                print(f'plotting results for {label_name}')
+                
                 for axss, norm_mode in zip([axs[0:3], axs[3:6], axs[6:9]], ['none', 'minmax', 'share']):
                     self.plot_sorted_heatmaps_fix_all(axss, norm_mode, cate=cate)
                     axss[0].set_title(f'response to standard interval \n {label_name} (normalized with {norm_mode})')
@@ -783,9 +724,9 @@ class plotter_main(plotter_utils):
         
     def cluster_oddball_fix_individual(self, axs_all):
         for cate, axs in zip([[-1,1,2],[-1],[1],[2]], axs_all):
-            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
-            print(f'plotting results for {label_name}')
             try:
+                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+                print(f'plotting results for {label_name}')
                 
                 self.plot_cluster_oddball_fix_individual(axs, cate=cate)
 
@@ -793,9 +734,9 @@ class plotter_main(plotter_utils):
     
     def cluster_oddball_jitter_global_individual(self, axs_all):
         for cate, axs in zip([[-1,1,2],[-1],[1],[2]], axs_all):
-            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
-            print(f'plotting results for {label_name}')
             try:
+                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+                print(f'plotting results for {label_name}')
                 
                 self.plot_cluster_oddball_jitter_global_individual(axs, cate=cate)
 
@@ -803,9 +744,9 @@ class plotter_main(plotter_utils):
     
     def cluster_oddball_jitter_local_individual(self, axs_all):
         for cate, axs in zip([[-1,1,2],[-1],[1],[2]], axs_all):
-            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
-            print(f'plotting results for {label_name}')
             try:
+                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+                print(f'plotting results for {label_name}')
                 
                 self.plot_cluster_oddball_jitter_local_individual(axs, cate=cate)
 
@@ -813,20 +754,19 @@ class plotter_main(plotter_utils):
     
     def oddball_win_decode_local(self, axs_all):
         for cate, axs in zip([[-1,1,2],[-1],[1],[2]], axs_all):
-            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
-            print(f'plotting results for {label_name}')
             try:
+                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+                print(f'plotting results for {label_name}')
                 
                 self.plot_oddball_win_decode_local(axs, cate=cate)
 
             except: pass
-        
     
     def oddball_latent_fix_all(self, axs_all):
         for cate, axs in zip([[-1,1,2],[-1],[1],[2]], axs_all):
-            label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
-            print(f'plotting results for {label_name}')
             try:
+                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+                print(f'plotting results for {label_name}')
                 
                 self.plot_oddball_latent_fix_all(axs[0], 0, cate=cate)
                 self.plot_oddball_latent_fix_all(axs[1], 1, cate=cate)

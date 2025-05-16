@@ -118,7 +118,7 @@ def get_multi_sess_neu_trial(
         ):
     neu = []
     stim_seq = []
-    stim_value = []
+    camera_pupil = []
     pre_isi = []
     post_isi = []
     # use stim_labels to find trials.
@@ -134,7 +134,7 @@ def get_multi_sess_neu_trial(
                 trial_param[5])
             neu.append(neu_cate[i][idx,:,:])
             stim_seq.append(alignment['list_stim_seq'][i][idx,:,:])
-            stim_value.append(alignment['list_stim_value'][i][idx,:])
+            camera_pupil.append(alignment['list_camera_pupil'][i][idx,:])
             pre_isi.append(alignment['list_pre_isi'][i][idx])
             post_isi.append(alignment['list_post_isi'][i][idx])
     # use given idx to find trials.
@@ -142,7 +142,7 @@ def get_multi_sess_neu_trial(
         for i in range(len(neu_cate)):
             neu.append(neu_cate[i][trial_idx[i],:,:])
             stim_seq.append(alignment['list_stim_seq'][i][trial_idx[i],:,:])
-            stim_value.append(alignment['list_stim_value'][i][trial_idx[i],:])
+            camera_pupil.append(alignment['list_camera_pupil'][i][trial_idx[i],:])
             pre_isi.append(alignment['list_pre_isi'][i][trial_idx[i]])
             post_isi.append(alignment['list_post_isi'][i][trial_idx[i]])
     # use both.
@@ -158,7 +158,7 @@ def get_multi_sess_neu_trial(
                 trial_param[5])
             neu.append(neu_cate[i][trial_idx[i]*idx,:,:])
             stim_seq.append(alignment['list_stim_seq'][i][trial_idx[i]*idx,:,:])
-            stim_value.append(alignment['list_stim_value'][i][trial_idx[i]*idx,:])
+            camera_pupil.append(alignment['list_camera_pupil'][i][trial_idx[i]*idx,:])
             pre_isi.append(alignment['list_pre_isi'][i][trial_idx[i]*idx])
             post_isi.append(alignment['list_post_isi'][i][trial_idx[i]*idx])
     # get numbers.
@@ -170,12 +170,12 @@ def get_multi_sess_neu_trial(
         sem  = [np.nanstd(n, axis=0)/np.sqrt(np.sum(~np.isnan(n), axis=0)) for n in neu]
         mean = np.concatenate(mean, axis=0)
         sem  = np.concatenate(sem, axis=0)
-        stim_seq   = np.mean(np.concatenate(stim_seq, axis=0),axis=0)
-        stim_value = np.mean(np.concatenate(stim_value, axis=0),axis=0)
-        return [mean, sem, stim_seq, stim_value], [n_trials, n_neurons]
+        stim_seq = np.nanmean(np.concatenate(stim_seq, axis=0),axis=0)
+        camera_pupil = np.nanmean(np.concatenate(camera_pupil, axis=0),axis=0)
+        return [mean, sem, stim_seq, camera_pupil], [n_trials, n_neurons]
     # return single trial response.
     else:
-        return [neu, stim_seq, stim_value, pre_isi, post_isi], [n_trials, n_neurons]
+        return [neu, stim_seq, camera_pupil, pre_isi, post_isi], [n_trials, n_neurons]
 
 # find neuron category and trial data.
 def get_neu_trial(
@@ -338,7 +338,7 @@ def exclude_odd_stim(stim_labels):
 
 # get isi based binning average neural response.
 def get_isi_bin_neu(
-        neu_seq, stim_seq, stim_value, isi,
+        neu_seq, stim_seq, isi,
         bin_win, bin_num,
         mean_sem=True
         ):
@@ -353,7 +353,6 @@ def get_isi_bin_neu(
     bin_neu_mean = np.zeros((len(bin_center), neu_seq[0].shape[2]))
     bin_neu_sem = np.zeros((len(bin_center), neu_seq[0].shape[2]))
     bin_stim_seq = np.zeros((len(bin_center), stim_seq[0].shape[1], 2))
-    bin_stim_value = np.zeros((len(bin_center), stim_value[0].shape[1]))
     for i in range(len(bin_center)):
         # get binned neural traces.
         neu_trial = [n[bi==i,:,:] for n, bi in zip(neu_seq, list_bin_idx)]
@@ -363,20 +362,15 @@ def get_isi_bin_neu(
         s_seq = [s[bi==i,:,:] for s, bi in zip(stim_seq, list_bin_idx)]
         s_seq = np.concatenate(s_seq, axis=0)
         s_seq = np.nanmean(s_seq, axis=0)
-        # get binned stimulus values.
-        s_value = [s[bi==i,:] for s, bi in zip(stim_value, list_bin_idx)]
-        s_value = np.concatenate(s_value, axis=0)
-        s_value = np.nanmean(s_value, axis=0)
         # collect results.
         bin_neu_seq_trial.append(neu_trial)
         bin_neu_seq.append(neu)
         bin_neu_mean[i,:] = get_mean_sem(neu)[0]
         bin_neu_sem[i,:] = get_mean_sem(neu)[1]
         bin_stim_seq[i,:,:] = s_seq
-        bin_stim_value[i,:] = s_value
     bin_center = bin_center.astype('int32')
     return [bins, bin_center, bin_neu_seq_trial, bin_neu_seq,
-            bin_neu_mean, bin_neu_sem, bin_stim_seq, bin_stim_value]
+            bin_neu_mean, bin_neu_sem, bin_stim_seq]
 
 # compute synchrnization across time.
 def get_neu_sync(neu, win_width):
@@ -800,6 +794,7 @@ class utils_basic:
         self.min_num_trial = 5
         self.latent_cmap = plt.cm.gnuplot2_r
     
+    @show_memory_usage
     def run_glm(self):
         # define kernel window.
         kernel_win = [-500,3000]
@@ -834,6 +829,9 @@ class utils_basic:
         v = np.mean(sv, axis=0)
         v = rescale(v, u, l)
         ax.plot(st, v, color=c, lw=0.5, linestyle=':')
+    
+    def plot_pupil(self, ax, nt, cp, c):
+        0
     
     def plot_heatmap_neuron(
             self, ax, neu_seq, neu_time, neu_seq_sort, cmap,
@@ -1123,7 +1121,7 @@ class utils_basic:
         fraction = num / np.nansum(num)
         # plot bars.
         ax.axis('off')
-        ax = ax.inset_axes([0, 0, 0.4, 1], transform=ax.transAxes)
+        ax = ax.inset_axes([0, 0, 0.5, 1], transform=ax.transAxes)
         for ci in range(n_clusters):
             ax.barh(
                 ci+0.5, fraction[ci],
@@ -1131,7 +1129,7 @@ class utils_basic:
                 edgecolor='white',
                 height=bar_width,
                 color=color)
-            ax.text(fraction[ci]+0.02, ci+0.48,
+            ax.text(0.01, ci+0.7,
                     f'{fraction[ci]:.2f}, n={num[ci]}',
                     ha='left', va='center', color='#2C2C2C')
         # adjust layouts.
@@ -1142,7 +1140,7 @@ class utils_basic:
         ax.spines['bottom'].set_visible(False)
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_xlim([0,np.nanmax(fraction)+0.05])
+        ax.set_xlim([0,np.nanmax(fraction)])
         ax.set_ylim([-0.2, n_clusters+0.1])
         ax.set_xlabel('fraction of neurons')
 
@@ -1160,6 +1158,8 @@ class utils_basic:
                 fraction[i,j] = nc / nt
         fraction = fraction / np.nansum(fraction, axis=0)
         # plot bars.
+        ax.axis('off')
+        ax = ax.inset_axes([0, 0, 0.6, 1], transform=ax.transAxes)
         bottom = 1-np.cumsum(fraction, axis=0)
         for j in range(n_clusters):
             for i in range(len(cate_eval)):
@@ -1170,7 +1170,7 @@ class utils_basic:
                         edgecolor='white',
                         height=bar_width,
                         color=cate_color[i])
-                    ax.text(bottom[i,j]+fraction[i,j]/2, j+0.8,
+                    ax.text(bottom[i,j]+fraction[i,j]/2, j+0.9,
                             f'{fraction[i,j]:.2f}',
                             ha='center', va='center', rotation=90, color='#2C2C2C')
         # adjust layout.

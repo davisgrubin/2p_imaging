@@ -70,16 +70,20 @@ def read_dff(ops):
     return dff
 
 # read camera dlc results.
-def read_camera(ops):
-    mm_path, file_path = get_memmap_path(ops, 'camera.h5')
+def read_camera(ops, z_score=True):
     try:
+        h5_file_name = [f for f in os.listdir(ops['save_path0']) if 'camera' in f][0]
+        mm_path, file_path = get_memmap_path(ops, h5_file_name)
         with h5py.File(file_path, 'r') as f:
-            camera_time = create_memmap(f['camera']['camera_time'], 'float32', os.path.join(mm_path, 'camera_time.mmap'))
-            pupil       = create_memmap(f['camera']['pupil'],       'float32', os.path.join(mm_path, 'pupil.mmap'))
+            camera_time  = np.array(f['camera_dlc']['camera_time'], dtype='float32')*1000
+            camera_time -= camera_time[0]
+            camera_pupil = np.array(f['camera_dlc']['pupil'], dtype='float32')
+            if z_score:
+                camera_pupil = (camera_pupil - np.nanmean(camera_pupil)) / (1e-10 + np.nanstd(camera_pupil))
     except:
-        camera_time = create_memmap(np.array([np.nan]), 'float32', os.path.join(mm_path, 'camera_time.mmap'))
-        pupil       = create_memmap(np.array([np.nan]),       'float32', os.path.join(mm_path, 'pupil.mmap'))
-    return [camera_time, pupil]
+        camera_time  = np.array([np.nan], dtype='float32')
+        camera_pupil = np.array([np.nan], dtype='float32')
+    return [camera_time, camera_pupil]
 
 # read masks.
 def read_masks(ops):
@@ -124,6 +128,8 @@ def read_neural_trials(ops, smooth):
         neural_trials['vol_flir']     = create_memmap(f['neural_trials']['vol_flir'],     'int8',    os.path.join(mm_path, 'vol_flir.mmap'))
         neural_trials['vol_pmt']      = create_memmap(f['neural_trials']['vol_pmt'],      'int8',    os.path.join(mm_path, 'vol_pmt.mmap'))
         neural_trials['vol_led']      = create_memmap(f['neural_trials']['vol_led'],      'int8',    os.path.join(mm_path, 'vol_led.mmap'))
+        neural_trials['camera_time']  = create_memmap(f['neural_trials']['camera_time'],  'float32', os.path.join(mm_path, 'camera_time.mmap'))
+        neural_trials['camera_pupil'] = create_memmap(f['neural_trials']['camera_pupil'], 'float32', os.path.join(mm_path, 'camera_pupil.mmap'))
     return neural_trials
 
 # read significance test label results.

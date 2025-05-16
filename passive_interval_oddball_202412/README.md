@@ -199,16 +199,23 @@
 - Now all individual plot xlim is applied before plotting.
 - Added a factor in apply_colormap to remap data distribution.
 - Added plot_cluster_neu_fraction_in_cluster.
+- Now pack_webpage_main can be assigned pages more flexibly with lists.
 
+## 2025.05.08
+- Added pupil traces processing in ReadResults and Trialization.
+- Added list_target_sess into list_target_sess and changed html_session_list.
+- Improved independence of html_session_list.
+- Now l_frames and r_frames are within get_stim_response.
 
+## 2025.05.10
+- Now pupil data is ready for analysis.
+- Added into ShortLong.
+- Improved plot_cluster_neu_fraction_in_cluster.
+- Combined cluster_all_pre and cluster_all_post in 3331Random
+- Removed stimulus and led traces alignment in Alignment.
+- Now clean_memap_path also applies at the beginning.
 
-
-
-
-
-
-
-
-
+## 2025.05.15
+- 
 
 

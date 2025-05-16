@@ -285,13 +285,13 @@ def run(session_config_list, smooth):
             return [filename, n_row, n_col, title]
         fig_all = [
             #plot_sess_significance(),
-            #plot_intervals(),
-            #plot_trial(),
+            plot_intervals(),
+            plot_trial(),
             plot_cluster_oddball_fix_all(),
             plot_sorted_heatmaps_fix_all(),
-            #plot_cluster_oddball_fix_individual(),
-            #plot_cluster_oddball_jitter_global_individual(),
-            #plot_cluster_oddball_jitter_local_individual(),
+            plot_cluster_oddball_fix_individual(),
+            plot_cluster_oddball_jitter_global_individual(),
+            plot_cluster_oddball_jitter_local_individual(),
             #plot_oddball_win_decode_local(),
             plot_oddball_latent_fix_all(),            
         ]

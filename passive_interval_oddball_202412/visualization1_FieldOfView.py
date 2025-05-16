@@ -38,7 +38,7 @@ def run(session_config_list, smooth):
         img_window = [plt.imread(wp) for wp in path_window]
         img_note = [plt.imread(wp) for wp in path_note]
         n_row = 2
-        n_col = len(path_window)
+        n_col = 5
         fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
         gs = GridSpec(n_row, n_col, figure=fig)
         win_ax01 = [plt.subplot(gs[0, i]) for i in range(len(path_window))]
@@ -129,7 +129,7 @@ def run(session_config_list, smooth):
         plot_masks(),
         #plot_example_traces(),
         #plot_ca(),
-        #plot_misc(),
+        plot_misc(),
         ]
     return fig_all
 

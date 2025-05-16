@@ -9,7 +9,7 @@ from webpage.css_styles import get_css_styles
 from webpage.java_scripts import get_java_scripts
 
 # main process to combine results.
-def run(session_config_list, fn1, fn2, fn3, fn4):
+def run(session_config_list, list_fn, list_page_name, list_target_sess):
     
     # helper function to embed figures into an html block.
     def generate_div(filename):
@@ -86,12 +86,11 @@ def run(session_config_list, fn1, fn2, fn3, fn4):
     
     # finalize all html output.
     def get_full_html(session_config_list, table_html, pages_html):
-        n_pages = 4
         # generate other codes.
-        dropdown_menu_html = get_dropdown_menu_html()
+        dropdown_menu_html = get_dropdown_menu_html(list_page_name)
         logo_html = get_logo_html()
         css_styles = get_css_styles()
-        java_scripts = get_java_scripts(n_pages)
+        java_scripts = get_java_scripts(len(list_page_name))
         # final html output code.
         html_output = f"""
         <html>
@@ -116,12 +115,10 @@ def run(session_config_list, fn1, fn2, fn3, fn4):
     
     # generate page containers and assign blocks to each page.
     pages_html = ""
-    pages_html += get_page_html(fn1, 0, 'field_of_view')
-    pages_html += get_page_html(fn2, 1, 'random')
-    pages_html += get_page_html(fn3, 2, 'short_long')
-    pages_html += get_page_html(fn4, 3, 'fix_jitter_odd')
+    for pi in range(len(list_page_name)):
+        pages_html += get_page_html(list_fn[pi], pi, list_page_name[pi])
     # generate list of session name html codes.
-    session_list_html = get_session_list_html(session_config_list)
+    session_list_html = get_session_list_html(session_config_list, list_target_sess)
     # get full html output.
     html_output = get_full_html(session_config_list, session_list_html, pages_html)
     # save result.

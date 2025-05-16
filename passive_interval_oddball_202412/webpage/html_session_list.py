@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 
-def get_session_list_html(session_config):
-    sess_name = {
-        'random':[],
-        'short_long':[],
-        'fix_jitter_odd':[]}
-    for key, value in session_config['list_session_name'].items():
-        sess_name.setdefault(value, []).append(key)
-    sess_name = {
-        'random ({})'.format(len(sess_name['random'])): sess_name['random'],
-        'short_long ({})'.format(len(sess_name['short_long'])): sess_name['short_long'],
-        'fix_jitter_odd ({})'.format(len(sess_name['fix_jitter_odd'])): sess_name['fix_jitter_odd'],
-        }
+def get_session_list_html(session_config_list, list_target_sess):
+    # classify sessions.
+    sess_name = {name: [] for name in list_target_sess}
+    for k, v in session_config_list['list_session_name'].items():
+        sess_name.setdefault(v, []).append(k)
+    # calculate total numbers.
+    sess_name = {k+f' ({len(sess_name[k])})': v for k,v in sess_name.items()}
+    # create table.
     table_headers = "".join(f"<th>{col}</th>" for col in sess_name.keys())
     max_rows = max(len(items) for items in sess_name.values())
     table_rows = ""
@@ -21,6 +17,7 @@ def get_session_list_html(session_config):
             cell = items[row] if row < len(items) else ""
             table_rows += f"<td>{cell}</td>"
         table_rows += "</tr>"
+    # write into html.
     session_list_html = f"""
     <table class="info-table">
         <thead>

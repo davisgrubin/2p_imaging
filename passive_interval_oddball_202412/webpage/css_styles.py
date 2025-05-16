@@ -79,8 +79,7 @@ def get_css_styles():
           .dropbtn {
             background-color: orange;
             color: white;
-            padding: 8px 12px;
-            font-size: 14px;
+            padding: 6px 10px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
@@ -89,7 +88,7 @@ def get_css_styles():
             display: none;
             position: absolute;
             background-color: #f9f9f9;
-            min-width: 160px;
+            min-width: 320px;
             max-height: 200px;
             overflow-y: auto;
             box-shadow: 0px 8px 16px rgba(0,0,0,0.2);

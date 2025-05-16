@@ -3,9 +3,11 @@
 import os
 import h5py
 import numpy as np
+from scipy.interpolate import interp1d
 
 from modules.ReadResults import read_raw_voltages
 from modules.ReadResults import read_dff
+from modules.ReadResults import read_camera
 from modules.ReadResults import read_bpod_mat_data
 
 # remove trial start trigger voltage impulse.
@@ -81,13 +83,14 @@ def get_stim_labels(bpod_sess_data, vol_time, vol_stim_vis):
     stim_labels[:,6] = bpod_sess_data['random_types']
     stim_labels[:,7] = bpod_sess_data['opto_types']
     return stim_labels
-
+    
 # save trial neural data.
 def save_trials(
         ops, time_neuro, dff, stim_labels,
         vol_time, vol_stim_vis,
         vol_stim_aud, vol_flir,
-        vol_pmt, vol_led
+        vol_pmt, vol_led,
+        camera_time, camera_pupil
         ):
     # file structure:
     # ops['save_path0'] / neural_trials.h5
@@ -112,6 +115,8 @@ def save_trials(
     grp['vol_flir']     = vol_flir
     grp['vol_pmt']      = vol_pmt
     grp['vol_led']      = vol_led
+    grp['camera_time']  = camera_time
+    grp['camera_pupil'] = camera_pupil
     f.close()
 
 # main function for trialization.
@@ -131,10 +136,15 @@ def run(ops):
     time_neuro = correct_time_img_center(time_img)
     # stimulus sequence labeling.
     stim_labels = get_stim_labels(bpod_sess_data, vol_time, vol_stim_vis)
+    # processing dlc results.
+    camera_time, camera_pupil = read_camera(ops)
+    camera_time = correct_time_img_center(camera_time)
+    camera_pupil = interp1d(camera_time, camera_pupil, bounds_error=False, fill_value=np.nan)(time_neuro)
     # save the final data.
     print('Saving trial data')
     save_trials(
         ops, time_neuro, dff, stim_labels,
         vol_time, vol_stim_vis,
         vol_stim_aud, vol_flir,
-        vol_pmt, vol_led)
+        vol_pmt, vol_led,
+        camera_time, camera_pupil)

@@ -105,38 +105,20 @@ def run(session_config_list, smooth):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        def plot_cluster_all_pre():
-            title = 'all cluster neural traces on binned pre stimlus interval'
+        def plot_cluster_all():
+            title = 'all cluster neural traces on binned stimlus interval'
             print('-----------------------------------------------')
             print(title)
-            filename = '3331Random04_cluster_all_pre'
+            filename = '3331Random04_cluster_all'
             n_row = 16
             n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in [0,4,8,12]:
-                a = [plt.subplot(gs[s:s+4, i]) for i in [0,1,2,3,4]]
+                a = [plt.subplot(gs[s:s+4, i]) for i in range(6)]
                 axs_all.append(a)
-            plotter.cluster_all_pre(axs_all)
-            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
-            plt.close(fig)
-            return [filename, n_row, n_col, title]
-        def plot_cluster_all_post():
-            title = 'all cluster neural traces on binned post stimlus interval'
-            print('-----------------------------------------------')
-            print(title)
-            filename = '3331Random05_cluster_all_post'
-            n_row = 16
-            n_col = 10
-            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
-            gs = GridSpec(n_row, n_col, figure=fig)
-            axs_all = []
-            for s in [0,4,8,12]:
-                a = [plt.subplot(gs[s:s+4, i]) for i in [0,1,2,3,4]]
-                axs_all.append(a)
-            plotter.cluster_all_post(axs_all)
+            plotter.cluster_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
@@ -145,7 +127,7 @@ def run(session_config_list, smooth):
             title = 'individual cluster neural traces on binned pre stimlus interval'
             print('-----------------------------------------------')
             print(title)
-            filename = '3331Random06_cluster_individual_pre'
+            filename = '3331Random05_cluster_individual_pre'
             n_row = 20
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -167,7 +149,7 @@ def run(session_config_list, smooth):
             title = 'individual cluster neural traces on binned post stimlus interval'
             print('-----------------------------------------------')
             print(title)
-            filename = '3331Random07_cluster_individual_post'
+            filename = '3331Random06_cluster_individual_post'
             n_row = 20
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -246,9 +228,8 @@ def run(session_config_list, smooth):
             return [filename, n_row, n_col, title]
         fig_all = [
             plot_trial(),
-            #plot_cluster_all_pre(),
-            plot_cluster_all_post(),
-            #plot_cluster_individual_pre(),
+            plot_cluster_all(),
+            plot_cluster_individual_pre(),
             plot_cluster_individual_post(),
             ]
         print('Clearing memory usage')

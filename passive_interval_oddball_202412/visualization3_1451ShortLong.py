@@ -105,11 +105,29 @@ def run(session_config_list, smooth):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
+        def plot_cluster_all():
+            title = 'all cluster neural traces'
+            print('-----------------------------------------------')
+            print(title)
+            filename = '1451ShortLong04_cluster_all'
+            n_row = 16
+            n_col = 10
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in [0,4,8,12]:
+                a = [plt.subplot(gs[s:s+4, i]) for i in range(10)]
+                axs_all.append(a)
+            plotter.cluster_all(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
         def plot_cluster_block_adapt_individual():
             title = 'individual cluster on block transition'
             print('-----------------------------------------------')
             print(title)
-            filename = '1451ShortLong04_cluster_block_adapt_individual'
+            filename = '1451ShortLong05_cluster_block_adapt_individual'
             n_row = 40
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -132,47 +150,11 @@ def run(session_config_list, smooth):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        def plot_sorted_heatmaps_standard():
-            title = 'sorted heatmaps on short long interval'
-            print('-----------------------------------------------')
-            print(title)
-            filename = '1451ShortLong09_sorted_heatmaps_standard'
-            n_row = 12
-            n_col = 4
-            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
-            gs = GridSpec(n_row, n_col, figure=fig)
-            axs_all = []
-            for s in [0,4,8]:
-                a = [[plt.subplot(gs[s+0:s+2, i]) for i in range(4)],
-                     [plt.subplot(gs[s+2:s+4, i]) for i in range(4)]]
-                axs_all.append(a)
-            plotter.sorted_heatmaps_standard(axs_all)
-            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
-            plt.close(fig)
-            return [filename, n_row, n_col, title]
-        def plot_temporal_scaling():
-            title = 'temporal scaling effect on short long interval'
-            print('-----------------------------------------------')
-            print(title)
-            filename = '1451ShortLong10_temporal_scaling'
-            n_row = 6
-            n_col = 4
-            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
-            gs = GridSpec(n_row, n_col, figure=fig)
-            axs_all = []
-            for s in [0,2,4]:
-                a = [plt.subplot(gs[s+0:s+2, i]) for i in range(3)]
-                axs_all.append(a)
-            plotter.temporal_scaling(axs_all)
-            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
-            plt.close(fig)
-            return [filename, n_row, n_col, title]
         fig_all = [
             #plot_sess_significance(),
-            #plot_intervals(),
+            plot_intervals(),
             plot_trial(),
+            plot_cluster_all(),
             plot_cluster_block_adapt_individual(),
             ]
         print('Clearing memory usage')

@@ -54,6 +54,8 @@ def run(session_config_list):
         print(n)
     print('Reading ops.npy')
     list_ops = read_ops(session_config_list['list_session_data_path'])
+    for i in range(len(list_ops)):
+        clean_memap_path(list_ops[i])
 
     print('===============================================')
     print('============= trials segmentation =============')
@@ -82,24 +84,28 @@ def run(session_config_list):
     print('===============================================')
     fn2 = visualization2_3331Random.run(session_config_list, smooth)
     #fn2 = []
-    
+
     print('===============================================')
     print('======= plotting 1451ShortLong results ========')
     print('===============================================')
     fn3 = visualization3_1451ShortLong.run(session_config_list, smooth)
     #fn3 = []
-    
+
     print('===============================================')
     print('====== plotting 4131FixJitterOdd results ======')
     print('===============================================')
     fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth)
     #fn4 = []
-    
+
     print('===============================================')
     print('============ saving session report ============')
     print('===============================================')
     print('Saving results')
-    pack_webpage_main.run(session_config_list, fn1, fn2, fn3, fn4)
+    pack_webpage_main.run(
+        session_config_list,
+        [fn1, fn2, fn3, fn4],
+        ['Field of View', 'The Random Session', 'The Short-Long Session', 'The Fix-Jitter-Oddball Session'],
+        ['random', 'fix_jitter_odd', 'short_long'])
     for i in range(len(list_ops)):
         print('Cleaning memory mapping files for {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
@@ -119,30 +125,32 @@ if __name__ == "__main__":
     from session_configs import session_config_list_YH02VT
     from session_configs import session_config_list_YH03VT
     from session_configs import session_config_list_YH14SC
+    from session_configs import session_config_list_YH16SC
     from session_configs import session_config_list_YH17VT
     from session_configs import session_config_list_YH18VT
     from session_configs import session_config_list_YH19VT
     from session_configs import session_config_list_YH20SC
+    from session_configs import session_config_list_YH21SC
     from session_configs import session_config_list_PPC
     from session_configs import session_config_list_V1
 
     for session_config_list in [
-        #session_config_list_YH01VT,
-        #session_config_list_YH02VT,
-        #session_config_list_YH03VT,
-        #session_config_list_YH14SC,
+        session_config_list_YH01VT,
+        session_config_list_YH02VT,
+        session_config_list_YH03VT,
+        session_config_list_YH14SC,
+        session_config_list_YH16SC,
         session_config_list_YH17VT,
         session_config_list_YH18VT,
         session_config_list_YH19VT,
-        #session_config_list_YH20SC,
+        session_config_list_YH20SC,
+        session_config_list_YH21SC,
         session_config_list_PPC,
         session_config_list_V1,
             ]:
-        try: run(session_config_list)
-        except: pass
+        run(session_config_list)
 
 
-    '''
     session_config_test = {
         'list_session_name' : {
             #'VTYH01_PPC_20250106_3331Random' : 'random',
@@ -154,15 +162,15 @@ if __name__ == "__main__":
             #'VTYH03_PPC_20250106_3331Random' : 'random',
             #'VTYH03_PPC_20250107_3331Random' : 'random',
             #'VTYH03_PPC_20250108_3331Random' : 'random',
-            'VTYH01_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH01_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH01_PPC_20250204_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH02_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH03_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH03_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH03_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH01_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH01_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH01_PPC_20250204_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH02_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH03_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH03_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH03_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH01_PPC_20250225_1451ShortLong' : 'short_long',
             #'VTYH01_PPC_20250226_1451ShortLong' : 'short_long',
             #'VTYH01_PPC_20250228_1451ShortLong' : 'short_long',
@@ -189,21 +197,27 @@ if __name__ == "__main__":
         'subject_name' : 'ppc_test',
         'output_filename' : 'test_passive.html'
         }
-
+    
+    '''
+    
     # run(session_config_list_test)
-
+    
+    import matplotlib.pyplot as plt
     session_config_list = combine_session_config_list(session_config_list_test)
     list_ops = read_ops(session_config_list['list_session_data_path'])
+    ops = list_ops[0]
+    
     from modules.ReadResults import read_all
     [list_labels, list_masks, 
      list_neural_trials, list_move_offset, list_significance
      ] = read_all(session_config_list, smooth=False)
-
+    neural_trials = list_neural_trials[0]
+    dff = neural_trials['dff']
     label_names = {'-1':'Exc', '1':'Inh_VIP', '2':'Inh_SST'}
     cate = [-1,1,2]
     roi_id = None
     norm_mode='none'
-    import matplotlib.pyplot as plt
+   
     cluster_cmap = plt.cm.hsv
     standard = 1
     oddball = 1
@@ -213,5 +227,5 @@ if __name__ == "__main__":
         os.makedirs(os.path.join('results', 'temp_'+session_config_list['subject_name']))
     if not os.path.exists(os.path.join('results', 'temp_'+session_config_list['subject_name'], 'alignment_memmap')):
         os.makedirs(os.path.join('results', 'temp_'+session_config_list['subject_name'], 'alignment_memmap'))
-
+    
     '''

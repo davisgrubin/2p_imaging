@@ -7,14 +7,16 @@ from utils import get_roi_label_color
 
 # surgery window picture and note picture.
 def plot_surgery_window(axs, imgs):
-    for i in range(len(imgs)):
-        axs[i].imshow(imgs[i])
-        axs[i].spines['left'].set_visible(False)
-        axs[i].spines['right'].set_visible(False)
-        axs[i].spines['top'].set_visible(False)
-        axs[i].spines['bottom'].set_visible(False)
-        axs[i].set_xticks([])
-        axs[i].set_yticks([])
+    try:
+        for i in range(len(imgs)):
+            axs[i].imshow(imgs[i])
+            axs[i].spines['left'].set_visible(False)
+            axs[i].spines['right'].set_visible(False)
+            axs[i].spines['top'].set_visible(False)
+            axs[i].spines['bottom'].set_visible(False)
+            axs[i].set_xticks([])
+            axs[i].set_yticks([])
+    except: pass
 
 # motion correction offsets.
 def plot_motion_offset_hist(ax, list_move_offset):

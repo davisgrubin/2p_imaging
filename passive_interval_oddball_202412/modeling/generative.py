@@ -44,50 +44,46 @@ def construct_design_matrix(factor_target, l_idx, r_idx):
 def run_glm_multi_sess(
         list_dff, list_neu_time,
         list_input_time, list_input_value, list_stim_labels,
-        l_idx, r_idx, alpha=1106):
+        l_idx, r_idx):
+    alpha = 1106
     target_labels = [2, 3, 4, 5, -2, -3, -4, -5, -1]
-    # pre-interpolate input data per session.
+    # interpolate inputs per session.
     list_factor_in = [
         interp_factor_in(iv, it, nt)
-        for iv, it, nt in zip(list_input_value, list_input_time, list_neu_time)]
-    kernel_all = []
-    exp_var_all = []
-    for si in range(len(list_dff)):
+        for iv, it, nt in zip(list_input_value, list_input_time, list_neu_time)
+    ]
+    # pre-allocate result arrays.
+    n_neurons = np.nansum([dff.shape[0] for dff in list_dff])
+    n_times = l_idx + r_idx
+    kernel_all = np.zeros([n_neurons, n_times])
+    exp_var_all = np.zeros([n_neurons])
+    # loop sessions and fill slices.
+    write_idx = 0
+    for si, (dff_sess, factor_in_sess) in enumerate(zip(list_dff, list_factor_in)):
         print(f'Fitting GLM for session {si+1}/{len(list_dff)}')
         stim_label = list_stim_labels[si][:, 2]
-        session_factor_in = list_factor_in[si]
-        # find indices where the stimulus is active.
-        stim_indices = np.where(session_factor_in == 1)[0]
-        stim_l_idx = stim_indices[0] - 1
-        stim_r_idx = stim_indices[-1] + 1
-        # extract the relevant part of the stimulus and filter it.
-        factor_in_session = session_factor_in[stim_l_idx:stim_r_idx]
-        factor_target = filter_stimulus(factor_in_session, stim_label, target_labels)
-        # precompute the design matrix for the current session.
-        design_matrix = construct_design_matrix(factor_target, l_idx, r_idx)
-        total_window = l_idx + r_idx + 2
-        # precompute the pseudo inverse for ridge regression:
-        A = design_matrix.T @ design_matrix + alpha * np.eye(total_window)
-        M = np.linalg.solve(A, design_matrix.T)
-        n_neurons = list_dff[si].shape[0]
-        kernel_sess = np.zeros((n_neurons, total_window - 2))
-        exp_var_sess = np.zeros(n_neurons)
-        # fit the ridge regression for each neuron.
+        # find stimulus window in this session.
+        stim_inds = np.where(factor_in_sess == 1)[0]
+        left  = stim_inds[0] - 1
+        right = stim_inds[-1] + 1
+        # crop and filter to get design targets.
+        f_crop   = factor_in_sess[left:right]
+        f_target = filter_stimulus(f_crop, stim_label, target_labels)
+        # build design matrix and precompute ridge pseudo-inverse.
+        X = construct_design_matrix(f_target, l_idx, r_idx)
+        TW = l_idx + r_idx + 2
+        A = X.T @ X + alpha * np.eye(TW)
+        M = np.linalg.solve(A, X.T)
+        n_neurons = dff_sess.shape[0]
+        # for each neuron solve and write into the big arrays.
         for ni in tqdm(range(n_neurons), desc="Neurons"):
-            dff_neu = list_dff[si][ni, stim_l_idx:stim_r_idx]
-            # ridge solution for this neuron.
-            beta = M @ dff_neu
-            # flip and trim the coefficient vector to obtain the kernel.
-            kernel_fit = np.flip(beta)[1:-1]
-            # compute the predicted neural response using the kernel.
-            dff_neu_fit = get_factor_dff_neu(factor_target, kernel_fit, l_idx, r_idx)
-            kernel_sess[ni,:] = kernel_fit
-            exp_var_sess[ni] = explained_variance_score(dff_neu, dff_neu_fit)
-        # collect results.
-        kernel_all.append(kernel_sess)
-        exp_var_all.append(exp_var_sess)
-    kernel_all = np.concatenate(kernel_all, axis=0)
-    exp_var_all = np.concatenate(exp_var_all)
+            y    = dff_sess[ni, left:right]
+            beta = M @ y
+            kern = np.flip(beta)[1:-1]  # length = kernel_length
+            y_hat = get_factor_dff_neu(f_target, kern, l_idx, r_idx)
+            kernel_all[write_idx + ni, :] = kern
+            exp_var_all[write_idx + ni]   = explained_variance_score(y, y_hat)
+        write_idx += n_neurons
     return kernel_all, exp_var_all
 
 # retrieve glm kernels for category.
@@ -122,7 +118,3 @@ def latent_align(neu_x, d_latent):
     return neu_z_align
     
     
-
-
-
-
