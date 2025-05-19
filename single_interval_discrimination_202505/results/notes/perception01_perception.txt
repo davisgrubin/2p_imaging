@@ -1,0 +1,6 @@
+Response to sensory inputs.
+
+- Stimulus with short interval.
+- Stimulus with long interval.
+- Reward.
+- Punish.

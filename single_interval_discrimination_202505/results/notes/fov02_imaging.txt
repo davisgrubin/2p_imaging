@@ -1,0 +1,1 @@
+An example field of view during imaging.

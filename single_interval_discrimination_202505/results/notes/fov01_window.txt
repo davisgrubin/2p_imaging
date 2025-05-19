@@ -1,0 +1,5 @@
+Surgery picture and handwritten notes.
+
+- A window picture taken during the surgery.
+
+- The note that is written during the surgery, showing the injection spots.

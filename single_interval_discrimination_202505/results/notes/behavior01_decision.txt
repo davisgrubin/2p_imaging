@@ -1,0 +1,3 @@
+Behavior results related to decision accuracy.
+
+- The psychometric function with pooled sessions.
