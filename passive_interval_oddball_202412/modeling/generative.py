@@ -27,6 +27,9 @@ def filter_stimulus(factor_in, stim_label, target_labels):
     diff = np.diff(np.concatenate(([0], factor_in, [0])))
     idx_up = np.where(diff == 1)[0]
     idx_down = np.where(diff == -1)[0]
+    if stim_label[-1] == -1:
+        idx_up = idx_up[:-1]
+        idx_down = idx_down[:-1]
     # iterate over stimulus segments to zero out non-targets.
     for i, (start, end) in enumerate(zip(idx_up, idx_down)):
         if stim_label[i] not in target_labels:
@@ -64,11 +67,11 @@ def run_glm_multi_sess(
         stim_label = list_stim_labels[si][:, 2]
         # find stimulus window in this session.
         stim_inds = np.where(factor_in_sess == 1)[0]
-        left  = stim_inds[0] - 1
-        right = stim_inds[-1] + 1
+        left  = stim_inds[0] - 5
+        right = stim_inds[-1] + 5
         # crop and filter to get design targets.
-        f_crop   = factor_in_sess[left:right]
-        f_target = filter_stimulus(f_crop, stim_label, target_labels)
+        factor_in = factor_in_sess[left:right]
+        f_target  = filter_stimulus(factor_in, stim_label, target_labels)
         # build design matrix and precompute ridge pseudo-inverse.
         X = construct_design_matrix(f_target, l_idx, r_idx)
         TW = l_idx + r_idx + 2

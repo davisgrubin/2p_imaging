@@ -63,7 +63,7 @@ def run(session_config_list):
     for i in range(len(list_ops)):
         print('Trializing {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
-        Trialization.run(list_ops[i])
+        #Trialization.run(list_ops[i])
 
     print('===============================================')
     print('============== significance test ==============')
@@ -71,7 +71,7 @@ def run(session_config_list):
     for i in range(len(list_ops)):
         print('Running significance test for {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
-        StatTest.run(list_ops[i])
+        #StatTest.run(list_ops[i])
 
     print('===============================================')
     print('======== plotting representative masks ========')
@@ -135,18 +135,18 @@ if __name__ == "__main__":
     from session_configs import session_config_list_V1
 
     for session_config_list in [
-        session_config_list_YH01VT,
-        session_config_list_YH02VT,
-        session_config_list_YH03VT,
-        session_config_list_YH14SC,
-        session_config_list_YH16SC,
-        session_config_list_YH17VT,
-        session_config_list_YH18VT,
-        session_config_list_YH19VT,
-        session_config_list_YH20SC,
-        session_config_list_YH21SC,
-        session_config_list_PPC,
-        session_config_list_V1,
+        #session_config_list_YH01VT,
+        #session_config_list_YH02VT,
+        #session_config_list_YH03VT,
+        #session_config_list_YH14SC,
+        #session_config_list_YH16SC,
+        #session_config_list_YH17VT,
+        #session_config_list_YH18VT,
+        #session_config_list_YH19VT,
+        #session_config_list_YH20SC,
+        #session_config_list_YH21SC,
+        #session_config_list_PPC,
+        #session_config_list_V1,
             ]:
         run(session_config_list)
 
@@ -165,21 +165,21 @@ if __name__ == "__main__":
             #'VTYH01_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH01_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH01_PPC_20250204_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH02_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH02_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH03_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH03_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH03_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH01_PPC_20250225_1451ShortLong' : 'short_long',
-            #'VTYH01_PPC_20250226_1451ShortLong' : 'short_long',
-            #'VTYH01_PPC_20250228_1451ShortLong' : 'short_long',
-            #'VTYH02_PPC_20250225_1451ShortLong' : 'short_long',
-            #'VTYH02_PPC_20250226_1415ShortLong' : 'short_long',
-            #'VTYH02_PPC_20250228_1451ShortLong' : 'short_long',
-            #'VTYH03_PPC_20250218_1451ShortLong' : 'short_long',
-            #'VTYH03_PPC_20250219_1451ShortLong' : 'short_long',
-            #'VTYH03_PPC_20250221_1451ShortLong' : 'short_long',
+            'VTYH01_PPC_20250225_1451ShortLong' : 'short_long',
+            'VTYH01_PPC_20250226_1451ShortLong' : 'short_long',
+            'VTYH01_PPC_20250228_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250225_1451ShortLong' : 'short_long',
+            'VTYH02_PPC_20250226_1415ShortLong' : 'short_long',
+            'VTYH02_PPC_20250228_1451ShortLong' : 'short_long',
+            'VTYH03_PPC_20250218_1451ShortLong' : 'short_long',
+            'VTYH03_PPC_20250219_1451ShortLong' : 'short_long',
+            'VTYH03_PPC_20250221_1451ShortLong' : 'short_long',
             },
         'session_folder' : 'test',
         'sig_tag' : 'all',
@@ -221,7 +221,8 @@ if __name__ == "__main__":
     cluster_cmap = plt.cm.hsv
     standard = 1
     oddball = 1
-    mode = 'post'
+    block = 0
+    mode = 'mean'
     temp_folder = 'temp_'+session_config_list['subject_name']
     if not os.path.exists(os.path.join('results', 'temp_'+session_config_list['subject_name'])):
         os.makedirs(os.path.join('results', 'temp_'+session_config_list['subject_name']))

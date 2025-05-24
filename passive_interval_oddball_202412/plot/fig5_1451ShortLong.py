@@ -22,6 +22,7 @@ from utils import get_expect_interval
 from utils import get_roi_label_color
 from utils import get_cmap_color
 from utils import adjust_layout_neu
+from utils import adjust_layout_3d_latent
 from utils import add_legend
 from utils import utils_basic
 
@@ -50,7 +51,7 @@ class plotter_utils(utils_basic):
         self.list_significance = list_significance
         self.bin_win = [450,2550]
         self.bin_num = 3
-        self.n_clusters = 12
+        self.n_clusters = 8
         self.max_clusters = 10
         self.d_latent = 3
         self.glm = self.run_glm()
@@ -228,42 +229,113 @@ class plotter_utils(utils_basic):
         try: plot_legend(axs[9])
         except: pass
 
+    def plot_cluster_heatmap_all(self, axs, cate):
+        kernel_all, cluster_id, neu_labels = self.run_clustering(cate)
+        def plot_cluster_features(ax):
+            # fit model.
+            features = PCA(n_components=2).fit_transform(kernel_all)
+            # plot results.
+            ax.scatter(features[:,0], features[:,1], c=cluster_id, cmap='hsv')
+            # adjust layout.
+            ax.tick_params(tick1On=False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.set_xlabel('latent 1')
+            ax.set_ylabel('latent 2')
+        def plot_hierarchical_dendrogram(ax):
+            # collect data.
+            [_, _, _, cmap], _, _, _ = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_param=[[2,3,4,5], None, [0], None, [0], [0]],
+                cate=cate, roi_id=None)
+            # plot results.
+            self.plot_dendrogram(ax, kernel_all, cmap)
+        def plot_glm_kernel(ax):
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 0.5, 1], transform=ax.transAxes)
+            # collect data.
+            [[_, _, _, cmap], [_, _, stim_seq, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_param=[[2,3,4,5], None, [0], None, [0], [0]],
+                cate=cate, roi_id=None)
+            c_idx = stim_seq.shape[0]//2
+            # plot results.
+            self.plot_cluster_heatmap(ax, kernel_all, self.glm['kernel_time'], cluster_id, 'minmax', cmap)
+            # adjust layout.
+            ax.set_xlabel('time since stim (ms)')
+            ax.axvline(stim_seq[c_idx,0], color='black', lw=1, linestyle='--')
+        def plot_standard(ax, standard):
+            xlim = [-2000,3000]
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
+            # collect data.
+            [[_, _, _, cmap],
+             [neu_seq, _, stim_seq, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_param=[[2,3,4,5], [standard], None, None, [0], [0]],
+                cate=cate, roi_id=None)
+            c_idx = stim_seq.shape[0]//2
+            neu_seq = neu_seq[:,l_idx:r_idx]
+            neu_time = self.alignment['neu_time'][l_idx:r_idx]
+            # plot results.
+            self.plot_cluster_heatmap(ax, neu_seq, neu_time, cluster_id, 'minmax', cmap)
+            # add stimulus line.
+            for bi in range(3):
+                xlines = [self.alignment['neu_time'][np.searchsorted(self.alignment['neu_time'], t)]
+                          for t in [stim_seq[c_idx+i,0]
+                                    for i in [-2,-1,0,1,2]]]
+                for xl in xlines:
+                    if xl>neu_time[0] and xl<neu_time[-1]:
+                        ax.axvline(xl, color='black', lw=1, linestyle='--')
+            # adjust layout.
+            ax.set_xlabel('time since stim (ms)')
+        # plot all.
+        try: plot_cluster_features(axs[0])
+        except: pass
+        try: plot_hierarchical_dendrogram(axs[1])
+        except: pass
+        try: plot_glm_kernel(axs[2])
+        except: pass
+        try: plot_standard(axs[3], 0)
+        except: pass
+        try: plot_standard(axs[4], 1)
+        except: pass
+
     def plot_cluster_block_adapt_individual(self, axs, cate=None):
         lbl = ['cluster #'+str(ci) for ci in range(self.n_clusters)]
         trials_around = 15
         kernel_all, cluster_id, neu_labels = self.run_clustering(cate)
-        # get transition trials indice.
-        list_trans_0to1 = [get_block_transition_idx(sl[:,3], trials_around)[0] for sl in self.list_stim_labels]
-        list_trans_1to0 = [get_block_transition_idx(sl[:,3], trials_around)[1] for sl in self.list_stim_labels]
         # collect data.
         [_, color1, color2, _], [_, _, stim_seq, _], _, [n_trials, n_neurons] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[None, None, None, None, [0], [0]],
             cate=cate, roi_id=None)
-        # preallocate arrays for 0to1 and 1to0 transitions
-        neu_trans_0to1 = []
-        for ti in range(list_trans_0to1[0].shape[0]):
-            trial_idx = [t01[ti, :] for t01 in list_trans_0to1]
-            trial_data = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_param=[None, None, None, None, [0], [0]],
-                trial_idx=trial_idx,
-                mean_sem=False,
-                cate=cate, roi_id=None)[1][0]
-            neu_trans_0to1.append(np.concatenate(trial_data, axis=1))
-        neu_trans_0to1 = np.stack(neu_trans_0to1, axis=0)
+        # get transition trials indice.
+        list_trans_0to1 = [get_block_transition_idx(sl[:,3], trials_around)[0] for sl in self.list_stim_labels]
+        list_trans_1to0 = [get_block_transition_idx(sl[:,3], trials_around)[1] for sl in self.list_stim_labels]
+        list_trans_0to1 = [np.nansum(ti, axis=0).astype('bool') for ti in list_trans_0to1]
+        list_trans_1to0 = [np.nansum(ti, axis=0).astype('bool') for ti in list_trans_1to0]
+        # collect data.
+        [[_, color1, color2, _],
+         [neu_trans_0to1, _, _, _, _], _, _] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_param=[None, None, None, None, [0], [0]],
+            trial_idx=list_trans_0to1,
+            mean_sem=False,
+            cate=cate, roi_id=None)
+        [[_, color1, color2, _],
+         [neu_trans_1to0, _, _, _, _], _, _] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_param=[None, None, None, None, [0], [0]],
+            trial_idx=list_trans_1to0,
+            mean_sem=False,
+            cate=cate, roi_id=None)
+        # reshape into [n_transition*n_trials*n_neurons*n_times]
+        neu_trans_0to1 = [neu.reshape([-1, 2*trials_around, neu.shape[1], neu.shape[2]]) for neu in neu_trans_0to1]
+        neu_trans_1to0 = [neu.reshape([-1, 2*trials_around, neu.shape[1], neu.shape[2]]) for neu in neu_trans_1to0]
+        neu_trans_0to1 = np.concatenate(neu_trans_0to1, axis=2)
+        neu_trans_1to0 = np.concatenate(neu_trans_1to0, axis=2)
+        # get average across transition [n_trials*n_neurons*n_times]
         neu_trans_0to1 = np.nanmean(neu_trans_0to1, axis=0)
-        neu_trans_1to0 = []
-        for ti in range(list_trans_1to0[0].shape[0]):
-            trial_idx = [t10[ti, :] for t10 in list_trans_1to0]
-            trial_data = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_param=[None, None, None, None, [0], [0]],
-                trial_idx=trial_idx,
-                mean_sem=False,
-                cate=cate, roi_id=None)[1][0]
-            neu_trans_1to0.append(np.concatenate(trial_data, axis=1))
-        neu_trans_1to0 = np.stack(neu_trans_1to0, axis=0)
         neu_trans_1to0 = np.nanmean(neu_trans_1to0, axis=0)
         def plot_trial_heatmap(axs, norm_mode):
             gap_margin = 5
@@ -421,6 +493,235 @@ class plotter_utils(utils_basic):
         except: pass
         try: plot_legend(axs[7])
         except: pass
+    
+    def plot_cluster_epoch_adapt_individual(self, axs, cate=None):
+        lbl = ['cluster #'+str(ci) for ci in range(self.n_clusters)]
+        trials_eval = 5
+        kernel_all, cluster_id, neu_labels = self.run_clustering(cate)
+        # collect data.
+        [_, color1, color2, _], [_, _, stim_seq, _], _, [n_trials, n_neurons] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_param=[None, None, None, None, [0], [0]],
+            cate=cate, roi_id=None)
+        # get transition trials indice.
+        list_trans_0to1 = [get_block_transition_idx(sl[:,3], trials_eval)[0] for sl in self.list_stim_labels]
+        list_trans_1to0 = [get_block_transition_idx(sl[:,3], trials_eval)[1] for sl in self.list_stim_labels]
+        list_trans_0to1 = [np.nansum(ti, axis=0).astype('bool') for ti in list_trans_0to1]
+        list_trans_1to0 = [np.nansum(ti, axis=0).astype('bool') for ti in list_trans_1to0]
+        # collect data.
+        [[_, color1, color2, _],
+         [neu_trans_0to1, _, _, _, _], _, _] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_param=[None, None, None, None, [0], [0]],
+            trial_idx=list_trans_0to1,
+            mean_sem=False,
+            cate=cate, roi_id=None)
+        [[_, color1, color2, _],
+         [neu_trans_1to0, _, _, _, _], _, _] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_param=[None, None, None, None, [0], [0]],
+            trial_idx=list_trans_1to0,
+            mean_sem=False,
+            cate=cate, roi_id=None)
+        # reshape into [n_transition*n_trials*n_neurons*n_times]
+        neu_trans_0to1 = [neu.reshape([-1, 2*trials_eval, neu.shape[1], neu.shape[2]]) for neu in neu_trans_0to1]
+        neu_trans_1to0 = [neu.reshape([-1, 2*trials_eval, neu.shape[1], neu.shape[2]]) for neu in neu_trans_1to0]
+        neu_trans_0to1 = np.concatenate(neu_trans_0to1, axis=2)
+        neu_trans_1to0 = np.concatenate(neu_trans_1to0, axis=2)
+        # get epoch.
+        neu_0_epoch0 = neu_trans_1to0[:,:trials_eval,:,:]
+        neu_0_epoch1 = neu_trans_0to1[:,trials_eval:,:,:]
+        neu_1_epoch0 = neu_trans_0to1[:,:trials_eval,:,:]
+        neu_1_epoch1 = neu_trans_1to0[:,trials_eval:,:,:]
+        # get average across blocks.
+        neu_0_epoch0 = np.nanmean(neu_0_epoch0, axis=0)
+        neu_0_epoch1 = np.nanmean(neu_0_epoch1, axis=0)
+        neu_1_epoch0 = np.nanmean(neu_1_epoch0, axis=0)
+        neu_1_epoch1 = np.nanmean(neu_1_epoch1, axis=0)
+        neu_0 = np.concatenate([neu_0_epoch0, neu_0_epoch1], axis=0)
+        neu_1 = np.concatenate([neu_1_epoch0, neu_1_epoch1], axis=0)
+        def plot_trial_quant(axs, standard):
+            target_metrics = ['evoke_mag', 'onset_ramp', 'onset_drop']
+            # collect data.
+            [[color0, color1, color2, _],
+             [_, _, stim_seq, _], _,
+             [n_trials, n_neurons]] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[1-standard] for l in self.list_block_start],
+                cate=cate, roi_id=None)
+            neu_epoch = [neu_0, neu_1][standard]
+            c_idx = stim_seq.shape[0]//2
+            # plot results for each class.
+            for ci in range(self.n_clusters):
+                quant_all = [
+                    run_quantification(neu_epoch[si, cluster_id==ci,:], self.alignment['neu_time'], stim_seq[c_idx,0])
+                    for si in range(2*trials_eval)]
+                # plot each metric.
+                for mi in range(len(target_metrics)):
+                    axs[mi][ci].axis('off')
+                    ax0 = axs[mi][ci].inset_axes([0, 0.5, 0.4, 0.6], transform=axs[mi][ci].transAxes)
+                    ax1 = axs[mi][ci].inset_axes([0.5, 0.5, 0.4, 0.6], transform=axs[mi][ci].transAxes, sharey=ax0)
+                    # plot each condition.
+                    for di in range(trials_eval):
+                        m, s = get_mean_sem(quant_all[di][target_metrics[mi]].reshape(-1,1))
+                        ax0.errorbar(
+                            di, m, s, None,
+                            color=[color1,color2][standard],
+                            capsize=2, marker='o', linestyle='none',
+                            markeredgecolor='white', markeredgewidth=0.1)
+                        m, s = get_mean_sem(quant_all[di+trials_eval][target_metrics[mi]].reshape(-1,1))
+                        ax1.errorbar(
+                            di, m, s, None,
+                            color=[color1,color2][standard],
+                            capsize=2, marker='o', linestyle='none',
+                            markeredgecolor='white', markeredgewidth=0.1)
+                    # adjust layout.
+                    axs[mi][ci].set_title(lbl[ci])
+                    ax1.spines['left'].set_visible(False)
+                    ax0.set_xlabel('first epoch')
+                    ax1.set_xlabel('last epoch')
+                    ax0.set_ylabel(target_metrics[mi])
+                    ax1.yaxis.set_visible(False)
+                    for ax in [ax0,ax1]:
+                        ax.tick_params(axis='y', tick1On=False)
+                        ax.spines['right'].set_visible(False)
+                        ax.spines['top'].set_visible(False)
+                        ax.set_xlim([-0.5, trials_eval+0.5])
+        def plot_legend(ax):
+            lbl = ['short', 'long']
+            cs = [color1, color2]
+            add_legend(ax, cs, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
+            ax.axis('off')
+        # plot all.
+        try: plot_trial_quant(axs[0], 0)
+        except: pass
+        try: plot_trial_quant(axs[1], 1)
+        except: pass
+        try: plot_legend(axs[2])
+        except: pass
+
+    def plot_oddball_latent_all(self, axs, oddball, cate):
+        d_latent = 3
+        # collect data.
+        xlim = [-5000, 6000]
+        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
+        [[color0, color1, color2, _],
+         [neu_x, _, stim_seq, _], _,
+         [n_trials, n_neurons]] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_idx=[l[oddball] for l in self.list_odd_idx],
+            trial_param=[None, None, [0], None, [0], [0]],
+            cate=cate, roi_id=None)
+        neu_x = neu_x[:,l_idx:r_idx]
+        neu_time = self.alignment['neu_time'][l_idx:r_idx]
+        cmap, c_neu = get_cmap_color(
+            neu_x.shape[1], base_color=[color1, color2][oddball],
+            return_cmap=True)
+        c_idx = stim_seq.shape[0]//2
+        c_stim = [color0] * stim_seq.shape[-2]
+        # fit model.
+        model = PCA(n_components=d_latent)
+        neu_z = model.fit_transform(
+            neu_x.reshape(neu_x.shape[0],-1).T
+            ).T.reshape(d_latent, -1)
+        def plot_3d_dynamics(ax):
+            # plot dynamics.
+            self.plot_3d_latent_dynamics(ax, neu_z, stim_seq, neu_time, c_stim)
+            # mark unexpected event.
+            idx_unexpect = get_frame_idx_from_time(
+                neu_time, 0, stim_seq[c_idx+1,0], stim_seq[c_idx,1]+self.expect[1-oddball])[oddball]
+            ax.scatter(neu_z[0,idx_unexpect], neu_z[1,idx_unexpect], neu_z[2,idx_unexpect], color='gold', marker='o', lw=5)
+            # adjust layout.
+            adjust_layout_3d_latent(ax, neu_z, self.latent_cmap, neu_time, 'time since pre oddball stim (ms)')
+        def plot_mean_dynamics(ax):
+            neu_mean, neu_sem = get_mean_sem(neu_x)
+            c_neu = get_cmap_color(neu_mean.shape[0], cmap=self.latent_cmap)
+            # find bounds.
+            upper = np.nanmax(neu_mean) + np.nanmax(neu_sem)
+            lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
+            # plot stimulus.
+            for si in range(stim_seq.shape[0]):
+                ax.fill_between(
+                    stim_seq[si,:],
+                    lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+                    color=color0, edgecolor='none', alpha=0.25, step='mid')
+            if oddball == 0:
+                ax.axvline(stim_seq[c_idx+1,0], color='gold', lw=1, linestyle='--')
+            if oddball == 1:
+                ax.axvline(stim_seq[c_idx,1]+self.expect[1-oddball], color='gold', lw=1, linestyle='--')
+            # plot neural traces.
+            self.plot_mean_sem(ax, neu_time, neu_mean, neu_sem, color0, None)
+            for t in range(neu_mean.shape[0]-1):
+                ax.plot(neu_time[t:t+2], neu_mean[t:t+2], color=c_neu[t])
+            # adjust layouts.
+            adjust_layout_neu(ax)
+            ax.set_xlim(xlim)
+            ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+            ax.set_xlabel('time since pre oddball stim (ms)')
+        # plot all.
+        try: plot_3d_dynamics(axs[0])
+        except: pass
+        try: plot_mean_dynamics(axs[1])
+        except: pass
+    
+    def plot_transition_latent_all(self, axs, block, cate):
+        d_latent = 3
+        # collect data.
+        xlim = [-5000, 6000]
+        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
+        [[color0, color1, color2, _],
+         [neu_x, _, stim_seq, _], _,
+         [n_trials, n_neurons]] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_idx=[l[block] for l in self.list_block_start],
+            trial_param=[None, None, [0], None, [0], [0]],
+            cate=cate, roi_id=None)
+        neu_x = neu_x[:,l_idx:r_idx]
+        neu_time = self.alignment['neu_time'][l_idx:r_idx]
+        cmap, c_neu = get_cmap_color(
+            neu_x.shape[1], base_color=[color1, color2][block],
+            return_cmap=True)
+        c_stim = [color0] * stim_seq.shape[-2]
+        # fit model.
+        model = PCA(n_components=d_latent)
+        neu_z = model.fit_transform(
+            neu_x.reshape(neu_x.shape[0],-1).T
+            ).T.reshape(d_latent, -1)
+        def plot_3d_dynamics(ax):
+            # plot dynamics.
+            self.plot_3d_latent_dynamics(ax, neu_z, stim_seq, neu_time, c_stim)
+            # mark unexpected event.
+            idx_unexpect = get_frame_idx_from_time(neu_time, 0, 0, 0)[0]
+            ax.scatter(neu_z[0,idx_unexpect], neu_z[1,idx_unexpect], neu_z[2,idx_unexpect], color='red', marker='o', lw=5)
+            # adjust layout.
+            adjust_layout_3d_latent(ax, neu_z, self.latent_cmap, neu_time, 'time since pre oddball stim (ms)')
+        def plot_mean_dynamics(ax):
+            neu_mean, neu_sem = get_mean_sem(neu_x)
+            c_neu = get_cmap_color(neu_mean.shape[0], cmap=self.latent_cmap)
+            # find bounds.
+            upper = np.nanmax(neu_mean) + np.nanmax(neu_sem)
+            lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
+            # plot stimulus.
+            for si in range(stim_seq.shape[0]):
+                ax.fill_between(
+                    stim_seq[si,:],
+                    lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+                    color=color0, edgecolor='none', alpha=0.25, step='mid')
+            ax.axvline(0, color='red', lw=1, linestyle='--')
+            # plot neural traces.
+            self.plot_mean_sem(ax, neu_time, neu_mean, neu_sem, color0, None)
+            for t in range(neu_mean.shape[0]-1):
+                ax.plot(neu_time[t:t+2], neu_mean[t:t+2], color=c_neu[t])
+            # adjust layouts.
+            adjust_layout_neu(ax)
+            ax.set_xlim(xlim)
+            ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+            ax.set_xlabel('time since pre oddball stim (ms)')
+        # plot all.
+        try: plot_3d_dynamics(axs[0])
+        except: pass
+        try: plot_mean_dynamics(axs[1])
+        except: pass
 
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
@@ -436,15 +737,30 @@ class plotter_main(plotter_utils):
 
                 self.plot_cluster_all(axs, cate=cate)
                 axs[0].set_title(f'GLM kernels \n {label_name}')
-                axs[1].set_title(f'reponse to binned interval in random \n {label_name}')
-                axs[2].set_title(f'reponse to binned interval in random \n {label_name}')
-                axs[3].set_title(f'reponse to short standard interval \n {label_name}')
-                axs[4].set_title(f'reponse to long standard interval \n {label_name}')
-                axs[5].set_title(f'reponse to short oddball interval \n {label_name}')
-                axs[6].set_title(f'reponse to long oddball interval \n {label_name}')
+                axs[1].set_title(f'response to binned interval in random \n {label_name}')
+                axs[2].set_title(f'response to binned interval in random \n {label_name}')
+                axs[3].set_title(f'response to short standard interval \n {label_name}')
+                axs[4].set_title(f'response to long standard interval \n {label_name}')
+                axs[5].set_title(f'response to short oddball interval \n {label_name}')
+                axs[6].set_title(f'response to long oddball interval \n {label_name}')
                 axs[7].set_title(f'fraction of neurons in cluster \n {label_name}')
                 axs[8].set_title(f'fraction of cell-types in cluster \n {label_name}')
                 axs[9].set_title(f'legend \n {label_name}')
+
+            except: pass
+
+    def cluster_heatmap_all(self, axs_all):
+        for cate, axs in zip([[-1,1,2],[-1],[1],[2]], axs_all):
+            try:
+                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+                print(f'plotting results for {label_name}')
+
+                self.plot_cluster_heatmap_all(axs, cate=cate)
+                axs[0].set_title(f'clustered latent features \n {label_name}')
+                axs[1].set_title(f'cluster dendrogram \n {label_name}')
+                axs[2].set_title(f'GLM kernel course \n {label_name}')
+                axs[3].set_title(f'response to short standard interval \n {label_name}')
+                axs[4].set_title(f'response to long standard interval \n {label_name}')
 
             except: pass
 
@@ -455,5 +771,39 @@ class plotter_main(plotter_utils):
                 print(f'plotting results for {label_name}')
 
                 self.plot_cluster_block_adapt_individual(axs, cate=cate)
+
+            except: pass
+    
+    def cluster_epoch_adapt_individual(self, axs_all):
+        for cate, axs in zip([[-1,1,2],[-1],[1],[2]], axs_all):
+            try:
+                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+                print(f'plotting results for {label_name}')
+
+                self.plot_cluster_epoch_adapt_individual(axs, cate=cate)
+
+            except: pass
+    
+    def latent_all(self, axs_all):
+        for cate, axs in zip([[-1,1,2],[-1],[1],[2]], axs_all):
+            try:
+                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+                print(f'plotting results for {label_name}')
+
+                self.plot_oddball_latent_all(axs[0], 0, cate=cate)
+                axs[0][0].set_title(f'latent dynamics around short oddball interval \n {label_name}')
+                axs[0][1].set_title(f'response to short oddball interval \n {label_name}')
+                
+                self.plot_oddball_latent_all(axs[1], 1, cate=cate)
+                axs[1][0].set_title(f'latent dynamics around long oddball interval \n {label_name}')
+                axs[1][1].set_title(f'response to long oddball interval \n {label_name}')
+                
+                self.plot_transition_latent_all(axs[2], 0, cate=cate)
+                axs[2][0].set_title(f'latent dynamics around short to long block transition \n {label_name}')
+                axs[2][1].set_title(f'response to short to long block transition \n {label_name}')
+                
+                self.plot_transition_latent_all(axs[3], 1, cate=cate)
+                axs[3][0].set_title(f'latent dynamics around long to short block transition \n {label_name}')
+                axs[3][1].set_title(f'response to long to short block transition \n {label_name}')
 
             except: pass

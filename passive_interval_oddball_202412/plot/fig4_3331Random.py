@@ -48,7 +48,7 @@ class plotter_utils(utils_basic):
         self.list_significance = list_significance
         self.bin_win = [450,2550]
         self.bin_num = 5
-        self.n_clusters = 12
+        self.n_clusters = 8
         self.max_clusters = 10
         self.d_latent = 3
         self.glm = self.run_glm()

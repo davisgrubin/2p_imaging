@@ -8,6 +8,8 @@ import matplotlib.colors as mcolors
 from scipy.stats import mannwhitneyu
 from scipy.spatial.distance import pdist
 from sklearn.manifold import TSNE
+from sklearn.cluster import AgglomerativeClustering
+from scipy.cluster.hierarchy import dendrogram
 
 from modeling.clustering import get_mean_sem_cluster
 from modeling.generative import run_glm_multi_sess
@@ -167,12 +169,12 @@ def get_multi_sess_neu_trial(
     # compute trial average and concatenate.
     if mean_sem:
         mean = [np.nanmean(n, axis=0) for n in neu]
-        sem  = [np.nanstd(n, axis=0)/np.sqrt(np.sum(~np.isnan(n), axis=0)) for n in neu]
+        std  = [np.nanstd(n, axis=0) for n in neu]
         mean = np.concatenate(mean, axis=0)
-        sem  = np.concatenate(sem, axis=0)
+        std  = np.concatenate(std, axis=0)
         stim_seq = np.nanmean(np.concatenate(stim_seq, axis=0),axis=0)
         camera_pupil = np.nanmean(np.concatenate(camera_pupil, axis=0),axis=0)
-        return [mean, sem, stim_seq, camera_pupil], [n_trials, n_neurons]
+        return [mean, std, stim_seq, camera_pupil], [n_trials, n_neurons]
     # return single trial response.
     else:
         return [neu, stim_seq, camera_pupil, pre_isi, post_isi], [n_trials, n_neurons]
@@ -1324,37 +1326,82 @@ class utils_basic:
         ax.set_xlim(-1.5,3)
         ax.set_ylim([-0.2, self.n_clusters+0.1])
         
-    def plot_cluster_heatmap(self, ax, neu_seq, neu_time, neu_seq_sort, cluster_id, colors):
+    def plot_cluster_heatmap(self, ax, neu_seq, neu_time, cluster_id, norm_mode, cmap):
+        gap = 5
         win_conv = 5
         win_sort = [-500, 500]
         # create heatmap for all clusters.
-        heatmap = []
+        data = []
+        yticks = []
         for i in range(self.n_clusters):
-            # get colormap for a cluster.
-            cmap, _ = get_cmap_color(2, base_color=colors[self.n_clusters-i-1], return_cmap=True)
             # get data within cluster.
             neu = neu_seq[cluster_id==(self.n_clusters-i-1),:].copy()
-            neu_sort = neu_seq_sort[cluster_id==(self.n_clusters-i-1),:].copy()
             # smooth the values in the sorting window.
             l_idx, r_idx = get_frame_idx_from_time(neu_time, 0, win_sort[0], win_sort[1])
             smoothed_mean = np.array(
                 [np.convolve(row, np.ones(win_conv)/win_conv, mode='same')
-                 for row in neu_sort[:,l_idx:r_idx]])
+                 for row in neu[:,l_idx:r_idx]])
             sort_idx_neu = np.argmax(smoothed_mean, axis=1).reshape(-1).argsort()
             # rearrange the matrix.
             neu = neu[sort_idx_neu,:]
             # add into full heatmap.
-            heatmap.append(apply_colormap(neu, cmap))
+            data.append(neu)
+            data.append(np.nan*np.ones([gap,neu.shape[1]]))
+            yticks.append(neu.shape[0]+gap)
         # plot heatmap.
-        heatmap = np.concatenate(heatmap,axis=0)
+        data = np.concatenate(data,axis=0)
+        hm_data, hm_norm, hm_cmap = apply_colormap(data, cmap, norm_mode, data)
         ax.imshow(
-            heatmap,
-            extent=[neu_time[0], neu_time[-1], 1, heatmap.shape[0]],
+            hm_data,
+            extent=[neu_time[0], neu_time[-1], 1, hm_data.shape[0]],
             interpolation='nearest', aspect='auto',
             origin='lower')
         # adjust layout.
         adjust_layout_heatmap(ax)
-        ax.set_ylabel('neuron id (clustered and sorted)')
+        ax.set_ylabel('neuron id (clustered)')
+        ax.set_yticks(np.cumsum(yticks)-gap)
+        ax.set_yticklabels([f'#{str(i).zfill(2)}' for i in range(self.n_clusters)])
+    
+    def plot_dendrogram(self, ax, kernel_all, cmap):
+        p=5
+        # run hierarchical clustering.
+        model = AgglomerativeClustering(distance_threshold=0, n_clusters=None)
+        model.fit(kernel_all)
+        # create the counts of samples under each node.
+        counts = np.zeros(model.children_.shape[0])
+        n_samples = len(model.labels_)
+        for i, merge in enumerate(model.children_):
+            current_count = 0
+            for child_idx in merge:
+                if child_idx < n_samples:
+                    current_count += 1
+                else:
+                    current_count += counts[child_idx - n_samples]
+            counts[i] = current_count
+        # create linkage matrix.
+        linkage_matrix = np.column_stack([model.children_, model.distances_, counts]).astype(float)
+        # create colors.
+        dists = linkage_matrix[:, 2]
+        norm = mcolors.Normalize(vmin=dists.min(), vmax=dists.max())
+        color_lookup = {
+            i + n_samples: mcolors.rgb2hex(cmap(norm(dist)))
+            for i, dist in enumerate(dists)}
+        # plot dendrogram.
+        dendrogram(
+            linkage_matrix,
+            truncate_mode='level',
+            p=p,
+            ax=ax,
+            color_threshold=0,
+            link_color_func=lambda idx: color_lookup.get(idx, '#000000'))
+        # adjust layout.
+        ax.tick_params(tick1On=False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.set_xlabel('number of points in node')
+        ax.set_yticks([])
+
     
     def plot_cluster_bin_3d_latents(self, axs, cluster_id, cate=None):
         colors = get_cmap_color(self.n_clusters, cmap=self.cluster_cmap)
@@ -1407,7 +1454,7 @@ class utils_basic:
             axs[ci].yaxis.pane.fill = False
             axs[ci].zaxis.pane.fill = False
             add_legend(axs[ci], c_neu[ci], lbl, n_trials, n_neurons, self.n_sess, 'upper right', dim=3)
-    
+
     def plot_3d_latent_dynamics(self, ax, neu_z, stim_seq, neu_time, c_stim, add_stim=True):
         c_neu = get_cmap_color(neu_z.shape[1], cmap=self.latent_cmap)
         # plot dynamics.
@@ -1441,21 +1488,5 @@ class utils_basic:
         for xl in xlines:
             ax.axvline(xl, color='black', lw=1, linestyle='--')
 
-    def plot_glm_kernel_cluster(
-            self, ax, kernel_time, kernel_all, cluster_id,
-            stim_seq, color0, colors,
-            ):
-        xlim = [kernel_time[0], kernel_time[-1]]
-        # get kernels within cluster.
-        neu_mean, neu_sem = get_mean_sem_cluster(kernel_all, cluster_id)
-        # get stimulus timing.
-        c_idx = int(stim_seq.shape[0]/2)
-        ss = stim_seq[c_idx,:].reshape(1,-1)
-        # plot results.
-        norm_params = [get_norm01_params(neu_mean[i,:]) for i in range(neu_mean.shape[0])]
-        self.plot_cluster_mean_sem(
-            ax, neu_mean, neu_sem, kernel_time,
-            norm_params, ss, [color0], colors, xlim)
-        
         
         

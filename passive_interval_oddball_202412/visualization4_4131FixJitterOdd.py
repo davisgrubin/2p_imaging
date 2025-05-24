@@ -124,11 +124,31 @@ def run(session_config_list, smooth):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        def plot_sorted_heatmaps_fix_all():
-            title = 'all cluster neural traces on fix intervals'
+        def plot_cluster_oddball_fix_heatmap_all():
+            title = 'clustered heatmaps on fix intervals'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd05_sorted_heatmaps_fix_all'
+            filename = '4131FixJitterOdd05_cluster_oddball_fix_heatmap_all'
+            n_row = 12
+            n_col = 6
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in [0,3,6,9]:
+                a = [plt.subplot(gs[s:s+2, 0:2])]
+                a+= [plt.subplot(gs[s+2, 0:2])]
+                a+= [plt.subplot(gs[s:s+3, i]) for i in [2,3,4,5]]
+                axs_all.append(a)
+            plotter.cluster_oddball_fix_heatmap_all(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        def plot_sorted_heatmaps_fix_all():
+            title = 'sorted heatmap on fix intervals'
+            print('-----------------------------------------------')
+            print(title)
+            filename = '4131FixJitterOdd06_sorted_heatmaps_fix_all'
             n_row = 8
             n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -146,7 +166,7 @@ def run(session_config_list, smooth):
             title = 'individual cluster neural traces on fix intervals'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd06_cluster_oddball_fix_individual'
+            filename = '4131FixJitterOdd07_cluster_oddball_fix_individual'
             n_row = 28
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -170,16 +190,22 @@ def run(session_config_list, smooth):
             title = 'individual cluster neural traces on jitter intervals with global distribution'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd07_cluster_oddball_jitter_global_individual'
-            n_row = 12
+            filename = '4131FixJitterOdd08_cluster_oddball_jitter_global_individual'
+            n_row = 36
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,3,6,9]:
+            for s in [0,9,18,27]:
                 a = [[plt.subplot(gs[s+0, i]) for i in range(plotter.n_clusters)]]
-                a+= [[plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)]]
-                a+= [plt.subplot(gs[s+2, 0])]
+                a+= [[[plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)],
+                      [plt.subplot(gs[s+2, i]) for i in range(plotter.n_clusters)],
+                      [plt.subplot(gs[s+3, i]) for i in range(plotter.n_clusters)]]]
+                a+= [[plt.subplot(gs[s+4, i]) for i in range(plotter.n_clusters)]]
+                a+= [[[plt.subplot(gs[s+5, i]) for i in range(plotter.n_clusters)],
+                      [plt.subplot(gs[s+6, i]) for i in range(plotter.n_clusters)],
+                      [plt.subplot(gs[s+7, i]) for i in range(plotter.n_clusters)]]]
+                a+= [plt.subplot(gs[s+8, 0])]
                 axs_all.append(a)
             plotter.cluster_oddball_jitter_global_individual(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -190,27 +216,33 @@ def run(session_config_list, smooth):
             title = 'individual cluster neural traces on jitter intervals with local distribution'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd08_cluster_oddball_jitter_local_individual'
-            n_row = 12
+            filename = '4131FixJitterOdd09_cluster_oddball_jitter_local_individual'
+            n_row = 36
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,3,6,9]:
+            for s in [0,9,18,27]:
                 a = [[plt.subplot(gs[s+0, i]) for i in range(plotter.n_clusters)]]
-                a+= [[plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)]]
-                a+= [plt.subplot(gs[s+2, 0])]
+                a+= [[[plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)],
+                      [plt.subplot(gs[s+2, i]) for i in range(plotter.n_clusters)],
+                      [plt.subplot(gs[s+3, i]) for i in range(plotter.n_clusters)]]]
+                a+= [[plt.subplot(gs[s+4, i]) for i in range(plotter.n_clusters)]]
+                a+= [[[plt.subplot(gs[s+5, i]) for i in range(plotter.n_clusters)],
+                      [plt.subplot(gs[s+6, i]) for i in range(plotter.n_clusters)],
+                      [plt.subplot(gs[s+7, i]) for i in range(plotter.n_clusters)]]]
+                a+= [plt.subplot(gs[s+8, 0])]
                 axs_all.append(a)
             plotter.cluster_oddball_jitter_local_individual(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        def plot_oddball_win_decode_local():
-            title = 'decoding local interval distribution from oddball interval response'
+        def plot_oddball_win_likelihood_global():
+            title = 'decoding global interval distribution from oddball interval response'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd09_oddball_win_decode_local'
+            filename = '4131FixJitterOdd10_oddball_win_likelihood_global'
             n_row = 4
             n_col = 3
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -219,7 +251,25 @@ def run(session_config_list, smooth):
             for s in [0,1,2,3]:
                 a = [plt.subplot(gs[s+0, i]) for i in range(3)]
                 axs_all.append(a)
-            plotter.oddball_win_decode_local(axs_all)
+            plotter.oddball_win_likelihood_global(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        def plot_oddball_win_likelihood_local():
+            title = 'decoding local interval distribution from oddball interval response'
+            print('-----------------------------------------------')
+            print(title)
+            filename = '4131FixJitterOdd11_oddball_win_likelihood_local'
+            n_row = 4
+            n_col = 3
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in [0,1,2,3]:
+                a = [plt.subplot(gs[s+0, i]) for i in range(3)]
+                axs_all.append(a)
+            plotter.oddball_win_likelihood_local(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
@@ -228,7 +278,7 @@ def run(session_config_list, smooth):
             title = 'latent dynamics from all neural traces on fix intervals'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd10_oddball_latent_fix_all'
+            filename = '4131FixJitterOdd12_oddball_latent_fix_all'
             n_row = 8
             n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -245,55 +295,19 @@ def run(session_config_list, smooth):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        def plot_sorted_heatmaps_fix_jitter():
-            title = 'sorted heatmaps on oddball fix jitter interval'
-            print('-----------------------------------------------')
-            print(title)
-            filename = '4131FixJitterOdd09_sorted_heatmaps_fix_jitter'
-            n_row = 12
-            n_col = 4
-            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
-            gs = GridSpec(n_row, n_col, figure=fig)
-            axs_all = []
-            for s in [0,4,8]:
-                a = [[plt.subplot(gs[s+0:s+2, i]) for i in range(4)],
-                     [plt.subplot(gs[s+2:s+4, i]) for i in range(4)]]
-                axs_all.append(a)
-            plotter.sorted_heatmaps_fix_jitter(axs_all)
-            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
-            plt.close(fig)
-            return [filename, n_row, n_col, title]
-        def plot_sorted_heatmaps_local_isi():
-            title = 'sorted heatmaps on oddball interval with preceeding isi'
-            print('-----------------------------------------------')
-            print(title)
-            filename = '4131FixJitterOdd09_sorted_heatmaps_local_isi'
-            n_row = 12
-            n_col = 4
-            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
-            gs = GridSpec(n_row, n_col, figure=fig)
-            axs_all = []
-            for s in [0,4,8]:
-                a = [[plt.subplot(gs[s+0:s+2, i]) for i in range(4)],
-                     [plt.subplot(gs[s+2:s+4, i]) for i in range(4)]]
-                axs_all.append(a)
-            plotter.sorted_heatmaps_local_isi(axs_all)
-            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
-            plt.close(fig)
-            return [filename, n_row, n_col, title]
         fig_all = [
             #plot_sess_significance(),
             plot_intervals(),
             plot_trial(),
-            plot_cluster_oddball_fix_all(),
-            plot_sorted_heatmaps_fix_all(),
-            plot_cluster_oddball_fix_individual(),
-            plot_cluster_oddball_jitter_global_individual(),
-            plot_cluster_oddball_jitter_local_individual(),
-            #plot_oddball_win_decode_local(),
-            plot_oddball_latent_fix_all(),            
+            #plot_cluster_oddball_fix_all(),
+            #plot_cluster_oddball_fix_heatmap_all(),
+            #plot_sorted_heatmaps_fix_all(),
+            #plot_cluster_oddball_fix_individual(),
+            #plot_cluster_oddball_jitter_global_individual(),
+            #plot_cluster_oddball_jitter_local_individual(),
+            plot_oddball_win_likelihood_local(),
+            plot_oddball_win_likelihood_global(),
+            #plot_oddball_latent_fix_all(),            
         ]
         print('Clearing memory usage')
         del list_labels

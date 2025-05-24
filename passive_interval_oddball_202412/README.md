@@ -216,6 +216,17 @@
 - Now clean_memap_path also applies at the beginning.
 
 ## 2025.05.15
-- 
+- Fixed filter_stimulus when the last trial happens to be oddball. 
+- Now apply_colormap can clip data into percentile range.
+- Added plot_cluster_heatmap.
+- Added plot_cluster_oddball_fix_heatmap_all.
+- Added plot_dendrogram.
 
-
+## 2025.05.23
+- Improved plot_cluster_block_adapt_individual efficiency.
+- get_multi_sess_neu_trial returns std instead of sem.
+- Added plot_cluster_epoch_adapt_individual.
+- Added plot_oddball_win_likelihood_local.
+- Added plot_oddball_win_likelihood_global.
+- Added plot_trial_quant to plot_cluster_oddball_jitter_local_individual.
+- Added plot_trial_quant to plot_cluster_oddball_jitter_global_individual.

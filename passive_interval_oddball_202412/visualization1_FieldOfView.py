@@ -129,7 +129,7 @@ def run(session_config_list, smooth):
         plot_masks(),
         #plot_example_traces(),
         #plot_ca(),
-        plot_misc(),
+        #plot_misc(),
         ]
     return fig_all
 

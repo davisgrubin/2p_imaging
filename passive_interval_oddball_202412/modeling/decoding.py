@@ -2,12 +2,44 @@
 
 import numpy as np
 from tqdm import tqdm
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import log_loss
 from sklearn.model_selection import train_test_split
 
 from modeling.utils import get_frame_idx_from_time
 from modeling.utils import get_mean_sem
+
+# sample neuron population decoding by sliding window.
+def neu_pop_sample_decoding_slide_win(
+        neu_x, neu_y, neu_time,
+        win_decode, win_sample, win_step,
+        ):
+    neu_pct = 0.2
+    sample_time = 10
+    start_idx, end_idx = get_frame_idx_from_time(neu_time, 0, win_decode[0], win_decode[1])
+    l_idx, r_idx = get_frame_idx_from_time(neu_time, 0, 0, win_sample)
+    n_sample = r_idx - l_idx
+    # run decoding.
+    n_neu = np.max([1, int(neu_x.shape[1] * neu_pct)])
+    llh_time = []
+    llh = np.zeros([sample_time,(end_idx - start_idx + win_step - 1) // win_step])
+    y_onehot = OneHotEncoder().fit_transform(neu_y.reshape(-1,1)).toarray()
+    for ti in tqdm(range(start_idx, end_idx, win_step)):
+        for si in range(sample_time):
+            x = neu_x[:,np.random.choice(neu_x.shape[1], size=n_neu, replace=False), ti-n_sample:ti].copy()
+            x = np.mean(x, axis=2)
+            y = neu_y.copy()
+            # fit model.
+            model = LogisticRegression().fit(x, y)
+            # test model.
+            llh[si,(ti-start_idx)*win_step] = - log_loss(y_onehot, model.predict_proba(x))
+        llh_time.append(ti)
+    llh_time = np.array(llh_time)
+    llh_mean, llh_sem = get_mean_sem(llh)
+    return llh_time, llh_mean, llh_sem
 
 # single trial decoding by sliding window.
 def multi_sess_decoding_slide_win(

@@ -138,7 +138,7 @@ def run(session_config_list, smooth):
                 a+= [[[plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)],
                       [plt.subplot(gs[s+2, i]) for i in range(plotter.n_clusters)]]]
                 a+= [[plt.subplot(gs[s+3, i]) for i in range(plotter.n_clusters)]]
-                a+= [[plt.subplot(gs[s+4, 0])]]
+                a+= [plt.subplot(gs[s+4, 0])]
                 axs_all.append(a)
             plotter.cluster_individual_pre(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)

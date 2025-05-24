@@ -123,11 +123,31 @@ def run(session_config_list, smooth):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
+        def plot_cluster_heatmap_all():
+            title = 'all cluster neural traces'
+            print('-----------------------------------------------')
+            print(title)
+            filename = '1451ShortLong05_cluster_heatmap_all'
+            n_row = 12
+            n_col = 5
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in [0,3,6,9]:
+                a = [plt.subplot(gs[s:s+2, 0:2])]
+                a+= [plt.subplot(gs[s+2, 0:2])]
+                a+= [plt.subplot(gs[s:s+3, i]) for i in [2,3,4]]
+                axs_all.append(a)
+            plotter.cluster_heatmap_all(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
         def plot_cluster_block_adapt_individual():
             title = 'individual cluster on block transition'
             print('-----------------------------------------------')
             print(title)
-            filename = '1451ShortLong05_cluster_block_adapt_individual'
+            filename = '1451ShortLong06_cluster_block_adapt_individual'
             n_row = 40
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -150,12 +170,58 @@ def run(session_config_list, smooth):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
+        def plot_cluster_epoch_adapt_individual():
+            title = 'individual cluster on epoch adaptation'
+            print('-----------------------------------------------')
+            print(title)
+            filename = '1451ShortLong06_cluster_epoch_adapt_individual'
+            n_row = 28
+            n_col = plotter.n_clusters
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in [0,7,14,21]:
+                a = [[[plt.subplot(gs[s+0, i]) for i in range(plotter.n_clusters)],
+                      [plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)],
+                      [plt.subplot(gs[s+2, i]) for i in range(plotter.n_clusters)]]]
+                a+= [[[plt.subplot(gs[s+3, i]) for i in range(plotter.n_clusters)],
+                      [plt.subplot(gs[s+4, i]) for i in range(plotter.n_clusters)],
+                      [plt.subplot(gs[s+5, i]) for i in range(plotter.n_clusters)]]]
+                a+= [plt.subplot(gs[s+6, 0])]
+                axs_all.append(a)
+            plotter.cluster_epoch_adapt_individual(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        def plot_latent_all():
+            title = 'latent dynamics for adaptation'
+            print('-----------------------------------------------')
+            print(title)
+            filename = '1451ShortLong08_latent_all'
+            n_row = 12
+            n_col = 8
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in [0,3,6,9]:
+                a = [[plt.subplot(gs[s+0:s+2, i:i+2], projection='3d'), plt.subplot(gs[s+2, i:i+2])] for i in [0,2,4,6]]
+                axs_all.append(a)
+            plotter.latent_all(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        
         fig_all = [
             #plot_sess_significance(),
-            plot_intervals(),
-            plot_trial(),
-            plot_cluster_all(),
-            plot_cluster_block_adapt_individual(),
+            #plot_intervals(),
+            #plot_trial(),
+            #plot_cluster_all(),
+            #plot_cluster_heatmap_all(),
+            #plot_cluster_block_adapt_individual(),
+            plot_cluster_epoch_adapt_individual(),
+            #plot_latent_all(),
             ]
         print('Clearing memory usage')
         del list_labels
