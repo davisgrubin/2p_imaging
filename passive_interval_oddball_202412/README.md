@@ -169,7 +169,7 @@
 - Added plot_cluster_oddball_fix_individual.
 - Added plot_cluster_oddball_fix_all.
 - All layout set to constrained.
-- Removed plot_sorted_heatmaps_fix_jitter.
+- Removed plot_sorted_heatmaps_fix_jitter.d
 - Added plot_sorted_heatmaps_fix_all.
 - Separate plot_heatmap_neuron and plot_heatmap_neuron_cate.
 - Added plot_sorted_heatmaps_fix_all.
@@ -230,3 +230,4 @@
 - Added plot_oddball_win_likelihood_global.
 - Added plot_trial_quant to plot_cluster_oddball_jitter_local_individual.
 - Added plot_trial_quant to plot_cluster_oddball_jitter_global_individual.
+- Added command line window control.

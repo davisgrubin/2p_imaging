@@ -215,13 +215,13 @@ def run(session_config_list, smooth):
         
         fig_all = [
             #plot_sess_significance(),
-            #plot_intervals(),
-            #plot_trial(),
-            #plot_cluster_all(),
-            #plot_cluster_heatmap_all(),
-            #plot_cluster_block_adapt_individual(),
+            plot_intervals(),
+            plot_trial(),
+            plot_cluster_all(),
+            plot_cluster_heatmap_all(),
+            plot_cluster_block_adapt_individual(),
             plot_cluster_epoch_adapt_individual(),
-            #plot_latent_all(),
+            plot_latent_all(),
             ]
         print('Clearing memory usage')
         del list_labels

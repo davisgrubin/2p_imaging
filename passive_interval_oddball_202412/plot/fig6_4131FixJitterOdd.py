@@ -461,6 +461,59 @@ class plotter_utils(utils_basic):
                     axs[mi][ci].set_xlabel('interval condition')
                     axs[mi][ci].set_ylabel(target_metrics[mi])
                     axs[mi][ci].set_title(lbl[ci])
+        def plot_oddball_fix_index(axs):
+            # standard.
+            [[color0, color1, color2, _],
+             [neu_seq_standard, _, stim_seq_standard, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_param=[[2,3,4,5], None, [0], None, [0], [0]],
+                cate=cate, roi_id=None)
+            # short oddball.
+            [[color0, color1, color2, _],
+             [neu_seq_short, _, stim_seq_short, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[0] for l in self.list_odd_idx],
+                trial_param=[None, None, [0], None, [0], [0]],
+                cate=cate, roi_id=None)
+            # long oddball.
+            [[color0, color1, color2, _],
+             [neu_seq_long, _, stim_seq_long, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[1] for l in self.list_odd_idx],
+                trial_param=[None, None, [0], None, [0], [0]],
+                cate=cate, roi_id=None)
+            # plot results for each class.
+            c_idx = stim_seq_standard.shape[0]//2
+            for ci in range(self.n_clusters):
+                axs[ci].axis('off')
+                axs[ci] = axs[ci].inset_axes([0, 0, 0.6, 1], transform=axs[ci].transAxes)
+                quant_all = [
+                    run_quantification(ns[cluster_id==ci,:], self.alignment['neu_time'], ss[c_idx+1,0])
+                    for ns, ss in zip(
+                        [neu_seq_standard, neu_seq_short, neu_seq_long],
+                        [stim_seq_standard, stim_seq_short, stim_seq_long])]
+                evoke_standard, evoke_short, evoke_long = [np.abs(quant_all[di]['evoke_mag']) for di in range(3)]
+                ori_short = (evoke_short - evoke_standard) / (evoke_short + evoke_standard + 1e-5)
+                ori_long = (evoke_long - evoke_standard) / (evoke_long + evoke_standard + 1e-5)
+                # plot errorbar.
+                axs[ci].scatter(
+                    0*np.ones_like(ori_short), ori_short, None,
+                    color=color1, alpha=0.5)
+                axs[ci].scatter(
+                    1*np.ones_like(ori_long), ori_long, None,
+                    color=color2, alpha=0.5)
+                # adjust layout.
+                axs[ci].tick_params(axis='y', tick1On=False)
+                axs[ci].tick_params(axis='x', labelrotation=90)
+                axs[ci].spines['right'].set_visible(False)
+                axs[ci].spines['top'].set_visible(False)
+                axs[ci].set_xlim([-0.5, 1.5])
+                axs[ci].set_ylim([-0.5, 0.5])
+                axs[ci].set_xticks([0,1])
+                axs[ci].set_xticklabels(['short', 'long'], rotation='vertical')
+                axs[ci].set_xlabel('interval condition')
+                axs[ci].set_ylabel('oddball response index')
+                axs[ci].set_title(lbl[ci])
         def plot_legend(ax):
             [[color0, color1, color2, _], _, _,
              [n_trials, n_neurons]] = get_neu_trial(
@@ -480,7 +533,9 @@ class plotter_utils(utils_basic):
         except: pass
         try: plot_oddball_fix_quant(axs[3])
         except: pass
-        try: plot_legend(axs[4])
+        try: plot_oddball_fix_index(axs[4])
+        except: pass
+        try: plot_legend(axs[5])
         except: pass
     
     def plot_cluster_oddball_jitter_global_individual(self, axs, cate):

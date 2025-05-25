@@ -167,19 +167,20 @@ def run(session_config_list, smooth):
             print('-----------------------------------------------')
             print(title)
             filename = '4131FixJitterOdd07_cluster_oddball_fix_individual'
-            n_row = 28
+            n_row = 32
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,7,14,21]:
+            for s in [0,8,16,24]:
                 a = [[plt.subplot(gs[s+0, i]) for i in range(plotter.n_clusters)]]
                 a+= [[plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)]]
                 a+= [[plt.subplot(gs[s+2, i]) for i in range(plotter.n_clusters)]]
                 a+= [[[plt.subplot(gs[s+3, i]) for i in range(plotter.n_clusters)],
                       [plt.subplot(gs[s+4, i]) for i in range(plotter.n_clusters)],
                       [plt.subplot(gs[s+5, i]) for i in range(plotter.n_clusters)]]]
-                a+= [plt.subplot(gs[s+6, 0])]
+                a+= [[plt.subplot(gs[s+6, i]) for i in range(plotter.n_clusters)]]
+                a+= [plt.subplot(gs[s+7, 0])]
                 axs_all.append(a)
             plotter.cluster_oddball_fix_individual(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -299,15 +300,15 @@ def run(session_config_list, smooth):
             #plot_sess_significance(),
             plot_intervals(),
             plot_trial(),
-            #plot_cluster_oddball_fix_all(),
-            #plot_cluster_oddball_fix_heatmap_all(),
-            #plot_sorted_heatmaps_fix_all(),
-            #plot_cluster_oddball_fix_individual(),
-            #plot_cluster_oddball_jitter_global_individual(),
-            #plot_cluster_oddball_jitter_local_individual(),
+            plot_cluster_oddball_fix_all(),
+            plot_cluster_oddball_fix_heatmap_all(),
+            plot_sorted_heatmaps_fix_all(),
+            plot_cluster_oddball_fix_individual(),
+            plot_cluster_oddball_jitter_global_individual(),
+            plot_cluster_oddball_jitter_local_individual(),
             plot_oddball_win_likelihood_local(),
             plot_oddball_win_likelihood_global(),
-            #plot_oddball_latent_fix_all(),            
+            plot_oddball_latent_fix_all(),            
         ]
         print('Clearing memory usage')
         del list_labels

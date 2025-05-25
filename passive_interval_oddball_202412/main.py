@@ -5,6 +5,7 @@ warnings.filterwarnings('ignore')
 
 import gc
 import os
+import argparse
 from datetime import datetime
 
 from modules import Trialization
@@ -63,7 +64,7 @@ def run(session_config_list):
     for i in range(len(list_ops)):
         print('Trializing {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
-        #Trialization.run(list_ops[i])
+        Trialization.run(list_ops[i])
 
     print('===============================================')
     print('============== significance test ==============')
@@ -71,7 +72,7 @@ def run(session_config_list):
     for i in range(len(list_ops)):
         print('Running significance test for {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
-        #StatTest.run(list_ops[i])
+        StatTest.run(list_ops[i])
 
     print('===============================================')
     print('======== plotting representative masks ========')
@@ -121,35 +122,21 @@ def run(session_config_list):
 
 if __name__ == "__main__":
 
-    from session_configs import session_config_list_YH01VT
-    from session_configs import session_config_list_YH02VT
-    from session_configs import session_config_list_YH03VT
-    from session_configs import session_config_list_YH14SC
-    from session_configs import session_config_list_YH16SC
-    from session_configs import session_config_list_YH17VT
-    from session_configs import session_config_list_YH18VT
-    from session_configs import session_config_list_YH19VT
-    from session_configs import session_config_list_YH20SC
-    from session_configs import session_config_list_YH21SC
-    from session_configs import session_config_list_PPC
-    from session_configs import session_config_list_V1
+    
+    from session_configs import all_config_list
 
-    for session_config_list in [
-        #session_config_list_YH01VT,
-        #session_config_list_YH02VT,
-        #session_config_list_YH03VT,
-        #session_config_list_YH14SC,
-        #session_config_list_YH16SC,
-        #session_config_list_YH17VT,
-        #session_config_list_YH18VT,
-        #session_config_list_YH19VT,
-        #session_config_list_YH20SC,
-        #session_config_list_YH21SC,
-        #session_config_list_PPC,
-        #session_config_list_V1,
-            ]:
-        run(session_config_list)
-
+    parser = argparse.ArgumentParser(description='Experiments can go shit but Yicong will love you forever!')
+    parser.add_argument('--config_list', required=True, type=str, help='Whether run denoising.')
+    args = parser.parse_args()
+    
+    for subject, session_config_list in zip(
+            ['YH01VT', 'YH02VT', 'YH03VT', 'YH14SC', 'YH16SC',
+             'YH17VT', 'YH18VT', 'YH19VT', 'YH20SC', 'YH21SC',
+             'PPC', 'V1'],
+            all_config_list
+        ):
+        if subject in args.config_list:
+            run(session_config_list)
 
     session_config_test = {
         'list_session_name' : {
@@ -162,24 +149,24 @@ if __name__ == "__main__":
             #'VTYH03_PPC_20250106_3331Random' : 'random',
             #'VTYH03_PPC_20250107_3331Random' : 'random',
             #'VTYH03_PPC_20250108_3331Random' : 'random',
-            #'VTYH01_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH01_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH01_PPC_20250204_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH02_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH03_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH03_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH03_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH01_PPC_20250225_1451ShortLong' : 'short_long',
-            'VTYH01_PPC_20250226_1451ShortLong' : 'short_long',
-            'VTYH01_PPC_20250228_1451ShortLong' : 'short_long',
-            'VTYH02_PPC_20250225_1451ShortLong' : 'short_long',
-            'VTYH02_PPC_20250226_1415ShortLong' : 'short_long',
-            'VTYH02_PPC_20250228_1451ShortLong' : 'short_long',
-            'VTYH03_PPC_20250218_1451ShortLong' : 'short_long',
-            'VTYH03_PPC_20250219_1451ShortLong' : 'short_long',
-            'VTYH03_PPC_20250221_1451ShortLong' : 'short_long',
+            'VTYH01_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
+            'VTYH01_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
+            'VTYH01_PPC_20250204_4131FixJitterOdd' : 'fix_jitter_odd',
+            'VTYH02_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
+            'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
+            'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
+            'VTYH03_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
+            'VTYH03_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
+            'VTYH03_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH01_PPC_20250225_1451ShortLong' : 'short_long',
+            #'VTYH01_PPC_20250226_1451ShortLong' : 'short_long',
+            #'VTYH01_PPC_20250228_1451ShortLong' : 'short_long',
+            #'VTYH02_PPC_20250225_1451ShortLong' : 'short_long',
+            #'VTYH02_PPC_20250226_1415ShortLong' : 'short_long',
+            #'VTYH02_PPC_20250228_1451ShortLong' : 'short_long',
+            #'VTYH03_PPC_20250218_1451ShortLong' : 'short_long',
+            #'VTYH03_PPC_20250219_1451ShortLong' : 'short_long',
+            #'VTYH03_PPC_20250221_1451ShortLong' : 'short_long',
             },
         'session_folder' : 'test',
         'sig_tag' : 'all',

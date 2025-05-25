@@ -593,4 +593,19 @@ session_config_list_V1 = {
     'output_filename' : 'all_V1_passive.html'
     }
 
+# all in one list.
+all_config_list = [
+    session_config_list_YH01VT,
+    session_config_list_YH02VT,
+    session_config_list_YH03VT,
+    session_config_list_YH14SC,
+    session_config_list_YH16SC,
+    session_config_list_YH17VT,
+    session_config_list_YH18VT,
+    session_config_list_YH19VT,
+    session_config_list_YH20SC,
+    session_config_list_YH21SC,
+    session_config_list_PPC,
+    session_config_list_V1,
+    ]
 
