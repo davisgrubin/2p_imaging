@@ -489,24 +489,6 @@ session_config_list_YH16SC = {
     'output_filename' : 'YH16SC_PPC_passive.html'
     }
 
-# all ppc.
-session_config_list_PPC = {
-    'list_config': [
-        session_config_YH01VT,
-        session_config_YH02VT,
-        session_config_YH03VT,
-        session_config_YH14SC,
-        session_config_YH16SC,
-        ],
-    'label_names' : {
-        '-1':'Exc',
-        '1':'Inh_VIP',
-        '2':'Inh_SST',
-        },
-    'subject_name' : 'all',
-    'output_filename' : 'all_PPC_passive.html'
-    }
-
 #%% V1 list configs
 
 # YH17VT.
@@ -575,6 +557,8 @@ session_config_list_YH21SC = {
     'output_filename' : 'YH21SC_V1_passive.html'
     }
 
+#%% all subject
+
 # all v1.
 session_config_list_V1 = {
     'list_config': [
@@ -589,8 +573,26 @@ session_config_list_V1 = {
         '1':'Inh_VIP',
         '2':'Inh_SST',
         },
-    'subject_name' : 'all',
+    'subject_name' : 'V1_all',
     'output_filename' : 'all_V1_passive.html'
+    }
+
+# all ppc.
+session_config_list_PPC = {
+    'list_config': [
+        session_config_YH01VT,
+        session_config_YH02VT,
+        session_config_YH03VT,
+        session_config_YH14SC,
+        session_config_YH16SC,
+        ],
+    'label_names' : {
+        '-1':'Exc',
+        '1':'Inh_VIP',
+        '2':'Inh_SST',
+        },
+    'subject_name' : 'PPC_all',
+    'output_filename' : 'all_PPC_passive.html'
     }
 
 # all in one list.

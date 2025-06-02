@@ -110,13 +110,13 @@ def run(session_config_list, smooth):
             print('-----------------------------------------------')
             print(title)
             filename = '1451ShortLong04_cluster_all'
-            n_row = 16
+            n_row = 12
             n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,4,8,12]:
-                a = [plt.subplot(gs[s:s+4, i]) for i in range(10)]
+            for s in [0,3,6,9]:
+                a = [plt.subplot(gs[s:s+3, i]) for i in range(10)]
                 axs_all.append(a)
             plotter.cluster_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -124,7 +124,7 @@ def run(session_config_list, smooth):
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_cluster_heatmap_all():
-            title = 'all cluster neural traces'
+            title = 'cluster features and heatmap'
             print('-----------------------------------------------')
             print(title)
             filename = '1451ShortLong05_cluster_heatmap_all'
@@ -143,53 +143,31 @@ def run(session_config_list, smooth):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        def plot_cluster_block_adapt_individual():
+        def plot_cluster_adapt_individual():
             title = 'individual cluster on block transition'
             print('-----------------------------------------------')
             print(title)
             filename = '1451ShortLong06_cluster_block_adapt_individual'
-            n_row = 40
+            n_row = 48
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,10,20,30]:
+            for s in [0,12,24,36]:
                 a = [[plt.subplot(gs[s+0, i]) for i in range(plotter.n_clusters)]]
                 a+= [[plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)]]
                 a+= [[plt.subplot(gs[s+2, i]) for i in range(plotter.n_clusters)]]
                 a+= [[plt.subplot(gs[s+3, i]) for i in range(plotter.n_clusters)]]
                 a+= [[[plt.subplot(gs[s+4, i]) for i in range(plotter.n_clusters)],
-                      [plt.subplot(gs[s+5, i]) for i in range(plotter.n_clusters)]]]
-                a+= [[plt.subplot(gs[s+6, i]) for i in range(plotter.n_clusters)]]
-                a+= [[[plt.subplot(gs[s+7, i]) for i in range(plotter.n_clusters)],
-                      [plt.subplot(gs[s+8, i]) for i in range(plotter.n_clusters)]]]
-                a+= [plt.subplot(gs[s+9, 0])]
+                      [plt.subplot(gs[s+5, i]) for i in range(plotter.n_clusters)],
+                      [plt.subplot(gs[s+6, i]) for i in range(plotter.n_clusters)]]]
+                a+= [[plt.subplot(gs[s+7, i]) for i in range(plotter.n_clusters)]]
+                a+= [[[plt.subplot(gs[s+8, i]) for i in range(plotter.n_clusters)],
+                      [plt.subplot(gs[s+9, i]) for i in range(plotter.n_clusters)],
+                      [plt.subplot(gs[s+10, i]) for i in range(plotter.n_clusters)]]]
+                a+= [plt.subplot(gs[s+11, 0])]
                 axs_all.append(a)
-            plotter.cluster_block_adapt_individual(axs_all)
-            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
-            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
-            plt.close(fig)
-            return [filename, n_row, n_col, title]
-        def plot_cluster_epoch_adapt_individual():
-            title = 'individual cluster on epoch adaptation'
-            print('-----------------------------------------------')
-            print(title)
-            filename = '1451ShortLong06_cluster_epoch_adapt_individual'
-            n_row = 28
-            n_col = plotter.n_clusters
-            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
-            gs = GridSpec(n_row, n_col, figure=fig)
-            axs_all = []
-            for s in [0,7,14,21]:
-                a = [[[plt.subplot(gs[s+0, i]) for i in range(plotter.n_clusters)],
-                      [plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)],
-                      [plt.subplot(gs[s+2, i]) for i in range(plotter.n_clusters)]]]
-                a+= [[[plt.subplot(gs[s+3, i]) for i in range(plotter.n_clusters)],
-                      [plt.subplot(gs[s+4, i]) for i in range(plotter.n_clusters)],
-                      [plt.subplot(gs[s+5, i]) for i in range(plotter.n_clusters)]]]
-                a+= [plt.subplot(gs[s+6, 0])]
-                axs_all.append(a)
-            plotter.cluster_epoch_adapt_individual(axs_all)
+            plotter.cluster_adapt_individual(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
@@ -219,8 +197,7 @@ def run(session_config_list, smooth):
             plot_trial(),
             plot_cluster_all(),
             plot_cluster_heatmap_all(),
-            plot_cluster_block_adapt_individual(),
-            plot_cluster_epoch_adapt_individual(),
+            plot_cluster_adapt_individual(),
             plot_latent_all(),
             ]
         print('Clearing memory usage')

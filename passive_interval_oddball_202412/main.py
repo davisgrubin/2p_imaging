@@ -64,7 +64,7 @@ def run(session_config_list):
     for i in range(len(list_ops)):
         print('Trializing {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
-        Trialization.run(list_ops[i])
+        #Trialization.run(list_ops[i])
 
     print('===============================================')
     print('============== significance test ==============')
@@ -72,13 +72,13 @@ def run(session_config_list):
     for i in range(len(list_ops)):
         print('Running significance test for {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
-        StatTest.run(list_ops[i])
+        #StatTest.run(list_ops[i])
 
     print('===============================================')
     print('======== plotting representative masks ========')
     print('===============================================')
-    fn1 = visualization1_FieldOfView.run(session_config_list, smooth)
-    #fn1 = []
+    #fn1 = visualization1_FieldOfView.run(session_config_list, smooth)
+    fn1 = []
 
     print('===============================================')
     print('========= plotting 3331Random results =========')
@@ -121,10 +121,9 @@ def run(session_config_list):
 
 
 if __name__ == "__main__":
-
-    
     from session_configs import all_config_list
-
+    
+    '''
     parser = argparse.ArgumentParser(description='Experiments can go shit but Yicong will love you forever!')
     parser.add_argument('--config_list', required=True, type=str, help='Whether run denoising.')
     args = parser.parse_args()
@@ -137,27 +136,28 @@ if __name__ == "__main__":
         ):
         if subject in args.config_list:
             run(session_config_list)
+    '''
 
     session_config_test = {
         'list_session_name' : {
-            #'VTYH01_PPC_20250106_3331Random' : 'random',
-            #'VTYH01_PPC_20250107_3331Random' : 'random',
-            #'VTYH01_PPC_20250108_3331Random' : 'random',
+            'VTYH01_PPC_20250106_3331Random' : 'random',
+            'VTYH01_PPC_20250107_3331Random' : 'random',
+            'VTYH01_PPC_20250108_3331Random' : 'random',
             #'VTYH02_PPC_20250108_3331Random' : 'random',
             #'VTYH02_PPC_20250109_3331Random' : 'random',
             #'VTYH02_PPC_20250111_3331Random' : 'random',
             #'VTYH03_PPC_20250106_3331Random' : 'random',
             #'VTYH03_PPC_20250107_3331Random' : 'random',
             #'VTYH03_PPC_20250108_3331Random' : 'random',
-            'VTYH01_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH01_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH01_PPC_20250204_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH02_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH03_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH03_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
-            'VTYH03_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH01_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH01_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH01_PPC_20250204_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH02_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH03_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH03_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
+            #'VTYH03_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH01_PPC_20250225_1451ShortLong' : 'short_long',
             #'VTYH01_PPC_20250226_1451ShortLong' : 'short_long',
             #'VTYH01_PPC_20250228_1451ShortLong' : 'short_long',
@@ -184,10 +184,12 @@ if __name__ == "__main__":
         'subject_name' : 'ppc_test',
         'output_filename' : 'test_passive.html'
         }
-    
+
     '''
     
     # run(session_config_list_test)
+    
+    # run(all_config_list[0])
     
     import matplotlib.pyplot as plt
     session_config_list = combine_session_config_list(session_config_list_test)
@@ -195,7 +197,7 @@ if __name__ == "__main__":
     ops = list_ops[0]
     
     from modules.ReadResults import read_all
-    [list_labels, list_masks, 
+    [list_labels, list_masks,
      list_neural_trials, list_move_offset, list_significance
      ] = read_all(session_config_list, smooth=False)
     neural_trials = list_neural_trials[0]
@@ -209,7 +211,7 @@ if __name__ == "__main__":
     standard = 1
     oddball = 1
     block = 0
-    mode = 'mean'
+    mode = 'post'
     temp_folder = 'temp_'+session_config_list['subject_name']
     if not os.path.exists(os.path.join('results', 'temp_'+session_config_list['subject_name'])):
         os.makedirs(os.path.join('results', 'temp_'+session_config_list['subject_name']))

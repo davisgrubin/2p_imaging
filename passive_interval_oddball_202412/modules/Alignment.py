@@ -35,8 +35,8 @@ def get_stim_response(
         expected,
         n_stim,
         ):
-    l_frames = 200
-    r_frames = 200
+    l_frames = 250
+    r_frames = 250
     # initialization.
     stim_labels = neural_trials['stim_labels']
     dff         = neural_trials['dff']
@@ -49,7 +49,7 @@ def get_stim_response(
     pre_isi      = []
     post_isi     = []
     # loop over stimulus.
-    for stim_id in tqdm(range(n_stim, stim_labels.shape[0]-n_stim)):
+    for stim_id in tqdm(range(n_stim, stim_labels.shape[0]-n_stim), desc='trials'):
         # find alignment offset.
         if expected=='none':
             t = stim_labels[stim_id,0]
@@ -115,6 +115,7 @@ def run_get_stim_response(
     list_pre_isi      = []
     list_post_isi     = []
     for ni in range(len(list_neural_trials)):
+        print(f'Aligning trials for session {ni+1}/{len(list_neural_trials)}')
         [stim_labels, neu_seq, neu_time,
          stim_seq,
          camera_pupil,

@@ -231,3 +231,17 @@
 - Added plot_trial_quant to plot_cluster_oddball_jitter_local_individual.
 - Added plot_trial_quant to plot_cluster_oddball_jitter_global_individual.
 - Added command line window control.
+
+## 2025.05.28
+- Now plot_oddball_win_likelihood_local and plot_oddball_win_likelihood_global use broken axis to plot model chance level.
+- Changed the decoding range of plot_oddball_win_likelihood_local and plot_oddball_win_likelihood_global.
+- Now plot_oddball_win_likelihood_local and plot_oddball_win_likelihood_global is for individual clusters.
+- Now plot_win_mag_quant can specify 3 windows.
+- Now plot_cluster_oddball_jitter_global_individual uses mean within window for quantification.
+
+## 2025.05.29
+- Deleted metrics in clustering_neu_response_mode.
+- Now clustering is run when init the plotter.
+- Added log info for alignment.
+- Merge plot_cluster_block_adapt_individual and plot_cluster_epoch_adapt_individual
+- Added error in get_neu_trial.

@@ -110,13 +110,13 @@ def run(session_config_list, smooth):
             print('-----------------------------------------------')
             print(title)
             filename = '4131FixJitterOdd04_cluster_oddball_fix_all'
-            n_row = 16
+            n_row = 12
             n_col = 7
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,4,8,12]:
-                a = [plt.subplot(gs[s:s+4, i]) for i in [0,1,2,3,4,5]]
+            for s in [0,3,6,9]:
+                a = [plt.subplot(gs[s:s+3, i]) for i in [0,1,2,3,4,5]]
                 a+= [plt.subplot(gs[s+0, 6])]
                 axs_all.append(a)
             plotter.cluster_oddball_fix_all(axs_all)
@@ -125,7 +125,7 @@ def run(session_config_list, smooth):
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_cluster_oddball_fix_heatmap_all():
-            title = 'clustered heatmaps on fix intervals'
+            title = 'cluster features and heatmap'
             print('-----------------------------------------------')
             print(title)
             filename = '4131FixJitterOdd05_cluster_oddball_fix_heatmap_all'
@@ -192,21 +192,17 @@ def run(session_config_list, smooth):
             print('-----------------------------------------------')
             print(title)
             filename = '4131FixJitterOdd08_cluster_oddball_jitter_global_individual'
-            n_row = 36
+            n_row = 20
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,9,18,27]:
+            for s in [0,5,10,15]:
                 a = [[plt.subplot(gs[s+0, i]) for i in range(plotter.n_clusters)]]
-                a+= [[[plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)],
-                      [plt.subplot(gs[s+2, i]) for i in range(plotter.n_clusters)],
-                      [plt.subplot(gs[s+3, i]) for i in range(plotter.n_clusters)]]]
-                a+= [[plt.subplot(gs[s+4, i]) for i in range(plotter.n_clusters)]]
-                a+= [[[plt.subplot(gs[s+5, i]) for i in range(plotter.n_clusters)],
-                      [plt.subplot(gs[s+6, i]) for i in range(plotter.n_clusters)],
-                      [plt.subplot(gs[s+7, i]) for i in range(plotter.n_clusters)]]]
-                a+= [plt.subplot(gs[s+8, 0])]
+                a+= [[plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)]]
+                a+= [[plt.subplot(gs[s+2, i]) for i in range(plotter.n_clusters)]]
+                a+= [[plt.subplot(gs[s+3, i]) for i in range(plotter.n_clusters)]]
+                a+= [plt.subplot(gs[s+4, 0])]
                 axs_all.append(a)
             plotter.cluster_oddball_jitter_global_individual(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -244,13 +240,15 @@ def run(session_config_list, smooth):
             print('-----------------------------------------------')
             print(title)
             filename = '4131FixJitterOdd10_oddball_win_likelihood_global'
-            n_row = 4
-            n_col = 3
+            n_row = 8
+            n_col = plotter.n_clusters+1
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,1,2,3]:
-                a = [plt.subplot(gs[s+0, i]) for i in range(3)]
+            for s in [0,2,4,6]:
+                a = [[plt.subplot(gs[s+0, i]) for i in range(plotter.n_clusters)]]
+                a+= [[plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)]]
+                a+= [plt.subplot(gs[s+0, plotter.n_clusters])]
                 axs_all.append(a)
             plotter.oddball_win_likelihood_global(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -262,13 +260,15 @@ def run(session_config_list, smooth):
             print('-----------------------------------------------')
             print(title)
             filename = '4131FixJitterOdd11_oddball_win_likelihood_local'
-            n_row = 4
-            n_col = 3
+            n_row = 8
+            n_col = plotter.n_clusters+1
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,1,2,3]:
-                a = [plt.subplot(gs[s+0, i]) for i in range(3)]
+            for s in [0,2,4,6]:
+                a = [[plt.subplot(gs[s+0, i]) for i in range(plotter.n_clusters)]]
+                a+= [[plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)]]
+                a+= [plt.subplot(gs[s+0, plotter.n_clusters])]
                 axs_all.append(a)
             plotter.oddball_win_likelihood_local(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -306,9 +306,9 @@ def run(session_config_list, smooth):
             plot_cluster_oddball_fix_individual(),
             plot_cluster_oddball_jitter_global_individual(),
             plot_cluster_oddball_jitter_local_individual(),
-            plot_oddball_win_likelihood_local(),
             plot_oddball_win_likelihood_global(),
-            plot_oddball_latent_fix_all(),            
+            plot_oddball_win_likelihood_local(),
+            plot_oddball_latent_fix_all(),       
         ]
         print('Clearing memory usage')
         del list_labels

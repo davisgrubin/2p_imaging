@@ -3,7 +3,8 @@
 import numpy as np
 from utils import add_legend
 
-# fig, ax = plt.subplots(1, 1, figsize=(6, 6)) colors=['#A4CB9E', '#F9C08A']
+# fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+# colors=['#A4CB9E', '#F9C08A']
 
 # standard type fraction.
 def plot_standard_type(ax, list_neural_trials):

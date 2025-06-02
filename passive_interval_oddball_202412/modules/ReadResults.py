@@ -112,7 +112,7 @@ def read_neural_trials(ops, smooth):
         neural_trials = dict()
         dff = np.array(f['neural_trials']['dff'])
         if smooth:
-            window_length=9
+            window_length=5
             polyorder=3
             dff = np.apply_along_axis(
                 savgol_filter, 1, dff,
@@ -181,7 +181,7 @@ def read_bpod_mat_data(ops):
     opto_types = np.array(raw['OptoTypes'])
     random_types = np.array(raw['RandomTypes'])
     bpod_sess_data = {
-        'standard_types'    : standard_types,
+        'standard_types'   : standard_types,
         'fix_jitter_types' : fix_jitter_types,
         'img_seq_label'    : img_seq_label,
         'oddball_types'    : oddball_types,

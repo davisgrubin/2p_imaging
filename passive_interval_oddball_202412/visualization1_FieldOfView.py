@@ -59,18 +59,18 @@ def run(session_config_list, smooth):
         fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
         gs = GridSpec(n_row, n_col, figure=fig)
         plotter = plotter_main_masks(
-            list_labels[-1],
-            list_masks[-1][0],
-            list_masks[-1][1],
-            list_masks[-1][2],
-            list_masks[-1][3],
-            list_masks[-1][4])
-        if len(session_config_list['label_names'])==1:
-            mask_axs = [plt.subplot(gs[0:2, j:j+2]) for j in range(0,10,2)]
-            plotter.all_1chan(mask_axs)
-        if len(session_config_list['label_names'])>1:
+            list_labels[0],
+            list_masks[0][0],
+            list_masks[0][1],
+            list_masks[0][2],
+            list_masks[0][3],
+            list_masks[0][4])
+        try:
             mask_axs = [plt.subplot(gs[i:i+2, j:j+2]) for j in range(0,12,2) for i in [0,2]]
             plotter.all_2chan(mask_axs)
+        except:
+            mask_axs = [plt.subplot(gs[0:2, j:j+2]) for j in range(0,10,2)]
+            plotter.all_1chan(mask_axs)
         fig.set_size_inches(n_col*size_scale, n_row*size_scale)
         fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
         plt.close(fig)

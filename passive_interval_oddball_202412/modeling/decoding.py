@@ -25,9 +25,9 @@ def neu_pop_sample_decoding_slide_win(
     # run decoding.
     n_neu = np.max([1, int(neu_x.shape[1] * neu_pct)])
     llh_time = []
-    llh = np.zeros([sample_time,(end_idx - start_idx + win_step - 1) // win_step])
+    llh_model = np.zeros([sample_time,(end_idx - start_idx + win_step - 1) // win_step])
     y_onehot = OneHotEncoder().fit_transform(neu_y.reshape(-1,1)).toarray()
-    for ti in tqdm(range(start_idx, end_idx, win_step)):
+    for ti in tqdm(range(start_idx, end_idx, win_step), desc='moving window'):
         for si in range(sample_time):
             x = neu_x[:,np.random.choice(neu_x.shape[1], size=n_neu, replace=False), ti-n_sample:ti].copy()
             x = np.mean(x, axis=2)
@@ -35,11 +35,13 @@ def neu_pop_sample_decoding_slide_win(
             # fit model.
             model = LogisticRegression().fit(x, y)
             # test model.
-            llh[si,(ti-start_idx)*win_step] = - log_loss(y_onehot, model.predict_proba(x))
+            llh_model[si,(ti-start_idx)*win_step] = - log_loss(y_onehot, model.predict_proba(x))
         llh_time.append(ti)
     llh_time = np.array(llh_time)
-    llh_mean, llh_sem = get_mean_sem(llh)
-    return llh_time, llh_mean, llh_sem
+    llh_mean, llh_sem = get_mean_sem(llh_model)
+    llh_chance = - log_loss(y_onehot, np.ones_like(y_onehot)/y_onehot.shape[1])
+    llh_chance = np.array([llh_chance]).reshape(-1)
+    return llh_time, llh_mean, llh_sem, llh_chance
 
 # single trial decoding by sliding window.
 def multi_sess_decoding_slide_win(

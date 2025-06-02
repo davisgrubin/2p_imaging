@@ -162,14 +162,14 @@ def run_quantification(neu_seq, neu_time, win_eval_c, samping_size=0.2):
         sampling_time = 10
         n_samples = int(samping_size*neu_seq.shape[0])+1
         
-        for qi in tqdm(range(sampling_time), desc="sample"):
+        for qi in tqdm(range(sampling_time), desc='sample'):
             sub_idx = np.random.choice(neu_seq.shape[0], n_samples, replace=False)
             nsm = np.nanmean(neu_seq[sub_idx,:], axis=0)
             q = get_all_metrics(nsm, neu_time, win_eval_c)
             quant.append(q)
     # compute for all individual traces.
     else:
-        for ni in tqdm(range(neu_seq.shape[0]), desc="sample"):
+        for ni in tqdm(range(neu_seq.shape[0]), desc='sample'):
             nsm = neu_seq[ni,:].copy()
             q = get_all_metrics(nsm, neu_time, win_eval_c)
             quant.append(q)

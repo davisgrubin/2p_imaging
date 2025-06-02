@@ -79,7 +79,7 @@ def run_glm_multi_sess(
         M = np.linalg.solve(A, X.T)
         n_neurons = dff_sess.shape[0]
         # for each neuron solve and write into the big arrays.
-        for ni in tqdm(range(n_neurons), desc="Neurons"):
+        for ni in tqdm(range(n_neurons), desc='neurons'):
             y    = dff_sess[ni, left:right]
             beta = M @ y
             kern = np.flip(beta)[1:-1]  # length = kernel_length
@@ -94,8 +94,7 @@ def get_glm_cate(glm, list_labels, list_significance, cate):
     idx = np.concatenate([np.in1d(list_labels[i],cate)*list_significance[i]['r_standard']
            for i in range(len(list_labels))])
     kernel_all = glm['kernel_all'][idx,:]
-    exp_var_all = glm['exp_var_all'][idx]
-    return kernel_all, exp_var_all
+    return kernel_all
 
 #%% latent dynamics
 
