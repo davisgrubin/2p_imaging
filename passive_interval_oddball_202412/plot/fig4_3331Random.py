@@ -17,6 +17,7 @@ from utils import get_neu_trial
 from utils import get_frame_idx_from_time
 from utils import get_isi_bin_neu
 from utils import get_expect_interval
+from utils import get_split_idx
 from utils import get_roi_label_color
 from utils import get_cmap_color
 from utils import apply_colormap
@@ -210,7 +211,6 @@ class plotter_utils(utils_basic):
             # get response within cluster at each bin.
             cluster_bin_neu_mean, cluster_bin_neu_sem = get_bin_mean_sem_cluster(bin_neu_seq, self.n_clusters, cluster_id)
             # plot results for each class.
-            fig, axs = plt.subplots(1, 8, figsize=(24, 3))
             for ci in range(self.n_clusters):
                 if np.sum(cluster_id==ci) > 0:
                     # find bounds.
@@ -226,11 +226,13 @@ class plotter_utils(utils_basic):
                             bin_stim_seq[bi,c_idx+isi_idx_offset,:],
                             lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
                             color=cs[bi], edgecolor='none', alpha=0.25, step='mid')
+                    '''
                     # plot pupil.
                     for bi in range(self.bin_num):
-                        plot_pupil(
+                        self.plot_pupil(
                             axs[ci], self.alignment['neu_time'][l_idx:r_idx], bin_camera_pupil[bi, l_idx:r_idx],
                             cs[bi], upper, lower)
+                    '''
                     # plot neural traces.
                     for bi in range(self.bin_num):
                         self.plot_mean_sem(
@@ -418,7 +420,106 @@ class plotter_utils(utils_basic):
         except Exception as e: print(e)
         try: plot_legend(axs[1])
         except Exception as e: print(e)
-
+    
+    def plot_cross_sess_adapt(self, axs, cate):
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
+        lbl = ['cluster #'+str(ci) for ci in range(self.n_clusters)]
+        split_idx = get_split_idx(self.list_labels, self.list_significance, cate)
+        [[color0, color1, color2, _],
+         [neu_seq, stim_seq, camera_pupil, _, _], _,
+         [n_trials, n_neurons]] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_param=[[2,3,4,5], None, None, None, [1], [0]],
+            mean_sem=False,
+            cate=cate, roi_id=None)
+        def plot_dist_cluster_fraction(axs):
+            bar_width = 0.5
+            # collect data.
+            day_cluster_id = np.split(cluster_id, split_idx)
+            # get fraction in each category.
+            fraction = np.zeros((len(split_idx)+1, self.n_clusters))
+            for di in range(len(split_idx)+1):
+                for ci in range(self.n_clusters):
+                    nc = np.nansum(day_cluster_id[di]==ci)
+                    nt = len(day_cluster_id[di]) + 1e-5
+                    fraction[di,ci] = nc / nt
+            # plot results for each class.
+            for ci in range(self.n_clusters):
+                if np.sum(cluster_id==ci) > 0:
+                    axs[ci].axis('off')
+                    axs[ci] = axs[ci].inset_axes([0, 0, 1, 0.5], transform=axs[ci].transAxes)
+                    for di in range(len(split_idx)+1):
+                        axs[ci].bar(
+                            di, fraction[di,ci],
+                            bottom=0, edgecolor='white', width=bar_width, color=color2)
+            # adjust layout.
+            for ci in range(self.n_clusters):
+                axs[ci].tick_params(tick1On=False)
+                axs[ci].spines['top'].set_visible(False)
+                axs[ci].spines['left'].set_visible(False)
+                axs[ci].spines['right'].set_visible(False)
+                axs[ci].grid(True, axis='y', linestyle='--')
+                axs[ci].set_ylim([0,np.nanmax(fraction[:,ci])+0.05])
+                axs[ci].set_xticks(np.arange(len(split_idx)+1))
+                axs[ci].set_xticklabels(
+                    ['day #{}'.format(di+1) for di in range(len(split_idx)+1)],
+                    rotation='vertical')
+                axs[ci].set_title(lbl[ci])
+        def plot_raw_traces(axs, di):
+            xlim = [-7500,7500]
+            # collect data.
+            day_cluster_id = np.split(cluster_id, split_idx)
+            # plot results for each class.
+            for ci in range(self.n_clusters):
+                if np.sum(day_cluster_id[di-1]==ci) > 0:
+                    axs[ci].axis('off')
+                    ax0 = axs[ci].inset_axes([0, 0.5, 1, 0.4], transform=axs[ci].transAxes)
+                    ax1 = axs[ci].inset_axes([0, 0, 1, 0.4], transform=axs[ci].transAxes)
+                    neu_mean0, neu_sem0 = get_mean_sem(neu_seq[di-1][0,day_cluster_id[di-1]==ci,:])
+                    neu_mean1, neu_sem1 = get_mean_sem(neu_seq[di-1][-1,day_cluster_id[di-1]==ci,:])
+                    # find bounds.
+                    upper = np.nanmax([neu_mean0, neu_mean1]) + np.nanmax([neu_sem0, neu_sem1])
+                    lower = np.nanmin([neu_mean0, neu_mean1]) - np.nanmax([neu_sem0, neu_sem1])
+                    # plot stimulus.
+                    for i in range(stim_seq[di-1][0].shape[0]):
+                        ax0.fill_between(
+                            stim_seq[di-1][0,i,:],
+                            lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+                            color=color0, edgecolor='none', alpha=0.25, step='mid')
+                    for i in range(stim_seq[di-1][-1].shape[0]):
+                        ax1.fill_between(
+                            stim_seq[di-1][-1,i,:],
+                            lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+                            color=color0, edgecolor='none', alpha=0.25, step='mid')
+                    # plot traces.
+                    self.plot_mean_sem(ax0, self.alignment['neu_time'], neu_mean0, neu_sem0, color0, None)
+                    self.plot_mean_sem(ax1, self.alignment['neu_time'], neu_mean1, neu_sem1, color2, None)
+                    # adjust layout.
+                    axs[ci].set_title(lbl[ci] + '\n' + 'day {}'.format(di))
+                    ax0.spines['bottom'].set_visible(False)
+                    ax0.xaxis.set_visible(False)
+                    ax1.set_ylabel('df/f (z-scored)')
+                    ax1.set_xlabel('time since stim (ms)')
+                    for ax in [ax0, ax1]:
+                        ax.tick_params(axis='y', tick1On=False)
+                        ax.spines['right'].set_visible(False)
+                        ax.spines['top'].set_visible(False)
+                        ax.set_xlim(xlim)
+                        ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+        def plot_legend(ax):
+            cs = [color0, color2]
+            lbl = ['first epoch', 'last epoch']
+            add_legend(ax, cs, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
+            ax.axis('off')
+        # plot all.
+        try: plot_dist_cluster_fraction(axs[0])
+        except Exception as e: print(e)
+        try: plot_raw_traces(axs[1], 1)
+        except Exception as e: print(e)
+        try: plot_raw_traces(axs[2], 5)
+        except Exception as e: print(e)
+        try: plot_legend(axs[3])
+        except Exception as e: print(e)
 
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
@@ -481,6 +582,16 @@ class plotter_main(plotter_utils):
                 print(f'plotting results for {label_name}')
                 
                 self.plot_win_likelihood_local(axs, cate=cate)
+
+            except Exception as e: print(e)
+
+    def cross_sess_adapt(self, axs_all):
+        for cate, axs in zip([[-1,1,2],[-1],[1],[2]], axs_all):
+            try:
+                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+                print(f'plotting results for {label_name}')
+                
+                self.plot_cross_sess_adapt(axs, cate=cate)
 
             except Exception as e: print(e)
         

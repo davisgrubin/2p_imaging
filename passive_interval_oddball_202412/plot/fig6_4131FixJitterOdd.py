@@ -17,6 +17,7 @@ from utils import get_neu_trial
 from utils import get_frame_idx_from_time
 from utils import get_isi_bin_neu
 from utils import get_expect_interval
+from utils import get_split_idx
 from utils import get_block_1st_idx
 from utils import run_wilcoxon_trial
 from utils import get_cmap_color
@@ -529,26 +530,61 @@ class plotter_utils(utils_basic):
         try: plot_legend(axs[5])
         except Exception as e: print(e)
     
-    def plot_cluster_oddball_jitter_global_individual(self, axs, cate):
+    def plot_cluster_oddball_jitter_individual(self, axs, mode, cate):
+        isi_win = 150
         xlim = [-2500, 4000]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
         lbl = ['cluster #'+str(ci) for ci in range(self.n_clusters)]
         cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
+        def get_neu_seq(oddball):
+            if mode == 'global':
+                # jitter oddball.
+                _, [neu_seq_jitter, _, _, _], _, _ = get_neu_trial(
+                    self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                    trial_idx=[l[oddball] for l in self.list_odd_idx],
+                    trial_param=[None, None, [1], None, [0], [0]],
+                    cate=cate, roi_id=None)
+                # fix oddball.
+                _, [neu_seq_fix, _, _, _], _, _ = get_neu_trial(
+                    self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                    trial_idx=[l[oddball] for l in self.list_odd_idx],
+                    trial_param=[None, None, [0], None, [0], [0]],
+                    cate=cate, roi_id=None)
+            if mode == 'common':
+                # jitter oddball.
+                [_, [neu_seq_jitter, _, _, pre_isi, _], _, _] = get_neu_trial(
+                    self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                    trial_idx=[l[oddball] for l in self.list_odd_idx],
+                    trial_param=[None, None, [1], None, [0], [0]],
+                    mean_sem=False,
+                    cate=cate, roi_id=None)
+                # jitter oddball.
+                [_, [neu_seq_fix, _, _, _, _], _, _] = get_neu_trial(
+                    self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                    trial_idx=[l[oddball] for l in self.list_odd_idx],
+                    trial_param=[None, None, [0], None, [0], [0]],
+                    mean_sem=False,
+                    cate=cate, roi_id=None)
+                # subsampling.
+                idx_jitter = [(isi>np.nanmean(isi)-isi_win)*(isi<np.nanmean(isi)+isi_win) for isi in pre_isi]
+                idx_fix    = [np.random.permutation(
+                    [True]*np.sum(idx_jitter[i]) + [False]*(neu_seq_fix[i].shape[0]-np.sum(idx_jitter[i])))
+                    for i in range(self.n_sess)]
+                neu_seq_jitter = [neu_seq_jitter[i][idx_jitter[i],:,:] for i in range(self.n_sess)]
+                neu_seq_fix    = [neu_seq_fix[i][idx_fix[i],:,:] for i in range(self.n_sess)]
+                return neu_seq_fix, neu_seq_jitter
         def plot_oddball_jitter(axs, oddball):
-            # fix oddball.
+            # collect data.
+            neu_seq_fix, neu_seq_jitter = get_neu_seq(oddball)
+            neu_seq_jitter = np.concatenate([np.nanmean(neu, axis=0) for neu in neu_seq_jitter], axis=0)
+            neu_seq_fix    = np.concatenate([np.nanmean(neu, axis=0) for neu in neu_seq_fix], axis=0)
             [[color0, color1, color2, _],
-             [neu_seq_fix, _, stim_seq_fix, _], _, _] = get_neu_trial(
+             [_, _, stim_seq, _], _, _] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
-            # jitter oddball.
-            [[color0, color1, color2, _],
-             [neu_seq_jitter, _, stim_seq_jitter, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_idx=[l[oddball] for l in self.list_odd_idx],
-                trial_param=[None, None, [1], None, [0], [0]],
-                cate=cate, roi_id=None)
+            c_idx = stim_seq.shape[0]//2
             # plot results for each class.
             for ci in range(self.n_clusters):
                 if np.sum(cluster_id==ci) > 0:
@@ -565,14 +601,13 @@ class plotter_utils(utils_basic):
                     upper = np.nanmax(neu_mean) + np.nanmax(neu_sem)
                     lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
                     # plot stimulus.
-                    c_idx = stim_seq_fix.shape[0]//2
                     if oddball == 0:
-                        axs[ci].axvline(stim_seq_fix[c_idx+1,0], color='gold', lw=1, linestyle='--')
+                        axs[ci].axvline(stim_seq[c_idx+1,0], color='gold', lw=1, linestyle='--')
                     if oddball == 1:
-                        axs[ci].axvline(stim_seq_fix[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
-                    for i in range(stim_seq_fix.shape[0]):
+                        axs[ci].axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
+                    for i in range(stim_seq.shape[0]):
                         axs[ci].fill_between(
-                            stim_seq_fix[i,:],
+                            stim_seq[i,:],
                             lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
                             color=color0, edgecolor='none', alpha=0.25, step='mid')
                     # plot neural traces.
@@ -590,42 +625,35 @@ class plotter_utils(utils_basic):
                     axs[ci].set_title(lbl[ci])
         def plot_trial_quant(axs, oddball):
             offset = [0, 0.1]
-            mode = ['mean', 'mean', 'mean'] 
-            # fix oddball.
+            # collect data.
+            neu_seq_fix, neu_seq_jitter = get_neu_seq(oddball)
             [[color0, color1, color2, _],
-             [neu_seq_fix, stim_seq_fix, _, _, _], _, _] = get_neu_trial(
+             [_, _, stim_seq, _], _, _] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
-                mean_sem=False,
                 cate=cate, roi_id=None)
-            stim_seq_fix = np.nanmean(np.concatenate(stim_seq_fix,axis=0),axis=0)
-            c_idx = stim_seq_fix.shape[0]//2
-            # jitter oddball.
-            [[color0, color1, color2, _],
-             [neu_seq_jitter, stim_seq_jitter, _, _, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
-                trial_idx=[l[oddball] for l in self.list_odd_idx],
-                trial_param=[None, None, [1], None, [0], [0]],
-                mean_sem=False,
-                cate=cate, roi_id=None)
+            c_idx = stim_seq.shape[0]//2
             # split cluster id.
             split_idx = np.cumsum([np.nansum(np.in1d(self.list_labels[i],cate)*self.list_significance[i]['r_standard'])
                    for i in range(len(self.list_labels))])[:-1]
             sess_cluster_id = np.split(cluster_id, split_idx)
-            # plot results for each class.
+            # define evaluation windows.
             if oddball == 0:
-                win_eval = [[-500, 0],
-                            [stim_seq_fix[c_idx+1,0],stim_seq_fix[c_idx+1,0]+250],
-                            [stim_seq_fix[c_idx+1,0]+250,stim_seq_fix[c_idx+1,0]+500]]
+                win_eval = [[-2500, 0],
+                            [stim_seq[c_idx+1,0],stim_seq[c_idx+1,0]+250],
+                            [stim_seq[c_idx+1,0]+300,stim_seq[c_idx+1,0]+550],
+                            [stim_seq[c_idx+1,0]+600,stim_seq[c_idx+1,0]+850]]
             if oddball == 1:
-                win_eval = [[-500, 0],
-                            [stim_seq_fix[c_idx,1]+self.expect, stim_seq_fix[c_idx,1]+self.expect+500],
-                            [stim_seq_fix[c_idx+1,0],stim_seq_fix[c_idx+1,0]+500]]
+                win_eval = [[-2500, 0],
+                            [stim_seq[c_idx,1]+self.expect, stim_seq[c_idx,1]+self.expect+250],
+                            [stim_seq[c_idx+1,0]-250,stim_seq[c_idx+1,0]],
+                            [stim_seq[c_idx+1,1],stim_seq[c_idx+1,1]+250]]
             for ci in range(self.n_clusters):
                 if np.sum(cluster_id==ci) > 0:
                     axs[ci].axis('off')
-                    axs[ci] = axs[ci].inset_axes([0, 0, 0.5, 1], transform=axs[ci].transAxes)
+                    ax0 = axs[ci].inset_axes([0, 0.9, 1, 0.1], transform=axs[ci].transAxes)
+                    ax1 = axs[ci].inset_axes([0, 0, 1, 0.8], transform=axs[ci].transAxes)
                     # average across neurons within cluster.
                     neu_ci_fix = np.concatenate(
                         [np.nanmean(neu[:,sci==ci,:],axis=1)
@@ -633,23 +661,32 @@ class plotter_utils(utils_basic):
                     neu_ci_jitter = np.concatenate(
                         [np.nanmean(neu[:,sci==ci,:],axis=1)
                          for neu,sci in zip(neu_seq_jitter,sess_cluster_id)], axis=0)
+                    # plot evaluation window.
+                    if oddball == 0:
+                        ax0.axvline(stim_seq[c_idx+1,0], color='gold', lw=1, linestyle='--')
+                    if oddball == 1:
+                        ax0.axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
+                    for i in range(stim_seq.shape[0]):
+                        ax0.fill_between(
+                            stim_seq[i,:], 0, 1,
+                            color=color0, edgecolor='none', alpha=0.25, step='mid')
+                    self.plot_win_mag_quant_win_eval(ax0, win_eval, color0, xlim)
                     # plot errorbar.
                     self.plot_win_mag_quant(
-                        axs[ci], neu_ci_fix, self.alignment['neu_time'],
-                        win_eval, mode, color0, 0, offset[0])
+                        ax1, neu_ci_fix, self.alignment['neu_time'],
+                        win_eval, ['lower', 'mean', 'mean', 'mean'], color0, 0, offset[0])
                     self.plot_win_mag_quant(
-                        axs[ci], neu_ci_jitter, self.alignment['neu_time'],
-                        win_eval, mode, [color1, color2][oddball], 0, offset[1])
-                    # adjust layout.
-                    axs[ci].tick_params(axis='x', labelrotation=90)
+                        ax1, neu_ci_jitter, self.alignment['neu_time'],
+                        win_eval, ['lower', 'mean', 'mean', 'mean'], [color1, color2][oddball], 0, offset[1])
         def plot_legend(ax):
             [[color0, color1, color2, _], _, _,
              [n_trials, n_neurons]] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_param=[[-1], None, [1], None, [0], [0]],
                 cate=cate, roi_id=None)
-            cs = [color0, color1, color2]
-            lbl = ['fix', 'jitter short oddball', 'jitter long oddball']
+            cs = [color0, color1, color2, color1, color2]
+            lbl = ['fix', 'jitter short oddball', 'jitter long oddball',
+                   r'jitter within $\pm{}$ ms'.format(isi_win), r'jitter within $\pm{}$ ms'.format(isi_win)]
             add_legend(ax, cs, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
             ax.axis('off')
         # plot all.
@@ -1052,6 +1089,35 @@ class plotter_utils(utils_basic):
         except Exception as e: print(e)
         try: plot_mean_dynamics(axs[1])
         except Exception as e: print(e)
+    
+    def plot_cross_sess_adapt(self, axs, cate):
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
+        lbl = ['cluster #'+str(ci) for ci in range(self.n_clusters)]
+        split_idx = get_split_idx(self.list_labels, self.list_significance, cate)
+        # standard.
+        [[color0, color1, color2, _],
+         [neu_seq_standard, _, stim_seq_standard, _], _, _] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_param=[[2,3,4,5], None, [0], None, [0], [0]],
+            cate=cate, roi_id=None)
+        c_idx = stim_seq_standard.shape[0]//2
+        # short oddball.
+        [[color0, color1, color2, _],
+         [neu_seq_short, _, stim_seq_short, _], _, _] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_idx=[l[0] for l in self.list_odd_idx],
+            trial_param=[None, None, [0], None, [0], [0]],
+            cate=cate, roi_id=None)
+        # long oddball.
+        [[color0, color1, color2, _],
+         [neu_seq_long, _, stim_seq_long, _], _, _] = get_neu_trial(
+            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            trial_idx=[l[1] for l in self.list_odd_idx],
+            trial_param=[None, None, [0], None, [0], [0]],
+            cate=cate, roi_id=None)
+        
+        
+        
         
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
@@ -1119,7 +1185,17 @@ class plotter_main(plotter_utils):
                 label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
                 print(f'plotting results for {label_name}')
                 
-                self.plot_cluster_oddball_jitter_global_individual(axs, cate=cate)
+                self.plot_cluster_oddball_jitter_individual(axs, 'global', cate=cate)
+
+            except Exception as e: print(e)
+    
+    def cluster_oddball_jitter_common_individual(self, axs_all):
+        for cate, axs in zip([[-1,1,2],[-1],[1],[2]], axs_all):
+            try:
+                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+                print(f'plotting results for {label_name}')
+                
+                self.plot_cluster_oddball_jitter_individual(axs, 'common', cate=cate)
 
             except Exception as e: print(e)
     

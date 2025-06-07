@@ -332,6 +332,13 @@ def get_change_prepost_idx(stim_labels):
     idx_post = stim_labels[:,2]<-1
     return idx_pre, idx_post
 
+# get index to split concatenated labels for categories.
+def get_split_idx(list_labels, list_significance, cate):
+    split_idx = [len(list_labels[i][np.in1d(list_labels[i],cate)*list_significance[i]['r_standard']])
+        for i in range(len(list_labels))]
+    split_idx = np.cumsum(split_idx)[:-1]
+    return split_idx
+
 # mark stim around image change and oddball as outlier.
 def exclude_odd_stim(stim_labels):
     n = 2
@@ -971,47 +978,49 @@ class utils_basic:
         for tick in ax.get_yticklabels():
             tick.set_rotation(90)
         add_heatmap_colorbar(ax, cmap, norm, 'dF/F')
+    
+    def plot_win_mag_quant_win_eval(
+            self, ax, win_eval, color, xlim
+            ):
+        for i in range(len(win_eval)):
+            ax.plot(win_eval[i], [1,1], color=color, marker='|')
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.set_xlim(xlim)
+        ax.set_yticks([])
                 
     def plot_win_mag_quant(
             self, ax, neu_seq, neu_time,
             win_eval, mode, color, c_time, offset,
             ):
         # compute response within window.
-        [mean_base, sem_base] = get_mean_sem_win(
+        quant = [get_mean_sem_win(
             neu_seq.reshape(-1, neu_seq.shape[-1]),
-            neu_time, c_time, win_eval[0][0], win_eval[0][1], mode=mode[0])
-        [mean_early, sem_early] = get_mean_sem_win(
-            neu_seq.reshape(-1, neu_seq.shape[-1]),
-            neu_time, c_time, win_eval[1][0], win_eval[1][1], mode=mode[1])
-        [mean_late, sem_late] = get_mean_sem_win(
-            neu_seq.reshape(-1, neu_seq.shape[-1]),
-            neu_time, c_time, win_eval[2][0], win_eval[2][1], mode=mode[2])
+            neu_time, c_time, win_eval[i][0], win_eval[i][1], mode=mode[i])
+            for i in range(4)]
+        m = np.array([quant[i][0] for i in range(4)])
+        s = np.array([quant[i][1] for i in range(4)])
         # corrected with baseline.
-        mean_early -= mean_base
-        mean_late  -= mean_base
+        m = (m - m[0])[1:]
+        s = s[1:]
         # plot errorbar.
-        ax.errorbar(
-            0 + offset,
-            mean_early, sem_early,
-            color=color,
-            capsize=2, marker='o', linestyle='none',
-            markeredgecolor='white', markeredgewidth=0.1)
-        ax.errorbar(
-            1 + offset,
-            mean_late, sem_late,
-            color=color,
-            capsize=2, marker='o', linestyle='none',
-            markeredgecolor='white', markeredgewidth=0.1)
+        for i in range(3):
+            ax.errorbar(
+                i + offset,
+                m[i], s[i],
+                color=color,
+                capsize=2, marker='o', linestyle='none',
+                markeredgecolor='white', markeredgewidth=0.1)
         # adjust layout.
         ax.tick_params(tick1On=False)
+        ax.tick_params(axis='x', labelrotation=90)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
-        ax.set_ylabel(f'response magnitude \n baseline [{win_eval[0][0]:.0f},{win_eval[0][1]:.0f}] ms')
-        ax.set_xticks([0,1])
-        ax.set_xticklabels([
-            f'early \n [{win_eval[1][0]:.0f},{win_eval[1][1]:.0f}] ms',
-            f'late \n [{win_eval[2][0]:.0f},{win_eval[2][1]:.0f}] ms'])
-        ax.set_xlim([-0.5, 1.5])
+        ax.set_ylabel('evoked magnitude')
+        ax.set_xticks([0,1,2])
+        ax.set_xticklabels(['early', 'late', 'post'])
+        ax.set_xlim([-0.5, 2.5])
 
     def plot_multi_sess_decoding_num_neu(
             self, ax,

@@ -346,7 +346,7 @@ class plotter_utils(utils_basic):
                 axs[ci].set_xlabel('time since stim (ms)')
                 axs[ci].set_ylabel('trial since transition')
             # add stimulus line.
-            n_trials = neu_trans_1to0.shape[0]
+            n_trials = neu_0to1.shape[0]
             total = 2 * n_trials + gap_margin
             for ci in range(self.n_clusters):
                 z, _ = get_frame_idx_from_time(neu_time, 0, 0, 0)
@@ -378,7 +378,7 @@ class plotter_utils(utils_basic):
                     int(n_trials/2), 0, -int(n_trials/2), int(n_trials/2), 0, -int(n_trials/2)])
                 axs[ci].set_ylim([0, total])
         def plot_tansition(axs, standard):
-            xlim = [-5000,6000]
+            xlim = [-7500,9000]
             # collect data.
             [[color0, color1, color2, _],
              [neu_trans, _, stim_seq, _], _,
@@ -388,6 +388,8 @@ class plotter_utils(utils_basic):
                 cate=cate, roi_id=None)
             # plot results for each class.
             for ci in range(self.n_clusters):
+                axs[ci].axis('off')
+                axs[ci] = axs[ci].inset_axes([0, 0, 1, 0.5], transform=axs[ci].transAxes)
                 if np.sum(cluster_id==ci) > 0:
                     neu_mean, neu_sem = get_mean_sem(neu_trans[cluster_id==ci,:])
                     c_idx = stim_seq.shape[0]//2
@@ -432,59 +434,59 @@ class plotter_utils(utils_basic):
                 self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
                 trial_idx=[l[1-standard] for l in self.list_block_start],
                 cate=cate, roi_id=None)
-            neu_epoch = [neu_trans_0to1, neu_trans_1to0][1-standard]
-            neu_trans = [neu_trans_0to1, neu_trans_1to0][standard]
-            stim_seq_epoch = [stim_seq_0to1, stim_seq_1to0][1-standard]
-            stim_seq_trans = [stim_seq_0to1, stim_seq_1to0][standard]
-            idx_epoch = np.arange(0, trials_eval)
+            neu_trans = [neu_trans_0to1, neu_trans_1to0][1-standard]
+            neu_late = [neu_trans_0to1, neu_trans_1to0][standard]
+            stim_seq_trans = [stim_seq_0to1, stim_seq_1to0][1-standard]
+            stim_seq_late = [stim_seq_0to1, stim_seq_1to0][standard]
             idx_trans = np.arange(-trials_eval, trials_eval)
-            color_epoch = [[color1,color2][standard]]*trials_eval
-            color_trans = [[color1,color2][standard]]*trials_eval + [[color1,color2][1-standard]]*trials_eval
+            idx_late = np.arange(-trials_eval, 0)
+            color_trans = [[color1,color2][1-standard]]*trials_eval + [[color1,color2][standard]]*trials_eval
+            color_late = [[color1,color2][standard]]*trials_eval
             c_idx = stim_seq.shape[0]//2
             # plot results for each class.
             for ci in range(self.n_clusters):
                 if np.sum(cluster_id==ci) > 0:
-                    quant_all_epoch = [
-                        run_quantification(neu_epoch[cluster_id==ci,:], self.alignment['neu_time'], stim_seq_epoch[c_idx+si,0])
-                        for si in idx_epoch]
                     quant_all_trans = [
                         run_quantification(neu_trans[cluster_id==ci,:], self.alignment['neu_time'], stim_seq_trans[c_idx+si,0])
                         for si in idx_trans]
+                    quant_all_late = [
+                        run_quantification(neu_late[cluster_id==ci,:], self.alignment['neu_time'], stim_seq_late[c_idx+si,0])
+                        for si in idx_late]
                     # plot each metric.
                     for mi in range(len(target_metrics)):
                         axs[mi][ci].axis('off')
-                        ax0 = axs[mi][ci].inset_axes([0, 0.5, 0.3, 0.5], transform=axs[mi][ci].transAxes)
-                        ax1 = axs[mi][ci].inset_axes([0.4, 0.5, 0.6, 0.5], transform=axs[mi][ci].transAxes, sharey=ax0)
-                        # plot each condition for early epoch.
-                        for di in range(trials_eval):
-                            m, s = get_mean_sem(quant_all_epoch[di][target_metrics[mi]].reshape(-1,1))
-                            ax0.errorbar(
-                                idx_epoch[di], m, s, None,
-                                color=color_epoch[di],
-                                capsize=2, marker='o', linestyle='none',
-                                markeredgecolor='white', markeredgewidth=0.1)
+                        ax0 = axs[mi][ci].inset_axes([0, 0.5, 0.6, 0.5], transform=axs[mi][ci].transAxes)
+                        ax1 = axs[mi][ci].inset_axes([0.7, 0.5, 0.3, 0.5], transform=axs[mi][ci].transAxes, sharey=ax0)
                         # plot each condition for transition.
-                        ax1.axvline(0, color='red', lw=1, linestyle='--')
+                        ax0.axvline(0, color='red', lw=1, linestyle='--')
                         for di in range(2*trials_eval):
                             m, s = get_mean_sem(quant_all_trans[di][target_metrics[mi]].reshape(-1,1))
-                            ax1.errorbar(
+                            ax0.errorbar(
                                 idx_trans[di], m, s, None,
                                 color=color_trans[di],
+                                capsize=2, marker='o', linestyle='none',
+                                markeredgecolor='white', markeredgewidth=0.1)
+                        # plot each condition for late epoch.
+                        for di in range(trials_eval):
+                            m, s = get_mean_sem(quant_all_late[di][target_metrics[mi]].reshape(-1,1))
+                            ax1.errorbar(
+                                idx_late[di], m, s, None,
+                                color=color_late[di],
                                 capsize=2, marker='o', linestyle='none',
                                 markeredgecolor='white', markeredgewidth=0.1)
                         # adjust layout.
                         axs[mi][ci].set_title(lbl[ci])
                         ax0.set_xlabel('first epoch')
                         ax0.set_ylabel(target_metrics[mi])
-                        ax0.set_xlim([-0.5, trials_eval-1+0.5])
-                        ax0.set_xticks(idx_epoch)
-                        ax0.set_xticklabels(idx_epoch, rotation='vertical')
+                        ax0.set_xlim([-trials_eval-0.5, trials_eval-1+0.5])
+                        ax0.set_xticks(idx_trans)
+                        ax0.set_xticklabels(idx_trans, rotation='vertical')
                         ax1.tick_params(axis='x', labelrotation=90)
                         ax1.spines['left'].set_visible(False)
-                        ax1.set_xlim([-trials_eval-0.5, trials_eval-1+0.5])
-                        ax1.set_xticks(idx_trans)
+                        ax1.set_xlim([-trials_eval-1+0.5, 0.5])
+                        ax1.set_xticks(idx_late)
                         ax1.yaxis.set_visible(False)
-                        ax1.set_xticklabels(idx_trans, rotation='vertical')
+                        ax1.set_xticklabels(idx_late, rotation='vertical')
                         ax1.set_xlabel('last epoch')
                         for ax in [ax0,ax1]:
                             ax.tick_params(axis='y', tick1On=False)

@@ -245,3 +245,17 @@
 - Added log info for alignment.
 - Merge plot_cluster_block_adapt_individual and plot_cluster_epoch_adapt_individual
 - Added error in get_neu_trial.
+
+## 2025.06.05
+- Fixed transition heatmap labels.
+- Changed transition trial quantification order.
+- Changed plot_tansition range and layout.
+- Now plot_cluster_oddball_jitter_individual supports both global and common modes.
+- Added get_split_idx.
+- Added plot_dist_cluster_fraction.
+- Added plot_raw_traces.
+
+## 2025.06.07
+- Added subsampling to plot_cluster_oddball_jitter_individual.
+- Added plot_win_mag_quant_win_eval.
+- Added baseline and post into plot_win_mag_quant.

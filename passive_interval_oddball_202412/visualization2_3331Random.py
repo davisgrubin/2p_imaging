@@ -206,6 +206,27 @@ def run(session_config_list, smooth):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
+        def plot_cross_sess_adapt():
+            title = 'individual cluster cross session day adaptation'
+            print('-----------------------------------------------')
+            print(title)
+            filename = '3331Random09_cross_sess_adapt'
+            n_row = 24
+            n_col = plotter.n_clusters*2
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in [0,6,12,18]:
+                a = [[plt.subplot(gs[s+0, i]) for i in range(plotter.n_clusters)]]
+                a+= [[plt.subplot(gs[s+1:s+3, 2*i:2*(i+1)]) for i in range(plotter.n_clusters)]]
+                a+= [[plt.subplot(gs[s+3:s+5, 2*i:2*(i+1)]) for i in range(plotter.n_clusters)]]
+                a+= [plt.subplot(gs[s+5, 0])]
+                axs_all.append(a)
+            plotter.cross_sess_adapt(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
         fig_all = [
             plot_trial(),
             plot_cluster_all(),
@@ -213,6 +234,7 @@ def run(session_config_list, smooth):
             plot_cluster_individual_pre(),
             plot_cluster_individual_post(),
             plot_win_likelihood_local(),
+            plot_cross_sess_adapt(),
             ]
         print('Clearing memory usage')
         del list_labels

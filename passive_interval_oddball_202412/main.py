@@ -64,7 +64,7 @@ def run(session_config_list):
     for i in range(len(list_ops)):
         print('Trializing {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
-        #Trialization.run(list_ops[i])
+        Trialization.run(list_ops[i])
 
     print('===============================================')
     print('============== significance test ==============')
@@ -72,7 +72,7 @@ def run(session_config_list):
     for i in range(len(list_ops)):
         print('Running significance test for {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
-        #StatTest.run(list_ops[i])
+        StatTest.run(list_ops[i])
 
     print('===============================================')
     print('======== plotting representative masks ========')
@@ -143,24 +143,24 @@ if __name__ == "__main__":
             'VTYH01_PPC_20250106_3331Random' : 'random',
             'VTYH01_PPC_20250107_3331Random' : 'random',
             'VTYH01_PPC_20250108_3331Random' : 'random',
-            #'VTYH02_PPC_20250108_3331Random' : 'random',
-            #'VTYH02_PPC_20250109_3331Random' : 'random',
+            'VTYH02_PPC_20250108_3331Random' : 'random',
+            'VTYH02_PPC_20250109_3331Random' : 'random',
             #'VTYH02_PPC_20250111_3331Random' : 'random',
             #'VTYH03_PPC_20250106_3331Random' : 'random',
             #'VTYH03_PPC_20250107_3331Random' : 'random',
             #'VTYH03_PPC_20250108_3331Random' : 'random',
-            #'VTYH01_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH01_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH01_PPC_20250204_4131FixJitterOdd' : 'fix_jitter_odd',
+            'VTYH01_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
+            'VTYH01_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
+            'VTYH01_PPC_20250204_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH02_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH03_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH03_PPC_20250201_4131FixJitterOdd' : 'fix_jitter_odd',
             #'VTYH03_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-            #'VTYH01_PPC_20250225_1451ShortLong' : 'short_long',
-            #'VTYH01_PPC_20250226_1451ShortLong' : 'short_long',
-            #'VTYH01_PPC_20250228_1451ShortLong' : 'short_long',
+            'VTYH01_PPC_20250225_1451ShortLong' : 'short_long',
+            'VTYH01_PPC_20250226_1451ShortLong' : 'short_long',
+            'VTYH01_PPC_20250228_1451ShortLong' : 'short_long',
             #'VTYH02_PPC_20250225_1451ShortLong' : 'short_long',
             #'VTYH02_PPC_20250226_1415ShortLong' : 'short_long',
             #'VTYH02_PPC_20250228_1451ShortLong' : 'short_long',
@@ -188,8 +188,6 @@ if __name__ == "__main__":
     '''
     
     # run(session_config_list_test)
-    
-    # run(all_config_list[0])
     
     import matplotlib.pyplot as plt
     session_config_list = combine_session_config_list(session_config_list_test)
