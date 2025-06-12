@@ -180,7 +180,7 @@
 - Rewritten multi_sess_decoding_slide_win.
 
 ## 2025.04.22
-- Now get_change_onset receives win_eval_c as the evaluation center and has the window predefined inside the function.
+- Now get_change_onset receives win_eval_c as the evaluation center and has the window predefined.
 - Added run_quantification into quantifications.
 - Added plot_trial_legend into intervals.
 - Added get_stim_evoke_mag into quantifications.
@@ -233,7 +233,7 @@
 - Added command line window control.
 
 ## 2025.05.28
-- Now plot_oddball_win_likelihood_local and plot_oddball_win_likelihood_global use broken axis to plot model chance level.
+- Now plot_oddball_win_likelihood_local and plot_oddball_win_likelihood_global use broken axis.
 - Changed the decoding range of plot_oddball_win_likelihood_local and plot_oddball_win_likelihood_global.
 - Now plot_oddball_win_likelihood_local and plot_oddball_win_likelihood_global is for individual clusters.
 - Now plot_win_mag_quant can specify 3 windows.
@@ -259,3 +259,18 @@
 - Added subsampling to plot_cluster_oddball_jitter_individual.
 - Added plot_win_mag_quant_win_eval.
 - Added baseline and post into plot_win_mag_quant.
+- Changed isi_range in plot_standard_isi_distribution.
+- Removed all numbers in figure filename.
+
+## 2025.06.10
+- Added command line control.
+- Added subsampling iteration for get_neu_seq_trial_fix_jitter.
+- Fine tuned regularization in run_glm_multi_sess.
+- Added gap control for plot_cluster_mean_sem.
+- Rewritten plot_cluster_cate_fraction_in_cluster.
+
+## 2025.06.11
+- Fixed get_mean_sem_win on taking percentile values.
+- Rewritten get_wilcoxon_test.
+- Now get_mean_sem_win also returns data points before average.
+- Now mode is defined inside plot_cluster_win_mag_quant.

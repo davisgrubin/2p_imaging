@@ -155,7 +155,6 @@ session_config_YH14SC = {
         'YH14SC_PPC_20250508_1451ShortLong' : 'short_long',
         'YH14SC_PPC_20250509_1451ShortLong' : 'short_long',
         'YH14SC_PPC_20250510_1451ShortLong' : 'short_long',
-        'YH14SC_PPC_20250511_1451ShortLong' : 'short_long',
         'YH14SC_PPC_20250512_1451ShortLong' : 'short_long',
         'YH14SC_PPC_20250513_1451ShortLong' : 'short_long',
         'YH14SC_PPC_20250514_1451ShortLong' : 'short_long',
@@ -212,13 +211,6 @@ session_config_YH16SC = {
 
 session_config_YH17VT = {
     'list_session_name' : {
-        #'YH17VT_V1_20250311_3331Random' : 'random',
-        #'YH17VT_V1_20250313_3331Random' : 'random',
-        #'YH17VT_V1_20250317_3331Random' : 'random',
-        #'YH17VT_V1_20250318_3331Random' : 'random',
-        #'YH17VT_V1_20250319_3331Random' : 'random',
-        #'YH17VT_V1_20250321_3331Random' : 'random',
-        #'YH17VT_V1_20250325_3331Random' : 'random',
         'YH17VT_V1_20250526_3331Random' : 'random',
         'YH17VT_V1_20250527_3331Random' : 'random',
         'YH17VT_V1_20250528_3331Random' : 'random',
@@ -263,11 +255,6 @@ session_config_YH17VT = {
 
 session_config_YH18VT = {
     'list_session_name' : {
-        #'YH18VT_V1_20250317_3331Random' : 'random',
-        #'YH18VT_V1_20250319_3331Random' : 'random',
-        #'YH18VT_V1_20250320_3331Random' : 'random',
-        #'YH18VT_V1_20250321_3331Random' : 'random',
-        #'YH18VT_V1_20250325_3331Random' : 'random',
         'YH18VT_V1_20250526_3331Random' : 'random',
         'YH18VT_V1_20250527_3331Random' : 'random',
         'YH18VT_V1_20250528_3331Random' : 'random',
@@ -309,12 +296,6 @@ session_config_YH18VT = {
 
 session_config_YH19VT = {
     'list_session_name' : {
-        #'YH19VT_V1_20250305_3331Random' : 'random',
-        #'YH19VT_V1_20250318_3331Random' : 'random',
-        #'YH19VT_V1_20250319_3331Random' : 'random',
-        #'YH19VT_V1_20250320_3331Random' : 'random',
-        #'YH19VT_V1_20250321_3331Random' : 'random',
-        #'YH19VT_V1_20250325_3331Random' : 'random',
         'YH19VT_V1_20250526_3331Random' : 'random',
         'YH19VT_V1_20250527_3331Random' : 'random',
         'YH19VT_V1_20250528_3331Random' : 'random',
@@ -486,6 +467,8 @@ session_config_list_YH14SC = {
         session_config_YH14SC,
         ],
     'label_names' : {
+        '-1':'Exc',
+        '1':'Inh_VIP',
         '2':'Inh_SST',
         },
     'subject_name' : 'YH14SC',
@@ -498,6 +481,8 @@ session_config_list_YH16SC = {
         session_config_YH16SC,
         ],
     'label_names' : {
+        '-1':'Exc',
+        '1':'Inh_VIP',
         '2':'Inh_SST',
         },
     'subject_name' : 'YH16SC',
@@ -554,6 +539,8 @@ session_config_list_YH20SC = {
         session_config_YH20SC,
         ],
     'label_names' : {
+        '-1':'Exc',
+        '1':'Inh_VIP',
         '2':'Inh_SST',
         },
     'subject_name' : 'YH20SC',
@@ -566,6 +553,8 @@ session_config_list_YH21SC = {
         session_config_YH21SC,
         ],
     'label_names' : {
+        '-1':'Exc',
+        '1':'Inh_VIP',
         '2':'Inh_SST',
         },
     'subject_name' : 'YH21SC',

@@ -69,7 +69,7 @@ def plot_random_type(ax, list_neural_trials):
 # standard isi distribution.
 def plot_standard_isi_distribution(ax, list_neural_trials):
     resolution = 10
-    isi_range = [0,6000]
+    isi_range = [0,3000]
     stim_labels = np.concatenate([nt['stim_labels'] for nt in list_neural_trials], axis=0)
     isi = stim_labels[1:,0] - stim_labels[:-1,1]
     data = isi[(stim_labels[:-1,2]!=-1)*(stim_labels[:-1,3]==0)*(stim_labels[:-1,4]==0)*(stim_labels[:-1,6]==0)]
@@ -100,7 +100,7 @@ def plot_standard_isi_distribution(ax, list_neural_trials):
 # jitter isi distribution.
 def plot_jitter_isi_distribution(ax, list_neural_trials):
     resolution = 10
-    isi_range = [0,6000]
+    isi_range = [0,3000]
     stim_labels = np.concatenate([nt['stim_labels'] for nt in list_neural_trials], axis=0)
     isi = stim_labels[1:,0] - stim_labels[:-1,1]
     data = isi[(stim_labels[:-1,2]!=-1)*(stim_labels[:-1,4]==1)*(stim_labels[:-1,6]==0)]
@@ -124,7 +124,7 @@ def plot_jitter_isi_distribution(ax, list_neural_trials):
 # oddball isi distribution.
 def plot_oddball_isi_distribution(ax, list_neural_trials):
     resolution = 10
-    isi_range = [0,6000]
+    isi_range = [0,3000]
     stim_labels = np.concatenate([nt['stim_labels'] for nt in list_neural_trials], axis=0)
     isi = stim_labels[1:,0] - stim_labels[:-1,1]
     data = isi[(stim_labels[:-1,2]==-1)*(stim_labels[:-1,5]==0)*(stim_labels[:-1,6]==0)]
@@ -155,7 +155,7 @@ def plot_oddball_isi_distribution(ax, list_neural_trials):
 # random isi distribution.
 def plot_random_isi_distribution(ax, list_neural_trials):
     resolution = 10
-    isi_range = [0,4000]
+    isi_range = [0,3000]
     stim_labels = np.concatenate([nt['stim_labels'] for nt in list_neural_trials], axis=0)
     isi = stim_labels[1:,0] - stim_labels[:-1,1]
     data = isi[stim_labels[:-1,6]==1]

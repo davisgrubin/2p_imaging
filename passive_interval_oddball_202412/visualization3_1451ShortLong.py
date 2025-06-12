@@ -46,7 +46,7 @@ def run(session_config_list, smooth):
             title = 'significance'
             print('-----------------------------------------------')
             print(title)
-            filename = '1451ShortLong01_significance'
+            filename = '1451ShortLong_significance'
             n_row = 1
             n_col = 1
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -61,7 +61,7 @@ def run(session_config_list, smooth):
             title = 'interval distribution'
             print('-----------------------------------------------')
             print(title)
-            filename = '1451ShortLong02_interval_distribution'
+            filename = '1451ShortLong_interval_distribution'
             n_row = 2
             n_col = 4
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -90,7 +90,7 @@ def run(session_config_list, smooth):
             title = 'interval trial structure'
             print('-----------------------------------------------')
             print(title)
-            filename = '1451ShortLong03_trial_structure'
+            filename = '1451ShortLong_trial_structure'
             n_row = 1
             n_col = 6
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -109,7 +109,7 @@ def run(session_config_list, smooth):
             title = 'all cluster neural traces'
             print('-----------------------------------------------')
             print(title)
-            filename = '1451ShortLong04_cluster_all'
+            filename = '1451ShortLong_cluster_all'
             n_row = 12
             n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -127,7 +127,7 @@ def run(session_config_list, smooth):
             title = 'cluster features and heatmap'
             print('-----------------------------------------------')
             print(title)
-            filename = '1451ShortLong05_cluster_heatmap_all'
+            filename = '1451ShortLong_cluster_heatmap_all'
             n_row = 12
             n_col = 5
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -147,7 +147,7 @@ def run(session_config_list, smooth):
             title = 'individual cluster on block transition'
             print('-----------------------------------------------')
             print(title)
-            filename = '1451ShortLong06_cluster_block_adapt_individual'
+            filename = '1451ShortLong_cluster_block_adapt_individual'
             n_row = 48
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -176,7 +176,7 @@ def run(session_config_list, smooth):
             title = 'latent dynamics for adaptation'
             print('-----------------------------------------------')
             print(title)
-            filename = '1451ShortLong08_latent_all'
+            filename = '1451ShortLong_latent_all'
             n_row = 12
             n_col = 8
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -192,7 +192,6 @@ def run(session_config_list, smooth):
             return [filename, n_row, n_col, title]
         
         fig_all = [
-            #plot_sess_significance(),
             plot_intervals(),
             plot_trial(),
             plot_cluster_all(),

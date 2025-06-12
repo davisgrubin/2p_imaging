@@ -7,7 +7,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import log_loss
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedShuffleSplit
 
 from modeling.utils import get_frame_idx_from_time
 from modeling.utils import get_mean_sem
@@ -45,11 +45,10 @@ def neu_pop_sample_decoding_slide_win(
 
 # single trial decoding by sliding window.
 def multi_sess_decoding_slide_win(
-        neu_x, neu_y, neu_time,
+        neu_x, neu_time,
         win_decode, win_sample, win_step,
         ):
-    mode = 'spatial'
-    n_sess = len(neu_x)
+    n_sess = len(neu_x[0])
     start_idx, end_idx = get_frame_idx_from_time(neu_time, 0, win_decode[0], win_decode[1])
     l_idx, r_idx = get_frame_idx_from_time(neu_time, 0, 0, win_sample)
     n_sample = r_idx - l_idx
@@ -57,16 +56,24 @@ def multi_sess_decoding_slide_win(
     acc_time   = []
     acc_model  = []
     acc_chance = []
-    for i in tqdm(range(start_idx, end_idx, win_step)):
+    print('Running decoding with slide window')
+    for ti in tqdm(range(start_idx, end_idx, win_step), desc='time'):
         results_model = []
         results_chance = []
-        for s in range(n_sess):
-            x = neu_x[s][:,:,i-n_sample:i].copy()
-            y = neu_y[s].copy()
-            am, ac = decoding_spatial_temporal(x, y, mode)
-            results_model.append(am)
-            results_chance.append(ac)
-        acc_time.append(i)
+        # decoding each session.
+        for si in range(n_sess):
+            if neu_x[0][si].shape[0] >= 2 and neu_x[0][si].shape[1] >=1 :
+                # average within sliding window.
+                x = [np.nanmean(neu_x[ci][si][:,:,ti-n_sample:ti], axis=2) for ci in range(len(neu_x))]
+                x = np.concatenate(x, axis=0)
+                # create corresponding labels.
+                y = [np.ones(neu_x[ci][si].shape[0])*ci for ci in range(len(neu_x))]
+                y = np.concatenate(y, axis=0)
+                # run decoding.
+                rm, rc = decoding_evaluation(x, y)
+                results_model.append(rm)
+                results_chance.append(rc)   
+        acc_time.append(ti)
         acc_model.append(np.array(results_model).reshape(-1,1))
         acc_chance.append(np.array(results_chance).reshape(-1,1))
     acc_model = np.concatenate(acc_model, axis=1)
@@ -77,24 +84,20 @@ def multi_sess_decoding_slide_win(
     return acc_time, acc_model_mean, acc_model_sem, acc_chance_mean, acc_chance_sem
 
 # run spatial-temporal model for single trial decoding.
-def decoding_spatial_temporal(x, y, mode):
-    test_size = 0.2
-    # split train/val/test sets.
-    x_train, x_test, y_train, y_test = train_test_split(
-        x, y, test_size=test_size)
-    # define models.
-    if mode == 'temporal':
-        x_train = np.mean(x_train, axis=1)
-        x_test  = np.mean(x_test,  axis=1)
-    if mode == 'spatial':
-        x_train = np.mean(x_train, axis=2)
-        x_test  = np.mean(x_test,  axis=2)
-    # fit model.
-    model = SVC(kernel='linear')
-    model.fit(x_train, y_train)
-    # test model.
-    acc_test = accuracy_score(
-        y_test, model.predict(x_test))
-    acc_shuffle = accuracy_score(
-        y_test, model.predict(np.random.permutation(x_test)))
-    return acc_test, acc_shuffle
+def decoding_evaluation(x, y):
+    n_splits = 50
+    test_size = 0.5
+    results_model = []
+    results_chance = []
+    sss = StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size)
+    for train_idx, test_idx in sss.split(x, y):
+        # split sets.
+        x_train, x_test = x[train_idx], x[test_idx]
+        y_train, y_test = y[train_idx], y[test_idx]
+        # fit model.
+        model = SVC(kernel='linear', probability=True)
+        model.fit(x_train, y_train)
+        # test model.
+        results_model.append(model.score(x_test, y_test))
+        results_chance.append(model.score(x_test, np.random.permutation(y_test)))
+    return results_model, results_chance

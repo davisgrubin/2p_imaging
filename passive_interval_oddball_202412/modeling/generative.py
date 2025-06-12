@@ -48,7 +48,7 @@ def run_glm_multi_sess(
         list_dff, list_neu_time,
         list_input_time, list_input_value, list_stim_labels,
         l_idx, r_idx):
-    alpha = 1106
+    alpha = 52025
     target_labels = [2, 3, 4, 5, -2, -3, -4, -5, -1]
     # interpolate inputs per session.
     list_factor_in = [

@@ -440,8 +440,8 @@ class plotter_utils(utils_basic):
             stim_seq_late = [stim_seq_0to1, stim_seq_1to0][standard]
             idx_trans = np.arange(-trials_eval, trials_eval)
             idx_late = np.arange(-trials_eval, 0)
-            color_trans = [[color1,color2][1-standard]]*trials_eval + [[color1,color2][standard]]*trials_eval
-            color_late = [[color1,color2][standard]]*trials_eval
+            color_trans = [[color1,color2][standard]]*trials_eval + [[color1,color2][1-standard]]*trials_eval
+            color_late = [[color1,color2][1-standard]]*trials_eval
             c_idx = stim_seq.shape[0]//2
             # plot results for each class.
             for ci in range(self.n_clusters):

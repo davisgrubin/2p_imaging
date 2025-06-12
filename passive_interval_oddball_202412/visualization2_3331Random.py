@@ -46,7 +46,7 @@ def run(session_config_list, smooth):
             title = 'significance'
             print('-----------------------------------------------')
             print(title)
-            filename = '3331Random01_significance'
+            filename = '3331Random_significance'
             n_row = 1
             n_col = 1
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -61,7 +61,7 @@ def run(session_config_list, smooth):
             title = 'interval distribution'
             print('-----------------------------------------------')
             print(title)
-            filename = '3331Random02_interval_distribution'
+            filename = '3331Random_interval_distribution'
             n_row = 2
             n_col = 4
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -90,7 +90,7 @@ def run(session_config_list, smooth):
             title = 'interval trial structure'
             print('-----------------------------------------------')
             print(title)
-            filename = '3331Random03_trial_structure'
+            filename = '3331Random_trial_structure'
             n_row = 1
             n_col = 6
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -109,7 +109,7 @@ def run(session_config_list, smooth):
             title = 'all cluster neural traces on binned stimlus interval'
             print('-----------------------------------------------')
             print(title)
-            filename = '3331Random04_cluster_all'
+            filename = '3331Random_cluster_all'
             n_row = 12
             n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -127,7 +127,7 @@ def run(session_config_list, smooth):
             title = 'cluster features and heatmap'
             print('-----------------------------------------------')
             print(title)
-            filename = '3331Random05_cluster_heatmap_all'
+            filename = '3331Random_cluster_heatmap_all'
             n_row = 12
             n_col = 5
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -147,7 +147,7 @@ def run(session_config_list, smooth):
             title = 'individual cluster neural traces on binned pre stimlus interval'
             print('-----------------------------------------------')
             print(title)
-            filename = '3331Random06_cluster_individual_pre'
+            filename = '3331Random_cluster_individual_pre'
             n_row = 20
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -169,7 +169,7 @@ def run(session_config_list, smooth):
             title = 'individual cluster neural traces on binned post stimlus interval'
             print('-----------------------------------------------')
             print(title)
-            filename = '3331Random07_cluster_individual_post'
+            filename = '3331Random_cluster_individual_post'
             n_row = 20
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -187,11 +187,11 @@ def run(session_config_list, smooth):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        def plot_win_likelihood_local():
-            title = 'decoding local interval distribution from long random interval response'
+        def plot_separability_local():
+            title = 'separability for local interval distribution from long random interval response'
             print('-----------------------------------------------')
             print(title)
-            filename = '3331Random08_oddball_win_likelihood_local'
+            filename = '3331Random_oddball_separability_local'
             n_row = 4
             n_col = plotter.n_clusters+1
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -201,7 +201,7 @@ def run(session_config_list, smooth):
                 a = [[plt.subplot(gs[s+0, i]) for i in range(plotter.n_clusters)]]
                 a+= [plt.subplot(gs[s+0, plotter.n_clusters])]
                 axs_all.append(a)
-            plotter.win_likelihood_local(axs_all)
+            plotter.separability_local(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
@@ -210,7 +210,7 @@ def run(session_config_list, smooth):
             title = 'individual cluster cross session day adaptation'
             print('-----------------------------------------------')
             print(title)
-            filename = '3331Random09_cross_sess_adapt'
+            filename = '3331Random_cross_sess_adapt'
             n_row = 24
             n_col = plotter.n_clusters*2
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -233,7 +233,7 @@ def run(session_config_list, smooth):
             plot_cluster_heatmap_all(),
             plot_cluster_individual_pre(),
             plot_cluster_individual_post(),
-            plot_win_likelihood_local(),
+            plot_separability_local(),
             plot_cross_sess_adapt(),
             ]
         print('Clearing memory usage')

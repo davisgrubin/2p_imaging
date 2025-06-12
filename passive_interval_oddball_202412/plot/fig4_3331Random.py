@@ -181,6 +181,8 @@ class plotter_utils(utils_basic):
     def plot_cluster_interval_bin_individual(self, axs, mode, cate=None):
         cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
         lbl = ['cluster #'+str(ci) for ci in range(self.n_clusters)]
+        split_idx = get_split_idx(self.list_labels, self.list_significance, cate)
+        day_cluster_id = np.split(cluster_id, split_idx)
         # collect data.
         [[color0, _, color2, cmap],
          [neu_seq, stim_seq, camera_pupil, pre_isi, post_isi],
@@ -202,7 +204,7 @@ class plotter_utils(utils_basic):
             isi_idx_offset = 1
             isi_quant_idx = 1
         # bin data based on isi.
-        [bins, bin_center, _, bin_neu_seq, _, _, bin_stim_seq, bin_camera_pupil] = get_isi_bin_neu(
+        [bins, bin_center, bin_neu_seq_trial, bin_neu_seq, _, _, bin_stim_seq, bin_camera_pupil] = get_isi_bin_neu(
             neu_seq, stim_seq, camera_pupil, isi, self.bin_win, self.bin_num)
         c_idx = bin_stim_seq.shape[1]//2
         cs = get_cmap_color(self.bin_num, base_color=color2)
@@ -245,6 +247,31 @@ class plotter_utils(utils_basic):
                     axs[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
                     axs[ci].set_xlabel('time since stim (ms)')
                     axs[ci].set_title(lbl[ci])
+        def plot_trial_quant(axs):
+            # plot results for each class.
+            for ci in range(self.n_clusters):
+                if np.sum(cluster_id==ci) > 0:
+                    axs[ci].axis('off')
+                    ax0 = axs[ci].inset_axes([0, 0.9, 1, 0.1], transform=axs[ci].transAxes)
+                    ax1 = axs[ci].inset_axes([0, 0, 1, 0.7], transform=axs[ci].transAxes)
+                    # plot evaluation window.
+                    win_eval = 0
+                    for i in [c_idx, c_idx+1]:
+                        ax0.fill_between(
+                            stim_seq[i,:], 0, 1,
+                            color=color0, edgecolor='none', alpha=0.25, step='mid')
+                    self.plot_win_mag_quant_win_eval(ax0, win_eval, color0, xlim)
+                    for bi in range(self.bin_num):
+                        # define evaluation windows.
+                        win_eval = [[-2500, 0],
+                                    [stim_seq[c_idx+1,0],stim_seq[c_idx+1,0]+250],
+                                    [stim_seq[c_idx+1,0]+300,stim_seq[c_idx+1,0]+550],
+                                    [stim_seq[c_idx+1,0]+600,stim_seq[c_idx+1,0]+850]]
+                        # average across neurons within cluster.
+                        bin_ci = np.concatenate(
+                            [np.nanmean(bin_neu_seq_trial[:,sci==ci,:],axis=1)
+                             for neu,sci in zip(neu_seq,day_cluster_id)], axis=0)
+                    
         def plot_interval_bin_quant(axs):
             target_metrics = ['evoke_mag', 'onset_drop']
             # plot results for each class.
@@ -322,14 +349,14 @@ class plotter_utils(utils_basic):
         try: plot_legend(axs[3])
         except Exception as e: print(e)
     
-    def plot_win_likelihood_local(self, axs, cate):
+    def plot_separability_local(self, axs, cate):
         min_isi = 2000
         xlim = [-4000, 5000]
         win_sample = 500
         win_step = 1
         lbl = ['cluster #'+str(ci) for ci in range(self.n_clusters)]
         cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
-        def plot_win_likelihood(axs):
+        def plot_separability(axs):
             # collect data.
             [[color0, _, color2, _],
              [neu_seq, stim_seq, camera_pupil, pre_isi, post_isi], _, _] = get_neu_trial(
@@ -416,7 +443,7 @@ class plotter_utils(utils_basic):
             add_legend(ax, cs, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
             ax.axis('off')
         # plot all.
-        try: plot_win_likelihood(axs[0])
+        try: plot_separability(axs[0])
         except Exception as e: print(e)
         try: plot_legend(axs[1])
         except Exception as e: print(e)
@@ -425,6 +452,7 @@ class plotter_utils(utils_basic):
         cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
         lbl = ['cluster #'+str(ci) for ci in range(self.n_clusters)]
         split_idx = get_split_idx(self.list_labels, self.list_significance, cate)
+        day_cluster_id = np.split(cluster_id, split_idx)
         [[color0, color1, color2, _],
          [neu_seq, stim_seq, camera_pupil, _, _], _,
          [n_trials, n_neurons]] = get_neu_trial(
@@ -434,8 +462,6 @@ class plotter_utils(utils_basic):
             cate=cate, roi_id=None)
         def plot_dist_cluster_fraction(axs):
             bar_width = 0.5
-            # collect data.
-            day_cluster_id = np.split(cluster_id, split_idx)
             # get fraction in each category.
             fraction = np.zeros((len(split_idx)+1, self.n_clusters))
             for di in range(len(split_idx)+1):
@@ -575,13 +601,13 @@ class plotter_main(plotter_utils):
 
             except Exception as e: print(e)
     
-    def win_likelihood_local(self, axs_all):
+    def separability_local(self, axs_all):
         for cate, axs in zip([[-1,1,2],[-1],[1],[2]], axs_all):
             try:
                 label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
                 print(f'plotting results for {label_name}')
                 
-                self.plot_win_likelihood_local(axs, cate=cate)
+                self.plot_separability_local(axs, cate=cate)
 
             except Exception as e: print(e)
 

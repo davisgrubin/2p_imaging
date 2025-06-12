@@ -46,7 +46,7 @@ def run(session_config_list, smooth):
             title = 'significance'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd01_significance'
+            filename = '4131FixJitterOdd_significance'
             n_row = 1
             n_col = 1
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -61,7 +61,7 @@ def run(session_config_list, smooth):
             title = 'interval distribution'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd02_interval_distribution'
+            filename = '4131FixJitterOdd_interval_distribution'
             n_row = 2
             n_col = 4
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -90,7 +90,7 @@ def run(session_config_list, smooth):
             title = 'interval trial structure'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd03_trial_structure'
+            filename = '4131FixJitterOdd_trial_structure'
             n_row = 1
             n_col = 6
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -109,7 +109,7 @@ def run(session_config_list, smooth):
             title = 'all cluster neural traces on fix intervals'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd04_cluster_oddball_fix_all'
+            filename = '4131FixJitterOdd_cluster_oddball_fix_all'
             n_row = 12
             n_col = 7
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -124,11 +124,30 @@ def run(session_config_list, smooth):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
+        def plot_cluster_oddball_jitter_common_all():
+            title = 'all cluster neural traces on jitter intervals'
+            print('-----------------------------------------------')
+            print(title)
+            filename = '4131FixJitterOdd_cluster_oddball_jitter_common_all'
+            n_row = 16
+            n_col = 15
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in [0,3,6,9]:
+                a = [plt.subplot(gs[s:s+3, i]) for i in range(12)]
+                a+= [plt.subplot(gs[s+0, 12])]
+                axs_all.append(a)
+            plotter.cluster_oddball_jitter_common_all(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
         def plot_cluster_oddball_fix_heatmap_all():
             title = 'cluster features and heatmap'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd05_cluster_oddball_fix_heatmap_all'
+            filename = '4131FixJitterOdd_cluster_oddball_fix_heatmap_all'
             n_row = 12
             n_col = 6
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -148,7 +167,7 @@ def run(session_config_list, smooth):
             title = 'sorted heatmap on fix intervals'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd06_sorted_heatmaps_fix_all'
+            filename = '4131FixJitterOdd_sorted_heatmaps_fix_all'
             n_row = 8
             n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -166,7 +185,7 @@ def run(session_config_list, smooth):
             title = 'individual cluster neural traces on fix intervals'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd07_cluster_oddball_fix_individual'
+            filename = '4131FixJitterOdd_cluster_oddball_fix_individual'
             n_row = 32
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -191,7 +210,7 @@ def run(session_config_list, smooth):
             title = 'individual cluster neural traces on jitter intervals with global distribution'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd08_cluster_oddball_jitter_global_individual'
+            filename = '4131FixJitterOdd_cluster_oddball_jitter_global_individual'
             n_row = 20
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -213,7 +232,7 @@ def run(session_config_list, smooth):
             title = 'individual cluster neural traces on jitter intervals with common distribution'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd09_cluster_oddball_jitter_common_individual'
+            filename = '4131FixJitterOdd_cluster_oddball_jitter_common_individual'
             n_row = 20
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -235,7 +254,7 @@ def run(session_config_list, smooth):
             title = 'individual cluster neural traces on jitter intervals with local distribution'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd10_cluster_oddball_jitter_local_individual'
+            filename = '4131FixJitterOdd_cluster_oddball_jitter_local_individual'
             n_row = 36
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -257,11 +276,11 @@ def run(session_config_list, smooth):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        def plot_oddball_win_likelihood_global():
-            title = 'decoding global interval distribution from oddball interval response'
+        def plot_oddball_separability_global():
+            title = 'separability for global interval distribution from oddball interval response'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd11_oddball_win_likelihood_global'
+            filename = '4131FixJitterOdd_oddball_separability_global'
             n_row = 8
             n_col = plotter.n_clusters+1
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -272,16 +291,16 @@ def run(session_config_list, smooth):
                 a+= [[plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)]]
                 a+= [plt.subplot(gs[s+0, plotter.n_clusters])]
                 axs_all.append(a)
-            plotter.oddball_win_likelihood_global(axs_all)
+            plotter.oddball_separability_global(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        def plot_oddball_win_likelihood_local():
-            title = 'decoding local interval distribution from oddball interval response'
+        def plot_oddball_separability_local():
+            title = 'separability for local interval distribution from oddball interval response'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd12_oddball_win_likelihood_local'
+            filename = '4131FixJitterOdd_oddball_separability_local'
             n_row = 8
             n_col = plotter.n_clusters+1
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -292,7 +311,7 @@ def run(session_config_list, smooth):
                 a+= [[plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)]]
                 a+= [plt.subplot(gs[s+0, plotter.n_clusters])]
                 axs_all.append(a)
-            plotter.oddball_win_likelihood_local(axs_all)
+            plotter.oddball_separability_local(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
@@ -301,7 +320,7 @@ def run(session_config_list, smooth):
             title = 'latent dynamics from all neural traces on fix intervals'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd13_oddball_latent_fix_all'
+            filename = '4131FixJitterOdd_oddball_latent_fix_all'
             n_row = 8
             n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -318,19 +337,66 @@ def run(session_config_list, smooth):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
+        def plot_cross_sess_adapt_fix():
+            title = 'cross day adaptation for fix oddball'
+            print('-----------------------------------------------')
+            print(title)
+            filename = '4131FixJitterOdd_cross_sess_adapt_fix'
+            n_row = 20
+            n_col = plotter.n_clusters*2+1
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in [0,5,10,15]:
+                a = [[plt.subplot(gs[s+0, 2*i]) for i in range(plotter.n_clusters)]]
+                a+= [[plt.subplot(gs[s+1, 2*i:2*(i+1)]) for i in range(plotter.n_clusters)]]
+                a+= [[plt.subplot(gs[s+2, 2*i]) for i in range(plotter.n_clusters)]]
+                a+= [[plt.subplot(gs[s+3, 2*i:2*(i+1)]) for i in range(plotter.n_clusters)]]
+                a+= [plt.subplot(gs[s+0:s+2, 2*plotter.n_clusters])]
+                axs_all.append(a)
+            plotter.cross_sess_adapt_fix(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        def plot_cross_sess_adapt_jitter():
+            title = 'cross day adaptation for jitter oddball'
+            print('-----------------------------------------------')
+            print(title)
+            filename = '4131FixJitterOdd_cross_sess_adapt_jitter'
+            n_row = 20
+            n_col = plotter.n_clusters*2+1
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in [0,5,10,15]:
+                a = [[plt.subplot(gs[s+0, 2*i]) for i in range(plotter.n_clusters)]]
+                a+= [[plt.subplot(gs[s+1, 2*i:2*(i+1)]) for i in range(plotter.n_clusters)]]
+                a+= [[plt.subplot(gs[s+2, 2*i]) for i in range(plotter.n_clusters)]]
+                a+= [[plt.subplot(gs[s+3, 2*i:2*(i+1)]) for i in range(plotter.n_clusters)]]
+                a+= [plt.subplot(gs[s+0:s+2, 2*plotter.n_clusters])]
+                axs_all.append(a)
+            plotter.cross_sess_adapt_fix(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
         fig_all = [
-            #plot_sess_significance(),
-            plot_intervals(),
-            plot_trial(),
-            plot_cluster_oddball_fix_all(),
-            plot_cluster_oddball_fix_heatmap_all(),
-            plot_sorted_heatmaps_fix_all(),
-            plot_cluster_oddball_fix_individual(),
-            plot_cluster_oddball_jitter_global_individual(),
-            plot_cluster_oddball_jitter_local_individual(),
-            plot_oddball_win_likelihood_global(),
-            plot_oddball_win_likelihood_local(),
-            plot_oddball_latent_fix_all(),       
+            #plot_intervals(),
+            #plot_trial(),
+            #plot_cluster_oddball_fix_all(),
+            plot_cluster_oddball_jitter_common_all(),
+            #plot_cluster_oddball_fix_heatmap_all(),
+            #plot_sorted_heatmaps_fix_all(),
+            #plot_cluster_oddball_fix_individual(),
+            #plot_cluster_oddball_jitter_global_individual(),
+            #plot_cluster_oddball_jitter_common_individual(),
+            #plot_cluster_oddball_jitter_local_individual(),
+            #plot_oddball_separability_global(),
+            #plot_oddball_separability_local(),
+            #plot_oddball_latent_fix_all(),      
+            #plot_cross_sess_adapt_fix(),
+            #plot_cross_sess_adapt_jitter(),
         ]
         print('Clearing memory usage')
         del list_labels

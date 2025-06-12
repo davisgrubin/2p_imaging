@@ -26,7 +26,7 @@ def run(session_config_list, smooth):
         title = 'surgery window'
         print('-----------------------------------------------')
         print(title)
-        filename = 'fov01_window'
+        filename = 'fov_window'
         session_folder = [
             os.path.join('results', sc['session_folder'])
             for sc in session_config_list['list_config']]
@@ -53,7 +53,7 @@ def run(session_config_list, smooth):
         title = 'imaging fov'
         print('-----------------------------------------------')
         print(title)
-        filename = 'fov02_imaging'
+        filename = 'fov_imaging'
         n_row = 4
         n_col = 12
         fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -81,7 +81,7 @@ def run(session_config_list, smooth):
         title = 'example traces'
         print('-----------------------------------------------')
         print(title)
-        filename = 'fov03_example_traces'
+        filename = 'fov_example_traces'
         n_row = 4
         n_col = 1
         fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -96,7 +96,7 @@ def run(session_config_list, smooth):
         title = 'calcium transient analysis'
         print('-----------------------------------------------')
         print(title)
-        filename = 'fov04_ca'
+        filename = 'fov_ca'
         n_row = 2
         n_col = 3
         fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -113,7 +113,7 @@ def run(session_config_list, smooth):
         title = 'misc imaging results'
         print('-----------------------------------------------')
         print(title)
-        filename = 'fov05_misc'
+        filename = 'fov_misc'
         n_row = 1
         n_col = 1
         fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
