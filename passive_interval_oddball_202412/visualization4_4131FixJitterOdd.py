@@ -130,13 +130,12 @@ def run(session_config_list, smooth):
             print(title)
             filename = '4131FixJitterOdd_cluster_oddball_jitter_common_all'
             n_row = 16
-            n_col = 15
+            n_col = 14
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in [0,3,6,9]:
-                a = [plt.subplot(gs[s:s+3, i]) for i in range(12)]
-                a+= [plt.subplot(gs[s+0, 12])]
+                a = [plt.subplot(gs[s:s+3, i]) for i in range(14)]
                 axs_all.append(a)
             plotter.cluster_oddball_jitter_common_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)

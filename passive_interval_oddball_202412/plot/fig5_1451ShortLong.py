@@ -78,7 +78,7 @@ class plotter_utils(utils_basic):
                 norm_params, stim_seq[c_idx,:].reshape(1,-1),
                 [color0], [color0]*self.n_clusters,
                 [np.nanmin(self.glm['kernel_time']), np.nanmax(self.glm['kernel_time'])])
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since stim (ms)')
         def plot_random_bin(ax, mode):
             # collect data.
@@ -117,7 +117,7 @@ class plotter_utils(utils_basic):
                     self.alignment['neu_time'], norm_params,
                     bin_stim_seq[bi, c_idx+isi_idx_offset, :].reshape(1,-1),
                     [colors[bi]], [colors[bi]]*self.n_clusters, xlim)
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since stim (ms)')
         def plot_standard(ax, standard):
             xlim = [-2000,3000]
@@ -136,7 +136,7 @@ class plotter_utils(utils_basic):
                 self.alignment['neu_time'], norm_params,
                 stim_seq,
                 [color0]*stim_seq.shape[0], [[color1, color2][standard]]*self.n_clusters, xlim)
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since stim (ms)')
         def plot_oddball(ax, oddball):
             xlim = [-3000,4000]
@@ -162,7 +162,7 @@ class plotter_utils(utils_basic):
                 self.alignment['neu_time'], norm_params,
                 stim_seq,
                 [color0]*stim_seq.shape[0], [[color1,color2][oddball]]*self.n_clusters, xlim)
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since pre oddball stim (ms)')
         def plot_neu_fraction(ax):
             # collect data.
@@ -222,7 +222,7 @@ class plotter_utils(utils_basic):
             features = PCA(n_components=2).fit_transform(kernel_all)
             # plot results.
             ax.scatter(features[:,0], features[:,1], c=cluster_id, cmap='hsv')
-            # adjust layout.
+            # adjust layouts.
             ax.tick_params(tick1On=False)
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
@@ -247,7 +247,7 @@ class plotter_utils(utils_basic):
             c_idx = stim_seq.shape[0]//2
             # plot results.
             self.plot_cluster_heatmap(ax, kernel_all, self.glm['kernel_time'], cluster_id, 'minmax', cmap)
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since stim (ms)')
             ax.axvline(stim_seq[c_idx,0], color='black', lw=1, linestyle='--')
         def plot_standard(ax, standard):
@@ -272,7 +272,7 @@ class plotter_utils(utils_basic):
                 for xl in xlines:
                     if xl>neu_time[0] and xl<neu_time[-1]:
                         ax.axvline(xl, color='black', lw=1, linestyle='--')
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since stim (ms)')
         # plot all.
         try: plot_cluster_features(axs[0])
@@ -413,7 +413,7 @@ class plotter_utils(utils_basic):
                     self.plot_mean_sem(
                         axs[ci], self.alignment['neu_time'][z_idx:],
                         neu_mean[z_idx:], neu_sem[z_idx:], [color1, color2][1-standard], None)
-                    # adjust layout.
+                    # adjust layouts.
                     adjust_layout_neu(axs[ci])
                     axs[ci].set_xlim(xlim)
                     axs[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
@@ -474,7 +474,7 @@ class plotter_utils(utils_basic):
                                 color=color_late[di],
                                 capsize=2, marker='o', linestyle='none',
                                 markeredgecolor='white', markeredgewidth=0.1)
-                        # adjust layout.
+                        # adjust layouts.
                         axs[mi][ci].set_title(lbl[ci])
                         ax0.set_xlabel('first epoch')
                         ax0.set_ylabel(target_metrics[mi])
@@ -546,7 +546,7 @@ class plotter_utils(utils_basic):
             idx_unexpect = get_frame_idx_from_time(
                 neu_time, 0, stim_seq[c_idx+1,0], stim_seq[c_idx,1]+self.expect[1-oddball])[oddball]
             ax.scatter(neu_z[0,idx_unexpect], neu_z[1,idx_unexpect], neu_z[2,idx_unexpect], color='gold', marker='o', lw=5)
-            # adjust layout.
+            # adjust layouts.
             adjust_layout_3d_latent(ax, neu_z, self.latent_cmap, neu_time, 'time since pre oddball stim (ms)')
         def plot_mean_dynamics(ax):
             neu_mean, neu_sem = get_mean_sem(neu_x)
@@ -608,7 +608,7 @@ class plotter_utils(utils_basic):
             # mark unexpected event.
             idx_unexpect = get_frame_idx_from_time(neu_time, 0, 0, 0)[0]
             ax.scatter(neu_z[0,idx_unexpect], neu_z[1,idx_unexpect], neu_z[2,idx_unexpect], color='red', marker='o', lw=5)
-            # adjust layout.
+            # adjust layouts.
             adjust_layout_3d_latent(ax, neu_z, self.latent_cmap, neu_time, 'time since pre oddball stim (ms)')
         def plot_mean_dynamics(ax):
             neu_mean, neu_sem = get_mean_sem(neu_x)

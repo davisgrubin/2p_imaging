@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import matplotlib.ticker as mtick
 from sklearn.decomposition import PCA
 
 from modules.Alignment import run_get_stim_response
@@ -14,6 +15,7 @@ from modeling.quantifications import run_quantification
 from utils import get_norm01_params
 from utils import get_odd_stim_prepost_idx
 from utils import get_mean_sem
+from utils import get_mean_sem_win
 from utils import get_neu_trial
 from utils import get_frame_idx_from_time
 from utils import get_isi_bin_neu
@@ -21,6 +23,7 @@ from utils import get_expect_interval
 from utils import get_split_idx
 from utils import get_block_1st_idx
 from utils import get_cmap_color
+from utils import hide_all_axis
 from utils import adjust_layout_neu
 from utils import adjust_layout_3d_latent
 from utils import add_legend
@@ -107,7 +110,7 @@ class plotter_utils(utils_basic):
                 norm_params, stim_seq[c_idx,:].reshape(1,-1),
                 [color0], [color0]*self.n_clusters,
                 [np.nanmin(self.glm['kernel_time']), np.nanmax(self.glm['kernel_time'])])
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since stim (ms)')
         def plot_standard_fix(ax):
             # collect data.
@@ -126,7 +129,7 @@ class plotter_utils(utils_basic):
                 self.alignment['neu_time'], norm_params,
                 stim_seq,
                 [color0]*stim_seq.shape[0], [color0]*self.n_clusters, xlim)
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since stim (ms)')
         def plot_oddball_fix(ax, oddball):
             # collect data.
@@ -151,7 +154,7 @@ class plotter_utils(utils_basic):
                 self.alignment['neu_time'], norm_params,
                 stim_seq,
                 [color0]*stim_seq.shape[0], [[color1,color2][oddball]]*self.n_clusters, xlim)
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since pre oddball stim (ms)')
         def plot_neu_fraction(ax):
             # collect data.
@@ -214,7 +217,7 @@ class plotter_utils(utils_basic):
                 norm_params, stim_seq[c_idx,:].reshape(1,-1),
                 [color0], [color0]*self.n_clusters,
                 [np.nanmin(self.glm['kernel_time']), np.nanmax(self.glm['kernel_time'])])
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since stim (ms)')
         def plot_random_bin(ax, mode):
             ax.axis('off')
@@ -255,7 +258,7 @@ class plotter_utils(utils_basic):
                     self.alignment['neu_time'], norm_params,
                     bin_stim_seq[bi, c_idx+isi_idx_offset, :].reshape(1,-1),
                     [colors[bi]], [colors[bi]]*self.n_clusters, xl)
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since stim (ms)')
         def plot_oddball_jitter(ax, oddball):
             ax.axis('off')
@@ -291,17 +294,16 @@ class plotter_utils(utils_basic):
                 ax, neu_jitter_mean, neu_jitter_sem,
                 self.alignment['neu_time'], norm_params,
                 None, None, [[color1,color2][oddball]]*self.n_clusters, xlim)
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since pre oddball stim (ms)')
         def plot_win_mag_quant_stat(ax, oddball):
             offset = [0, 0.1]
             ax.axis('off')
-            ax0 = ax.inset_axes([0, 0.97, 0.5, 0.03], transform=ax.transAxes)
+            ax0 = ax.inset_axes([0, 0.97, 1, 0.03], transform=ax.transAxes)
             ax1 = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
-            ax1.axis('off')
-            ax_box = [ax1.inset_axes([0, ci/self.n_clusters, 0.5, 0.75/self.n_clusters], transform=ax1.transAxes)
+            ax_box = [ax1.inset_axes([0.5, ci/self.n_clusters, 0.5, 0.75/self.n_clusters], transform=ax1.transAxes)
                       for ci in range(self.n_clusters)]
-            axs_stat = [ax1.inset_axes([0, (0.8+ci)/self.n_clusters, 0.5, 0.1/self.n_clusters], transform=ax1.transAxes)
+            axs_stat = [ax1.inset_axes([0.5, (0.8+ci)/self.n_clusters, 0.5, 0.1/self.n_clusters], transform=ax1.transAxes)
                    for ci in range(self.n_clusters)]
             # collect data.
             neu_seq_fix, neu_seq_jitter = self.get_neu_seq_trial_fix_jitter('common', oddball, cate, isi_win)
@@ -344,17 +346,15 @@ class plotter_utils(utils_basic):
             self.plot_cluster_win_mag_quant_stat(
                 axs_stat, day_cluster_id, neu_seq_fix, neu_seq_jitter, self.alignment['neu_time'],
                 win_eval, 0)
-            # adjust layout.
+            # adjust layouts.
+            hide_all_axis(ax1)
             ax0.set_xticks([])
-        def plot_win_decode(ax, oddball):
+            ax1.set_ylabel('baseline corrected evoked magnitude')
+        def plot_block_win_decode(ax, oddball):
+            win_eval_baseline = [-2500, 0]
             win_decode = [-2500, 4000]
             win_sample = 200
             win_step = 1
-            ax.axis('off')
-            ax = ax.inset_axes([0, 0, 0.5, 0.95], transform=ax.transAxes)
-            ax.axis('off')
-            axs = [ax.inset_axes([0, ci/self.n_clusters, 1, 0.8/self.n_clusters], transform=ax.transAxes)
-                      for ci in range(self.n_clusters)]
             # collect data.
             neu_seq_fix, neu_seq_jitter = self.get_neu_seq_trial_fix_jitter('common', oddball, cate, isi_win)
             [[color0, color1, color2, _],
@@ -367,46 +367,106 @@ class plotter_utils(utils_basic):
             # run decoding for each class.
             for ci in range(self.n_clusters):
                 if np.sum(cluster_id==ci) > 0:
+                    # baseline correction.
+                    neu_ci_fix = [np.nanmean(neu[:,dci==ci,:],axis=0) for neu,dci in zip(neu_seq_fix,day_cluster_id)]
+                    neu_ci_jitter = [np.nanmean(neu[:,dci==ci,:],axis=0) for neu,dci in zip(neu_seq_fix,day_cluster_id)]
+                    baseline_fix = [get_mean_sem_win(
+                        nc.reshape(-1, nc.shape[-1]),
+                        self.alignment['neu_time'], 0, win_eval_baseline[0], win_eval_baseline[1], mode='lower')[1]
+                        for nc in neu_ci_fix]
+                    baseline_jitter = [get_mean_sem_win(
+                        nc.reshape(-1, nc.shape[-1]),
+                        self.alignment['neu_time'], 0, win_eval_baseline[0], win_eval_baseline[1], mode='lower')[1]
+                        for nc in neu_ci_jitter]
+                    # construct input data.
                     neu_x = [
-                        [nsf[:,dci==ci,:] for nsf,dci in zip(neu_seq_fix, day_cluster_id)],
-                        [nsj[:,dci==ci,:] for nsj,dci in zip(neu_seq_jitter, day_cluster_id)]]
+                        [nsf[:,dci==ci,:]-bl for nsf,dci,bl in zip(neu_seq_fix, day_cluster_id, baseline_fix)],
+                        [nsj[:,dci==ci,:]-bl for nsj,dci,bl in zip(neu_seq_jitter, day_cluster_id, baseline_jitter)]]
+                    # run decoding.
                     r = multi_sess_decoding_slide_win(
                          neu_x, self.alignment['neu_time'],
                          win_decode, win_sample, win_step)
                     results_all.append(r)
+                else:
+                    results_all.append([np.nan]*5)
             # split results.
-            decode_time = results_all[0][0]
             decode_model_mean  = [results_all[ci][1] for ci in range(self.n_clusters)]
             decode_model_sem   = [results_all[ci][2] for ci in range(self.n_clusters)]
             decode_chance_mean = [results_all[ci][3] for ci in range(self.n_clusters)]
             decode_chance_sem  = [results_all[ci][4] for ci in range(self.n_clusters)]
             # plot results for each class.
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            axs = [ax.inset_axes([0.5, ci/self.n_clusters, 0.5, 0.8/self.n_clusters], transform=ax.transAxes)
+                      for ci in range(self.n_clusters)]
             for ci in range(self.n_clusters):
-                # find bounds.
-                upper = np.nanmax([decode_model_mean[ci], decode_chance_mean[ci]])
-                lower = np.nanmin([decode_model_mean[ci], decode_chance_mean[ci]])
-                # plot stimulus.
-                c_idx = stim_seq.shape[0]//2
-                if oddball == 0:
-                    axs[ci].axvline(stim_seq[c_idx+1,0], color='gold', lw=1, linestyle='--')
-                if oddball == 1:
-                    axs[ci].axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
-                for i in range(stim_seq.shape[0]):
-                    axs[ci].fill_between(
-                        stim_seq[i,:],
-                        lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                        color=color0, edgecolor='none', alpha=0.25, step='mid')
-                # plot decoding results.
-                self.plot_mean_sem(axs[ci], decode_time, decode_model_mean[ci], decode_model_sem[ci], color2, None)
-                self.plot_mean_sem(axs[ci], decode_time, decode_chance_mean[ci], decode_chance_sem[ci], color0, None)
-                # adjust layout.
+                if np.sum(cluster_id==ci) > 0:
+                    # find bounds.
+                    upper = np.nanmax([decode_model_mean[ci], decode_chance_mean[ci]])
+                    lower = np.nanmin([decode_model_mean[ci], decode_chance_mean[ci]])
+                    # plot stimulus.
+                    c_idx = stim_seq.shape[0]//2
+                    if oddball == 0:
+                        axs[self.n_clusters-ci-1].axvline(stim_seq[c_idx+1,0], color='gold', lw=1, linestyle='--')
+                    if oddball == 1:
+                        axs[self.n_clusters-ci-1].axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
+                    for i in range(stim_seq.shape[0]):
+                        axs[self.n_clusters-ci-1].fill_between(
+                            stim_seq[i,:],
+                            lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+                            color=color0, edgecolor='none', alpha=0.25, step='mid')
+                    # plot decoding results.
+                    self.plot_mean_sem(
+                        axs[self.n_clusters-ci-1],
+                        results_all[ci][0], decode_model_mean[ci], decode_model_sem[ci],
+                        [color1,color2][oddball], None)
+                    self.plot_mean_sem(
+                        axs[self.n_clusters-ci-1],
+                        results_all[ci][0], decode_chance_mean[ci], decode_chance_sem[ci],
+                        color0, None)
+                    # adjust layouts.
+                    axs[self.n_clusters-ci-1].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+            for ci in range(self.n_clusters):
                 axs[ci].tick_params(tick1On=False)
                 axs[ci].spines['right'].set_visible(False)
                 axs[ci].spines['top'].set_visible(False)
-                axs[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+                axs[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
                 if ci>0:
                     axs[ci].set_xticks([])
             axs[0].set_xlabel('time since pre oddball stim (ms)')
+            hide_all_axis(ax)
+            ax.set_ylabel('block decoding accuracy')
+        def plot_win_mag_scatter(ax, oddball):
+            # collect data.
+            neu_seq_fix, neu_seq_jitter = self.get_neu_seq_trial_fix_jitter('common', oddball, cate, isi_win)
+            [[color0, color1, color2, _],
+             [_, _, stim_seq, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                trial_idx=[l[oddball] for l in self.list_odd_idx],
+                trial_param=[None, None, [0], None, [0], [0]],
+                cate=cate, roi_id=None)
+            c_idx = stim_seq.shape[0]//2
+            # define evaluation windows.
+            if oddball == 0:
+                win_eval = [[-2500, 0],
+                            [stim_seq[c_idx+1,0]+600,stim_seq[c_idx+1,0]+850]]
+            if oddball == 1:
+                win_eval = [[-2500, 0],
+                            [stim_seq[c_idx+1,1],stim_seq[c_idx+1,1]+250]]
+            # plot results for each class.
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            axs = [ax.inset_axes([0.5, ci/self.n_clusters, 0.5, 0.8/self.n_clusters], transform=ax.transAxes)
+                      for ci in range(self.n_clusters)]
+            self.plot_cluster_win_mag_scatter(
+                axs, day_cluster_id, neu_seq_fix, neu_seq_jitter, self.alignment['neu_time'],
+                win_eval, [color1,color2][oddball], 0)
+            # adjust layouts.
+            for ci in range(self.n_clusters):
+                axs[ci].set_ylabel('jitter')
+            axs[0].set_xlabel('fix')
+            hide_all_axis(ax)
+            ax.set_ylabel('response comparison in the late window')
         def plot_neu_fraction(ax):
             ax.axis('off')
             ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
@@ -442,19 +502,23 @@ class plotter_utils(utils_basic):
         except Exception as e: print(e)
         try: plot_win_mag_quant_stat(axs[4], 0)
         except Exception as e: print(e)
-        try: plot_win_decode(axs[5], 0)
+        try: plot_win_mag_scatter(axs[5], 0)
         except Exception as e: print(e)
-        try: plot_oddball_jitter(axs[6], 1)
+        try: plot_block_win_decode(axs[6], 0)
         except Exception as e: print(e)
-        try: plot_win_mag_quant_stat(axs[7], 1)
+        try: plot_oddball_jitter(axs[7], 1)
         except Exception as e: print(e)
-        try: plot_win_decode(axs[8], 1)
+        try: plot_win_mag_quant_stat(axs[8], 1)
         except Exception as e: print(e)
-        try: plot_neu_fraction(axs[9])
+        try: plot_win_mag_scatter(axs[9], 0)
         except Exception as e: print(e)
-        try: plot_cate_fraction(axs[10])
+        try: plot_block_win_decode(axs[10], 1)
         except Exception as e: print(e)
-        try: plot_legend(axs[11])
+        try: plot_neu_fraction(axs[11])
+        except Exception as e: print(e)
+        try: plot_cate_fraction(axs[12])
+        except Exception as e: print(e)
+        try: plot_legend(axs[13])
         except Exception as e: print(e)
     
     def plot_cluster_oddball_fix_heatmap_all(self, axs, cate):
@@ -467,7 +531,7 @@ class plotter_utils(utils_basic):
             features = PCA(n_components=2).fit_transform(kernel_all)
             # plot results.
             ax.scatter(features[:,0], features[:,1], c=cluster_id, cmap='hsv')
-            # adjust layout.
+            # adjust layouts.
             ax.tick_params(tick1On=False)
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
@@ -492,7 +556,7 @@ class plotter_utils(utils_basic):
             c_idx = stim_seq.shape[0]//2
             # plot results.
             self.plot_cluster_heatmap(ax, kernel_all, self.glm['kernel_time'], cluster_id, 'minmax', cmap)
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since stim (ms)')
             ax.axvline(stim_seq[c_idx,0], color='black', lw=1, linestyle='--')
         def plot_standard_fix(ax):
@@ -515,7 +579,7 @@ class plotter_utils(utils_basic):
                 for xl in xlines:
                     if xl>neu_time[0] and xl<neu_time[-1]:
                         ax.axvline(xl, color='black', lw=1, linestyle='--')
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since stim (ms)')
         def plot_oddball_fix(ax, oddball):
             # collect data.
@@ -542,7 +606,7 @@ class plotter_utils(utils_basic):
                 ax.axvline(stim_seq[c_idx+1,0], color='gold', lw=1, linestyle='--')
             if oddball == 1:
                 ax.axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since pre oddball stim (ms)')
         # plot all.
         try: plot_cluster_features(axs[0])
@@ -610,7 +674,7 @@ class plotter_utils(utils_basic):
             for xl in xlines:
                 if xl>neu_time[0] and xl<neu_time[-1]:
                     axs[bi].axvline(xl, color='black', lw=1, linestyle='--')
-        # adjust layout.
+        # adjust layouts.
         axs[0].set_xlabel('time since stim (ms) \n sorting window [{},{}] ms'.format(
             win_sort[0], win_sort[1]))
         axs[1].set_xlabel('time since pre oddball stim (ms) \n sorting window [{},{}] ms'.format(
@@ -650,7 +714,7 @@ class plotter_utils(utils_basic):
                     self.plot_mean_sem(
                         axs[ci], self.alignment['neu_time'],
                         neu_mean[ci,:], neu_sem[ci,:], color0, None)
-                    # adjust layout.
+                    # adjust layouts.
                     adjust_layout_neu(axs[ci])
                     axs[ci].set_xlim(xlim)
                     axs[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
@@ -688,7 +752,7 @@ class plotter_utils(utils_basic):
                     self.plot_mean_sem(
                         axs[ci], self.alignment['neu_time'],
                         neu_mean[ci,:], neu_sem[ci,:], [color1,color2][oddball], None)
-                    # adjust layout.
+                    # adjust layouts.
                     adjust_layout_neu(axs[ci])
                     axs[ci].set_xlim(xlim)
                     axs[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
@@ -737,7 +801,7 @@ class plotter_utils(utils_basic):
                                 color=[color0, color1, color2][di],
                                 capsize=2, marker='o', linestyle='none',
                                 markeredgecolor='white', markeredgewidth=0.1)
-                        # adjust layout.
+                        # adjust layouts.
                         axs[mi][ci].tick_params(axis='y', tick1On=False)
                         axs[mi][ci].tick_params(axis='x', labelrotation=90)
                         axs[mi][ci].spines['right'].set_visible(False)
@@ -790,7 +854,7 @@ class plotter_utils(utils_basic):
                     axs[ci].scatter(
                         1*np.ones_like(ori_long), ori_long, None,
                         color=color2, alpha=0.5)
-                    # adjust layout.
+                    # adjust layouts.
                     axs[ci].tick_params(axis='y', tick1On=False)
                     axs[ci].tick_params(axis='x', labelrotation=90)
                     axs[ci].spines['right'].set_visible(False)
@@ -1044,7 +1108,7 @@ class plotter_utils(utils_basic):
                                 color=cs[di],
                                 capsize=2, marker='o', linestyle='none',
                                 markeredgecolor='white', markeredgewidth=0.1)
-                        # adjust layout.
+                        # adjust layouts.
                         axs[mi][ci].tick_params(axis='y', tick1On=False)
                         axs[mi][ci].tick_params(axis='x', labelrotation=90)
                         axs[mi][ci].spines['right'].set_visible(False)
@@ -1313,7 +1377,7 @@ class plotter_utils(utils_basic):
             idx_unexpect = get_frame_idx_from_time(
                 neu_time, 0, stim_seq[c_idx+1,0], stim_seq[c_idx,1]+self.expect)[oddball]
             ax.scatter(neu_z[0,idx_unexpect], neu_z[1,idx_unexpect], neu_z[2,idx_unexpect], color='gold', marker='o', lw=5)
-            # adjust layout.
+            # adjust layouts.
             adjust_layout_3d_latent(ax, neu_z, self.latent_cmap, neu_time, 'time since pre oddball stim (ms)')
         def plot_mean_dynamics(ax):
             ax.axis('off')
@@ -1406,7 +1470,7 @@ class plotter_utils(utils_basic):
                     self.plot_mean_sem(
                         axs[ci], self.alignment['neu_time'],
                         neu_mean[ni], neu_sem[ni], neu_color[ni], None)
-                # adjust layout.
+                # adjust layouts.
                 adjust_layout_neu(axs[ci])
                 axs[ci].set_xlim(xlim)
                 axs[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
@@ -1513,6 +1577,20 @@ class plotter_main(plotter_utils):
                 print(f'plotting results for {label_name}')
                 
                 self.plot_cluster_oddball_jitter_common_all(axs, cate=cate)
+                axs[ 0].set_title(f'GLM kernel course \n {label_name}')
+                axs[ 1].set_title(f'reponse to binned (pre) random \n {label_name}')
+                axs[ 2].set_title(f'reponse to binned (post) random \n {label_name}')
+                axs[ 3].set_title(f'reponse to short oddball \n {label_name}')
+                axs[ 4].set_title(f'reponse to short oddball \n {label_name}')
+                axs[ 5].set_title(f'comparison for short oddball \n {label_name}')
+                axs[ 6].set_title(f'decoding in short oddball \n {label_name}')
+                axs[ 7].set_title(f'reponse to long oddball \n {label_name}')
+                axs[ 8].set_title(f'reponse to long oddball \n {label_name}')
+                axs[ 9].set_title(f'comparison for long oddball \n {label_name}')
+                axs[10].set_title(f'decoding in long oddball \n {label_name}')
+                axs[11].set_title(f'fraction of neurons in cluster \n {label_name}')
+                axs[12].set_title(f'fraction of cell-types in cluster \n {label_name}')
+                axs[13].set_title(f'legend \n {label_name}')
 
             except Exception as e: print(e)
     

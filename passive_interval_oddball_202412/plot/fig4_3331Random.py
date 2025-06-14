@@ -81,7 +81,7 @@ class plotter_utils(utils_basic):
                 norm_params, np.nanmean(np.concatenate(stim_seq, axis=0), axis=0)[c_idx,:].reshape(1,-1),
                 [color0], [color0]*self.n_clusters,
                 [np.nanmin(self.glm['kernel_time']), np.nanmax(self.glm['kernel_time'])])
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since stim (ms)')
         def plot_interval_bin(ax, mode):
             # bin data based on isi.
@@ -110,7 +110,7 @@ class plotter_utils(utils_basic):
                     self.alignment['neu_time'], norm_params,
                     bin_stim_seq[bi, c_idx+isi_idx_offset, :].reshape(1,-1),
                     [colors[bi]], [colors[bi]]*self.n_clusters, xlim)
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since stim (ms)')
         def plot_neu_fraction(ax):
             self.plot_cluster_neu_fraction_in_cluster(ax, cluster_id, color2)
@@ -152,7 +152,7 @@ class plotter_utils(utils_basic):
             features = PCA(n_components=2).fit_transform(kernel_all)
             # plot results.
             ax.scatter(features[:,0], features[:,1], c=cluster_id, cmap='hsv')
-            # adjust layout.
+            # adjust layouts.
             ax.tick_params(tick1On=False)
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
@@ -167,7 +167,7 @@ class plotter_utils(utils_basic):
             c_idx = stim_seq.shape[0]//2
             # plot results.
             self.plot_cluster_heatmap(ax, kernel_all, self.glm['kernel_time'], cluster_id, 'minmax', cmap)
-            # adjust layout.
+            # adjust layouts.
             ax.set_xlabel('time since stim (ms)')
             ax.axvline(stim_seq[c_idx,0], color='black', lw=1, linestyle='--')
         # plot all.
@@ -292,7 +292,7 @@ class plotter_utils(utils_basic):
                                 color=cs[di+1],
                                 capsize=2, marker='o', linestyle='none',
                                 markeredgecolor='white', markeredgewidth=0.1)
-                        # adjust layout.
+                        # adjust layouts.
                         axs[mi][ci].tick_params(axis='y', tick1On=False)
                         axs[mi][ci].tick_params(axis='x', labelrotation=90)
                         axs[mi][ci].spines['right'].set_visible(False)
@@ -322,7 +322,7 @@ class plotter_utils(utils_basic):
                             self.alignment['neu_time'][0], self.alignment['neu_time'][-1],
                             1, heatmap.shape[0]],
                         interpolation='nearest', aspect='auto')
-                    # adjust layout.
+                    # adjust layouts.
                     adjust_layout_heatmap(axs[ci])
                     axs[ci].set_xlabel('time since stim (ms)')
                     axs[ci].set_ylabel('interval (ms)')
@@ -478,7 +478,7 @@ class plotter_utils(utils_basic):
                         axs[ci].bar(
                             di, fraction[di,ci],
                             bottom=0, edgecolor='white', width=bar_width, color=color2)
-            # adjust layout.
+            # adjust layouts.
             for ci in range(self.n_clusters):
                 axs[ci].tick_params(tick1On=False)
                 axs[ci].spines['top'].set_visible(False)
@@ -520,7 +520,7 @@ class plotter_utils(utils_basic):
                     # plot traces.
                     self.plot_mean_sem(ax0, self.alignment['neu_time'], neu_mean0, neu_sem0, color0, None)
                     self.plot_mean_sem(ax1, self.alignment['neu_time'], neu_mean1, neu_sem1, color2, None)
-                    # adjust layout.
+                    # adjust layouts.
                     axs[ci].set_title(lbl[ci] + '\n' + 'day {}'.format(di))
                     ax0.spines['bottom'].set_visible(False)
                     ax0.xaxis.set_visible(False)

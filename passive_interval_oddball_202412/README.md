@@ -274,3 +274,13 @@
 - Rewritten get_wilcoxon_test.
 - Now get_mean_sem_win also returns data points before average.
 - Now mode is defined inside plot_cluster_win_mag_quant.
+- Fixed coloring of decoding.
+- Improved labeling for plot_win_decode.
+- Improved labeling for plot_win_mag_quant_stat.
+- Added hide_all_axis.
+- Added baseline correction to plot_win_decode.
+- Fixed plot_win_decode clustering bug.
+- Fixed plot_cluster_win_mag_quant_stat clustering bug.
+- Fixed plot_cluster_win_mag_quant clustering bug.
+- Added fit_linear_r2.
+- Added plot_cluster_win_mag_scatter.
