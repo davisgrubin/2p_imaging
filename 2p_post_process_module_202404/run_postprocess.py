@@ -35,7 +35,7 @@ def read_ops(session_data_path):
     return ops
 
 if __name__ == "__main__":
-    COMMANDLINE_MODE = True
+
     if COMMANDLINE_MODE:
         parser = argparse.ArgumentParser(description='Do not forget the everlasting love from Yicong!')
         parser.add_argument('--session_data_path', required=True, type=str, help='The name of folder to save suite2p results.')
