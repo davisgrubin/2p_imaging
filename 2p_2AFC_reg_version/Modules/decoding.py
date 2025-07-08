@@ -67,6 +67,12 @@ def neural_decoder_svm(data, labels, neu_time, trial_type, isi, shuffle = None, 
     n_trials, n_neurons, n_timepoints = data_processed.shape
     X = data_processed.reshape(n_trials, n_neurons * n_timepoints)
     y = labels.copy()
+
+    # Step 2.1: Handle NaN values and analyze label distribution
+    # Identify non-NaN indices
+    valid_indices = ~np.isnan(labels)
+    X = X[valid_indices]
+    y = labels[valid_indices]
     
     print(f"Flattened feature matrix shape: {X.shape}")
     
@@ -442,6 +448,11 @@ def temporal_decoding_accuracy(data, labels, neu_time, trial_type, isi, window_s
             # Handle class imbalance with undersampling
             y_balanced = labels.copy()
             X_balanced = X_window.copy()
+
+            # Remove NaN labels
+            valid_indices = ~np.isnan(y_balanced)
+            X_balanced = X_balanced[valid_indices]
+            y_balanced = y_balanced[valid_indices]
             
             if undersample:
                 label_counts = Counter(y_balanced)
