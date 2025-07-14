@@ -284,3 +284,88 @@
 - Fixed plot_cluster_win_mag_quant clustering bug.
 - Added fit_linear_r2.
 - Added plot_cluster_win_mag_scatter.
+
+## 2025.06.15
+- Now plot_cluster_cate_fraction_in_cluster uses common maximum in set_ylim.
+- Added plot_oddball_jitter_variance.
+- Now plot_cluster_win_mag_scatter is none average.
+- Now plot_cluster_win_mag_scatter also added distribution.
+
+## 2025.06.16
+- Added bsaeline correction as optional for quantifications.
+- Removed subsammpling for fix trials.
+- Added y axis to plot_cluster_win_mag_quant.
+- Added scale bar for plot_cluster_win_mag_scatter.
+- Added stat_sym.
+- Rewritten plot_cluster_win_mag_dist with np.histogram.
+- Added 0 for clustering tracesto adjust_layout_cluster_neu.
+- Now quantifications have option to change average axis.
+- Now plot_oddball_jitter_variability is single neuron single trial.
+- Added adjust_layout_scatter.
+- Adjusted position of statistics test of plot_cluster_win_mag_dist_compare.
+- Added plot_dist.
+- Fixed cumulative distribution.
+- Removed plot_raw_traces in random.
+
+## 2025.06.19
+- Added plot_cross_epochin random.
+- Adjusted plot_dist_cluster_fraction layout.
+- Created fig7_3331RandomExtended.
+- Now plot_stim_label accept isi_range manually.
+- Now plot_win_mag_scatter can specify evaluation window.
+- Changed layout of plot_dist_cluster_fraction.
+
+## 2025.06.21
+- Now plot_cross_epoch compares epoch around stimulus.
+- Now get_stat_test can test variability as well.
+
+## 2025.06.25
+- Now plot_cross_epoch compares epoch for all days.
+- Rewritten plot_cluster_adapt_individual with plot_cluster_adapt_all.
+- Rewritten plot_tansition_trial_heatmap.
+- Added axs.reverse() to all cluster plots with.
+- Improved add_heatmap_colorbar layout.
+- Rewritten plot_tansition.
+- Added more options to get_neu_seq_trial_fix_jitter.
+- Now plot_cluster_win_mag_scatter allows different win_eval.
+- Added plot_win_mag_scatter_trans_oddball.
+
+## 2025.06.26
+- Set alignment window longer.
+- Rewritten plot_trial_quant in plot_cluster_adapt_all.
+- Adjusted plot_tansition layout.
+- Separated plot_scatter.
+- Removed quantification scripts.
+
+## 2025.07.01
+- Rewritten plot_interval_scaling with baseline correction.
+- Added fit_poly_line.
+- Added scale_bar control to plot_cluster_mean_sem.
+- Rewritten plot_cross_epoch with bin interval.
+- Now plot_3d_latent_dynamics has optional cmap.
+- Now adjust_layout_3d_latent can specify if add colorbar.
+- Added plot_standard_latent.
+- Added plot_interval_scaling to plot_cluster_interval_bin_all.
+- Added plot_interval_bin_latent.
+- Added adjust_layout_2d_latent.
+
+## 2025.07.06
+- Fixed title labeling in plot_cluster_interval_bin_all.
+- Added plot_standard_heatmap to plot_cluster_adapt_all.
+- Rewritten plot_win_mag_scatter_epoch.
+- Now baseline_correction is given in plot_cluster_win_mag_scatter.
+- Added print info for all sub functions.
+- Added cate_list and cate_gap to control plotting.
+- Removed all memmap operations.
+
+## 2025.07.10
+- Now plot_win_mag_quant_win_eval can control whether plot baseline.
+- Added plot_oddball_time_eclapse.
+- Added multi_sess_decoding_time_eclapse.
+
+## 2025.07.14
+- Changed coloring of plot_cluster_oddball_fix_all.
+- Now plot_cate_fraction can specify color.
+- Now plot_cluster_oddball_fix_all colors are defined within panel.
+- Added plot_oddball_fix_quant.
+- Rewritten plot_oddball_latent_fix_all.

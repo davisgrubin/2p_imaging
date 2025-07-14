@@ -59,7 +59,7 @@ def run_glm_multi_sess(
     n_neurons = np.nansum([dff.shape[0] for dff in list_dff])
     n_times = l_idx + r_idx
     kernel_all = np.zeros([n_neurons, n_times])
-    exp_var_all = np.zeros([n_neurons])
+    #exp_var_all = np.zeros([n_neurons])
     # loop sessions and fill slices.
     write_idx = 0
     for si, (dff_sess, factor_in_sess) in enumerate(zip(list_dff, list_factor_in)):
@@ -83,11 +83,12 @@ def run_glm_multi_sess(
             y    = dff_sess[ni, left:right]
             beta = M @ y
             kern = np.flip(beta)[1:-1]  # length = kernel_length
-            y_hat = get_factor_dff_neu(f_target, kern, l_idx, r_idx)
+            #y_hat = get_factor_dff_neu(f_target, kern, l_idx, r_idx)
             kernel_all[write_idx + ni, :] = kern
-            exp_var_all[write_idx + ni]   = explained_variance_score(y, y_hat)
+            #exp_var_all[write_idx + ni]   = explained_variance_score(y, y_hat)
         write_idx += n_neurons
-    return kernel_all, exp_var_all
+    #return kernel_all, exp_var_all
+    return kernel_all
 
 # retrieve glm kernels for category.
 def get_glm_cate(glm, list_labels, list_significance, cate):

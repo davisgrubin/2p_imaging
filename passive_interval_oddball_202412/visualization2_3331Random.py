@@ -25,7 +25,7 @@ from plot.fig3_intervals import plot_stim_label
 from plot.fig3_intervals import plot_trial_legend
 from plot.fig4_3331Random import plotter_main
 
-def run(session_config_list, smooth):
+def run(session_config_list, smooth, cate_list):
     size_scale = 3
     target_sess = 'random'
     idx_target_sess = np.array(list(session_config_list['list_session_name'].values())) == target_sess
@@ -41,7 +41,7 @@ def run(session_config_list, smooth):
         print('Initiating alignment results')
         plotter = plotter_main(
             list_neural_trials, list_labels, list_significance,
-            session_config_list['label_names'], 'temp_'+session_config_list['subject_name'])
+            session_config_list['label_names'], 'temp_'+session_config_list['subject_name'], cate_list)
         def plot_sess_significance():
             title = 'significance'
             print('-----------------------------------------------')
@@ -99,7 +99,7 @@ def run(session_config_list, smooth):
             trial_ax02 = plt.subplot(gs[0, 1:5])
             trial_ax03 = plt.subplot(gs[0, 5])
             plot_stim_type(trial_ax01, list_neural_trials)
-            plot_stim_label(trial_ax02, list_neural_trials)
+            plot_stim_label(trial_ax02, list_neural_trials, plotter.bin_win)
             plot_trial_legend(trial_ax03)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
@@ -110,13 +110,14 @@ def run(session_config_list, smooth):
             print('-----------------------------------------------')
             print(title)
             filename = '3331Random_cluster_all'
-            n_row = 12
+            cate_gap = 4
+            n_row = cate_gap*len(plotter.cate_list)
             n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,3,6,9]:
-                a = [plt.subplot(gs[s:s+3, i]) for i in range(6)]
+            for s in cate_gap*np.arange(len(plotter.cate_list)):
+                a = [plt.subplot(gs[s:s+3, i]) for i in range(8)]
                 axs_all.append(a)
             plotter.cluster_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -128,12 +129,13 @@ def run(session_config_list, smooth):
             print('-----------------------------------------------')
             print(title)
             filename = '3331Random_cluster_heatmap_all'
-            n_row = 12
+            cate_gap = 4
+            n_row = cate_gap*len(plotter.cate_list)
             n_col = 5
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,3,6,9]:
+            for s in cate_gap*np.arange(len(plotter.cate_list)):
                 a = [plt.subplot(gs[s:s+2, 0:2])]
                 a+= [plt.subplot(gs[s+2, 0:2])]
                 a+= [plt.subplot(gs[s:s+3, i]) for i in [2]]
@@ -148,12 +150,13 @@ def run(session_config_list, smooth):
             print('-----------------------------------------------')
             print(title)
             filename = '3331Random_cluster_individual_pre'
-            n_row = 20
+            cate_gap = 6
+            n_row = cate_gap*len(plotter.cate_list)
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,5,10,15]:
+            for s in cate_gap*np.arange(len(plotter.cate_list)):
                 a = [[plt.subplot(gs[s+0, i]) for i in range(plotter.n_clusters)]]
                 a+= [[[plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)],
                       [plt.subplot(gs[s+2, i]) for i in range(plotter.n_clusters)]]]
@@ -170,12 +173,13 @@ def run(session_config_list, smooth):
             print('-----------------------------------------------')
             print(title)
             filename = '3331Random_cluster_individual_post'
-            n_row = 20
+            cate_gap = 6
+            n_row = cate_gap*len(plotter.cate_list)
             n_col = plotter.n_clusters
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,5,10,15]:
+            for s in cate_gap*np.arange(len(plotter.cate_list)):
                 a = [[plt.subplot(gs[s+0, i]) for i in range(plotter.n_clusters)]]
                 a+= [[[plt.subplot(gs[s+1, i]) for i in range(plotter.n_clusters)],
                       [plt.subplot(gs[s+2, i]) for i in range(plotter.n_clusters)]]]
@@ -192,12 +196,13 @@ def run(session_config_list, smooth):
             print('-----------------------------------------------')
             print(title)
             filename = '3331Random_oddball_separability_local'
-            n_row = 4
+            cate_gap = 5
+            n_row = cate_gap*len(plotter.cate_list)
             n_col = plotter.n_clusters+1
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,1,2,3]:
+            for s in cate_gap*np.arange(len(plotter.cate_list)):
                 a = [[plt.subplot(gs[s+0, i]) for i in range(plotter.n_clusters)]]
                 a+= [plt.subplot(gs[s+0, plotter.n_clusters])]
                 axs_all.append(a)
@@ -211,16 +216,17 @@ def run(session_config_list, smooth):
             print('-----------------------------------------------')
             print(title)
             filename = '3331Random_cross_sess_adapt'
-            n_row = 24
-            n_col = plotter.n_clusters*2
+            cate_gap = 4
+            n_row = cate_gap*len(plotter.cate_list)
+            n_col = 11
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
-            for s in [0,6,12,18]:
-                a = [[plt.subplot(gs[s+0, i]) for i in range(plotter.n_clusters)]]
-                a+= [[plt.subplot(gs[s+1:s+3, 2*i:2*(i+1)]) for i in range(plotter.n_clusters)]]
-                a+= [[plt.subplot(gs[s+3:s+5, 2*i:2*(i+1)]) for i in range(plotter.n_clusters)]]
-                a+= [plt.subplot(gs[s+5, 0])]
+            for s in cate_gap*np.arange(len(plotter.cate_list)):
+                a = [plt.subplot(gs[s+0:s+3, 0])]
+                a+= [plt.subplot(gs[s+0:s+3, 1:9])]
+                a+= [plt.subplot(gs[s+0:s+3, 9])]
+                a+= [plt.subplot(gs[s+0:s+3, 10])]
                 axs_all.append(a)
             plotter.cross_sess_adapt(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -231,9 +237,9 @@ def run(session_config_list, smooth):
             plot_trial(),
             plot_cluster_all(),
             plot_cluster_heatmap_all(),
-            plot_cluster_individual_pre(),
-            plot_cluster_individual_post(),
-            plot_separability_local(),
+            #plot_cluster_individual_pre(),
+            #plot_cluster_individual_post(),
+            #plot_separability_local(),
             plot_cross_sess_adapt(),
             ]
         print('Clearing memory usage')

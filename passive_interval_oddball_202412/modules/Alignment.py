@@ -1,16 +1,8 @@
 #!/usr/bin/env python3
 
-import os
 import gc
 import numpy as np
 from tqdm import tqdm
-
-# create a numpy memmap from numpy array.
-def create_memmap(temp_folder, data, file_name, ni):
-    file_path = os.path.join('results', temp_folder, 'alignment_memmap', file_name+'_'+str(ni).zfill(5)+'.mmap')
-    memmap_arr = np.memmap(file_path, dtype=data.dtype, mode='w+', shape=data.shape)
-    memmap_arr[:] = data[...]
-    return memmap_arr
 
 # cut sequence into the same length as the shortest one given pivots.
 def trim_seq(
@@ -35,8 +27,8 @@ def get_stim_response(
         expected,
         n_stim,
         ):
-    l_frames = 250
-    r_frames = 250
+    l_frames = 300
+    r_frames = 300
     # initialization.
     stim_labels = neural_trials['stim_labels']
     dff         = neural_trials['dff']
@@ -123,13 +115,6 @@ def run_get_stim_response(
          ] = get_stim_response(
              list_neural_trials[ni],
              expected, n_stim)
-        stim_labels  = create_memmap(temp_folder, stim_labels,  'stim_labels',  ni)
-        neu_seq      = create_memmap(temp_folder, neu_seq,      'neu_seq',      ni)
-        neu_time     = create_memmap(temp_folder, neu_time,     'neu_time',     ni)
-        stim_seq     = create_memmap(temp_folder, stim_seq,     'stim_seq',     ni)
-        camera_pupil = create_memmap(temp_folder, camera_pupil, 'camera_pupil', ni)
-        pre_isi      = create_memmap(temp_folder, pre_isi,      'pre_isi',      ni)
-        post_isi     = create_memmap(temp_folder, post_isi,     'post_isi',     ni)
         list_stim_labels.append(stim_labels)
         list_neu_seq.append(neu_seq)
         list_neu_time.append(neu_time)

@@ -122,7 +122,7 @@ def run(session_config_list, list_fn, list_page_name, list_target_sess):
     # get full html output.
     html_output = get_full_html(session_config_list, session_list_html, pages_html)
     # save result.
-    output_path = os.path.join('results', session_config_list['output_filename'])
+    output_path = os.path.join('results', session_config_list['output_filename']+'.html')
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html_output)
     # delete temp folder.

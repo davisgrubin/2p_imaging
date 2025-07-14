@@ -202,9 +202,7 @@ def plot_stim_type(ax, list_neural_trials):
         num_odd+num_change+num_img1+num_img2+num_img3+num_img4))
 
 # trial labels.
-def plot_stim_label(ax, list_neural_trials):
-    isi_range = [500,2500]
-    trial_range = [0,2000]
+def plot_stim_label(ax, list_neural_trials, isi_range):
     colors = ['black', 'cornflowerblue', 'mediumseagreen', 'hotpink', 'coral']
     stim_labels = list_neural_trials[-1]['stim_labels']
     img_seq_label = np.abs(stim_labels[:-1,2]).astype('int32')
@@ -217,11 +215,11 @@ def plot_stim_label(ax, list_neural_trials):
     ax.yaxis.grid(True, linewidth=0.25)
     ax.set_xlabel('trial #')
     ax.set_ylabel('interval (ms)')
-    ax.set_xlim(trial_range)
-    ax.set_ylim([450,2550])
-    ax.set_yticks(500*np.arange(isi_range[0]/500, isi_range[1]/500+1).astype('int32'))
+    ax.set_xlim([0, len(isi)])
+    ax.set_ylim(isi_range)
+    ax.set_yticks(500*np.arange((isi_range[0]+50)/500, (isi_range[1]-50)/500+1).astype('int32'))
     ax.set_yticklabels(
-        500*np.arange(isi_range[0]/500, isi_range[1]/500+1).astype('int32'))
+        500*np.arange((isi_range[0]+50)/500, (isi_range[1]-50)/500+1).astype('int32'))
     ax.set_title('single trial interval distribution')
 
 # plot legend.

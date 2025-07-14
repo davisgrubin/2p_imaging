@@ -21,8 +21,7 @@ def filter_session_config_list(session_config_list, target_sess):
 
 # create a numpy memmap from an h5py dataset.
 def create_memmap(data, dtype, mmap_path):
-    memmap_arr = np.memmap(mmap_path, dtype=dtype, mode='w+', shape=data.shape)
-    memmap_arr[:] = data[...]
+    memmap_arr = np.array(data, dtype=dtype)
     return memmap_arr
 
 # create folder for h5 data.

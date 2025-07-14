@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import time
 import functools
 import tracemalloc
 import numpy as np
@@ -7,8 +8,8 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.ticker as mtick
 from scipy.stats import mannwhitneyu
+from scipy.stats import levene
 from scipy.spatial.distance import pdist
-from sklearn.manifold import TSNE
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.decomposition import PCA
 from scipy.cluster.hierarchy import dendrogram
@@ -20,14 +21,19 @@ from modeling.generative import run_glm_multi_sess
 #%% general data processing
 
 # monitor memory usage.
-def show_memory_usage(func):
+def show_resource_usage(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        print(f'running {func.__name__}')
         tracemalloc.start()
+        start = time.perf_counter()
         result = func(*args, **kwargs)
+        elapsed = time.perf_counter() - start
         current, peak = tracemalloc.get_traced_memory()
-        print(f"{func.__name__} - Current: {current/1024/1024:.6f} MB, Peak: {peak/1024/1024:.6f} MB")
         tracemalloc.stop()
+        print(f'--- time: {elapsed:.2f}s')
+        print(f'--- memory current: {current/1024/1024:.2f} MB')
+        print(f'--- memory peak: {peak/1024/1024:.2f} MB')
         return result
     return wrapper
 
@@ -110,7 +116,7 @@ def pick_trial(
     idx = (idx1*idx2*idx3*idx4*idx5*idx6).astype('bool')
     return idx
 
-# for multi session settings find trials based on stim_labels.
+# get trial results across sessions.
 def get_multi_sess_neu_trial(
         list_stim_labels,
         neu_cate,
@@ -118,65 +124,53 @@ def get_multi_sess_neu_trial(
         trial_idx=None,
         trial_param=None,
         mean_sem=True,
-        ):
+    ):
     neu = []
     stim_seq = []
     camera_pupil = []
     pre_isi = []
     post_isi = []
-    # use stim_labels to find trials.
-    if trial_param != None and trial_idx == None:
-        for i in range(len(neu_cate)):
-            idx = pick_trial(
-                list_stim_labels[i],
-                trial_param[0],
-                trial_param[1],
-                trial_param[2],
-                trial_param[3],
-                trial_param[4],
-                trial_param[5])
-            neu.append(neu_cate[i][idx,:,:])
-            stim_seq.append(alignment['list_stim_seq'][i][idx,:,:])
-            camera_pupil.append(alignment['list_camera_pupil'][i][idx,:])
-            pre_isi.append(alignment['list_pre_isi'][i][idx])
-            post_isi.append(alignment['list_post_isi'][i][idx])
-    # use given idx to find trials.
-    if trial_param == None and trial_idx != None:
-        for i in range(len(neu_cate)):
-            neu.append(neu_cate[i][trial_idx[i],:,:])
-            stim_seq.append(alignment['list_stim_seq'][i][trial_idx[i],:,:])
-            camera_pupil.append(alignment['list_camera_pupil'][i][trial_idx[i],:])
-            pre_isi.append(alignment['list_pre_isi'][i][trial_idx[i]])
-            post_isi.append(alignment['list_post_isi'][i][trial_idx[i]])
-    # use both.
-    if trial_param != None and trial_idx != None:
-        for i in range(len(neu_cate)):
-            idx = pick_trial(
-                list_stim_labels[i],
-                trial_param[0],
-                trial_param[1],
-                trial_param[2],
-                trial_param[3],
-                trial_param[4],
-                trial_param[5])
-            neu.append(neu_cate[i][trial_idx[i]*idx,:,:])
-            stim_seq.append(alignment['list_stim_seq'][i][trial_idx[i]*idx,:,:])
-            camera_pupil.append(alignment['list_camera_pupil'][i][trial_idx[i]*idx,:])
-            pre_isi.append(alignment['list_pre_isi'][i][trial_idx[i]*idx])
-            post_isi.append(alignment['list_post_isi'][i][trial_idx[i]*idx])
-    # get numbers.
-    n_trials = np.nansum([n.shape[0] for n in neu])
-    n_neurons = np.nansum([n.shape[1] for n in neu])
-    # compute trial average and concatenate.
+    # pull everything out of the alignment dict once
+    list_stim_seq     = alignment['list_stim_seq']
+    list_camera_pupil = alignment['list_camera_pupil']
+    list_pre_isi      = alignment['list_pre_isi']
+    list_post_isi     = alignment['list_post_isi']
+    # decide mode: 1 = only trial_param, 2 = only trial_idx, 3 = both
+    mode = (trial_param is not None) + 2 * (trial_idx is not None)
+    if trial_param is not None:
+        p0, p1, p2, p3, p4, p5 = trial_param
+    pick = pick_trial
+    # one pass over sessions
+    for i, labels in enumerate(list_stim_labels):
+        if mode == 1:
+            idx = pick(labels, p0, p1, p2, p3, p4, p5)
+        elif mode == 2:
+            idx = trial_idx[i]
+        elif mode == 3:
+            idx = trial_idx[i] * pick(labels, p0, p1, p2, p3, p4, p5)
+        else:
+            # no trial_param or trial_idx → nothing to do
+            continue
+        neu.append(        neu_cate[i][idx,   ...] )
+        stim_seq.append(   list_stim_seq[i][idx,   ...] )
+        camera_pupil.append(list_camera_pupil[i][idx, ...] )
+        pre_isi.append(    list_pre_isi[i][idx]    )
+        post_isi.append(   list_post_isi[i][idx]   )
+    # total trials & neurons
+    n_trials  = sum(n.shape[0] for n in neu)
+    n_neurons = sum(n.shape[1] for n in neu)
     if mean_sem:
-        mean = [np.nanmean(n, axis=0) for n in neu]
-        std  = [np.nanstd(n, axis=0) for n in neu]
-        mean = np.concatenate(mean, axis=0)
-        std  = np.concatenate(std, axis=0)
-        stim_seq = np.nanmean(np.concatenate(stim_seq, axis=0),axis=0)
-        camera_pupil = np.nanmean(np.concatenate(camera_pupil, axis=0),axis=0)
+        nanmean = np.nanmean
+        nanstd  = np.nanstd
+        # per-session means & stds, then concatenate
+        means = [nanmean(n, axis=0) for n in neu]
+        stds  = [nanstd(n,  axis=0) for n in neu]
+        mean  = np.concatenate(means, axis=0)
+        std   = np.concatenate(stds,  axis=0)
+        # collapse sequences & pupil across all trials
+        stim_seq     = nanmean(np.concatenate(stim_seq,     axis=0), axis=0)
+        camera_pupil = nanmean(np.concatenate(camera_pupil, axis=0), axis=0)
         return [mean, std, stim_seq, camera_pupil], [n_trials, n_neurons]
-    # return single trial response.
     else:
         return [neu, stim_seq, camera_pupil, pre_isi, post_isi], [n_trials, n_neurons]
 
@@ -192,6 +186,7 @@ def get_neu_trial(
              for i in range(len(list_stim_labels))])
         if np.sum(idx) == 0:
             raise ValueError(f'No available neurons in given category {cate}')
+        list_neu_seq = alignment['list_neu_seq']
         colors = get_roi_label_color(cate=cate)
         neu_labels = np.concatenate([
             list_labels[i][np.in1d(list_labels[i],cate)*list_significance[i]['r_standard']]
@@ -199,13 +194,13 @@ def get_neu_trial(
         neu_sig = np.concatenate([
             list_significance[i]['r_standard'][np.in1d(list_labels[i],cate)]
             for i in range(len(list_stim_labels))])
-        neu_cate = [
-            alignment['list_neu_seq'][i][:,np.in1d(list_labels[i],cate)*list_significance[i]['r_standard'],:]
-            for i in range(len(list_stim_labels))]
+        r_standards = [sig['r_standard'] for sig in list_significance]
+        masks = [np.isin(labels, cate) & r_std.astype(bool) for labels, r_std in zip(list_labels, r_standards)]
+        neu_cate = [neu_seq[:, mask, :] for neu_seq, mask in zip(list_neu_seq, masks)]
     if roi_id != None:
         colors = get_roi_label_color(list_labels, roi_id=roi_id)
         neu_labels = None
-        neu_cate = [np.expand_dims(alignment['list_neu_seq'][0][:,roi_id,:], axis=1)]
+        neu_cate = [np.expand_dims(list_neu_seq[0][:,roi_id,:], axis=1)]
     neu_trial, neu_num = get_multi_sess_neu_trial(
         list_stim_labels, neu_cate, alignment,
         trial_idx=trial_idx, trial_param=trial_param, mean_sem=mean_sem)
@@ -422,7 +417,6 @@ def get_expect_time(stim_labels):
     return expect_short, expect_long
 
 # compute calcium transient event timing and average.
-@show_memory_usage
 def get_ca_transient(dff, time_img):
     pct = 95
     win_peak = 25
@@ -497,7 +491,6 @@ def get_ca_transient(dff, time_img):
     return n_ca, dff_ca_neu, dff_ca_time
 
 # compute calcium transient event timing and average with multiple sessions.
-@show_memory_usage
 def get_ca_transient_multi_sess(list_neural_trials):
     list_dff = [nt['dff'] for nt in list_neural_trials] 
     list_time = [nt['time'] for nt in list_neural_trials]
@@ -591,15 +584,19 @@ def get_temporal_scaling_trial_multi_sess(neu_seq, stim_seq, neu_time, target_is
         scale_neu_seq.append(scale_ns)
     return scale_neu_seq
 
-# run wilcoxon signed rank test and return significance level.
-def get_stat_test(data_1, data_2):
+# run statistics test and get significance level.
+def get_stat_test(data_1, data_2, stat_test):
     p_thres = np.array([5e-2, 5e-4, 5e-6])
-    _, p = mannwhitneyu(data_1, data_2)
+    if stat_test == 'mean':
+        _, p = mannwhitneyu(data_1, data_2)
+    if stat_test == 'var':
+        _, p = levene(data_1, data_2)
     r = np.sum(p < p_thres)
     return p, r
 
 # statistics test for response in evaluation windows.
-def get_win_mag_quant_stat_test(neu_seq_1, neu_seq_2, neu_time, c_time, win_eval):
+def get_win_mag_quant_stat_test(neu_seq_1, neu_seq_2, neu_time, c_time, win_eval, stat_test):
+    baseline_correction = False
     mode = ['lower', 'mean', 'mean', 'mean']
     # get window data.
     neu_1 = [get_mean_sem_win(
@@ -611,11 +608,15 @@ def get_win_mag_quant_stat_test(neu_seq_1, neu_seq_2, neu_time, c_time, win_eval
         neu_time, c_time, win_eval[i][0], win_eval[i][1], mode=mode[i])
         for i in range(4)]
     # baseline correction.
-    neu_1 = [neu_1[i][0] - neu_1[0][1] for i in [1,2,3]]
-    neu_2 = [neu_2[i][0] - neu_2[0][1] for i in [1,2,3]]
+    if baseline_correction:
+        neu_1 = [neu_1[i][0] - neu_1[0][1] for i in [1,2,3]]
+        neu_2 = [neu_2[i][0] - neu_2[0][1] for i in [1,2,3]]
+    else:
+        neu_1 = [neu_1[i][0] for i in [1,2,3]]
+        neu_2 = [neu_2[i][0] for i in [1,2,3]]
     # run statistics test.
-    p = np.array([get_stat_test(n1, n2)[0] for n1, n2 in zip(neu_1, neu_2)])
-    r = np.array([get_stat_test(n1, n2)[1] for n1, n2 in zip(neu_1, neu_2)])
+    p = np.array([get_stat_test(n1, n2, stat_test)[0] for n1, n2 in zip(neu_1, neu_2)])
+    r = np.array([get_stat_test(n1, n2, stat_test)[1] for n1, n2 in zip(neu_1, neu_2)])
     return p, r
 
 #%% plotting
@@ -736,30 +737,55 @@ def hide_all_axis(ax):
 
 # adjust layout for grand average neural traces.
 def adjust_layout_neu(ax):
-    ax.tick_params(axis='y', tick1On=False)
+    ax.tick_params(direction='in')
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.set_ylabel('df/f (z-scored)')
+    ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+    ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
 
 # adjust layout for grand average neural traces for clustering.
 def adjust_layout_cluster_neu(ax, n_clusters, xlim):
-    ax.tick_params(tick1On=False)
+    ax.tick_params(axis='y', tick1On=False)
     ax.spines['left'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
     ax.set_xlim(xlim)
-    ax.set_xticks([])
+    ax.set_xticks([0])
     ax.set_yticks([])
-    
+
+# adjust layout for scatter comparison.
+def adjust_layout_scatter(ax, upper, lower):
+    ax.tick_params(direction='in')
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.set_xlim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+    ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+    ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+    ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+    ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+    ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+
 # adjust layout for heatmap.
 def adjust_layout_heatmap(ax):
+    ax.tick_params(direction='in')
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
 
+# adjust layout for 2d latent dynamics.
+def adjust_layout_2d_latent(ax):
+    ax.tick_params(direction='in')
+    ax.spines['right'].set_visible(False)
+    ax.spines['top'].set_visible(False)
+    ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+    ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+    ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+    ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+    
 # adjust layout for 3d latent dynamics.
 def adjust_layout_3d_latent(ax, neu_z, cmap, neu_time, cbar_label):
-    scale = 0.9
+    scale = 1.0
     ax.grid(False)
     ax.view_init(elev=15, azim=15)
     ax.set_xticks([])
@@ -768,23 +794,21 @@ def adjust_layout_3d_latent(ax, neu_z, cmap, neu_time, cbar_label):
     ax.set_xlim([np.min(neu_z[0,:])*scale, np.max(neu_z[0,:])*scale])
     ax.set_ylim([np.min(neu_z[1,:])*scale, np.max(neu_z[1,:])*scale])
     ax.set_zlim([np.min(neu_z[2,:])*scale, np.max(neu_z[2,:])*scale])
-    ax.set_xlabel('latent 1')
-    ax.set_ylabel('latent 2')
-    ax.set_zlabel('latent 3')
     ax.xaxis.pane.fill = False
     ax.yaxis.pane.fill = False
     ax.zaxis.pane.fill = False
-    cbar = ax.figure.colorbar(
-        plt.cm.ScalarMappable(cmap=cmap), ax=ax, ticks=[0.0,0.2,0.5,0.8,1.0],
-        shrink=0.5, aspect=25)
-    cbar.outline.set_visible(False)
-    cbar.ax.set_ylabel(cbar_label, rotation=-90, va='bottom')
-    cbar.ax.set_yticklabels(
-        ['\u2716',
-         str(int(neu_time[int(len(neu_time)*0.2)])),
-         str(int(neu_time[int(len(neu_time)*0.5)])),
-         str(int(neu_time[int(len(neu_time)*0.8)])),
-         '\u25CF'], rotation=-90)
+    if cmap != None:
+        cbar = ax.figure.colorbar(
+            plt.cm.ScalarMappable(cmap=cmap), ax=ax, ticks=[0.0,0.2,0.5,0.8,1.0],
+            shrink=0.5, aspect=25)
+        cbar.outline.set_visible(False)
+        cbar.ax.set_ylabel(cbar_label, rotation=-90, va='bottom')
+        cbar.ax.set_yticklabels(
+            ['\u2716',
+             str(int(neu_time[int(len(neu_time)*0.2)])),
+             str(int(neu_time[int(len(neu_time)*0.5)])),
+             str(int(neu_time[int(len(neu_time)*0.8)])),
+             '\u25CF'], rotation=-90)
 
 # add legend into subplots.
 def add_legend(ax, colors, labels, n_trials, n_neurons, n_sessions, loc, dim=2):
@@ -811,17 +835,19 @@ def add_legend(ax, colors, labels, n_trials, n_neurons, n_sessions, loc, dim=2):
     
 # add heatmap colorbar.
 def add_heatmap_colorbar(ax, cmap, norm, label):
-    if norm != None:
+    if norm != None and label != None:
         cbar = ax.figure.colorbar(
             plt.cm.ScalarMappable(
                 cmap=cmap,
                 norm=norm),
-            ax=ax, aspect=100, shrink=0.75, fraction=0.1)
-        cbar.ax.set_ylabel(label, rotation=90, labelpad=10)
-        for tick in cbar.ax.get_yticklabels():
-            tick.set_rotation(90)
-        cbar.ax.yaxis.set_label_coords(-1, 1.06)
+            ax=ax, aspect=10, shrink=0.7, fraction=1)
+        cbar.ax.set_ylabel(label, rotation=0, labelpad=10)
+        cbar.ax.yaxis.set_label_coords(2, 1.25)
         cbar.outline.set_linewidth(0.25)
+        cbar.ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+        cbar.ax.yaxis.set_major_locator(
+            mtick.FixedLocator([norm.vmin+0.2*(norm.vmax-norm.vmin),
+                                norm.vmax-0.2*(norm.vmax-norm.vmin)]))
 
 #%% basic plotting utils class
 
@@ -830,8 +856,9 @@ class utils_basic:
     def __init__(self):
         self.min_num_trial = 5
         self.latent_cmap = plt.cm.gnuplot2_r
-    
-    @show_memory_usage
+        self.stat_sym = ['n.s.', '*', '**', '***']
+
+    @show_resource_usage
     def run_glm(self,):
         # define kernel window.
         kernel_win = [-500,3000]
@@ -846,14 +873,13 @@ class utils_basic:
         list_input_value = [nt['vol_stim_vis'] for nt in self.list_neural_trials]
         list_stim_labels = [nt['stim_labels'] for nt in self.list_neural_trials]
         # fit glm model.
-        kernel_all, exp_var_all = run_glm_multi_sess(
+        kernel_all = run_glm_multi_sess(
             list_dff, list_neu_time,
             list_input_time, list_input_value, list_stim_labels,
             l_idx, r_idx)
         glm = {
             'kernel_time': kernel_time,
             'kernel_all': kernel_all,
-            'exp_var_all': exp_var_all,
             }
         return glm
     
@@ -862,12 +888,12 @@ class utils_basic:
         # get glm kernels.
         kernel_all = self.glm['kernel_all']
         # reduce kernel weights to pca features.
-        model = PCA(n_components=n_latents if n_latents < np.min(kernel_all.shape) else np.min(kernel_all.shape))
+        model = PCA(n_components=n_latents)
         neu_x = model.fit_transform(kernel_all)
         # run clustering.
         cluster_id = clustering_neu_response_mode(neu_x, self.n_clusters)
         # relabel.
-        cluster_id = remap_cluster_id(kernel_all, self.alignment['neu_time'], self.n_clusters, cluster_id)
+        #cluster_id = remap_cluster_id(kernel_all, self.alignment['neu_time'], self.n_clusters, cluster_id)
         return cluster_id
 
     def plot_mean_sem(self, ax, t, m, s, c, l, a=1.0):
@@ -883,6 +909,47 @@ class utils_basic:
     def plot_pupil(self, ax, nt, cp, c, u, l):
         cp = rescale(cp, u, l)
         ax.plot(nt, cp, color=c, lw=0.5, linestyle=':')
+    
+    def plot_dist(self, ax, data, c, cumulative):
+        bins = 50
+        d, b = np.histogram(data, bins=bins, density=True)
+        cb = (b[:-1] + b[1:]) / 2
+        if cumulative:
+            d = np.cumsum(d) * np.diff(b)
+        ax.plot(cb, d, color=c)
+        return d
+    
+    def plot_scatter(self, ax, q1, q2, c):
+        # subsampling if lengths differ.
+        if len(q1) > len(q2):
+            q1 = q1[np.random.choice(len(q1), size=len(q2), replace=False)]
+        if len(q1) < len(q2):
+            q2 = q2[np.random.choice(len(q2), size=len(q1), replace=False)]          
+        # find bounds.
+        upper = np.nanmax([q1, q2])
+        lower = np.nanmin([q1, q2])
+        # plot scatter.
+        ax.scatter(q1, q2, color=c, s=1, alpha=0.5)
+        # plot unit line.
+        ax.plot(
+            np.linspace(lower,upper,1106),
+            np.linspace(lower,upper,1106),
+            lw=1, linestyle=':', color='#2C2C2C')
+        # plot mean value.
+        ax.scatter(
+            np.nanmean(q1), np.nanmean(q2),
+            color='black', marker='x', s=10)
+        # plot statistics test.
+        r_m = get_stat_test(q1, q2, 'mean')[1]
+        r_v = get_stat_test(q1, q2, 'var')[1]
+        ax.text(
+            upper-0.05*(upper-lower), upper-0.4*(upper-lower), self.stat_sym[r_m],
+            ha='center', va='center')
+        ax.text(
+            upper-0.05*(upper-lower), upper-0.6*(upper-lower), self.stat_sym[r_v],
+            ha='center', va='center')
+        # adjust layouts.
+        adjust_layout_scatter(ax, upper, lower)
     
     def plot_heatmap_neuron(
             self, ax, neu_seq, neu_time, neu_seq_sort, cmap,
@@ -901,7 +968,7 @@ class utils_basic:
             # compute share scale if give.
             if neu_seq_share != None:
                 data_share = np.concatenate(neu_seq_share, axis=0)
-            else: 
+            else:
                 data_share = np.nan
             # prepare heatmap.
             hm_data, hm_norm, hm_cmap = apply_colormap(data, cmap, norm_mode, data_share)
@@ -915,9 +982,8 @@ class utils_basic:
             ax.set_ylabel('neuron id (sorted)')
             for tick in ax.get_yticklabels():
                 tick.set_rotation(90)
-            add_heatmap_colorbar(ax, hm_cmap, hm_norm, cbar_label)
+            #add_heatmap_colorbar(ax, hm_cmap, hm_norm, cbar_label)
 
-    @show_memory_usage
     def plot_heatmap_neuron_cate(
             self, ax, neu_seq, neu_time, neu_seq_sort,
             win_sort, neu_labels, neu_sig,
@@ -975,31 +1041,14 @@ class utils_basic:
                 add_heatmap_colorbar(
                     ax, list_cmap[ci], list_norm[ci],
                     self.label_names[str(cate[ci][0])])
-    
-    def plot_heatmap_trial(
-            self, ax,
-            neu_seq, neu_time,
-            cmap, norm_mode, data_share,
-            ):
-        neu_h, norm, cmap = apply_colormap(
-            neu_seq, cmap, norm_mode=norm_mode, data_share=data_share)
-        # plot heatmap.
-        ax.imshow(
-            neu_h,
-            extent=[neu_time[0], neu_time[-1], 1, neu_h.shape[0]],
-            interpolation='nearest', aspect='auto')
-        # adjust layouts.
-        adjust_layout_heatmap(ax)
-        for tick in ax.get_yticklabels():
-            tick.set_rotation(90)
-        add_heatmap_colorbar(ax, cmap, norm, 'dF/F')
-    
+
     def plot_win_mag_quant_win_eval(
-            self, ax, win_eval, color, xlim
+            self, ax, win_eval, color, xlim, baseline=True
             ):
-        ax.plot(win_eval[0], [1,1], color=color, linestyle=':', marker='|')
-        for i in [1,2,3]:
-            ax.plot(win_eval[i], [1,1], color=color, marker='|')
+        if baseline:
+            ax.plot(win_eval[0], [1,1], color=color, linestyle=':', marker='|')
+        for i in range(len(win_eval)-1):
+            ax.plot(win_eval[i+1], [1,1], color=color, marker='|')
         ax.spines['left'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
@@ -1144,10 +1193,13 @@ class utils_basic:
         ax.set_ylim([-0.2, self.n_clusters+0.1])
         ax.set_xlabel('fraction of neurons')
 
-    def plot_cluster_cate_fraction_in_cluster(self, ax, cluster_id, neu_labels, label_names):
+    def plot_cluster_cate_fraction_in_cluster(self, ax, cluster_id, neu_labels, label_names, color=None):
         bar_width = 0.5
         cate_eval = [int(k) for k in label_names.keys()]
-        cate_color = [get_roi_label_color(cate=[c])[2] for c in cate_eval]
+        if color != None:
+            cate_color = [color]*len(cate_eval) 
+        else:
+            cate_color = [get_roi_label_color(cate=[c])[2] for c in cate_eval]
         # get fraction in each category.
         fraction = np.zeros((len(cate_eval), self.n_clusters))
         for i in range(len(cate_eval)):
@@ -1159,15 +1211,16 @@ class utils_basic:
         ax.axis('off')
         axs = [ax.inset_axes([0, ci/self.n_clusters, 0.6, 0.8/self.n_clusters], transform=ax.transAxes)
                for ci in range(self.n_clusters)]
+        axs.reverse()
         for ci in range(self.n_clusters):
             for i in range(len(cate_eval)):
                 if fraction[i,ci] != 0:
-                    axs[self.n_clusters-ci-1].bar(
+                    axs[ci].bar(
                         i, fraction[i,ci],
                         edgecolor='white',
                         width=bar_width,
                         color=cate_color[i])
-                axs[self.n_clusters-ci-1].text(
+                axs[ci].text(
                     i, fraction[i,ci],
                     f' {fraction[i,ci]:.2f}',
                     ha='center', va='bottom', color='#2C2C2C')
@@ -1180,15 +1233,16 @@ class utils_basic:
             axs[ci].set_xticks([])
             axs[ci].set_yticks([])
             axs[ci].set_xlim([-0.5,2.5])
-            axs[ci].set_ylim([0, np.nanmax(fraction[:,self.n_clusters-ci-1])*2])
-        axs[0].tick_params(axis='x', labelrotation=90)
-        axs[0].set_xticks([0,1,2])
-        axs[0].set_xticklabels([v for v in label_names.values()])
-        axs[0].set_xlabel('fraction of cell-type')
+            axs[ci].set_ylim([0, np.nanmax(fraction)*1.25])
+        axs[self.n_clusters-1].tick_params(axis='x', labelrotation=90)
+        axs[self.n_clusters-1].set_xticks([0,1,2])
+        axs[self.n_clusters-1].set_xticklabels([v for v in label_names.values()])
+        axs[self.n_clusters-1].set_xlabel('fraction of cell-type')
 
     def plot_cluster_mean_sem(
             self, ax, neu_mean, neu_sem, neu_time,
-            norm_params, stim_seq, c_stim, c_neu, xlim
+            norm_params, stim_seq, c_stim, c_neu, xlim,
+            scale_bar=True
             ):
         gap = 0.05
         l_nan_margin = 5
@@ -1221,28 +1275,32 @@ class utils_basic:
                 (a*nm[ci,:]+b)*(1-2*gap)+gap+self.n_clusters-ci-1, np.abs(a)*ns[ci,:],
                 c_neu[ci], None)
             # plot y scalebar.
-            y_start = ci + 0.5 - len_scale_y/2
-            ax.vlines(xlim[0]*0.99, y_start, y_start+len_scale_y, color='#2C2C2C')
-            ax.text(xlim[0]*0.99, ci+0.5,
-                '{:.3f}'.format(len_scale_y*(d-c)),
-                va='center', ha='right', rotation=90, color='#2C2C2C')
+            if scale_bar:
+                y_start = ci + 0.5 - len_scale_y/2
+                ax.vlines(xlim[0]*0.99, y_start, y_start+len_scale_y, color='#2C2C2C')
+                ax.text(xlim[0]*0.99, ci+0.5,
+                    '{:.3f}'.format(len_scale_y*(d-c)),
+                    va='center', ha='right', rotation=90, color='#2C2C2C')
         # plot x scalebar.
+        if scale_bar:
+            ax.hlines(-0.1, xlim[0]*0.99, xlim[0]*0.99+len_scale_x, color='#2C2C2C')
+            ax.text(xlim[0]*0.99 + len_scale_x/2, -0.15, '{} ms'.format(int(len_scale_x)),
+                va='top', ha='center', color='#2C2C2C')
+            ax.set_ylim([-0.2, neu_mean.shape[0]+0.1])
+        # adjust layouts.
         adjust_layout_cluster_neu(ax, nm.shape[0], xlim)
-        ax.hlines(-0.1, xlim[0]*0.99, xlim[0]*0.99+len_scale_x, color='#2C2C2C')
-        ax.text(xlim[0]*0.99 + len_scale_x/2, -0.15, '{} ms'.format(int(len_scale_x)),
-            va='top', ha='center', color='#2C2C2C')
-        ax.set_ylim([-0.2, neu_mean.shape[0]+0.1])
     
     def plot_cluster_win_mag_quant(
             self, axs, day_cluster_id, neu_seq, neu_time,
-            win_eval, color, c_time, offset,
+            win_eval, color, c_time, offset, average_axis=0
             ):
+        baseline_correction = False
         mode = ['lower', 'mean', 'mean', 'mean']
         # plot results for each class.
         for ci in range(self.n_clusters):
-            # average across trials.
+            # average.
             neu_ci = np.concatenate(
-                [np.nanmean(neu[:,dci==ci,:],axis=0)
+                [np.nanmean(neu[:,dci==ci,:],axis=average_axis)
                  for neu,dci in zip(neu_seq,day_cluster_id)], axis=0)
             # compute response within window.
             quant = [get_mean_sem_win(
@@ -1253,45 +1311,44 @@ class utils_basic:
             s = np.array([quant[i][2] for i in range(4)])
             # plot errorbar.
             for i in [1,2,3]:
-                axs[self.n_clusters-ci-1].errorbar(
+                mi = m[i]-m[0] if baseline_correction else m[i]
+                axs[ci].errorbar(
                     i + offset,
-                    m[i]-m[0], s[i],
+                    mi, s[i],
                     color=color,
                     capsize=2, marker='o', linestyle='none',
                     markeredgecolor='white', markeredgewidth=0.1)
         # adjust layouts.
         for ci in range(self.n_clusters):
-            axs[ci].tick_params(tick1On=False)
-            axs[ci].tick_params(axis='x', labelrotation=90)
-            axs[ci].spines['left'].set_visible(False)
+            axs[ci].tick_params(axis='x', labelrotation=90, tick1On=False)
+            axs[ci].tick_params(axis='y', direction='in')
             axs[ci].spines['right'].set_visible(False)
             axs[ci].spines['top'].set_visible(False)
             axs[ci].set_xlim([0.5, 3.5])
             axs[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
             axs[ci].set_xticks([])
-            axs[ci].set_yticks([])
-        axs[0].set_xticks([1,2,3])
-        axs[0].set_xticklabels(['early', 'late', 'post'])
+        axs[self.n_clusters-1].set_xticks([1,2,3])
+        axs[self.n_clusters-1].set_xticklabels(['early', 'late', 'post'])
+        axs[self.n_clusters-1].set_xlabel('quantification window \n across trials')
     
     def plot_cluster_win_mag_quant_stat(
             self, axs, day_cluster_id, neu_seq_1, neu_seq_2, neu_time,
-            win_eval, c_time,
+            win_eval, c_time, average_axis, stat_test
             ):
-        sym = ['n.s.', '*', '**', '***']
         # plot results for each class.
         for ci in range(self.n_clusters):
             # average across neurons within cluster.
             neu_1 = np.concatenate(
-                [np.nanmean(ns1[:,dci==ci,:],axis=0)
+                [np.nanmean(ns1[:,dci==ci,:],axis=average_axis)
                  for ns1,dci in zip(neu_seq_1,day_cluster_id)], axis=0)
             neu_2 = np.concatenate(
-                [np.nanmean(ns2[:,dci==ci,:],axis=0)
+                [np.nanmean(ns2[:,dci==ci,:],axis=average_axis)
                  for ns2,dci in zip(neu_seq_2,day_cluster_id)], axis=0)
             # get significance level.
-            r = get_win_mag_quant_stat_test(neu_1, neu_2, neu_time, c_time, win_eval)[1]
+            r_m = get_win_mag_quant_stat_test(neu_1, neu_2, neu_time, c_time, win_eval, stat_test)[1]
             # plot results.
             for i in range(3):
-                axs[self.n_clusters-ci-1].text(i+1, 0, sym[r[i]], ha='center', va='center')
+                axs[ci].text(i+1, 0, self.stat_sym[r_m[i]], ha='center', va='center')
         # adjust layouts.
         for ci in range(self.n_clusters):
             axs[ci].axis('off')
@@ -1299,17 +1356,53 @@ class utils_basic:
     
     def plot_cluster_win_mag_scatter(
             self, axs, day_cluster_id, neu_seq_1, neu_seq_2, neu_time,
-            win_eval, color, c_time,
+            win_eval_1, win_eval_2, color, c_time,
+            average_axis=0, baseline_correction=False
             ):
         mode = ['lower', 'mean']
         # plot results for each class.
         for ci in range(self.n_clusters):
-            # average across trials.
+            # organize results.
             neu_ci_1 = np.concatenate(
-                [np.nanmean(neu[:,dci==ci,:],axis=0)
+                [np.nanmean(neu[:,dci==ci,:],axis=average_axis)
                  for neu,dci in zip(neu_seq_1,day_cluster_id)], axis=0)
             neu_ci_2 = np.concatenate(
-                [np.nanmean(neu[:,dci==ci,:],axis=0)
+                [np.nanmean(neu[:,dci==ci,:],axis=average_axis)
+                 for neu,dci in zip(neu_seq_2,day_cluster_id)], axis=0)
+            # compute response within window.
+            quant_1 = [get_mean_sem_win(
+                neu_ci_1.reshape(-1, neu_ci_1.shape[-1]),
+                neu_time, c_time, win_eval_1[i][0], win_eval_1[i][1], mode=mode[i])
+                for i in range(2)]
+            quant_2 = [get_mean_sem_win(
+                neu_ci_2.reshape(-1, neu_ci_2.shape[-1]),
+                neu_time, c_time, win_eval_2[i][0], win_eval_2[i][1], mode=mode[i])
+                for i in range(2)]
+            # get single neuron response with baseline correction.
+            if baseline_correction:
+                q1 = quant_1[1][0] - quant_1[0][1]
+                q2 = quant_2[1][0] - quant_2[0][1]
+            else:
+                q1 = quant_1[1][0]
+                q2 = quant_2[1][0]
+            # plot results.
+            self.plot_scatter(axs[ci], q1, q2, color)
+                    
+    def plot_cluster_win_mag_dist_compare(
+            self, axs, day_cluster_id, neu_seq_1, neu_seq_2, neu_time,
+            win_eval, c_neu, c_time, cumulative
+            ):
+        len_scale = 0.5
+        baseline_correction = False
+        mode = ['lower', 'mean']
+        # plot results for each class.
+        for ci in range(self.n_clusters):
+            # organize results.
+            neu_ci_1 = np.concatenate(
+                [neu[:,dci==ci,:].reshape(-1, neu.shape[2])
+                 for neu,dci in zip(neu_seq_1,day_cluster_id)], axis=0)
+            neu_ci_2 = np.concatenate(
+                [neu[:,dci==ci,:].reshape(-1, neu.shape[2])
                  for neu,dci in zip(neu_seq_2,day_cluster_id)], axis=0)
             # compute response within window.
             quant_1 = [get_mean_sem_win(
@@ -1321,27 +1414,62 @@ class utils_basic:
                 neu_time, c_time, win_eval[i][0], win_eval[i][1], mode=mode[i])
                 for i in range(2)]
             # get single neuron response with baseline correction.
-            q1 = quant_1[1][0] - quant_1[0][1]
-            q2 = quant_2[1][0] - quant_2[0][1]
+            if baseline_correction:
+                q1 = quant_1[1][0] - quant_1[0][1]
+                q2 = quant_2[1][0] - quant_2[0][1]
+            else:
+                q1 = quant_1[1][0]
+                q2 = quant_2[1][0]
+            # plot empirical distribution.
+            d1 = self.plot_dist(axs[ci], q1, c_neu[0], cumulative)
+            d2 = self.plot_dist(axs[ci], q2, c_neu[1], cumulative)
             # find bounds.
-            upper = np.nanmax([q1, q2])
-            lower = np.nanmin([q1, q2])
-            # plot scatter.
-            axs[self.n_clusters-ci-1].scatter(q1, q2, color=color, s=1, alpha=0.5)
-            # plot unit line.
-            axs[self.n_clusters-ci-1].plot(
-                np.arange(-25,25), np.arange(-25,25), linestyle=':', color='#2C2C2C')
+            xu = np.nanmax(np.concatenate([q1, q2]))
+            xl = np.nanmin(np.concatenate([q1, q2]))
+            yu = np.nanmax(np.concatenate([d1, d2]))
+            # plot statistics test.
+            r = get_stat_test(q1, q2, 'mean')[1]
+            axs[ci].text(
+                xl-0.05*(xu-xl), yu*(1-len_scale-0.2), self.stat_sym[r],
+                ha='center', va='center')
+            # plot scale bar.
+            axs[ci].vlines(
+                xl-0.05*(xu-xl),
+                yu*(1-len_scale), yu,
+                color='#2C2C2C')
+            axs[ci].text(xl-0.09*(xu-xl), yu*(1-len_scale/2),
+                '{:.2f}'.format(len_scale*yu),
+                va='center', ha='center', rotation=90, color='#2C2C2C')
             # adjust layouts.
-            axs[self.n_clusters-ci-1].tick_params(tick1On=False)
-            axs[self.n_clusters-ci-1].spines['right'].set_visible(False)
-            axs[self.n_clusters-ci-1].spines['top'].set_visible(False) 
-            axs[self.n_clusters-ci-1].set_xticks([])
-            axs[self.n_clusters-ci-1].set_yticks([])
-            axs[self.n_clusters-ci-1].set_xlim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
-            axs[self.n_clusters-ci-1].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
-            axs[self.n_clusters-ci-1].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
-            axs[self.n_clusters-ci-1].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+            axs[ci].tick_params(axis='x', direction='in')
+            axs[ci].tick_params(axis='y', tick1On=False)
+            axs[ci].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+            axs[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
+            axs[ci].spines['left'].set_visible(False)
+            axs[ci].spines['right'].set_visible(False)
+            axs[ci].spines['top'].set_visible(False) 
+            axs[ci].set_yticks([])
+            axs[ci].set_xlim([xl - 0.1*(xu-xl), xu - 0.1*(xu-xl)])
+            axs[ci].set_ylim([0, yu*1.1])
     
+    def plot_cluster_heatmap_trial(
+            self, axs_hm, axs_cb,
+            neu_x, neu_time,
+            cmap, norm_mode,
+            ):
+        for ci in range(self.n_clusters):
+            neu_h, norm, cmap = apply_colormap(
+                neu_x[ci], cmap, norm_mode=norm_mode, data_share=neu_x)
+            # plot heatmap.
+            axs_hm[ci].imshow(
+                neu_h,
+                extent=[neu_time[0], neu_time[-1], 1, neu_h.shape[0]],
+                interpolation='nearest', aspect='auto')
+            # adjust layouts.
+            adjust_layout_heatmap(axs_hm[ci])
+            #add_heatmap_colorbar(axs_cb[ci], cmap, norm, 'dF/F')
+            axs_cb[ci].axis('off')
+        
     def plot_cluster_heatmap(self, ax, neu_seq, neu_time, cluster_id, norm_mode, cmap):
         gap = 5
         win_conv = 5
@@ -1423,8 +1551,9 @@ class utils_basic:
         ax.set_xlabel('number of points in node')
         ax.set_yticks([])
 
-    def plot_3d_latent_dynamics(self, ax, neu_z, stim_seq, neu_time, c_stim, add_stim=True):
-        c_neu = get_cmap_color(neu_z.shape[1], cmap=self.latent_cmap)
+    def plot_3d_latent_dynamics(self, ax, neu_z, stim_seq, neu_time, c_stim, cmap=None, add_stim=True):
+        cmap = self.latent_cmap if cmap==None else cmap
+        c_neu = get_cmap_color(neu_z.shape[1], cmap=cmap)
         # plot dynamics.
         for t in range(neu_z.shape[1]-1):
             # trajaectory.
@@ -1439,4 +1568,5 @@ class utils_basic:
                     neu_time, 0, stim_seq[j,0], stim_seq[j,1])
                 ax.plot(neu_z[0,l_idx:r_idx], neu_z[1,l_idx:r_idx], neu_z[2,l_idx:r_idx],
                         lw=3, color=c_stim[j])
+    
 

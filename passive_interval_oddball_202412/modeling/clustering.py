@@ -41,11 +41,11 @@ def get_cluster_cate(cluster_id_all, list_labels, list_significance, cate):
 def get_mean_sem_cluster(neu, n_clusters, cluster_id):
     neu_mean = np.zeros((n_clusters, neu.shape[1])) * np.nan
     neu_sem  = np.zeros((n_clusters, neu.shape[1])) * np.nan
-    for i in range(n_clusters):
-        idx = np.where(cluster_id==i)[0]
+    for ci in range(n_clusters):
+        idx = np.where(cluster_id==ci)[0]
         if len(idx) > 0:
-            neu_mean[i,:], neu_sem[i,:] = get_mean_sem(
-                neu[np.where(cluster_id==i)[0], :].reshape(-1,neu.shape[1]))
+            neu_mean[ci,:], neu_sem[ci,:] = get_mean_sem(
+                neu[np.where(cluster_id==ci)[0], :].reshape(-1,neu.shape[1]))
     return neu_mean, neu_sem
 
 # compute mean and sem for bined data for clusters.
