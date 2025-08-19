@@ -1,307 +1,211 @@
 #!/usr/bin/env python3
 
-import pywt
 import numpy as np
-from tqdm import tqdm
-from skimage.feature import peak_local_max
-from sklearn.cluster import KMeans
-from scipy.stats import linregress
+import matplotlib.pyplot as plt
+from scipy.special import erfc
+from scipy.optimize import curve_fit
+from sklearn.metrics import r2_score
 
+from modeling.utils import norm01
 from modeling.utils import get_frame_idx_from_time
 
-# compute the curvature of line.
-def get_curvature(data):
-    t = np.arange(len(data))
-    dx = np.gradient(data)
-    ddx = np.gradient(dx)
-    curvature = np.polyfit(ddx, t, 1)[0]
-    return curvature
+# average across subsampling neurons.
+def sub_sampling(neu_seq):
+    samping_size = 0.2
+    sampling_times = 50
+    # compute number of samples.
+    n_samples = int(samping_size*neu_seq.shape[0])+1
+    # average across ramdom subset of neurons.
+    neu_seq_sub = np.zeros([sampling_times, neu_seq.shape[1]])
+    for qi in range(sampling_times):
+        sub_idx = np.random.choice(neu_seq.shape[0], n_samples, replace=False)
+        neu_seq_sub[qi,:] = np.nanmean(neu_seq[sub_idx,:], axis=0)
+    return neu_seq_sub
 
-# test linearity of a line.
-def stat_test_linear(data):
-    t = np.arange(len(data))
-    _, _, _, p_value, _ = linregress(t, data)
-    return p_value
+# define temporal receptive field model.
+def trf_model(t, b, a, m, r, s, ramp_sign=1):
+    t_eff = ramp_sign * t
+    term_factor = ramp_sign*np.abs(a)/2
+    term_exp = np.exp((2*m + r**2) / (2*s) - t_eff/s)
+    term_erfc = erfc((m + (r**2)/s - t_eff) / (np.sqrt(2)*r))
+    trf = b + term_factor * term_exp * term_erfc
+    return trf
+def trf_model_up(t, b, a, m, r, s):
+    return trf_model(t, b, a, m, r, s, 1)
+def trf_model_dn(t, b, a, m, r, s):
+    return trf_model(t, b, a, m, r, s, -1)
 
-# onset detection with wavelet.
-def get_change_onset(nsm, neu_time, win_eval_c):
-    num_peaks = 2
-    pct = 80
-    win_eval = [-1000, 1500]
-    win_val = [-350,350]
-    # evaluation window.
-    l_idx, r_idx = get_frame_idx_from_time(neu_time, win_eval_c, win_eval[0], win_eval[1])
-    nsm = nsm[l_idx:r_idx].copy()
-    nt = neu_time[l_idx:r_idx]
+# fit response model for single trace.
+def fit_trf_model(nsl, nsr, l_time, r_time):
+    # initial conditions.
+    init_b = 0.0
+    init_a = 0.5
+    init_m = 0.3
+    init_r = 0.15
+    init_s = 0.5
+    p0 = [init_b, init_a, init_m, init_r, init_s]
+    # bounds.
+    bounds_b = [-2.0, 2.0]
+    bounds_a = [0.0, 25.0]
+    bounds_m = [-2, 2]
+    bounds_r = [1e-3, 0.7]
+    bounds_s = [1e-3, 0.9]
+    bounds = [np.array([bounds_b[0], bounds_a[0], bounds_m[0], bounds_r[0], bounds_s[0]]),
+              np.array([bounds_b[1], bounds_a[1], bounds_m[1], bounds_r[1], bounds_s[1]])]
+    # fit models.
     try:
-        # wavelet transform.
-        wavelets = ['cgau1','cmor2.5-0.5','fbsp']
-        scales = np.arange(1, 64)
-        sampling_period = np.mean(np.diff(neu_time))
-        coef = [
-            pywt.cwt(nsm, scales, wavelets[wi], sampling_period=sampling_period)[0]
-            for wi in range(len(wavelets))]
-        # collect all real and imaginery results.
-        coef = [coef[wi].real for wi in range(len(wavelets))] + [coef[wi].imag for wi in range(len(wavelets))]
-        # max in time frequency map is dropping onset.
-        candi_drop = [peak_local_max(c, threshold_abs=np.percentile(c, pct), num_peaks=num_peaks) for c in coef]
-        # min in time frequency map is ramping onset.
-        candi_ramp = [peak_local_max(-c, threshold_abs=np.percentile(c, pct), num_peaks=num_peaks) for c in coef]
-        # validation window index.
-        val_c_idx, _ = get_frame_idx_from_time(neu_time, 0, 0, 0)
-        val_l_idx, val_r_idx = get_frame_idx_from_time(neu_time, 0, win_val[0], win_val[1])
-        val_l_idx = val_c_idx - val_l_idx
-        val_r_idx = val_r_idx - val_c_idx
-        # collect target trace within validation window.
-        val_drop, val_ramp = [], []
-        idx_drop, idx_ramp = [], []
-        for ci in range(len(coef)):
-            for pi in range(candi_drop[ci].shape[0]):
-                i = candi_drop[ci][pi,1]
-                if (i > val_l_idx and i < len(nt)-val_r_idx):
-                    val_drop.append(nsm[i-val_l_idx:i+val_r_idx].reshape(1,-1))
-                    idx_drop.append(i.reshape(-1))
-            for pi in range(candi_ramp[ci].shape[0]):
-                i = candi_ramp[ci][pi,1]
-                if (i > val_l_idx and i < len(nt)-val_r_idx):
-                    val_ramp.append(nsm[i-val_l_idx:i+val_r_idx].reshape(1,-1))
-                    idx_ramp.append(i.reshape(-1))
-        val_drop = np.concatenate(val_drop, axis=0)
-        val_ramp = np.concatenate(val_ramp, axis=0)
-        idx_drop = np.concatenate(idx_drop)
-        idx_ramp = np.concatenate(idx_ramp)
-        # run clustering to divide into two groups.
-        cluster_id_drop = KMeans(n_clusters=2).fit_predict(val_drop)
-        cluster_id_ramp = KMeans(n_clusters=2).fit_predict(val_ramp)
-        # compute clustering mean.
-        cluster_mean_drop = [np.nanmean(val_drop[cluster_id_drop==i], axis=0) for i in range(2)]
-        cluster_mean_ramp = [np.nanmean(val_ramp[cluster_id_ramp==i], axis=0) for i in range(2)]
-        # find the group with less linearity.
-        p_drop = [stat_test_linear(m) for m in cluster_mean_drop]
-        p_ramp = [stat_test_linear(m) for m in cluster_mean_ramp]
-        val_drop = val_drop[cluster_id_drop==np.argmax(p_drop),:]
-        val_ramp = val_ramp[cluster_id_ramp==np.argmax(p_ramp),:]
-        idx_drop = idx_drop[cluster_id_drop==np.argmax(p_drop)]
-        idx_ramp = idx_ramp[cluster_id_ramp==np.argmax(p_ramp)]
-        # keep the one closet to center stimulus onset.
-        c_idx, _ = get_frame_idx_from_time(nt, 0, win_eval_c, 0)
-        val_drop = val_drop[np.argmin(np.abs(idx_drop - c_idx)),:]
-        val_ramp = val_ramp[np.argmin(np.abs(idx_ramp - c_idx)),:]
-        idx_drop = np.array(idx_drop[np.argmin(np.abs(idx_drop - c_idx))])
-        idx_ramp = np.array(idx_ramp[np.argmin(np.abs(idx_ramp - c_idx))])
-        # refine with local optimum.
-        idx_drop = idx_drop - val_l_idx + np.argmax(val_drop)
-        idx_ramp = idx_ramp - val_l_idx + np.argmin(val_ramp)
-        # convert to time.
-        onset_drop = np.array(nt[idx_drop])
-        onset_ramp = np.array(nt[idx_ramp])
+        popt_up, _ = curve_fit(trf_model_up, l_time, nsl, p0=p0, bounds=bounds, maxfev=20000)
+        popt_dn, _ = curve_fit(trf_model_dn, r_time, nsr, p0=p0, bounds=bounds, maxfev=20000)
+        y_pred_up = trf_model_up(l_time, *popt_up)
+        y_pred_dn = trf_model_dn(r_time, *popt_dn)
+        r2_up = r2_score(nsl, y_pred_up)
+        r2_dn = r2_score(nsr, y_pred_dn)
     except:
-        onset_drop = np.nan
-        onset_ramp = np.nan
-    return onset_drop, onset_ramp
+        popt_up = np.full(5, np.nan)
+        popt_dn = np.full(5, np.nan)
+        y_pred_up = np.full_like(nsl, np.nan)
+        y_pred_dn = np.full_like(nsr, np.nan)
+        r2_up = np.nan
+        r2_dn = np.nan
+    return popt_up, popt_dn, y_pred_up, y_pred_dn, r2_up, r2_dn
 
-# peak and valley value.
-def get_peak_valley(nsm, neu_time, onset_drop, onset_ramp):
-    if not np.isnan(onset_drop) and not np.isnan(onset_ramp):
-        idx_drop, idx_ramp = get_frame_idx_from_time(neu_time, 0, onset_drop, onset_ramp)
-        neu_peak   = nsm[idx_drop]
-        neu_valley = nsm[idx_ramp]
-    else:
-        neu_peak = np.nan
-        neu_valley = np.nan
-    return neu_peak, neu_valley
-
-# stimulus evoked latency.
-def get_stim_evoke_latency(onset_drop, onset_ramp):
-    try:
-        evoke_latency = onset_ramp - onset_drop
-    except:
-        evoke_latency = np.nan
-    return evoke_latency
-
-# stimulus evoked response.
-def get_stim_evoke_mag(onset_drop, onset_ramp, neu_peak, neu_valley):
-    try:
-        sign = np.sign(np.nanmean(onset_ramp) - np.nanmean(onset_drop))
-        evoke_mag = sign * (neu_valley - neu_peak)
-    except:
-        evoke_mag = np.nan
-    return evoke_mag
-
-# stimulus evoked response slope.
-def get_stim_evoke_slope(onset_drop, onset_ramp, neu_peak, neu_valley):
-    try:
-        evoke_slope = (onset_drop - onset_ramp) / (neu_peak - neu_valley)
-    except:
-        evoke_slope = np.nan
-    return evoke_slope
-
-# compute all metrics.
-def get_all_metrics(nsm, neu_time, win_eval_c):
-    onset_drop, onset_ramp = get_change_onset(nsm, neu_time, win_eval_c)
-    neu_peak, neu_valley = get_peak_valley(nsm, neu_time, onset_drop, onset_ramp)
-    evoke_latency = get_stim_evoke_latency(onset_drop, onset_ramp)
-    evoke_mag = get_stim_evoke_mag(onset_drop, onset_ramp, neu_peak, neu_valley)
-    evoke_slope = get_stim_evoke_slope(onset_drop, onset_ramp, neu_peak, neu_valley)
-    quant = {
-        'onset_drop': onset_drop - win_eval_c,
-        'onset_ramp': onset_ramp - win_eval_c,
-        'neu_peak': neu_peak,
-        'neu_valley': neu_valley,
-        'evoke_latency': evoke_latency,
-        'evoke_mag': evoke_mag,
-        'evoke_slope': evoke_slope,
-        }
-    return quant
-
-# compute all metrics for each traces.
-def run_quantification(neu_seq, neu_time, win_eval_c, samping_size=0.2):
-    quant = []
-    # average subset of traces.
-    if samping_size > 0:
-        sampling_time = 10
-        n_samples = int(samping_size*neu_seq.shape[0])+1
-        
-        for qi in tqdm(range(sampling_time), desc='sample'):
-            sub_idx = np.random.choice(neu_seq.shape[0], n_samples, replace=False)
-            nsm = np.nanmean(neu_seq[sub_idx,:], axis=0)
-            q = get_all_metrics(nsm, neu_time, win_eval_c)
-            quant.append(q)
-    # compute for all individual traces.
-    else:
-        for ni in tqdm(range(neu_seq.shape[0]), desc='sample'):
-            nsm = neu_seq[ni,:].copy()
-            q = get_all_metrics(nsm, neu_time, win_eval_c)
-            quant.append(q)
-    quant = {k: np.array([q[k] for q in quant]) for k in q.keys()}
-    return quant
-    
-
-    
-
+# fit response model for all input neurons.
+def fit_trf_model_all(neu_seq, neu_time):
+    margin_time = 300
+    # subsampling neurons.
+    neu_seq_sub = sub_sampling(neu_seq)
+    # get time zero.
+    l_bound, r_bound = get_frame_idx_from_time(neu_time, 0, margin_time, -margin_time)
+    # z score data.
+    neu_seq_sub = (neu_seq_sub - np.nanmean(neu_seq)) / (np.nanstd(neu_seq_sub) + 1e-8)
+    neu_seq_l = neu_seq_sub[:,:l_bound]
+    neu_seq_r = neu_seq_sub[:,r_bound:]
+    # normlize time.
+    l_time = norm01(neu_time[:l_bound])
+    r_time = norm01(neu_time[r_bound:])
+    # initialize results.
+    popt_up = np.zeros([5,neu_seq_sub.shape[0]])
+    popt_dn = np.zeros([5,neu_seq_sub.shape[0]])
+    y_pred_up = np.zeros_like(neu_seq_l)
+    y_pred_dn = np.zeros_like(neu_seq_r)
+    r2_up = np.zeros([neu_seq_sub.shape[1]])
+    r2_dn = np.zeros([neu_seq_sub.shape[1]])
+    # fit model for each neuron.
+    for ni in range(neu_seq_sub.shape[0]):
+        results = fit_trf_model(neu_seq_l[ni,:], neu_seq_r[ni,:], l_time, r_time)
+        popt_up[:,ni] = results[0]
+        popt_dn[:,ni] = results[1]
+        y_pred_up[ni,:] = results[2]
+        y_pred_dn[ni,:] = results[3]
+        r2_up[ni] = results[4]
+        r2_dn[ni] = results[5]
 
 '''
-n_clusters = 6
 
-lbl = ['cluster #'+str(ci) for ci in range(n_clusters)]
-xlim = [-2500, 4000]
-kernel_time, kernel_all, cluster_id, neu_labels = run_clustering(cate)
-oddball = 1
+neu_time = neu_time_1
+neu_seq = neu_seq_1[0,cluster_id==2,:]
+nsl, nsr = neu_seq_l[0,:], neu_seq_r[0,:]
 
-# collect data.
-[[color0, color1, color2, _],
- [neu_seq, _, stim_seq, stim_value],
- [neu_labels, neu_sig], _] = get_neu_trial(
-    alignment, list_labels, list_significance, list_stim_labels,
-    trial_idx=[l[oddball] for l in list_odd_idx],
-    trial_param=[None, None, [0], None, [0], [0]],
-    cate=cate, roi_id=None)
-
-# get response within cluster.
-neu_mean, neu_sem = get_mean_sem_cluster(neu_seq, cluster_id)
-neu_time = alignment['neu_time']
-
-c_idx = int(stim_seq.shape[0]/2)
-win_eval_c = stim_seq[c_idx+1,0]
-
-fig, axs = plt.subplots(2, n_clusters, figsize=(2*n_clusters,4))
-for cli in range(n_clusters):
-    nsm = neu_mean[cli,:]
-    onset_drop, onset_ramp = get_change_onset(nsm, neu_time, win_eval_c)
-    axs[0,cli].plot(neu_time, nsm, color='black')
-    axs[0,cli].axvline(onset_drop, color='crimson', linestyle=':')
-    axs[0,cli].axvline(onset_ramp, color='royalblue', linestyle=':')
-    axs[0,cli].set_xlim(xlim)
-
-fig, axs = plt.subplots(9, n_clusters, figsize=(2*n_clusters,20))
-for cli in range(n_clusters):
-    nsm = neu_mean[cli,:]
+fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+for i in range(sampling_times):
+    ax.plot(l_time, neu_seq_l[i,:], color='black', alpha=0.1)
+    ax.plot(l_time, y_pred_up[i,:], color='dodgerblue', alpha=0.1)
     
-    num_peaks = 2
-    pct = 80
-    win_eval = [-1000, 1500]
-    win_val = [-350,350]
-    # evaluation window.
-    l_idx, r_idx = get_frame_idx_from_time(neu_time, win_eval_c, win_eval[0], win_eval[1])
-    nsm = nsm[l_idx:r_idx].copy()
-    nt = neu_time[l_idx:r_idx]
-    # wavelet transform.
-    wavelets = ['cgau1','cmor2.5-0.5','fbsp']
-    scales = np.arange(1, 64)
-    sampling_period = np.mean(np.diff(neu_time))
-    coef = [
-        pywt.cwt(nsm, scales, wavelets[wi], sampling_period=sampling_period)[0]
-        for wi in range(len(wavelets))]
-    # collect all real and imaginery results.
-    coef = [coef[wi].real for wi in range(len(wavelets))] + [coef[wi].imag for wi in range(len(wavelets))]
-    # max in time frequency map is dropping onset.
-    candi_drop = [peak_local_max(c, threshold_abs=np.percentile(c, pct), num_peaks=num_peaks) for c in coef]
-    # min in time frequency map is ramping onset.
-    candi_ramp = [peak_local_max(-c, threshold_abs=np.percentile(c, pct), num_peaks=num_peaks) for c in coef]
-    # validation window index.
-    val_c_idx, _ = get_frame_idx_from_time(neu_time, 0, 0, 0)
-    val_l_idx, val_r_idx = get_frame_idx_from_time(neu_time, 0, win_val[0], win_val[1])
-    val_l_idx = val_c_idx - val_l_idx
-    val_r_idx = val_r_idx - val_c_idx
-    # collect target trace within validation window.
-    val_drop, val_ramp = [], []
-    idx_drop, idx_ramp = [], []
-    for ci in range(len(coef)):
-        for pi in range(candi_drop[ci].shape[0]):
-            i = candi_drop[ci][pi,1]
-            if (i > val_l_idx and i < len(nt)-val_r_idx):
-                val_drop.append(nsm[i-val_l_idx:i+val_r_idx].reshape(1,-1))
-                idx_drop.append(i.reshape(-1))
-        for pi in range(candi_ramp[ci].shape[0]):
-            i = candi_ramp[ci][pi,1]
-            if (i > val_l_idx and i < len(nt)-val_r_idx):
-                val_ramp.append(nsm[i-val_l_idx:i+val_r_idx].reshape(1,-1))
-                idx_ramp.append(i.reshape(-1))
-    val_drop = np.concatenate(val_drop, axis=0)
-    val_ramp = np.concatenate(val_ramp, axis=0)
-    idx_drop = np.concatenate(idx_drop)
-    idx_ramp = np.concatenate(idx_ramp)
-    # run clustering to divide into two groups.
-    cluster_id_drop = KMeans(n_clusters=2).fit_predict(val_drop)
-    cluster_id_ramp = KMeans(n_clusters=2).fit_predict(val_ramp)
-    # compute clustering mean.
-    cluster_mean_drop = [np.nanmean(val_drop[cluster_id_drop==i], axis=0) for i in range(2)]
-    cluster_mean_ramp = [np.nanmean(val_ramp[cluster_id_ramp==i], axis=0) for i in range(2)]
-    # find the group with less linearity.
-    p_drop = [stat_test_linear(m) for m in cluster_mean_drop]
-    p_ramp = [stat_test_linear(m) for m in cluster_mean_ramp]
-    val_drop = val_drop[cluster_id_drop==np.argmax(p_drop),:]
-    val_ramp = val_ramp[cluster_id_ramp==np.argmax(p_ramp),:]
-    idx_drop = idx_drop[cluster_id_drop==np.argmax(p_drop)]
-    idx_ramp = idx_ramp[cluster_id_ramp==np.argmax(p_ramp)]
-    # keep the one closet to center stimulus onset.
-    c_idx, _ = get_frame_idx_from_time(nt, 0, win_eval_c, 0)
-    val_drop = val_drop[np.argmin(np.abs(idx_drop - c_idx)),:]
-    val_ramp = val_ramp[np.argmin(np.abs(idx_ramp - c_idx)),:]
-    idx_drop = np.array(idx_drop[np.argmin(np.abs(idx_drop - c_idx))])
-    idx_ramp = np.array(idx_ramp[np.argmin(np.abs(idx_ramp - c_idx))])
-    # refine with local optimum.
-    idx_drop = idx_drop - val_l_idx + np.argmax(val_drop)
-    idx_ramp = idx_ramp - val_l_idx + np.argmin(val_ramp)
-    # convert to time.
-    onset_drop = np.array(nt[idx_drop])
-    onset_ramp = np.array(nt[idx_ramp])
-
-    axs[0,cli].plot(nt, nsm, color='black')
-    axs[0,cli].axvline(onset_drop, color='crimson', linestyle=':')
-    axs[0,cli].axvline(onset_ramp, color='royalblue', linestyle=':')
-    dnsm = np.diff(nsm, prepend=nsm[0])
-    axs[1,cli].plot(nt, dnsm, color='black')
-    ddnsm = np.diff(dnsm, prepend=dnsm[0])
-    axs[2,cli].plot(nt, ddnsm, color='black')
-    
-    extent=[nt[0], nt[-1], scales[-1], scales[0]]
-    for wi in range(6):
-        axs[wi+3,cli].imshow(coef[wi], extent=extent, aspect='auto', cmap='coolwarm')  
-    for wi in range(6):
-        for i in candi_drop[wi][:,1]:
-            axs[wi+3,cli].axvline(nt[i], color='crimson', linestyle=':')
-        for i in candi_ramp[wi][:,1]:
-            axs[wi+3,cli].axvline(nt[i], color='royalblue', linestyle=':')
-
+fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+for i in range(sampling_times):
+    ax.plot(r_time, neu_seq_r[i,:], color='black', alpha=0.2)
+    ax.plot(r_time, y_pred_dn[i,:], color='dodgerblue', alpha=0.1)
 '''
+
+
+# ---------- Fitting ----------
+
+def fit_half(t_half, y_half, ramp='up', a_sign='pos'):
+    # initial guesses
+    b0 = np.median(y_half)
+    a0 = max(0.2, np.percentile(y_half, 95) - np.percentile(y_half, 5))
+    if a_sign == 'neg':
+        a0 = -a0
+    mu0 = -0.8  # works for both due to form
+    r0, s0 = 0.4, 1.0
+
+    # bounds
+    b_bounds = (y_half.min() - 2.0, y_half.max() + 2.0)
+    if a_sign == 'pos':
+        a_bounds = (0.0, 50.0)
+    else:
+        a_bounds = (-50.0, 0.0)
+    mu_bounds = (-T_pre, 1.0)  # broad
+    r_bounds = (0.05, 2.0)
+    s_bounds = (0.05, 3.0)
+
+    p0 = (b0, a0, mu0, r0, s0)
+    bounds = (np.array([b_bounds[0], a_bounds[0], mu_bounds[0], r_bounds[0], s_bounds[0]]),
+              np.array([b_bounds[1], a_bounds[1], mu_bounds[1], r_bounds[1], s_bounds[1]]))
+
+    model = trf_model_up if ramp == 'up' else trf_model_down
+
+    try:
+        popt, _ = curve_fit(model, t_half, y_half, p0=p0, bounds=bounds, maxfev=20000)
+        y_pred = model(t_half, *popt)
+        r2 = r2_score(y_half, y_pred)
+        return popt, y_pred, r2
+    except Exception:
+        return (np.full(5, np.nan), np.full_like(y_half, np.nan), np.nan)
+
+
+# Containers
+trf_param_up = np.zeros((n_neurons, 5))   # b, a, mu, r, s
+trf_param_down = np.zeros((n_neurons, 5))
+r2_all_up = np.zeros(n_neurons)
+r2_all_down = np.zeros(n_neurons)
+
+# Fit each neuron
+for i in range(n_neurons):
+    # Pre-stim fit (ramp-up model), constrain a >= 0
+    p_up, yhat_up, r2_up = fit_half(t_neg, neu_seq[i, :split], ramp='up', a_sign='pos')
+    trf_param_up[i] = p_up
+    r2_all_up[i] = r2_up
+
+    # Post-stim fit (ramp-down model), constrain sign by neuron type
+    a_sign = 'neg' if mask_typeA[i] else 'pos'
+    p_down, yhat_down, r2_down = fit_half(t_pos, neu_seq[i, split:], ramp='down', a_sign=a_sign)
+    trf_param_down[i] = p_down
+    r2_all_down[i] = r2_down
+
+# ---------- Plotting (20 neurons per type) ----------
+
+def plot_group(indices, title_prefix):
+    fig, axes = plt.subplots(4, 5, figsize=(20, 12))
+    axes = axes.ravel()
+    for ax, i in zip(axes, indices):
+        y = neu_seq[i]
+        # model preds
+        y_up = mexg_fixed_up(t_neg, *trf_param_up[i])
+        y_down = mexg_fixed_down(t_pos, *trf_param_down[i])
+        ax.plot(t_neg, y[:split], linewidth=1.0)
+        ax.plot(t_neg, y_up, linewidth=2.0)
+        ax.plot(t_pos, y[split:], linewidth=1.0)
+        ax.plot(t_pos, y_down, linewidth=2.0)
+        ax.axvline(0, linestyle='--', linewidth=1.0)
+        ax.set_title(
+            f"{title_prefix} {i} | R2_up={r2_all_up[i]:.2f}, R2_down={r2_all_down[i]:.2f}",
+            fontsize=9)
+        ax.set_xlabel("Time (s)")
+        ax.set_ylabel("Rate (a.u.)")
+    plt.tight_layout()
+    return fig
+
+# Select 20 from each type
+idx_up = rng.choice(np.where(mask_typeA)[0], size=20, replace=False)
+idx_down = rng.choice(np.where(mask_typeB)[0], size=20, replace=False)
+
+fig1 = plot_group(idx_up, "RampUp→Inhibit")
+fig2 = plot_group(idx_down, "Excited→RampDown")
+
+plt.show()
+
+print("trf_param_up shape:", trf_param_up.shape)
+print("trf_param_down shape:", trf_param_down.shape)
+print("r2_all_up (mean±sd):", np.nanmean(r2_all_up), np.nanstd(r2_all_up))
+print("r2_all_down (mean±sd):", np.nanmean(r2_all_down), np.nanstd(r2_all_down))

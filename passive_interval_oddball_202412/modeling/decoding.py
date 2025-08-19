@@ -2,10 +2,12 @@
 
 import numpy as np
 from tqdm import tqdm
+from sklearn.utils import shuffle
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
+from sklearn.svm import SVR
 from sklearn.metrics import mean_absolute_percentage_error
 from sklearn.metrics import r2_score
 from sklearn.metrics import log_loss
@@ -16,9 +18,10 @@ from modeling.utils import get_mean_sem
 
 # fit a line and report goodness.
 def fit_poly_line(x, y, order):
-    coeffs = np.polyfit(x, y, order)
+    idx = ~np.isnan(y)
+    coeffs = np.polyfit(x[idx], y[idx], order)
     y_pred = np.polyval(coeffs, x)
-    mape = mean_absolute_percentage_error(y, y_pred)
+    mape = mean_absolute_percentage_error(y[idx], y_pred[idx])
     return y_pred, mape
 
 # sample neuron population decoding by sliding window.
@@ -71,6 +74,22 @@ def decoding_evaluation(x, y):
         results_chance.append(model.score(x_test, np.random.permutation(y_test)))
     return results_model, results_chance
 
+def regression_evaluation(x, y):
+    n_splits = 5
+    test_size = 0.2
+    x, y = shuffle(x, y)
+    sss = StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size)
+    results_model = []
+    results_chance = []
+    for train_idx, test_idx in sss.split(x, y):
+        x_train, x_test = x[train_idx].reshape(-1, 1), x[test_idx].reshape(-1, 1)
+        y_train, y_test = y[train_idx].reshape(-1, 1), y[test_idx].reshape(-1, 1)
+        model = SVR(kernel='linear')
+        model.fit(x_train, y_train)
+        results_model.append(model.score(x_test, y_test))
+        results_chance.append(model.score(x_test, np.random.permutation(y_test)))
+    return results_model, results_chance
+
 # single trial decoding by sliding window.
 def multi_sess_decoding_slide_win(
         neu_x, neu_time,
@@ -100,7 +119,7 @@ def multi_sess_decoding_slide_win(
                 # run decoding.
                 rm, rc = decoding_evaluation(x, y)
                 results_model.append(rm)
-                results_chance.append(rc)   
+                results_chance.append(rc)
         acc_time.append(ti)
         acc_model.append(np.array(results_model).reshape(-1,1))
         acc_chance.append(np.array(results_chance).reshape(-1,1))
@@ -112,36 +131,25 @@ def multi_sess_decoding_slide_win(
     return acc_time, acc_model_mean, acc_model_sem, acc_chance_mean, acc_chance_sem
 
 # decoding time collapse.
-def multi_sess_decoding_time_eclapse(
+def multi_sess_decoding_time_elapse(
         neu_x, neu_time, win_decode
         ):
-    n_splits = 5
-    test_size = 0.2
+    bin_times = 100
     start_idx, end_idx = get_frame_idx_from_time(neu_time, 0, win_decode[0], win_decode[1])
-    # run decoding.
-    results_model = []
-    results_chance = []
-    # run decoding for each condition.
-    for si in range(len(neu_x)):
-        if neu_x[si].shape[0] >= 2 and neu_x[si].shape[1] >=1 :
-            # take data within range.
-            x = neu_x[si][:,:,start_idx:end_idx]
-            y = np.tile(np.arange(x.shape[2]), (x.shape[0], 1))
-            # create input data.
-            x = x.transpose(0, 2, 1).reshape(-1, x.shape[1])
-            y = y.reshape(-1)
-            # run decoding.
-            sss = StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size)
-            for train_idx, test_idx in sss.split(x, y):
-                # split sets.
-                x_train, x_test = x[train_idx], x[test_idx]
-                y_train, y_test = y[train_idx], y[test_idx]
-                # fit model.
-                model = LinearRegression()
-                model.fit(x_train, y_train)
-                # test model.
-                results_model.append(r2_score(y_test, model.predict(x_test)))
-                results_chance.append(r2_score(np.random.permutation(y_test), model.predict(x_test)))
-    results_model = np.array(results_model)
-    results_chance = np.array(results_chance)
-    return results_model, results_chance
+    bin_l_idx, bin_r_idx = get_frame_idx_from_time(neu_time, 0, 0, bin_times)
+    bin_len = bin_r_idx - bin_l_idx
+    # take data within range.
+    x = neu_x[:,start_idx:end_idx]
+    # trim remainder.
+    x = x[:,:(x.shape[1]//bin_len)*bin_len]
+    x = np.nanmean(x.reshape(x.shape[0], -1, bin_len), axis=2)
+    y = np.tile(np.arange(x.shape[0]), (x.shape[1], 1)).T
+    x = x.reshape(-1)
+    y = y.reshape(-1)
+    # run regression.
+    results_model, results_chance = regression_evaluation(x, y)
+    results_model = np.array(results_model).reshape(-1,1)
+    results_chance = np.array(results_chance).reshape(-1,1)
+    results_model_mean, results_model_sem = get_mean_sem(results_model)
+    results_chance_mean, results_chance_sem = get_mean_sem(results_chance)
+    return results_model_mean, results_model_sem, results_chance_mean, results_chance_sem

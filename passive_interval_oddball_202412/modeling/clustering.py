@@ -1,28 +1,40 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from sklearn.cluster import AgglomerativeClustering
-
-from modeling.quantifications import run_quantification
+from tslearn.clustering import KShape
+from tslearn.preprocessing import TimeSeriesScalerMeanVariance
+ 
+from modeling.utils import norm01
 from modeling.utils import get_mean_sem
+from modeling.utils import get_frame_idx_from_time
 
 # clustering neural response.
 def clustering_neu_response_mode(x_in, n_clusters):
     print('Running clustering')
-    # feature normalization.
-    x_in -= np.nanmean(x_in, axis=1, keepdims=True)
     # cluster number must be less than sample number.
     n_clusters = n_clusters if n_clusters < x_in.shape[0] else x_in.shape[0]
+    # feature normalization.
+    x_in = TimeSeriesScalerMeanVariance().fit_transform(x_in)
     # run clustering model.
-    model = AgglomerativeClustering(n_clusters)
+    model = KShape(
+        n_clusters=n_clusters,
+        n_init=5,
+        verbose=True)
     cluster_id = model.fit_predict(x_in)
     return cluster_id
 
-# organize cluster labels based on stimulus evoked latency.
-def remap_cluster_id(neu, neu_time, n_clusters, cluster_id):
-    neu_seq, _ = get_mean_sem_cluster(neu, n_clusters, cluster_id)
-    evoke_time = run_quantification(neu_seq, neu_time, win_eval_c=0, samping_size=0)['evoke_latency']
-    sorted_labels = np.argsort(evoke_time)[::-1]
+# organize cluster labels based on stimulus evoked magnitude.
+def remap_cluster_id(kernel_all, kernel_time, n_clusters, cluster_id):
+    # get response within cluster.
+    glm_mean, _ = get_mean_sem_cluster(kernel_all, n_clusters, cluster_id)
+    # normalization.
+    glm_mean = np.apply_along_axis(norm01, 1, glm_mean)
+    # get time zero.
+    z = get_frame_idx_from_time(kernel_time, 0, 0, 0)[0]
+    # compute response magnitude.
+    mag = glm_mean[:,z] - glm_mean[:,0]
+    # sort labels.
+    sorted_labels = np.argsort(mag)[::-1]
     mapping = {val: i for i, val in enumerate(sorted_labels)}
     cluster_id = np.vectorize(mapping.get)(cluster_id)
     return cluster_id

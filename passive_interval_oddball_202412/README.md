@@ -369,3 +369,104 @@
 - Now plot_cluster_oddball_fix_all colors are defined within panel.
 - Added plot_oddball_fix_quant.
 - Rewritten plot_oddball_latent_fix_all.
+- Added plot_oddball_jitter_latent.
+- Removed plot_oddball_jitter_variability.
+
+## 2025.07.17
+- Moved plot_random_bin to plot_cluster_oddball_fix_all.
+- Removed plot_glm_kernel from plot_cluster_oddball_jitter_global_all.
+- Now plot_glm_kernel only plots a dashline at 0.
+- Added plot_isi_seting.
+
+## 2025.07.28
+- Rewritten plot_transition_latent_individual.
+- Removed plot_oddball_jitter_latent.
+- Now plot_oddball_latent_all plots all latent dynamics.
+- Changed coloring for plot_block_win_decode in plot_cluster_oddball_jitter_global_all.
+- Changed coloring for plot_oddball_jitter in plot_cluster_oddball_jitter_global_all.
+- Deleted plot_oddball_jitter_latent in plot_cluster_oddball_jitter_global_all.
+- Changed coloring for plot_win_mag_dist in plot_cluster_oddball_jitter_global_all.
+
+## 2025.07.29
+- Now plot_3d_latent_dynamics starts from 0.
+- Now plot_3d_latent_dynamics plots critical points.
+- Deleted axis limit settings in adjust_layout_3d_latent.
+- Now plot_3d_latent_dynamics plots stimulus as scatter.
+- Deleted plot_random_bin from plot_cluster_oddball_jitter_local_all.
+- Changed coloring for plot_oddball_jitter in plot_cluster_oddball_jitter_local_all.
+- Deleted plot_oddball_jitter_latent from plot_cluster_oddball_jitter_local_all.
+- Added random_bin_cmap.
+
+## 2025.07.31
+- Deleted plot_heatmap_neuron_cate.
+- Now apply_colormap uses default cmap.
+- Deleted plot_random_bin in plot_cluster_all.
+- Added interpolation and smoothing in plot_3d_latent_dynamics.
+- Added plot_standard to plot_latent_individual.
+- Now plot_standard in plot_cluster_heatmap_all has options to specify clustering or not.
+- Now pick_trial can specify fraction of trials.
+- Added heatmap_sort_frac.
+- Now plot_standard uses fraction of trials for sorting.
+
+## 2025.08.05
+- Now sort_heatmap_neuron uses rastermap for sorting.
+- Rewritten plot_heatmap_neuron with rastermap.
+- Fixed add_mark in plot_3d_latent_dynamics.
+- Now plot_3d_latent_dynamics plots stimulus as square.
+- Added plot_corr_mat.
+
+## 2025.08.08
+- Adjusted layout of plot_tansition.
+- Now fit_poly_line can handle nan values.
+- Added plot_interval_scaling to plot_cluster_oddball_jitter_local_all.
+- Added legend for plot_interval_scaling.
+- Added legend for plot_block_win_decode.
+- Added plot_standard to plot_cluster_oddball_jitter_global_all.
+- Added plot_standard_scale to plot_cluster_all.
+- Added trial correction to plot_tansition_trial_heatmap.
+- Rewritten plot_cross_epoch with trial average.
+
+## 2025.08.09
+- Fixed legend of plot_cluster_oddball_jitter_local_all.
+- Fixed plot_sorted_heatmaps_fix_all.
+- Now clustering uses k-shape.
+- Removed PCA in clsutering.
+- Rewritten remap_cluster_id.
+- Changed random_bin_cmap.
+- Fixed plot_cross_sess_adapt legend.
+- Now plot_interval_bin uses line as stimulus.
+- Fixed plot_standard_scale layout problem.
+- Added xlim constraint for stimulus in plot_cluster_mean_sem.
+- Added plot_sorted_heatmaps_all to short long.
+- Added plot_isi_example_epoch.
+
+## 2025.08.11
+- Fixed plot_cross_sess_adapt color.
+- Added plot_cluster_local_all.
+- Reduced max_pixel in plot_heatmap_neuron.
+- Fixed plot_tansition_trial_heatmap layout.
+- Decoupled trials_around and trials_eval for plot_tansition_trial_heatmap.
+- Changed plot_dis_mat cmap.
+- Rewritten plot_trial_corr.
+- Added red line to plot_tansition_trial_heatmap.
+- Removed mean correction in get_row_corr.
+
+## 2025.08.15
+- Now plot_dist_cluster_fraction averages across subjects.
+- Removed plot_interval_scaling in plot_cross_sess_adapt.
+- Added plot_heatmap_trial.
+- Added plot_interval_heatmap.
+- Removed scale factor in apply_colormap.
+- Added percentile scale in norm01.
+- Rewritten plot_cross_epoch.
+- Added plot_cross_day.
+- Now plot_standard can plot superimpose.
+- Rewritten plot_latent_individual.
+
+## 2025.08.16
+- Removed epoch in plot_cross_day.
+- Now plot_heatmap plots cluster heatmap.
+- Added plot_standard_heatmap.
+- Added get_peak_time.
+- Now plot_interval_scaling uses peak magnitude evaluation.
+- Fixed plot_tansition colors.

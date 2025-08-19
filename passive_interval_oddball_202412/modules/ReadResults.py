@@ -27,8 +27,6 @@ def create_memmap(data, dtype, mmap_path):
 # create folder for h5 data.
 def get_memmap_path(ops, h5_file_name):
     mm_folder_name, _ = os.path.splitext(h5_file_name)
-    if not os.path.exists(os.path.join(ops['save_path0'], 'memmap', mm_folder_name)):
-        os.makedirs(os.path.join(ops['save_path0'], 'memmap', mm_folder_name))
     mm_path = os.path.join(ops['save_path0'], 'memmap', mm_folder_name)
     file_path = os.path.join(ops['save_path0'], h5_file_name)
     return mm_path, file_path

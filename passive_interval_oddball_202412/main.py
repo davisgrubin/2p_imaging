@@ -79,8 +79,8 @@ def run(session_config_list, cate_list):
     print('===============================================')
     print('======== plotting representative masks ========')
     print('===============================================')
-    fn1 = visualization1_FieldOfView.run(session_config_list, smooth)
-    #fn1 = []
+    #fn1 = visualization1_FieldOfView.run(session_config_list, smooth)
+    fn1 = []
 
     print('===============================================')
     print('========= plotting 3331Random results =========')
@@ -97,14 +97,14 @@ def run(session_config_list, cate_list):
     print('===============================================')
     print('====== plotting 4131FixJitterOdd results ======')
     print('===============================================')
-    fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
-    #fn4 = []
+    #fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
+    fn4 = []
     
     print('===============================================')
     print('===== plotting 3331RandomExtended results =====')
     print('===============================================')
-    fn5 = visualization5_3331RandomExtended.run(session_config_list, smooth, cate_list)
-    #fn5 = []
+    #fn5 = visualization5_3331RandomExtended.run(session_config_list, smooth, cate_list)
+    fn5 = []
 
     print('===============================================')
     print('============ saving session report ============')
@@ -129,8 +129,8 @@ def run(session_config_list, cate_list):
 
 
 if __name__ == "__main__":
-    COMMANDLINE_MODE = 0
-    cate_list = [[-1,1,2], [-1], [1], [2]]
+    COMMANDLINE_MODE = 1
+    cate_list = [[-1,1,2]]
     from session_configs import all_config_list
     
     if COMMANDLINE_MODE:
@@ -149,11 +149,11 @@ if __name__ == "__main__":
     else:
         session_config_VTYH02 = {
             'list_session_name' : {
-                #'VTYH02_PPC_20250106_3331Random' : 'random',
-                #'VTYH02_PPC_20250107_3331Random' : 'random',
-                #'VTYH02_PPC_20250108_3331Random' : 'random',
-                #'VTYH02_PPC_20250109_3331Random' : 'random',
-                #'VTYH02_PPC_20250111_3331Random' : 'random',
+                'VTYH02_PPC_20250106_3331Random' : 'random',
+                'VTYH02_PPC_20250107_3331Random' : 'random',
+                'VTYH02_PPC_20250108_3331Random' : 'random',
+                'VTYH02_PPC_20250109_3331Random' : 'random',
+                'VTYH02_PPC_20250111_3331Random' : 'random',
                 #'VTYH02_PPC_20250118_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'VTYH02_PPC_20250120_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'VTYH02_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
@@ -165,20 +165,20 @@ if __name__ == "__main__":
                 #'VTYH02_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-                'VTYH02_PPC_20250205_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250206_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250207_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250208_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250210_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250211_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250212_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250213_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250214_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250218_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250221_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250225_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250226_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250228_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250205_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250206_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250207_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250208_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250210_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250211_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250212_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250213_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250214_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250218_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250221_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250225_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250226_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250228_1451ShortLong' : 'short_long',
                 },
             'session_folder' : 'YH02VT',
             'sig_tag' : 'all',
@@ -214,11 +214,11 @@ if __name__ == "__main__":
                 #'YH18VT_V1_20250408_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250409_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250410_4131FixJitterOdd' : 'fix_jitter_odd',
-                'YH18VT_V1_20250415_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250416_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250417_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250418_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250421_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250415_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250416_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250417_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250418_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250421_1451ShortLong' : 'short_long',
                 'YH18VT_V1_20250422_1451ShortLong' : 'short_long',
                 'YH18VT_V1_20250423_1451ShortLong' : 'short_long',
                 'YH18VT_V1_20250424_1451ShortLong' : 'short_long',
@@ -257,7 +257,7 @@ if __name__ == "__main__":
         
         session_config_list_test = session_config_list_VTYH02
         session_config_list_test = session_config_list_YH18VT
-        run(session_config_list_test, cate_list)
+        run(sessio n_config_list_test, cate_list)
         
         import matplotlib.pyplot as plt
         session_config_list = combine_session_config_list(session_config_list_test)
