@@ -6,7 +6,6 @@ from matplotlib.backends.backend_pdf import PdfPages
 import h5py
 from collections import Counter
 
-from configurations import conf
 
 from utils.indication import intervals
 from utils.functions import *
@@ -23,11 +22,11 @@ from plotting.plots import plot_histogram, plot_scatter, plot_hexbin, plot_fec_t
 def sig_pdf_name(session_date, sig_event):
     return f"./outputs/{session_date}/significant_ROIs/individual_{sig_event}_sig_roi.pdf"
 
-dates = conf.dates
-static_threshold = 2
+static_threshold = 0.8 
+poor_threshold = 0.004
 min_FEC = 0.3
 
-mice = [folder for folder in os.listdir('./data/imaging/')]
+mice = [folder for folder in os.listdir('./data/imaging/') if folder != ".DS_Store"]
 
 for mouse_name in mice:
 
@@ -41,23 +40,23 @@ for mouse_name in mice:
         print(f"output folder '{mouse_name}' created.")
     else:
         print(f"output folder '{mouse_name}' already exists.")
-    session_folder = [folder for folder in os.listdir(f'./data/imaging/{mouse_name}/')]
+    session_folder = [folder for folder in os.listdir(f'./data/imaging/{mouse_name}/') if folder != ".DS_Store"]
 
     for session_date in session_folder:
-        ######
-        if '1101' in session_date:
-            print('1101')
-            static_threshold = 10
-            min_FEC = 0
-        if '1104' in session_date:
-            print('1104')
-            static_threshold = 1.5
-            min_FEC = 0.0
-        if '1107' in session_date:
-            print('1107')
-            static_threshold = 1.5
-            min_FEC = 0.55
-        ######
+        # ######
+        # if '1101' in session_date:
+        #     print('1101')
+        #     static_threshold = 0.1
+        #     min_FEC = 0
+        # if '1104' in session_date:
+        #     print('1104')
+        #     static_threshold = 0.015
+        #     min_FEC = 0.0
+        # if '1107' in session_date:
+        #     print('1107')
+        #     static_threshold = 0.015
+        #     min_FEC = 0.55
+        # ######
         if session_date[0]=='.' or session_date[0]=='i':
             continue
         if not os.path.exists(f'./outputs/imaging/{mouse_name}/{session_date}'):
@@ -79,18 +78,34 @@ for mouse_name in mice:
         init_time, init_index, ending_time, ending_index, led_index, ap_index = aligning_times(trials=trials)
         fec, fec_time_0, _ = fec_zero(trials)
         fec_0 = moving_average(fec , window_size=7)
-        fec_normed = min_max_normalize(fec_0)
+        # print(fec_0)
+        # breakpoint()
+        fec_normed = fec_0
         shorts, longs = block_type(trials)
-        CR_stat, CR_interval_avg, base_line_avg, cr_interval_idx, bl_interval_idx = CR_stat_indication(trials , static_threshold = static_threshold, AP_delay = 3)
+        CR_stat, CR_interval_avg, base_line_avg, cr_interval_idx, bl_interval_idx = CR_stat_indication(trials, fec_normed, fec_time_0, poor_threshold, static_threshold, AP_delay = 3)
         short_CRp_fec, short_CRn_fec, long_CRp_fec, long_CRn_fec = block_and_CR_fec(CR_stat,fec_0, shorts, longs)
         short_CRp_fec_normed, short_CRn_fec_normed, long_CRp_fec_normed, long_CRn_fec_normed = block_and_CR_fec(CR_stat,fec_normed, shorts, longs)
         all_id = sort_numbers_as_strings(shorts + longs)
         event_diff, ap_diff , ending_diff = index_differences(init_index , led_index, ending_index, ap_index)
 
+        # print(CR_stat)
+        # breakpoint()
+        # print(shorts)
+        # breakpoint()
+
         short_crp_aligned_dff , short_crp_aligned_time = aligned_dff(trials,shorts,CR_stat, 1, init_index, ending_index, shorts[0])
+        # print('hello 0')
+        # breakpoint()
         short_crn_aligned_dff , short_crn_aligned_time = aligned_dff(trials,shorts,CR_stat, 0, init_index, ending_index, shorts[0])
+
+        # print('hello 1')
+        # breakpoint()
         long_crp_aligned_dff , long_crp_aligned_time = aligned_dff(trials,longs,CR_stat, 1, init_index, ending_index, longs[0])
+        # print('hello 2')
+        # breakpoint()
         long_crn_aligned_dff , long_crn_aligned_time = aligned_dff(trials,longs,CR_stat, 0, init_index, ending_index, longs[0])
+        # print(1, short_crp_aligned_dff)
+        # print(2, short_crn_aligned_time)
 
         short_crp_avg_pooled, short_crp_sem_pooled, n_short_crp_pooled = calculate_average_dff_pool(short_crp_aligned_dff)
         short_crn_avg_pooled, short_crn_sem_pooled, n_short_crn_pooled = calculate_average_dff_pool(short_crn_aligned_dff)
@@ -195,6 +210,7 @@ for mouse_name in mice:
         print(f"sig rois for led:{led_roi}")
         print(f"sig rois for cr:{cr_roi}")
 
+        # print(short_crp_aligned_dff)
         short_crp_avg_led_sig, short_crp_sem_led_sig, short_crp_count_led_sig = calculate_average_sig(short_crp_aligned_dff, roi_indices=led_roi)
         short_crn_avg_led_sig, short_crn_sem_led_sig, short_crn_count_led_sig = calculate_average_sig(short_crn_aligned_dff, roi_indices=led_roi)
         long_crp_avg_led_sig, long_crp_sem_led_sig, long_crp_count_led_sig = calculate_average_sig(long_crp_aligned_dff , roi_indices=led_roi)
@@ -223,17 +239,19 @@ for mouse_name in mice:
                                     long_crp_aligned_time, trials, pdf_filename = sig_pdf_name(session_date, sig_event="CR"), ROI_list=cr_roi)
         except:
             print("there is a problem with sig roi plotting")
-        try:
+        # try:
             save_roi_plots_to_pdf(short_crp_avg_dff, short_crn_avg_dff, short_crp_sem_dff, short_crn_sem_dff,
                                 short_crp_aligned_time, long_crp_avg_dff, long_crn_avg_dff, long_crp_sem_dff, long_crn_sem_dff,
                                 long_crp_aligned_time, trials, pdf_filename = individual_roi_pdf)
 
             save_fec_plots_to_pdf(trials, fec_time_0, fec_0, CR_stat,all_id, individual_fec_pdf)
-        except:
+
+            breakpoint()
+        # except:
             print("problem with roi dff or trial fec plotting")
 
         with PdfPages(filename=sig_summary_file) as sig_summary_pdf:
-            fig, axs = plt.subplots(7, 3, figsize=(20, 40))
+            fig, axs = plt.subplots(5, 3, figsize=(21, 35))
 
             # Assign specific axes for the first set of plots
             ax0 = axs[0, 0]
@@ -244,6 +262,7 @@ for mouse_name in mice:
             ax5 = axs[2, 1]
 
             # Plot using `plot_trial_averages_sig` for the first set of axes
+            # print(short_crp_avg_led_sig)
             plot_trial_averages_sig(trials, short_crp_aligned_time, short_crp_avg_led_sig, short_crp_sem_led_sig, short_crn_avg_led_sig, short_crn_sem_led_sig, title_suffix="Short", event="LED", pooled=True, ax=ax0)
             plot_trial_averages_sig(trials, long_crp_aligned_time, long_crp_avg_led_sig, long_crp_sem_led_sig, long_crn_avg_led_sig, long_crn_sem_led_sig, title_suffix="Long", event="LED", pooled=True, ax=ax1)
             plot_trial_averages_sig(trials, short_crp_aligned_time, short_crp_avg_ap_sig, short_crp_sem_ap_sig, short_crn_avg_ap_sig, short_crn_sem_ap_sig, title_suffix="Short", event="AirPuff", pooled=True, ax=ax2)
@@ -350,38 +369,61 @@ for mouse_name in mice:
         all_relative_changes = data_fec_scatter['all_relative_changes']
 
         # Sort and create heatmaps for all datasets
-        sorted_avg_short_crp_roi = sort_dff_avg(short_crp_avg_dff, event_diff, ap_diff)
-        sorted_avg_long_crp_roi = sort_dff_avg(long_crp_avg_dff, event_diff, ap_diff)
-        sorted_avg_short_crn_roi = sort_dff_avg(short_crn_avg_dff, event_diff, ap_diff)
-        sorted_avg_long_crn_roi = sort_dff_avg(long_crn_avg_dff, event_diff, ap_diff)
+        sorted_avg_short_crp_roi = sort_dff_avg(short_crp_avg_dff, event_diff -3, event_diff + 18)
+        sorted_avg_long_crp_roi = sort_dff_avg(long_crp_avg_dff, event_diff-3, event_diff + 18)
+        sorted_avg_short_crn_roi = sort_dff_avg(short_crn_avg_dff, event_diff-3, event_diff + 18)
+        sorted_avg_long_crn_roi = sort_dff_avg(long_crn_avg_dff, event_diff-3, event_diff + 18)
 
         # Create heat arrays
         heat_arrays_avg = []
         for sorted_avg_rois, dff in [
-            (sorted_avg_short_crp_roi, short_crp_avg_dff),
-            (sorted_avg_long_crp_roi, long_crp_avg_dff),
-            (sorted_avg_short_crn_roi, short_crn_avg_dff),
-            (sorted_avg_long_crn_roi, long_crn_avg_dff),
+            (reversed(sorted_avg_short_crp_roi), short_crp_avg_dff),
+            (reversed(sorted_avg_long_crp_roi), long_crp_avg_dff),
+            (reversed(sorted_avg_short_crn_roi), short_crn_avg_dff),
+            (reversed(sorted_avg_long_crn_roi), long_crn_avg_dff),
         ]:
             heat_array_0 = [dff[roi] for roi in list(sorted_avg_rois)]
             heat_arrays_avg.append(np.vstack(heat_array_0))
 
+        # Create heat arrays
+        heat_arrays_avg1 = []
+        for sorted_avg_rois, dff in [
+            (reversed(sorted_avg_long_crp_roi), short_crp_avg_dff),
+            (reversed(sorted_avg_short_crp_roi), long_crp_avg_dff),
+            (reversed(sorted_avg_long_crn_roi), short_crn_avg_dff),
+            (reversed(sorted_avg_short_crn_roi), long_crn_avg_dff),
+        ]:
+            heat_array_0 = [dff[roi] for roi in list(sorted_avg_rois)]
+            heat_arrays_avg1.append(np.vstack(heat_array_0))
 
-        sorted_max_short_crp_roi = sort_dff_max_index(short_crp_avg_dff, event_diff, ap_diff)
-        sorted_max_short_crn_roi = sort_dff_max_index(short_crn_avg_dff, event_diff, ap_diff)
-        sorted_max_long_crp_roi =  sort_dff_max_index(long_crp_avg_dff, event_diff, ap_diff)
-        sorted_max_long_crn_roi =  sort_dff_max_index(long_crn_avg_dff, event_diff, ap_diff)
+        sorted_max_short_crp_roi = sort_dff_max_index(short_crp_avg_dff, event_diff, event_diff + 12)
+        sorted_max_short_crn_roi = sort_dff_max_index(short_crn_avg_dff, event_diff, event_diff + 12)
+        sorted_max_long_crp_roi =  sort_dff_max_index(long_crp_avg_dff, event_diff, event_diff + 12)
+        sorted_max_long_crn_roi =  sort_dff_max_index(long_crn_avg_dff, event_diff, event_diff + 12)
+        print(sorted_max_long_crp_roi)
+        # breakpoint()
 
         # Create heat arrays
         heat_arrays_max = []
         for sorted_max_rois, dff in [
-            (sorted_max_short_crp_roi, short_crp_avg_dff),
-            (sorted_max_long_crp_roi, long_crp_avg_dff),
-            (sorted_max_short_crn_roi, short_crn_avg_dff),
-            (sorted_max_long_crn_roi, long_crn_avg_dff),
+            ((sorted_max_short_crp_roi), short_crp_avg_dff),
+            ((sorted_max_long_crp_roi), long_crp_avg_dff),
+            ((sorted_max_short_crn_roi), short_crn_avg_dff),
+            ((sorted_max_long_crn_roi), long_crn_avg_dff),
         ]:
-            heat_array_0 = [dff[roi] for roi in list(sorted_max_rois)]
+            heat_array_0 = [dff[roi] for roi in sorted_max_rois]
             heat_arrays_max.append(np.vstack(heat_array_0))
+
+        # Create heat arrays
+        heat_arrays_max1 = []
+        for sorted_max_rois, dff in [
+            ((sorted_max_long_crp_roi), short_crp_avg_dff),
+            ((sorted_max_short_crp_roi), long_crp_avg_dff),
+            ((sorted_max_long_crn_roi), short_crn_avg_dff),
+            ((sorted_max_short_crn_roi), long_crn_avg_dff),
+        ]:
+            heat_array_0 = [dff[roi] for roi in sorted_max_rois]
+            heat_arrays_max1.append(np.vstack(heat_array_0))
 
         aligned_times = [
             short_crp_aligned_time,
@@ -390,8 +432,10 @@ for mouse_name in mice:
             long_crn_aligned_time
         ]
 
-        heatmap_titles_avg = ["Sorted :average signal in the CR window - Short CR+", "Sorted : average signal in the CR window - Long CR+", "Sorted : average signal in the CR window - Short CR-", "Sorted : average signal in the CR window - Long CR-"]
-        heatmap_titles_max = ["Sorted : time of maximum - Short CR+", "Sorted : time of maximum - Long CR+", "Sorted : time of maximum - Short CR-", "Sorted heatmap according to the time of maximum - Long CR-"]
+        heatmap_titles_avg = ["Sorted :average CR window short - Short CR+", "Sorted : average CR window long - Long CR+", "Sorted : average CR window short - Short CR-", "Sorted : average CR window long - Long CR-"]
+        heatmap_titles_avg1 = ["Sorted :average CR window long - Short CR+", "Sorted : average CR window short - Long CR+", "Sorted : average CR window long - Short CR-", "Sorted : average CR window short - Long CR-"]
+        heatmap_titles_max = ["Sorted :max CR window short - Short CR+", "Sorted : max CR window long - Long CR+", "Sorted : max CR window short - Short CR-", "Sorted : max CR window long - Long CR-"]
+        heatmap_titles_max1 = ["Sorted :max CR window long - Short CR+", "Sorted : max CR window short - Long CR+", "Sorted : max CR window long - Short CR-", "Sorted : max CR window short - Long CR-"]
         color_maps = ["magma", "magma", "viridis", "viridis"]
 
 
@@ -406,7 +450,7 @@ for mouse_name in mice:
             y = 15
             x = 6
             # fig, axes = plt.subplots(y, x, figsize=(7*x, 7*y), gridspec_kw={'width_ratios': [1, 1, 0.03], 'height_ratios': [2,1,1,1,1,1,1,1,1,1,1,1,1,1]}, squeeze=False)
-           
+            
             spacing = 20  # Number of grid spaces for spacing between plots
             cbar_width = 0.06
 
@@ -465,38 +509,62 @@ for mouse_name in mice:
             ax40 = fig.add_subplot(gs[500 + 4 * spacing:600 + 4 * spacing, 0:100])  # Fifth row, first column
             remove_spines(ax40)
 
-            ax41 = fig.add_subplot(gs[500 + 4 * spacing:600 + 4 * spacing, 100 + spacing:200 + spacing])  # Fifth row, second column
+            ax41 = fig.add_subplot(gs[500 + 4 * spacing:600 + 4 * spacing, 100 + spacing:200 + spacing])  # Sixth row, second column
             remove_spines(ax41)
 
-            # ax42 = fig.add_subplot(gs[500 + 4 * spacing:600 + 4 * spacing, 200 + 2 * spacing:int(200 + 2 * spacing + cbar_width * 100)])
-            # remove_spines(ax42)  # Color bar
+            ax42 = fig.add_subplot(gs[500 + 4 * spacing:600 + 4 * spacing, 200 + 2 * spacing:300 + 2 * spacing])  # Seventh row, se
+            remove_spines(ax42)
+
+            ax43 = fig.add_subplot(gs[500 + 4 * spacing:600 + 4 * spacing, 300 + 3 * spacing:400 + 3 * spacing])  # Seventh row, sen
+            remove_spines(ax43)
+
+            ax44 = fig.add_subplot(gs[500 + 4 * spacing:600 + 4 * spacing, 400 + 4 * spacing:int(400 + 4 * spacing + cbar_width * 100)])
+            remove_spines(ax44)  # Color bar
 
             ax50 = fig.add_subplot(gs[600 + 5 * spacing:700 + 5 * spacing, 0:100])  # Sixth row, first column
             remove_spines(ax50)
 
             ax51 = fig.add_subplot(gs[600 + 5 * spacing:700 + 5 * spacing, 100 + spacing:200 + spacing])  # Sixth row, second column
             remove_spines(ax51)
+            
+            ax52 = fig.add_subplot(gs[600 + 5 * spacing:700 + 5 * spacing, 200 + 2 * spacing:300 + 2 * spacing])  # Seventh row, second column
+            remove_spines(ax52)
 
-            # ax52 = fig.add_subplot(gs[600 + 5 * spacing:700 + 5 * spacing, 200 + 2 * spacing:int(200 + 2 * spacing + cbar_width * 100)])
-            # remove_spines(ax52)  # Color bar
+            ax53 = fig.add_subplot(gs[600 + 5 * spacing:700 + 5 * spacing, 300 + 3 * spacing:400 + 3 * spacing])  # Seventh row, second column
+            remove_spines(ax53)
+            
+            ax54 = fig.add_subplot(gs[600 + 5 * spacing:700 + 5 * spacing, 400 + 4 * spacing:int(400 + 4 * spacing + cbar_width * 100)])
+            remove_spines(ax54)  # Color bar
 
             ax60 = fig.add_subplot(gs[700 + 6 * spacing:800 + 6 * spacing, 0:100])  # Seventh row, first column
             remove_spines(ax60)
 
-            ax61 = fig.add_subplot(gs[700 + 6 * spacing:800 + 6 * spacing, 100 + spacing:200 + spacing])  # Seventh row, second column
+            ax61 = fig.add_subplot(gs[700 + 6 * spacing:800 + 6 * spacing, 100 + spacing:200 + spacing])  # Sixth row, second columnmn
             remove_spines(ax61)
+            
+            ax62 = fig.add_subplot(gs[700 + 6 * spacing:800 + 6 * spacing, 200 + 2 * spacing:300 + 2 * spacing])  # Seventh row, secmn
+            remove_spines(ax62)
 
-            # ax62 = fig.add_subplot(gs[700 + 6 * spacing:800 + 6 * spacing, 200 + 2 * spacing:int(200 + 2 * spacing + cbar_width * 100)])
-            # remove_spines(ax62)  # Color bar
+            ax63 = fig.add_subplot(gs[700 + 6 * spacing:800 + 6 * spacing, 300 + 3 * spacing:400 + 3 * spacing])  # Seventh row, secmn
+            remove_spines(ax63)
+            
+            ax64 = fig.add_subplot(gs[700 + 6 * spacing:800 + 6 * spacing, 400 + 4 * spacing:int(400 + 4 * spacing + cbar_width * 100)])
+            remove_spines(ax62)  # Color bar
 
             ax70 = fig.add_subplot(gs[800 + 7 * spacing:900 + 7 * spacing, 0:100])  # Eighth row, first column
             remove_spines(ax70)
 
-            ax71 = fig.add_subplot(gs[800 + 7 * spacing:900 + 7 * spacing, 100 + spacing:200 + spacing])  # Eighth row, second column
+            ax71 = fig.add_subplot(gs[800 + 7 * spacing:900 + 7 * spacing, 100 + spacing:200 + spacing])  # Sixth row, second columnn
             remove_spines(ax71)
 
-            # ax72 = fig.add_subplot(gs[800 + 7 * spacing:900 + 7 * spacing, 200 + 2 * spacing:int(200 + 2 * spacing + cbar_width * 100)])
-            # remove_spines(ax72)  # Color bar
+            ax72 = fig.add_subplot(gs[800 + 7 * spacing:900 + 7 * spacing, 200 + 2 * spacing:300 + 2 * spacing])  # Seventh row, secn
+            remove_spines(ax72)
+
+            ax73 = fig.add_subplot(gs[800 + 7 * spacing:900 + 7 * spacing, 300 + 3 * spacing:400 + 3 * spacing])  # Seventh row, secn
+            remove_spines(ax73)
+
+            ax74 = fig.add_subplot(gs[800 + 7 * spacing:900 + 7 * spacing, 400 + 4 * spacing:int(400 + 4 * spacing + cbar_width * 100)])
+            remove_spines(ax74)  # Color bar
 
             ax80 = fig.add_subplot(gs[900 + 8 * spacing:1000 + 8 * spacing, 0:100])
             remove_spines(ax80)
@@ -516,9 +584,9 @@ for mouse_name in mice:
             ax101 = fig.add_subplot(gs[1100 + 10 * spacing:1200 + 10 * spacing, 100 + spacing:200 + spacing])
             remove_spines(ax101)
 
-            ax102 = fig.add_subplot(gs[1100 + 10 * spacing:1200 + 10 * spacing, 
-                                      200 + 2 * spacing:int(200 + 2 * spacing + cbar_width * 100)])
-            remove_spines(ax102)
+            # ax102 = fig.add_subplot(gs[1100 + 10 * spacing:1200 + 10 * spacing, 
+            #                           200 + 2 * spacing:int(200 + 2 * spacing + cbar_width * 100)])
+            # remove_spines(ax102)
 
             ax110 = fig.add_subplot(gs[1200 + 11 * spacing:1300 + 11 * spacing, 0:100])
             remove_spines(ax110)
@@ -540,6 +608,8 @@ for mouse_name in mice:
             plot_masks_functions(mask_file, Ax1, Ax2, Ax3)
             # cbar = plt.colorbar(plt.cm.ScalarMappable(cmap="plasma" ), cax=ax02)
             short_data_normed = data_fec_average_normed["short_trials"]
+
+            #mean1 is positive
             plot_fec_trial(
                 ax10,
                 short_data_normed["time"],
@@ -584,20 +654,26 @@ for mouse_name in mice:
                 long_crn_avg_pooled, long_crn_sem_pooled,
                 trials, title_suffix1="Short", title_suffix2="Long", pooled=True)
 
-            plot_heatmaps_side_by_side(heat_arrays_avg, aligned_times, heatmap_titles_avg, trials, color_maps=color_maps, axes= [ax40, ax41, ax50, ax51])
-            # cbar = plt.colorbar(plt.cm.ScalarMappable(cmap="magma"), cax=ax42)
-            # cbar.set_label("dF/F intensity")
+            plot_heatmaps_side_by_side(heat_arrays_avg, aligned_times, heatmap_titles_avg, trials, color_maps=color_maps, axes= [ax40, ax43, ax50, ax53])
 
-            # cbar = plt.colorbar(plt.cm.ScalarMappable(cmap="viridis" ), cax=ax52)
-            # cbar.set_label("dF/F intensity")
+            #the weird ones
+            plot_heatmaps_side_by_side(heat_arrays_avg1, aligned_times, heatmap_titles_avg1, trials, color_maps=color_maps, axes= [ax41, ax42, ax51, ax52])
 
-            plot_heatmaps_side_by_side(heat_arrays_max, aligned_times, heatmap_titles_max, trials, color_maps=color_maps, axes= [ax60, ax61, ax70, ax71])
+            cbar = plt.colorbar(plt.cm.ScalarMappable(cmap="magma"), cax=ax44)
+            cbar.set_label("dF/F intensity")
 
-            # cbar = plt.colorbar(plt.cm.ScalarMappable(cmap="magma" ), cax=ax62)
-            # cbar.set_label("dF/F intensity")
+            cbar = plt.colorbar(plt.cm.ScalarMappable(cmap="viridis" ), cax=ax54)
+            cbar.set_label("dF/F intensity")
 
-            # cbar = plt.colorbar(plt.cm.ScalarMappable(cmap="viridis" ), cax=ax72)
-            # cbar.set_label("dF/F intensity")
+            plot_heatmaps_side_by_side(heat_arrays_max, aligned_times, heatmap_titles_max, trials, color_maps=color_maps, axes= [ax60, ax63, ax70, ax73])
+
+            plot_heatmaps_side_by_side(heat_arrays_max1, aligned_times, heatmap_titles_max1, trials, color_maps=color_maps, axes= [ax61, ax62, ax71, ax72])
+
+            cbar = plt.colorbar(plt.cm.ScalarMappable(cmap="magma" ), cax=ax64)
+            cbar.set_label("dF/F intensity")
+
+            cbar = plt.colorbar(plt.cm.ScalarMappable(cmap="viridis" ), cax=ax74)
+            cbar.set_label("dF/F intensity")
 
             # Histogram of baseline4
             plot_histogram(
@@ -649,8 +725,8 @@ for mouse_name in mice:
                 xlabel='Baseline', ylabel='CR Size (Relative Change)'
             )
 
-            cbar = plt.colorbar(plt.cm.ScalarMappable(cmap="Greens" ), cax=ax102)
-            cbar.set_label("dF/F intensity")
+            # cbar = plt.colorbar(plt.cm.ScalarMappable(cmap="Greens" ), cax=ax102)
+            # cbar.set_label("")
 
                 # Assign specific axes for the first set of plots
             ax0 = ax110
@@ -669,7 +745,7 @@ for mouse_name in mice:
             plot_trial_averages_sig(trials, long_crp_aligned_time, long_crp_avg_cr_sig, long_crp_sem_cr_sig, long_crn_avg_cr_sig, long_crn_sem_cr_sig, title_suffix="Long", event="CR", pooled=True, ax=ax5)
 
 
-            summary_pdf.savefig(fig)
+            summary_pdf.savefig(fig, dpi = 400)
             plt.close(fig)
 
 
@@ -677,5 +753,5 @@ for mouse_name in mice:
         # else:
             # print(f"session {session_date} is missing the saved trials")
 
-        # except:
-        #     print(f"session {session_date} could not be processed")
+        # except Exception as e:
+        #     print(f"session {session_date} could not be processed{e}")

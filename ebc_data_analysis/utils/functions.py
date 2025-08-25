@@ -4,7 +4,43 @@ from tqdm import tqdm
 from matplotlib.gridspec import GridSpec
 # import h5py
 import scipy.io as sio
+from scipy.signal import savgol_filter
 import h5py
+import traceback
+from utils.alignment import find_index
+
+def color_list(slice_i, stack_i, number_of_session_slices):
+    # Calculate brightness from 1 (brightest) to 0.2 (darkest)
+    brightness = np.linspace(1.0, 0.02, number_of_session_slices)[slice_i]
+
+
+    if stack_i % 2 == 1:
+        # Green shades: (R, G, B)
+        color = (0, brightness, 0)
+    else:
+        # Blue shades: (R, G, B)
+        color = (0, 0, brightness)
+
+    return color
+
+def save_trials(trials, exclude_start, exclude_end, save_path):
+    trial_ids = sorted(map(int, trials.keys()))  # Ensure trial IDs are sorted
+
+    # if len(trial_ids) == 0:
+    #     raise ValueError('Empty trials')
+
+    if exclude_start + exclude_end >= len(trial_ids) and exclude_start != 0 and exclude_end != 0 :
+        raise ValueError("Exclusion range removes all trials.")
+
+    with h5py.File(save_path, 'w') as f:
+        grp = f.create_group('trial_id')
+
+        for trial in range(exclude_start, len(trial_ids) - exclude_end):
+            trial_id = str(trial_ids[trial])
+            trial_group = grp.create_group(trial_id)
+            for k, v in trials[trial_id].items():
+                trial_group[k] = v
+
 
 #for the fec only files
 def processing_beh(bpod_file, save_path, exclude_start, exclude_end):
@@ -12,60 +48,236 @@ def processing_beh(bpod_file, save_path, exclude_start, exclude_end):
     trials = trial_label_fec(bpod_mat_data_0)
     save_trials(trials, exclude_start, exclude_end, save_path)
 
+def read_bpod_mat_data(bpod_file):
+    # Load .mat file
+    raw = sio.loadmat(bpod_file, struct_as_record=False, squeeze_me=True)
+    try:
+        raw = check_keys(raw)
+    except Exception as e:
+        print(e)
+        breakpoint()
+        # raise ValueError(f'check keys {e}')
+
+
+    try:
+        sleep_dep = raw['SessionData']['SleepDeprived']
+        print(sleep_dep)
+    except Exception as e:
+        print('Sleep Deprivation data is missing', e)
+        sleep_dep = 0
+        # breakpoint()
+    #raw = raw['SessionData']
+
+    # Initialize variables
+    trial_type = []
+    trial_FEC_TIME = []
+    LED_on = []
+    LED_off = []
+    AirPuff_on = []
+    AirPuff_off = []
+    Airpuff_on_post = []
+    Airpuff_off_post = []
+    eye_area = []
+    test_type = []
+
+
+    # try:
+        # Loop through trials
+    for i in range(raw['SessionData']['nTrials']):
+        # trial_states = raw['RawEvents']['Trial'][i]['States']
+        trial_data = raw['SessionData']['RawEvents']['Trial'][i]['Data']
+        trial_event = raw['SessionData']['RawEvents']['Trial'][i]['Events']
+
+        # Handle LED_on and LED_off
+        if 'GlobalTimer1_Start' in trial_event:
+            LED_on.append(1000 * np.array(trial_event['GlobalTimer1_Start']).reshape(-1))
+        else:
+            print(f'led on missing from bpod trial {i}')
+            # breakpoint()
+            # continue
+            LED_on.append([])
+
+        if 'GlobalTimer1_End' in trial_event:
+            LED_off.append(1000 * np.array(trial_event['GlobalTimer1_End']).reshape(-1))
+        else:
+            print(f'led off missing from bpod trial {i}')
+            # breakpoint()
+            # continue
+            LED_off.append([])
+
+        # Handle AirPuff_on and AirPuff_off
+        if 'GlobalTimer2_Start' in trial_event:
+            AirPuff_on.append(1000 * np.array(trial_event['GlobalTimer2_Start']).reshape(-1))
+        else:
+            print(f'airpuff on missing from bpod trial {i}')
+            # breakpoint()
+            # continue
+            AirPuff_on.append([])
+
+        if 'GlobalTimer2_End' in trial_event:
+            AirPuff_off.append(1000 * np.array(trial_event['GlobalTimer2_End']).reshape(-1))
+        else:
+            print(f'airpuff off missing from bpod trial {i}')
+            # breakpoint()
+            # continue
+            AirPuff_off.append([])
+       
+        if 'FECTimes' in trial_data:
+            trial_FEC_TIME.append(1000 * np.array(trial_data['FECTimes']).reshape(-1))
+        else:
+            print(f'FEC times missing from bpod trial {i}')
+            # breakpoint()
+            # continue
+            trial_FEC_TIME.append([])
+
+        # Determine trial type
+        if trial_data.get('BlockType') == 'short':
+            trial_type.append(1)
+        else:
+            trial_type.append(2)
+        
+        if 'eyeAreaPixels' in trial_data:
+            eye_area.append(trial_data['eyeAreaPixels'])
+        else:
+            eye_area.append([])
+            continue
+
+        test_type.append(sleep_dep)
+    # except Exception as e:
+    #     print('error with n trials', e)
+
+
+
+    # Prepare output dictionary
+    bpod_sess_data = {
+        'trial_types': trial_type,
+        'trial_AirPuff_ON': AirPuff_on,
+        'trial_AirPuff_OFF': AirPuff_off,
+        'trial_LED_ON': LED_on,
+        'trial_LED_OFF': LED_off,
+        'eye_area': eye_area,
+        'trial_FEC_TIME': trial_FEC_TIME,
+        'test_type' : test_type,
+    }
+
+    return bpod_sess_data
+
+# def trial_label_fec(bpod_sess_data):
+#     valid_trials = {}  # Create a new dictionary to store only valid trials
+#     #print(len(bpod_sess_data['trial_types']))
+#     for i in range(len(bpod_sess_data['trial_types'])):
+#         valid_trials[str(i)] = {}
+#     for i in range(len(bpod_sess_data['trial_types'])):
+#         # Initialize a flag to check if the trial contains invalid data
+#         is_valid = True
+
+#         # Check each field for NaN or unexpected values or are empty
+#         if np.isnan(bpod_sess_data['trial_FEC_TIME'][i]).any() or bpod_sess_data['trial_FEC_TIME'][i] == []:
+#             print(f"trial_FEC_TIME trial {i}")
+#             is_valid = False
+
+#         if np.isnan(bpod_sess_data['trial_LED_ON'][i]).any() or np.isnan(bpod_sess_data['trial_LED_OFF'][i]).any() or bpod_sess_data['trial_LED_OFF'][i] == []:
+#             print(f"invalid trial_LED trial {i}")
+#             breakpoint()
+#             is_valid = False
+#     
+#         if not bpod_sess_data['trial_LED_ON'][i] or not bpod_sess_data['trial_LED_OFF'][i]:
+#             print(f"Warning: Empty list found in trial_LED for trial {i}")
+#             is_valid = False
+
+#         if np.isnan(bpod_sess_data['trial_AirPuff_ON'][i]).any():
+#             print(f"Warning: NaN found in trial_AirPuff for trial {i}")
+#             is_valid = False
+
+#         if not bpod_sess_data['trial_AirPuff_ON'][i] or not bpod_sess_data['trial_AirPuff_OFF'][i]:
+#             print(f"Warning: Empty list found in air puff for trial {i}")
+#             is_valid = False
+
+#         if np.isnan(bpod_sess_data['eye_area'][i]).any():
+#             print('no eye area')
+#             is_valid = False
+
+#         if np.isnan(bpod_sess_data['test_type'][i]).any():
+#             print('no sd data 0')
+#             is_valid = False
+#     
+#         if is_valid:
+
+#             led_on_time = bpod_sess_data['trial_LED_ON'][i] 
+#             led_off_time = bpod_sess_data['trial_LED_OFF'][i] 
+#             airpuff_on = bpod_sess_data['trial_AirPuff_ON'][i]
+#             airpuff_off = bpod_sess_data['trial_AirPuff_OFF'][i]
+
+#             valid_trials[str(i)]['trial_type'] = bpod_sess_data['trial_types'][i]
+#             valid_trials[str(i)]['LED'] = [led_on_time[0], led_off_time[0]]
+#             valid_trials[str(i)]['AirPuff'] = [airpuff_on[0], airpuff_off[0]]
+#             valid_trials[str(i)]['test_type'] = bpod_sess_data['test_type']
+#             valid_trials[str(i)]['FEC'] = 1- ((bpod_sess_data['eye_area'][i]- np.min(bpod_sess_data['eye_area'][i])) / (np.max(bpod_sess_data['eye_area'][i]) - np.min(bpod_sess_data['eye_area'][i])))
+#             valid_trials[str(i)]['FECTimes'] = bpod_sess_data['trial_FEC_TIME'][i]
+
+#     return valid_trials
+
+
+
 def trial_label_fec(bpod_sess_data):
-    valid_trials = {}  # Create a new dictionary to store only valid trials
-    #print(len(bpod_sess_data['trial_types']))
-    for i in range(len(bpod_sess_data['trial_types'])):
-        valid_trials[str(i)] = {}
-    for i in range(len(bpod_sess_data['trial_types'])):
-        # Initialize a flag to check if the trial contains invalid data
-        is_valid = True
+    indicator = 0
+    valid_trials = {} 
 
-        # Check each field for NaN or unexpected values
-        if np.isnan(bpod_sess_data['trial_LED_ON'][i]).any() or np.isnan(bpod_sess_data['trial_LED_OFF'][i]).any():
-            #print(f"Warning: NaN found in trial_LED for trial {i}")
-            is_valid = False
-        if np.isnan(bpod_sess_data['trial_AirPuff'][i]).any():
-            #print(f"Warning: NaN found in trial_AirPuff for trial {i}")
-            is_valid = False
-        if not isinstance(bpod_sess_data['trial_types'][i], int):  # Assuming trial types should be integers
-            #print(f"Warning: Invalid trial_type for trial {i}")
-            is_valid = False
-        if np.isnan(bpod_sess_data['trial_ITI'][i]).any():
-            #print(f"Warning: NaN found in trial_ITI for trial {i}")
-            is_valid = False
-        if np.isnan(bpod_sess_data['trial_FEC'][i]).any():
-            #print(f"Warning: NaN found in trial_FEC for trial {i}")
-            is_valid = False
-        if np.isnan(bpod_sess_data['trial_FEC_TIME'][i]).any():
-            #print(f"Warning: NaN found in trial_FEC_TIME for trial {i}")
-            is_valid = False
+    for i in range(len(bpod_sess_data['trial_types'])):
+        is_valid = True  
+        print(i)
+        print(len(bpod_sess_data['trial_types']))
 
-        # Only add the trial to valid_trials if it is valid
+        # Check for empty lists or NaN values
+        if len(bpod_sess_data['trial_FEC_TIME'][i]) == 0 or np.isnan(bpod_sess_data['trial_FEC_TIME'][i]).any():
+            is_valid = False
+            indicator = 1
+
+        if len(bpod_sess_data['trial_LED_ON'][i]) == 0 or len(bpod_sess_data['trial_LED_OFF'][i]) == 0 or \
+           np.isnan(bpod_sess_data['trial_LED_ON'][i]).any() or np.isnan(bpod_sess_data['trial_LED_OFF'][i]).any():
+            is_valid = False
+            indicator = 2
+
+        if len(bpod_sess_data['trial_AirPuff_ON'][i]) == 0:
+            is_valid = False
+            indicator = 30
+
+        if len(bpod_sess_data['trial_AirPuff_OFF'][i]) == 0:
+            is_valid = False
+            indicator = 31
+            
+        if np.isnan(bpod_sess_data['trial_AirPuff_ON'][i]).any():
+            is_valid = False
+            indicator = 32
+
+        if len(bpod_sess_data['eye_area'][i]) == 0 or np.isnan(bpod_sess_data['eye_area'][i]).any():
+            is_valid = False
+            indicator = 4
+
+        if np.isnan(bpod_sess_data['test_type'][i]).any():
+            is_valid = False
+            indicator = 5
+
         if is_valid:
-            # Modify the 'LED' field with new logic
-            led_on_time = bpod_sess_data['trial_LED_ON'][i] 
-            led_off_time = bpod_sess_data['trial_LED_OFF'][i] 
-            valid_trials[str(i)]['LED'] = [led_on_time[0], led_off_time[0]]
-
-            valid_trials[str(i)]['AirPuff'] = bpod_sess_data['trial_AirPuff'][i] 
-            valid_trials[str(i)]['trial_type'] = bpod_sess_data['trial_types'][i]
-            valid_trials[str(i)]['ITI'] = bpod_sess_data['trial_ITI'][i] 
-            valid_trials[str(i)]['FEC'] = bpod_sess_data['trial_FEC'][i]
-            valid_trials[str(i)]['FECTimes'] = bpod_sess_data['trial_FEC_TIME'][i]
-            valid_trials[str(i)]['LED_on'] = led_on_time
-            valid_trials[str(i)]['LED_off'] = led_off_time
-
-            #print(f"Data for trial {i} has been added.")
-        # else:
-            # print(f"Skipping trial {i} due to invalid data.")
+            valid_trials[str(i)] = {
+                'trial_type': bpod_sess_data['trial_types'][i],
+                'LED': [bpod_sess_data['trial_LED_ON'][i][0], bpod_sess_data['trial_LED_OFF'][i][0]],
+                'AirPuff': [bpod_sess_data['trial_AirPuff_ON'][i][0], bpod_sess_data['trial_AirPuff_OFF'][i][0]],
+                'test_type': bpod_sess_data['test_type'][i],
+                'FEC': 1 - ((bpod_sess_data['eye_area'][i] - np.min(bpod_sess_data['eye_area'][i])) /
+                            (np.max(bpod_sess_data['eye_area'][i]) - np.min(bpod_sess_data['eye_area'][i]))),
+                'FECTimes': bpod_sess_data['trial_FEC_TIME'][i]
+            }
+        else:
+            print(indicator)
+            # breakpoint()
 
     return valid_trials
 
 
 def processing_files(bpod_file = "bpod_session_data.mat",
                      raw_voltage_file = "raw_voltages.h5",
-                     dff_file = "raw_voltages.h5",
+                     dff_file = "dff.h5",
                      save_path = 'saved_trials.h5',
                      exclude_start=20, exclude_end=20):
     bpod_mat_data_0 = read_bpod_mat_data(bpod_file)
@@ -110,7 +322,11 @@ def trial_label(neural_trials, bpod_sess_data):
         if np.isnan(bpod_sess_data['trial_LED_ON'][i]).any() or np.isnan(bpod_sess_data['trial_LED_OFF'][i]).any():
             print(f"Warning: NaN found in trial_LED for trial {i}")
             is_valid = False
-        if np.isnan(bpod_sess_data['trial_AirPuff'][i]).any():
+        
+        if not bpod_sess_data['trial_LED_ON'][i] or not bpod_sess_data['trial_LED_OFF'][i]:
+            print(f"Warning: Empty list found in trial_LED for trial {i}")
+            is_valid = False
+        if np.isnan(bpod_sess_data['trial_AirPuff_ON'][i]).any():
             print(f"Warning: NaN found in trial_AirPuff for trial {i}")
             is_valid = False
         if not isinstance(bpod_sess_data['trial_types'][i], int):  # Assuming trial types should be integers
@@ -119,11 +335,14 @@ def trial_label(neural_trials, bpod_sess_data):
         if np.isnan(bpod_sess_data['trial_ITI'][i]).any():
             print(f"Warning: NaN found in trial_ITI for trial {i}")
             is_valid = False
-        if np.isnan(bpod_sess_data['trial_FEC'][i]).any():
-            print(f"Warning: NaN found in trial_FEC for trial {i}")
-            is_valid = False
+        # if np.isnan(bpod_sess_data['trial_FEC'][i]).any():
+        #     print(f"Warning: NaN found in trial_FEC for trial {i}")
+        #     is_valid = False
         if np.isnan(bpod_sess_data['trial_FEC_TIME'][i]).any():
             print(f"Warning: NaN found in trial_FEC_TIME for trial {i}")
+            is_valid = False
+        if np.isnan(bpod_sess_data['eye_area'][i]).any():
+            print('*')
             is_valid = False
 
         # Only add the trial to valid_trials if it is valid
@@ -133,19 +352,17 @@ def trial_label(neural_trials, bpod_sess_data):
             # Modify the 'LED' field with new logic
             led_on_time = bpod_sess_data['trial_LED_ON'][i] + neural_trials[str(i)]['vol_time'][0]
             led_off_time = bpod_sess_data['trial_LED_OFF'][i] + neural_trials[str(i)]['vol_time'][0]
+            airpuff_on = bpod_sess_data['trial_AirPuff_ON'][i]+ neural_trials[str(i)]['vol_time'][0]
+            airpuff_off = bpod_sess_data['trial_AirPuff_OFF'][i]+ neural_trials[str(i)]['vol_time'][0]
             valid_trials[str(i)]['LED'] = [led_on_time[0], led_off_time[0]]
+            valid_trials[str(i)]['AirPuff'] = [airpuff_on[0], airpuff_off[0]]
 
-            valid_trials[str(i)]['AirPuff'] = bpod_sess_data['trial_AirPuff'][i] + neural_trials[str(i)]['vol_time'][0]
             valid_trials[str(i)]['trial_type'] = bpod_sess_data['trial_types'][i]
             valid_trials[str(i)]['ITI'] = bpod_sess_data['trial_ITI'][i] + neural_trials[str(i)]['vol_time'][0]
-            valid_trials[str(i)]['FEC'] = bpod_sess_data['trial_FEC'][i]
+            valid_trials[str(i)]['FEC'] = 1- ((bpod_sess_data['eye_area'][i]- np.min(bpod_sess_data['eye_area'][i])) / (np.max(bpod_sess_data['eye_area'][i]) - np.min(bpod_sess_data['eye_area'][i])))
             valid_trials[str(i)]['FECTimes'] = bpod_sess_data['trial_FEC_TIME'][i] + neural_trials[str(i)]['vol_time'][0]
             valid_trials[str(i)]['LED_on'] = led_on_time
             valid_trials[str(i)]['LED_off'] = led_off_time
-
-            #print(f"Data for trial {i} has been added.")
-        # else:
-            # print(f"Skipping trial {i} due to invalid data.")
 
     return valid_trials
 
@@ -253,19 +470,7 @@ def get_trial_start_end(
         end.append(e)
     return start, end
 
-def save_trials(neural_trials, exclude_start, exclude_end, save_path):
-    f = h5py.File(save_path, 'w')
-    grp = f.create_group('trial_id')
-    trial_ids = list(map(int, neural_trials.keys()))  # Get all valid trial IDs as integers
 
-    for trial in range(len(trial_ids)):  # Iterate through valid trial IDs
-        if trial > exclude_start and trial < len(trial_ids) - exclude_end:
-            trial_id = str(trial_ids[trial])  # Convert back to string for dictionary access
-            if trial_id in neural_trials:  # Check if the trial ID exists in the dictionary
-                trial_group = grp.create_group(trial_id)
-                for k in neural_trials[trial_id].keys():
-                    trial_group[k] = neural_trials[trial_id][k]
-    f.close()
 
 def trial_split(
         start, end,
@@ -287,25 +492,31 @@ def trial_split(
     return neural_trials
 
 def check_keys(d):
+    """Recursively converts MATLAB structs to Python dictionaries."""
     for key in d:
         if isinstance(d[key], sio.matlab.mat_struct):
             d[key] = todict(d[key])
+        elif isinstance(d[key], np.ndarray):
+            d[key] = tolist(d[key])
     return d
 
 def todict(matobj):
+    """Converts a MATLAB struct object to a Python dictionary."""
     d = {}
-    for strg in matobj._fieldnames:
-        elem = matobj.__dict__[strg]
+    for field in getattr(matobj, '_fieldnames', []):  # Ensure _fieldnames exists
+        elem = getattr(matobj, field, None)
         if isinstance(elem, sio.matlab.mat_struct):
-            d[strg] = todict(elem)
+            d[field] = todict(elem)
         elif isinstance(elem, np.ndarray):
-            d[strg] = tolist(elem)
+            d[field] = tolist(elem)
         else:
-            d[strg] = elem
+            d[field] = elem
     return d
 
 def tolist(ndarray):
     elem_list = []
+    if ndarray.ndim == 0:  # Handle 0-d arrays
+        return ndarray.item()  # Convert to Python scalar
     for sub_elem in ndarray:
         if isinstance(sub_elem, sio.matlab.mat_struct):
             elem_list.append(todict(sub_elem))
@@ -314,112 +525,8 @@ def tolist(ndarray):
         else:
             elem_list.append(sub_elem)
     return elem_list
+    # return [tolist(elem) if isinstance(elem, np.ndarray) else elem for elem in ndarray]
 
-def read_bpod_mat_data(bpod_file):
-    # Load .mat file
-    raw = sio.loadmat(bpod_file, struct_as_record=False, squeeze_me=True)
-    raw = check_keys(raw)['SessionData']
-    #raw = raw['SessionData']
-
-    # Initialize variables
-    trial_type = []
-    trial_delay = []
-    trial_AirPuff = []
-    trial_LED = []
-    trial_ITI = []
-    trial_FEC = []
-    trial_FEC_TIME = []
-    LED_on = []
-    LED_off = []
-
-    # Loop through trials
-    for i in range(raw['nTrials']):
-        trial_states = raw['RawEvents']['Trial'][i]['States']
-        trial_data = raw['RawEvents']['Trial'][i]['Data']
-        trial_event = raw['RawEvents']['Trial'][i]['Events']
-
-        # Handle trial_LED
-        if 'LED_Onset' in trial_states:
-            trial_LED.append(1000 * np.array(trial_states['LED_Onset']).reshape(-1))
-        else:
-            trial_LED.append([])
-
-        # Handle LED_on and LED_off
-        if 'GlobalTimer1_Start' in trial_event:
-            LED_on.append(1000 * np.array(trial_event['GlobalTimer1_Start']).reshape(-1))
-        else:
-            LED_on.append([])
-        if 'GlobalTimer1_End' in trial_event:
-            LED_off.append(1000 * np.array(trial_event['GlobalTimer1_End']).reshape(-1))
-        else:
-            LED_off.append([])
-
-        # Handle trial_AirPuff
-        if 'AirPuff' in trial_states:
-            trial_AirPuff.append(1000 * np.array(trial_states['AirPuff']).reshape(-1))
-        else:
-            trial_AirPuff.append([])
-
-        # Handle trial_ITI
-        if 'ITI' in trial_states:
-            trial_ITI.append(1000 * np.array(trial_states['ITI']).reshape(-1))
-        else:
-            trial_ITI.append([])
-
-        # Handle trial_FEC and trial_FEC_TIME
-        if 'FEC' in trial_data:
-            trial_FEC.append(np.array(trial_data['FEC']).reshape(-1))
-        else:
-            trial_FEC.append([])
-        if 'FECTimes' in trial_data:
-            trial_FEC_TIME.append(1000 * np.array(trial_data['FECTimes']).reshape(-1))
-        else:
-            trial_FEC_TIME.append([])
-
-        # Determine trial type
-        if trial_data.get('BlockType') == 'short':
-            trial_type.append(1)
-        else:
-            trial_type.append(2)
-
-        # Handle trial_delay
-        if 'AirPuff_OnsetDelay' in trial_data:
-            trial_delay.append(1000 * np.array(trial_data['AirPuff_OnsetDelay']))
-        else:
-            trial_delay.append(None)
-
-    # Prepare output dictionary
-    bpod_sess_data = {
-        'trial_types': trial_type,
-        'trial_delay': trial_delay,
-        'trial_AirPuff': trial_AirPuff,
-        'trial_LED': trial_LED,
-        'trial_LED_ON': LED_on,
-        'trial_LED_OFF': LED_off,
-        'trial_ITI': trial_ITI,
-        'trial_FEC': trial_FEC,
-        #eyeareapixels should replace FEC
-        'trial_FEC_TIME': trial_FEC_TIME
-    }
-
-    return bpod_sess_data
-
-
-
-########
-def indexing_time(value1 , value2 , time):
-    for i in range (len(time)):
-        if float(time[i]) < value1:
-            if float(time[i]) > value1 - 100:
-                index_1 = i
-
-    for j in range (len(time)):
-        if float(time[j]) < value2:
-            if float(time[j]) > value2 - 100:
-                index_2 = j
-    return index_1, index_2
-
-########
 def roi_group_analysis(trials, trial_id, roi_group):
 
     group = []
@@ -432,9 +539,18 @@ def roi_group_analysis(trials, trial_id, roi_group):
     return avg , std
 
 def read_dff(dff_file_path):
-    f = h5py.File(dff_file_path)
-    dff = np.array(f['name'])
-    f.close()
+    window_length = 9
+    polyorder = 3
+
+    with h5py.File(dff_file_path, 'r') as f:
+        dff = np.array(f['name'])
+
+    dff = np.apply_along_axis(
+        savgol_filter, 1, dff.copy(),
+        window_length=window_length,
+        polyorder=polyorder
+    )
+    
     return dff
 
 def interval_averaging(interval):
@@ -446,3 +562,64 @@ def interval_averaging(interval):
             dummy.append(interval[roi][id])
         interval_avg[roi] = np.nanmean(dummy, axis=0)
     return interval_avg
+
+def zscore(trace):
+    return (trace - np.mean(trace)) / np.std(trace)
+
+def sig_trial_func(all_id, trials, transition_0, transition_1):
+
+    sig_trial_ids = []
+    slot_ids = []
+
+    if isi_type(trials[all_id[0]]) == 2:
+        print('first block is long')
+        sig_trial_ids.append([])
+        slot_ids.append([])
+
+    for trial_id in all_id:
+        try:
+            next_id = int(trial_id) + 1
+
+            while str(next_id) not in trials:
+                next_id += 1
+
+                if next_id - int(trial_id) >= 20:
+                    break
+
+            if trials[trial_id]["trial_type"][()] != trials[str(next_id)]["trial_type"][()] :
+                sig_trial_ids.append(trial_id)
+                slot_ids.append([str(i) for i in range(int(trial_id) - transition_0 , int(trial_id) + transition_1)])
+
+        except Exception as e:
+            print(f"Exception: {e}")
+            continue
+
+    return sig_trial_ids, slot_ids
+
+def isi_type(trial):
+    airpuff = trial["AirPuff"][0] - trial["LED"][0]
+    if airpuff > (Long_airpuff_off - 10) and airpuff < (Long_airpuff_on + 10):
+        trial_type = 2
+    elif airpuff > (Short_airpuff_on - 10) and airpuff < (Short_airpuff_on + 10):
+        trial_type = 1
+    else:
+        print("FATAL ERROR. The isi duration is not as expected. It is {airpuff}")
+        ValueError()
+        trial_type = None
+
+    return trial_type
+
+
+def sd_stat(test_type, session_date):
+    if 'V_3_18' in session_date or 'V_3_19' in session_date:
+        return test_type
+    elif 'V_3_17' in session_date:
+        if test_type == 2:
+            return 1
+        elif test_type == 3:
+            return 2
+    elif 'V_3_16' in session_date:
+        if test_type == 1:
+            return 3
+        elif test_type == 0:
+            return 1

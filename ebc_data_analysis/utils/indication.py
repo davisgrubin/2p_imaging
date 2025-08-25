@@ -1,11 +1,55 @@
 import numpy as np
 import math
 from scipy.stats import ttest_rel
+from utils.alignment import moving_average
+from utils.functions import isi_type
 
-def find_max_with_gradient(time_points, values):
+def cr_onset_loop(fec, fec_time, airpuff, ids):
+    window_size = 5
+    cr_time = {}
+    for id in ids:
+        cr_idx = cr_onset_calc(fec[id], fec_time[id], window_size, airpuff[id], cr_stat = 1)
+        cr_time[id] = fec_time[cr_idx]
+    return cr_time
+
+def cr_onset_calc(fec, fec_time, window_size, air_puff, cr_stat):
+    # doing a significant smoothing on the fec
+    kernel = np.ones(window_size) / window_size
+    fec = np.convolve(fec, kernel, mode='same')
+    #calculating the velocity
+    velocity = np.gradient(fec, fec_time)
+    cr_idx = None
+    threshold_v = 0.00005
+    #calculating the threshold for the amplitude
+    threshold_a = 0.005
+    #going through time to find out the first CR onset like behaviour
+    for t, time in enumerate(fec_time):
+        if cr_stat ==1: #checking if the cr status is 1 and the cr is positive
+            if time > 50 and time < air_puff:
+
+                if velocity[t] > threshold_v and fec[t] > threshold_a:
+                        cr_idx = t
+                        break
+                else:
+                    cr_idx = None
+
+        else:
+            if t == len(fec_time):
+                cr_idx = None
+                print("no CR onset found")
+
+    return cr_idx
+
+def threshold_time(fec, fec_time, threshold):
+    time = None
+    for i, t in enumerate(fec_time):
+        if fec[i] >= threshold:
+            time = fec_time[i]
+    return time
+
+def find_max_with_gradient(time_points, values, gradients):
     zero_grad_idxs = []
     zero_grad_value = []
-    gradients = np.gradient(values, time_points)
     sign_changes = np.where((gradients[:-1] > 0) & (gradients[1:] <= 0))[0]
 
     for i, gradient in enumerate(gradients):
@@ -15,7 +59,7 @@ def find_max_with_gradient(time_points, values):
 
     # If no gradient change points exist and no zero-gradient points exist, return None
     if len(sign_changes) == 0 and len(zero_grad_value) == 0:
-        return None, None
+        return None, None, None, gradients
 
     # Handle the case where both zero-gradient and sign-change points are present
     max_index_sign = max(sign_changes, key=lambda i: values[i]) if len(sign_changes) > 0 else None
@@ -26,9 +70,9 @@ def find_max_with_gradient(time_points, values):
 
     # Compare the two maximum values and return the overall maximum
     if max_value_grad >= max_value_sign:
-        return time_points[max_index_grad], max_value_grad
+        return time_points[max_index_grad], max_value_grad, max_index_grad ,gradients
     else:
-        return time_points[max_index_sign], max_value_sign
+        return time_points[max_index_sign], max_value_sign, max_index_sign, gradients
 
 def find_index(home_array, event):
     return np.searchsorted(home_array, event, side='right')
@@ -42,21 +86,21 @@ def block_and_CR_fec(CR_stat,fec_0, shorts, longs):
     for id in shorts:
         try:
             if CR_stat[id] == 1:
-                short_CRp.append(fec_0[id] * 0.01)
+                short_CRp.append(fec_0[id])
             if CR_stat[id] == 0:
-                short_CRn.append(fec_0[id]* 0.01)
+                short_CRn.append(fec_0[id])
         except:
             print()
             print
     for id in longs:
         if CR_stat[id] == 1:
-            long_CRp.append(fec_0[id]* 0.01)
+            long_CRp.append(fec_0[id])
         if CR_stat[id] == 0:
-            long_CRn.append(fec_0[id]* 0.01)
+            long_CRn.append(fec_0[id])
 
     return short_CRp, short_CRn, long_CRp, long_CRn
 
-def CR_stat_indication(trials , static_threshold, AP_delay):
+def CR_stat_indication(trials, fec, fec_time, static_threshold, AP_delay):
     fec_index_0 = {}
     fec_index_led = {}
     fec_index_ap = {}
@@ -66,52 +110,67 @@ def CR_stat_indication(trials , static_threshold, AP_delay):
     fec_0 = {}
     base_line_avg = {}
     CR_interval_avg = {}
+    isi_interval_avg = {}
     CR_stat = {}
     cr_interval_idx = {}
     bl_interval_idx = {}
+    cr_positives = []
+    smoothed_isi = moving_average(fec, window_size= 20)
 
-    for i , id in enumerate(trials):
-        if trials[id]["trial_type"][()] == 1:
-            interval_type = 0
-        if trials[id]["trial_type"][()] == 2:
-            interval_type = 50
-        fec_time_0[id] = trials[id]["FECTimes"][:] - trials[id]["LED"][0]
-        fec_0[id] = trials[id]["FEC"][:]
+    for id in fec:
+
+        fec_time_0[id] = fec_time[id]
 
         fec_index_0[id] = np.abs(fec_time_0[id]).argmin()
         fec_index_led[id] = find_index(fec_time_0[id], 0.0)
+        
         fec_index_ap[id] = find_index(fec_time_0[id] , trials[id]["AirPuff"][0]- trials[id]["LED"][0] + 12)
         fec_index_cr[id] = find_index(fec_time_0[id], trials[id]["AirPuff"][0]- trials[id]["LED"][0] - 50)
-        fec_index_bl[id] = find_index(fec_time_0[id] , trials[id]["LED"][0]- trials[id]["LED"][0] - 200)
+        fec_index_bl[id] = find_index(fec_time_0[id] ,-200)
 
-        # print("fec indexes", fec_index_led - fec_index_0)
-
-        CR_interval = fec_0[id][fec_index_cr[id] :fec_index_ap[id]]
+        CR_interval = fec[id][fec_index_cr[id] :fec_index_ap[id]]
         CR_interval_avg[id] = np.average(CR_interval)
 
-        base_line = np.sort(fec_0[id][fec_index_bl[id]: fec_index_led[id]])
+        isi_interval = smoothed_isi[id][fec_index_led[id] : fec_index_cr[id]]
+        isi_interval_avg[id] = np.average(isi_interval)
+
+        base_line = np.sort(fec[id][fec_index_bl[id]: fec_index_led[id]])
         base_line_indexes = int(0.3 * len(base_line))
         base_line_avg[id] = np.average(base_line[:base_line_indexes])
 
         if CR_interval_avg[id] - base_line_avg[id] > static_threshold:
             CR_stat[id] = 1
+            # added just to make things easier.
+            cr_positives.append(id)
+
         else:
-            CR_stat[id] = 0
+            if any(value > base_line_avg[id] + static_threshold for value in isi_interval):
+                CR_stat[id] = 2
+
+            else:
+                CR_stat[id] = 0
+
         cr_interval_idx[id] = np.array([fec_index_cr[id], fec_index_ap[id]])
         bl_interval_idx[id] = np.array([fec_index_bl[id], fec_index_led[id]])
-    return CR_stat, CR_interval_avg, base_line_avg, cr_interval_idx, bl_interval_idx 
+    return cr_positives, CR_stat, CR_interval_avg, base_line_avg, cr_interval_idx, bl_interval_idx 
 
 def block_type(trials):
     shorts = []
     longs = []
-    for i , id in enumerate(trials):
+    cntr_300 = 0
+    for id in trials:
         try:
-            if trials[id]["trial_type"][()] == 1:
+            if isi_type(trials[id]) == 1:
                 shorts.append(id)
-            if trials[id]["trial_type"][()] == 2:
+            if isi_type(trials[id]) == 2:
                 longs.append(id)
+            if isi_type(trials[id]) == 3:
+                cntr_300 += 1
+            elif isi_type(trials[id]) == None:
+                continue
         except:
             print(f'trial {id} has trial type file problem')
+            continue
 
     return shorts, longs
 
@@ -313,3 +372,33 @@ def CR_FEC(base_line_avg, CR_interval_avg, CR_stat):
             cr_relative_changes_crn[id] = cr_relative_change
 
     return baselines_crp, cr_amplitudes_crp, cr_relative_changes_crp, baselines_crn, cr_amplitudes_crn, cr_relative_changes_crn
+
+def sig_trials_checking_trash(sig_trial_ids, trials, all_id):
+    print(sig_trial_ids)
+    for i in range(len(sig_trial_ids)):
+        try:
+
+            next_id = int(sig_trial_ids[i]) + 1
+            previous = int(sig_trial_ids[i]) - 1
+
+            while str(next_id) not in trials:
+                next_id += 1
+
+                if next_id >= len(all_id):
+                    break
+            while str(previous) not in trials:
+                previous -= 1
+
+                if previous <= 10:
+                    break
+
+            print(previous)
+            print(trials[str(previous)]["trial_type"][()])
+            print(next_id)
+            print(trials[str(next_id)]["trial_type"][()])
+
+        except Exception as e:
+            print(f"Exception: {e}")
+            continue
+    
+    breakpoint()

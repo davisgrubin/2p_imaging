@@ -20,10 +20,20 @@ def save_fec_plots_to_pdf(trials, fec_time_0, fec_0, CR_stat, all_id, filename):
                 id = trial_ids[trial_idx]
                 ax = axes[i]  # Select the correct subplot for this trial
 
-                CR_color = "blue" if CR_stat[id] == 0 else "red"
+                # CR_color = "blue" if CR_stat[id] == 0 elif CR_stat[id] == 1"red"
+                if CR_stat[id] == 0:
+                    CR_color = 'blue'
+                
+                if CR_stat[id] == 1:
+                    CR_color = 'red'
+
+                if CR_stat[id] == 2:
+                    CR_color = 'purple'
+                    # breakpoint()
+
                 block_color = "blue" if trials[id]["trial_type"][()] == 1 else "lime"
 
-                ax.plot(fec_time_0[id], fec_0[id]/100, label=f"FEC of trial {id}", color=CR_color)
+                ax.plot(fec_time_0[id], fec_0[id], label=f"FEC of trial {id}", color=CR_color)
                 ax.axvspan(0, trials[id]["LED"][1] - trials[id]["LED"][0],
                            color="gray", alpha=0.5, label="LED")
                 ax.axvspan(trials[id]["AirPuff"][0] - trials[id]["LED"][0],
