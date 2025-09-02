@@ -12,7 +12,6 @@ from datetime import datetime
 from modules import Trialization
 from modules import StatTest
 from modules.ReadResults import read_ops
-from modules.ReadResults import clean_memap_path
 
 def combine_session_config_list(session_config_list):
     list_session_data_path = []
@@ -47,8 +46,6 @@ def run(session_config_list, cate_list):
     print('===============================================')
     if not os.path.exists(os.path.join('results', 'temp_'+session_config_list['subject_name'])):
         os.makedirs(os.path.join('results', 'temp_'+session_config_list['subject_name']))
-    if not os.path.exists(os.path.join('results', 'temp_'+session_config_list['subject_name'], 'alignment_memmap')):
-        os.makedirs(os.path.join('results', 'temp_'+session_config_list['subject_name'], 'alignment_memmap'))
     print('Created canvas')
     session_config_list = combine_session_config_list(session_config_list)
     print('Processing {} sessions'.format(
@@ -57,8 +54,6 @@ def run(session_config_list, cate_list):
         print(n)
     print('Reading ops.npy')
     list_ops = read_ops(session_config_list['list_session_data_path'])
-    for i in range(len(list_ops)):
-        clean_memap_path(list_ops[i])
 
     print('===============================================')
     print('============= trials segmentation =============')
@@ -79,14 +74,14 @@ def run(session_config_list, cate_list):
     print('===============================================')
     print('======== plotting representative masks ========')
     print('===============================================')
-    #fn1 = visualization1_FieldOfView.run(session_config_list, smooth)
-    fn1 = []
+    fn1 = visualization1_FieldOfView.run(session_config_list, smooth, cate_list)
+    #fn1 = []
 
     print('===============================================')
     print('========= plotting 3331Random results =========')
     print('===============================================')
     fn2 = visualization2_3331Random.run(session_config_list, smooth, cate_list)
-    #fn2 = []
+    fn2 = []
 
     print('===============================================')
     print('======= plotting 1451ShortLong results ========')
@@ -97,7 +92,7 @@ def run(session_config_list, cate_list):
     print('===============================================')
     print('====== plotting 4131FixJitterOdd results ======')
     print('===============================================')
-    #fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
+    fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
     fn4 = []
     
     print('===============================================')
@@ -118,7 +113,6 @@ def run(session_config_list, cate_list):
     for i in range(len(list_ops)):
         print('Cleaning memory mapping files for {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
-        clean_memap_path(list_ops[i])
     print('Processing completed for all sessions')
     for n in session_config_list['list_session_name']:
         print(n)
@@ -147,56 +141,7 @@ if __name__ == "__main__":
                 run(session_config_list, cate_list)
 
     else:
-        session_config_VTYH02 = {
-            'list_session_name' : {
-                'VTYH02_PPC_20250106_3331Random' : 'random',
-                'VTYH02_PPC_20250107_3331Random' : 'random',
-                'VTYH02_PPC_20250108_3331Random' : 'random',
-                'VTYH02_PPC_20250109_3331Random' : 'random',
-                'VTYH02_PPC_20250111_3331Random' : 'random',
-                #'VTYH02_PPC_20250118_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250120_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250122_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250123_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250127_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250129_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250130_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250131_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250202_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250203_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250205_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250206_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250207_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250208_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250210_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250211_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250212_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250213_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250214_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250218_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250221_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250225_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250226_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250228_1451ShortLong' : 'short_long',
-                },
-            'session_folder' : 'YH02VT',
-            'sig_tag' : 'all',
-            'force_label' : None,
-            }
-        session_config_list_VTYH02 = {
-            'list_config': [
-                session_config_VTYH02,
-                ],
-            'label_names' : {
-                '-1':'Exc',
-                '1':'Inh_VIP',
-                '2':'Inh_SST',
-                },
-            'subject_name' : 'YH02VT',
-            'output_filename' : 'test_YH02VT_PPC_passive'
-            }
-        
+
         session_config_YH18VT = {
             'list_session_name' : {
                 #'YH18VT_V1_20250526_3331Random' : 'random',
@@ -204,9 +149,9 @@ if __name__ == "__main__":
                 #'YH18VT_V1_20250528_3331Random' : 'random',
                 #'YH18VT_V1_20250529_3331Random' : 'random',
                 #'YH18VT_V1_20250530_3331Random' : 'random',
-                #'YH18VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250331_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250331_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250401_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250402_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250403_4131FixJitterOdd' : 'fix_jitter_odd',
@@ -219,28 +164,29 @@ if __name__ == "__main__":
                 #'YH18VT_V1_20250417_1451ShortLong' : 'short_long',
                 #'YH18VT_V1_20250418_1451ShortLong' : 'short_long',
                 #'YH18VT_V1_20250421_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250422_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250423_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250424_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250425_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250428_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250429_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250430_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250501_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250502_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250503_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250505_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250422_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250423_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250424_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250425_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250428_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250429_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250430_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250501_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250502_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250503_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250505_1451ShortLong' : 'short_long',
                 #'YH18VT_V1_20250623_3331RandomExtended' : 'extended_random',
                 #'YH18VT_V1_20250624_3331RandomExtended' : 'extended_random',
                 #'YH18VT_V1_20250625_3331RandomExtended' : 'extended_random',
                 #'YH18VT_V1_20250626_3331RandomExtended' : 'extended_random',
                 #'YH18VT_V1_20250627_3331RandomExtended' : 'extended_random',
+                #'test_YH18VT_V1_20250505_1451ShortLong' : 'short_long',
                 },
             'session_folder' : 'YH18VT',
             'sig_tag' : 'all',
             'force_label' : None,
             }
-        session_config_list_YH18VT = {
+        session_config_list_test = {
             'list_config': [
                 session_config_YH18VT,
                 ],
@@ -254,26 +200,24 @@ if __name__ == "__main__":
             }
         
         '''
-        
-        session_config_list_test = session_config_list_VTYH02
-        session_config_list_test = session_config_list_YH18VT
-        run(sessio n_config_list_test, cate_list)
+
+        # run(session_config_list_test, cate_list)
         
         import matplotlib.pyplot as plt
         session_config_list = combine_session_config_list(session_config_list_test)
         list_ops = read_ops(session_config_list['list_session_data_path'])
         ops = list_ops[0]
-        
+
         from modules.ReadResults import read_all
         [list_labels, list_masks,
          list_neural_trials, list_move_offset, list_significance
-         ] = read_all(session_config_list, smooth=False)
+         ] = read_all(session_config_list, smooth=True)
         neural_trials = list_neural_trials[0]
         dff = neural_trials['dff']
         label_names = {'-1':'Exc', '1':'Inh_VIP', '2':'Inh_SST'}
         cate = [-1,1,2]
         roi_id = None
-        norm_mode='minmax'
+        norm_mode='none'
         jitter_trial_mode='global'
        
         cluster_cmap = plt.cm.hsv
@@ -284,7 +228,5 @@ if __name__ == "__main__":
         temp_folder = 'temp_'+session_config_list['subject_name']
         if not os.path.exists(os.path.join('results', 'temp_'+session_config_list['subject_name'])):
             os.makedirs(os.path.join('results', 'temp_'+session_config_list['subject_name']))
-        if not os.path.exists(os.path.join('results', 'temp_'+session_config_list['subject_name'], 'alignment_memmap')):
-            os.makedirs(os.path.join('results', 'temp_'+session_config_list['subject_name'], 'alignment_memmap'))
-        
+            
         '''

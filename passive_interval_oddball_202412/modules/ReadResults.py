@@ -109,8 +109,8 @@ def read_neural_trials(ops, smooth):
         neural_trials = dict()
         dff = np.array(f['neural_trials']['dff'])
         if smooth:
-            window_length=5
-            polyorder=3
+            window_length=11
+            polyorder=2
             dff = np.apply_along_axis(
                 savgol_filter, 1, dff,
                 window_length=window_length,
@@ -135,8 +135,6 @@ def read_significance(ops):
     with h5py.File(file_path, 'r') as f:
         significance = {}
         significance['r_standard'] = np.array(f['significance']['r_standard'])
-        significance['r_change'] = np.array(f['significance']['r_change'])
-        significance['r_oddball'] = np.array(f['significance']['r_oddball'])
     return significance
 
 # read bpod session data.
@@ -207,8 +205,6 @@ def read_subject(list_ops, sig_tag, force_label, smooth):
         significance = read_significance(ops)
         if sig_tag == 'all':
             significance['r_standard'] = np.ones_like(significance['r_standard']).astype('bool')
-            significance['r_change']   = np.ones_like(significance['r_change']).astype('bool')
-            significance['r_oddball']  = np.ones_like(significance['r_oddball']).astype('bool')
         # labels.
         if force_label != None:
             labels = np.ones_like(labels) * force_label
@@ -266,11 +262,3 @@ def read_all(session_config_list, smooth):
         gc.collect()
     return [list_labels, list_masks,
             list_neural_trials, list_move_offset, list_significance]
-    
-# clean memory mapping files.
-def clean_memap_path(ops):
-    try:
-        if os.path.exists(os.path.join(ops['save_path0'], 'memmap')):
-            shutil.rmtree(os.path.join(ops['save_path0'], 'memmap'))
-    except: pass
-    

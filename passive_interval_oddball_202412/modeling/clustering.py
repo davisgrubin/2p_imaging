@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import rastermap as rm
 from tslearn.clustering import KShape
 from tslearn.preprocessing import TimeSeriesScalerMeanVariance
  
@@ -18,24 +19,22 @@ def clustering_neu_response_mode(x_in, n_clusters):
     # run clustering model.
     model = KShape(
         n_clusters=n_clusters,
-        n_init=5,
+        n_init=1,
         verbose=True)
     cluster_id = model.fit_predict(x_in)
     return cluster_id
 
 # organize cluster labels based on stimulus evoked magnitude.
-def remap_cluster_id(kernel_all, kernel_time, n_clusters, cluster_id):
+def remap_cluster_id(kernel_all, n_clusters, cluster_id):
     # get response within cluster.
     glm_mean, _ = get_mean_sem_cluster(kernel_all, n_clusters, cluster_id)
     # normalization.
     glm_mean = np.apply_along_axis(norm01, 1, glm_mean)
-    # get time zero.
-    z = get_frame_idx_from_time(kernel_time, 0, 0, 0)[0]
-    # compute response magnitude.
-    mag = glm_mean[:,z] - glm_mean[:,0]
+    # fit model.
+    model = rm.Rastermap(n_clusters=2, locality=1)
+    model.fit(glm_mean)
     # sort labels.
-    sorted_labels = np.argsort(mag)[::-1]
-    mapping = {val: i for i, val in enumerate(sorted_labels)}
+    mapping = {val: i for i, val in enumerate(model.isort)}
     cluster_id = np.vectorize(mapping.get)(cluster_id)
     return cluster_id
 

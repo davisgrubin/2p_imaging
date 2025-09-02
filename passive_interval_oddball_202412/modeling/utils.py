@@ -7,6 +7,10 @@ from scipy.signal import savgol_filter
 def norm01(data):
     return (data - np.nanmin(data)) / (np.nanmax(data) - np.nanmin(data) + 1e-5)
 
+# normalization into gaussian.
+def norm_gauss(data):
+    return (data - np.nanmean(data)) / (np.nanstd(data) + 1e-5)
+
 # compute the scale parameters when normalizing data into [0,1].
 def get_norm01_params(data):
     a = 1 / (np.nanmax(data) - np.nanmin(data))

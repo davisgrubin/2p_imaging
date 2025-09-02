@@ -54,8 +54,6 @@ def run(session_config_list, list_fn, list_page_name, list_target_sess):
                 </div>
         </div>
         """
-        # clear space.
-        os.remove(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename[0]+'.svg'))
         return html_block
     
     # create html code for a page given list of figure filenames.
@@ -125,6 +123,4 @@ def run(session_config_list, list_fn, list_page_name, list_target_sess):
     output_path = os.path.join('results', session_config_list['output_filename']+'.html')
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html_output)
-    # delete temp folder.
-    shutil.rmtree(os.path.join('results', 'temp_'+session_config_list['subject_name']))
 

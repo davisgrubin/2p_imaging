@@ -133,7 +133,7 @@ def run(session_config_list, smooth, cate_list):
             print('-----------------------------------------------')
             print(title)
             filename = '4131FixJitterOdd_cluster_oddball_fix_heatmap_all'
-            cate_gap = 4
+            cate_gap = 5
             n_row = cate_gap*len(plotter.cate_list)
             n_col = 6
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -142,7 +142,7 @@ def run(session_config_list, smooth, cate_list):
             for s in cate_gap*np.arange(len(plotter.cate_list)):
                 a = [plt.subplot(gs[s:s+2, 0:2])]
                 a+= [plt.subplot(gs[s+2, 0:2])]
-                a+= [plt.subplot(gs[s:s+3, i]) for i in [2,3,4,5]]
+                a+= [plt.subplot(gs[s:s+2, i]) for i in [2,3,4,5]]
                 axs_all.append(a)
             plotter.cluster_oddball_fix_heatmap_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -161,7 +161,7 @@ def run(session_config_list, smooth, cate_list):
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+2, i]) for i in [0,1,2,3,4,5,6,7,8]]
+                a = [plt.subplot(gs[s:s+1, i]) for i in range(9)]
                 axs_all.append(a)
             plotter.sorted_heatmaps_fix_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -175,12 +175,13 @@ def run(session_config_list, smooth, cate_list):
             filename = '4131FixJitterOdd_cluster_oddball_jitter_global_all'
             cate_gap = 5
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 13
+            n_col = 16
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+3, i]) for i in range(13)]
+                a = [plt.subplot(gs[s:s+3, i]) for i in range(16)]
+                a+= [plt.subplot(gs[s+3, i]) for i in range(16)]
                 axs_all.append(a)
             plotter.cluster_oddball_jitter_global_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -206,34 +207,37 @@ def run(session_config_list, smooth, cate_list):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        def plot_oddball_latent_all():
+        def plot_latent_all():
             title = 'latent dynamics on fix oddball intervals'
             print('-----------------------------------------------')
             print(title)
             filename = '4131FixJitterOdd_oddball_latent_all'
-            cate_gap = 3
+            cate_gap = 9
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 13
+            n_col = 20
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+2, i:i+2]) for i in [0,2,4,6,8,10]]
+                a = [[plt.subplot(gs[s+0:s+2, i:i+2]) for i in 2*np.arange(10)]]
+                a+= [[plt.subplot(gs[s+2:s+4, i:i+2]) for i in 2*np.arange(10)]]
+                a+= [[plt.subplot(gs[s+4:s+6, i:i+2]) for i in 2*np.arange(10)]]
+                a+= [[plt.subplot(gs[s+6:s+8, i:i+2]) for i in 2*np.arange(10)]]
                 axs_all.append(a)
-            plotter.oddball_latent_all(axs_all)
+            plotter.latent_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
         fig_all = [
-            plot_intervals(),
-            plot_trial(),
-            plot_cluster_oddball_fix_all(),
-            plot_cluster_oddball_fix_heatmap_all(),
-            plot_sorted_heatmaps_fix_all(),
+            #plot_intervals(),
+            #plot_trial(),
+            #plot_cluster_oddball_fix_all(),
+            #plot_cluster_oddball_fix_heatmap_all(),
+            #plot_sorted_heatmaps_fix_all(),
             plot_cluster_oddball_jitter_global_all(),
-            plot_cluster_oddball_jitter_local_all(),
-            plot_oddball_latent_all(),
+            #plot_cluster_oddball_jitter_local_all(),
+            plot_latent_all(),
         ]
         print('Clearing memory usage')
         del list_labels

@@ -470,3 +470,101 @@
 - Added get_peak_time.
 - Now plot_interval_scaling uses peak magnitude evaluation.
 - Fixed plot_tansition colors.
+
+## 2025.08.19
+- Added sub_sampling_trial.
+- Now get_multi_sess_neu_trial has option on trial subsampling.
+- Added norm_gauss.
+- Deleted neu_pop_sample_decoding_slide_win.
+- Added decoding_time_confusion.
+- Added time_decoding_evaluation.
+- Added plot_standard_time_decode.
+- Adjusted layouts for random.
+
+## 2025.08.21
+- Deleted get_sub_time_idx.
+- Now decoding_time_confusion also returns timestamps.
+- Improved plot_standard_time_decode layouts.
+- Fixed plot_standard_time_decode time bug.
+- Now bin_times is a parameter in decoding_time_confusion
+- Adjusted random layouts.
+- Now plot_time_decode_confusion_matrix receives t_range for extent.
+- Improved add_heatmap_colorbar with cax.
+
+## 2025.08.23
+- Removed plot_heatmap_trial label rotation.
+- Adjusted add_heatmap_colorbar cax layouts.
+- Added colorbar to plot_heatmap_trial.
+- Now cmap is defined completely by base_color in get_cmap_color.
+- Now add_heatmap_colorbar has norm as optional.
+- Now add_heatmap_colorbar can add yticklabels.
+- Changed percentile to nanpercentile in apply_colormap.
+- Removed plot_latent_individual in random.
+- Added colorbar for plot_heatmap_neuron.
+- Fixed plot_standard_heatmap layouts.
+
+## 2025.08.24
+- Fixed plot_cluster_local_all layouts.
+- Added hide_all_axis to add_heatmap_colorbar.
+- Fixed plot_interval_bin_latent_all bin_num.
+- Fixed plot_latent_individual layouts.
+- Fixed plot_cluster_adapt_all layouts.
+- Added plot_cluster_heatmap_trial colorbar.
+- Fixed plot_sorted_heatmaps_all.
+
+## 2025.08.27
+- Now remap_cluster_id uses rastermap to sort cluster_id.
+- Reversed cross_day_cmap.
+
+## 2025.08.28
+- Added get_random_rotate_mat_3d.
+- Now all 3d dynamics has random rotation.
+- Made plot_latent_all independent.
+- Removed plot_fix_oddball.
+- Changed fix jitter color.
+- Added plot_cluster_pred_mod_index_compare.
+- Rewritten plot_win_mag_quant_stat.
+
+## 2025.08.29
+- Added regression_time.
+- Added plot_decode_all.
+- Now sort_heatmap_neuron has multiple options for sorting.
+- Now plot_standard_heatmap uses shuffle as sort_method.
+- Fixed plot_interval_heatmap yticks.
+- Added plot_standard_heatmap to random.
+- Now decoding_time_confusion also returns overall accuracy score.
+- Removed all inside tick.
+- Added plot_oddball_time_decode.
+
+## 2025.08.30
+- Fixed plot_block_win_decode layouts.
+- Fixed plot_standard_time_decode layouts.
+- Fixed plot_heatmap_neuron yticklabels.
+- Now add_heatmap_colorbar has option to ignore ax.
+- Added plot_standard_ramp_params.
+- Now plot_dist discard the first and last element.
+- Removed plot_standard_latent.
+- Removed grid line on adjust_layout_isi_example_epoch.
+- Added unexpected omission to plot_tansition.
+- Fixed plot_trial_quant trial number.
+- Rewritten plot_trial_quant layouts.
+
+## 2025.08.31
+- Removed baseline correction in plot_block_win_decode.
+- Removed calcium transient.
+- Rewritten plot_sess_example_traces.
+- Fixed plot_sess_example_traces.
+- Added neuron subsampling to plot_standard_time_regress_drop_neu_all.
+- Adjusted plot_cluster_mean_sem layouts.
+- Now get_full_html will not delete temp folder.
+- Removed clean_memap_path.
+- Fixed plot_win_mag_quant_stat neg.
+- Added plot_block_win_decode_all.
+- Added plot_cluster_type_percentage.
+- Removed plot_standard_time_decode.
+
+## 2025.09.01
+- Now plot_standard_time_decode plots superimpose lineas as well.
+- Now plot_dist plots normalized cumulative distribution.
+- Fixed plot_stim.
+- Added window to plot_win_mag_quant_stat.

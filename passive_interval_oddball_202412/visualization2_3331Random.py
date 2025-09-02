@@ -114,14 +114,14 @@ def run(session_config_list, smooth, cate_list):
             print('-----------------------------------------------')
             print(title)
             filename = '3331Random_cluster_all'
-            cate_gap = 3
+            cate_gap = 5
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 11
+            n_col = 13
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+2, i]) for i in range(11)]
+                a = [plt.subplot(gs[s:s+3, i]) for i in range(13)]
                 axs_all.append(a)
             plotter.cluster_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -142,7 +142,7 @@ def run(session_config_list, smooth, cate_list):
             for s in cate_gap*np.arange(len(plotter.cate_list)):
                 a = [plt.subplot(gs[s:s+2, 0:2])]
                 a+= [plt.subplot(gs[s+2, 0:2])]
-                a+= [plt.subplot(gs[s:s+3, i]) for i in [2]]
+                a+= [plt.subplot(gs[s:s+1, i]) for i in [2,3]]
                 axs_all.append(a)
             plotter.cluster_heatmap_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -161,10 +161,10 @@ def run(session_config_list, smooth, cate_list):
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+2, 0])]
-                a+= [plt.subplot(gs[s:s+2, 1:4])]
-                a+= [plt.subplot(gs[s:s+2, 4])]
-                a+= [plt.subplot(gs[s:s+2, 5])]
+                a = [plt.subplot(gs[s:s+3, 0])]
+                a+= [plt.subplot(gs[s:s+3, 1:4])]
+                a+= [plt.subplot(gs[s:s+3, 4])]
+                a+= [plt.subplot(gs[s:s+3, 5])]
                 axs_all.append(a)
             plotter.cross_sess_adapt(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -176,14 +176,14 @@ def run(session_config_list, smooth, cate_list):
             print('-----------------------------------------------')
             print(title)
             filename = '3331Random_cluster_local_all'
-            cate_gap = 3
+            cate_gap = 4
             n_row = cate_gap*len(plotter.cate_list)
             n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+2, i]) for i in range(4)]
+                a = [plt.subplot(gs[s:s+3, i]) for i in range(4)]
                 axs_all.append(a)
             plotter.cluster_local_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -191,18 +191,18 @@ def run(session_config_list, smooth, cate_list):
             plt.close(fig)
             return [filename, n_row, n_col, title]
         def plot_latent_all():
-            title = 'latent dynamics'
+            title = 'all cluster latent dynamics on binned stimlus interval'
             print('-----------------------------------------------')
             print(title)
             filename = '3331Random_latent_all'
             cate_gap = 3
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 10
+            n_col = 20
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s+0:s+2, 0:2])]
+                a = [[plt.subplot(gs[s+0:s+2, i:i+2]) for i in 2*np.arange(10)]]
                 axs_all.append(a)
             plotter.latent_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -210,12 +210,13 @@ def run(session_config_list, smooth, cate_list):
             plt.close(fig)
             return [filename, n_row, n_col, title]
         fig_all = [
+            #plot_intervals(),
             plot_trial(),
             plot_cluster_all(),
-            plot_cluster_heatmap_all(),
+            #plot_cluster_heatmap_all(),
             plot_cross_sess_adapt(),
-            plot_cluster_local_all(),
-            #plot_latent_all(),
+            #plot_cluster_local_all(),
+            plot_latent_all(),
             ]
         print('Clearing memory usage')
         del list_labels

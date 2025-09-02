@@ -20,18 +20,17 @@ from utils import get_frame_idx_from_time
 from utils import get_isi_bin_neu
 from utils import get_expect_interval
 from utils import get_split_idx
-from utils import get_roi_label_color
 from utils import get_cmap_color
 from utils import hide_all_axis
+from utils import get_random_rotate_mat_3d
 from utils import adjust_layout_isi_example_epoch
-from utils import adjust_layout_neu
 from utils import adjust_layout_2d_latent
 from utils import adjust_layout_3d_latent
 from utils import add_legend
+from utils import add_heatmap_colorbar
 from utils import utils_basic
 
-# fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-# fig, ax = plt.subplots(1, 1, figsize=(3, 6))
+# fig, ax = plt.subplots(1, 1, figsize=(3, 9))
 # fig, axs = plt.subplots(1, 8, figsize=(24, 3))
 # axs = [plt.subplots(1, 8, figsize=(24, 3))[1], plt.subplots(1, 8, figsize=(24, 3))[1]]
 # fig, ax = plt.subplots(1, 1, figsize=(6, 6), subplot_kw={"projection": "3d"})
@@ -55,42 +54,31 @@ class plotter_utils(utils_basic):
         self.list_significance = list_significance
         self.bin_win = [450,2550]
         self.bin_num = 4
-        self.n_clusters = 3
-        self.max_clusters = 10
+        self.n_clusters = 7
         self.d_latent = 3
         self.glm = self.run_glm()
         self.cluster_id = self.run_clustering()
 
     def plot_isi_seting(self, ax):
-        gap = 10
-        colors = get_cmap_color(self.bin_num, cmap=self.random_bin_cmap)
-        for bi in range(self.bin_num):
-            a = 500+bi*(2500-500)/self.bin_num+gap
-            b = 500+(bi+1)*(2500-500)/self.bin_num-gap
-            ax.hlines(1, a, b, color=colors[bi])
-            ax.vlines([a, b], 0, 1, color=colors[bi])
-        ax.tick_params(direction='in')
+        gap = 25
+        ax.hlines(0.5, 500+gap, 2500-gap, color='black')
+        ax.vlines([500+gap, 2500-gap], 0, 0.5, color='black')
         ax.spines['left'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.set_xlim([450,2550])
         ax.set_ylim([0, 1.05])
-        ax.set_xticks([500,2500])
+        ax.set_xticks([500,1500,2500])
         ax.set_yticks([])
-        ax.set_xticklabels([500,2500])
+        ax.set_xticklabels([500,1500,2500])
     
     def plot_isi_example_epoch(self, ax):
         trial_win = [1000,1500]
-        colors = get_cmap_color(self.bin_num, cmap=self.random_bin_cmap)
         # get isi and trial labels.
         stim_labels = self.list_neural_trials[0]['stim_labels'][trial_win[0]:trial_win[1],:]
         isi = stim_labels[1:,0] - stim_labels[:-1,1]
-        # bin isi.
-        bin_size = (self.bin_win[1] - self.bin_win[0]) / self.bin_num
-        bins = np.arange(self.bin_win[0], self.bin_win[1] + bin_size, bin_size)
-        bin_idx = np.array([np.digitize(i, bins) - 1 for i in isi])
         # plot trials.
-        ax.scatter(np.arange(trial_win[0], trial_win[1]-1), isi, c=np.array(colors)[bin_idx], s=5)
+        ax.scatter(np.arange(trial_win[0], trial_win[1]-1), isi, c='black', s=5)
         # adjust layouts.
         adjust_layout_isi_example_epoch(ax, trial_win, self.bin_win)
 
@@ -113,7 +101,7 @@ class plotter_utils(utils_basic):
         def plot_glm_kernel(ax):
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 0.5, 0.75], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 0.5, 0.95], transform=ax.transAxes)
             # get cluster average.
             glm_mean, glm_sem = get_mean_sem_cluster(kernel_all, self.n_clusters, cluster_id)
             norm_params = [get_norm01_params(glm_mean[ci,:]) for ci in range(self.n_clusters)]
@@ -126,6 +114,60 @@ class plotter_utils(utils_basic):
             # adjust layouts.
             ax.set_xlabel('time since stim (ms)')
         @show_resource_usage
+        def plot_stim(ax):
+            xlim = [-1000, 1500]
+            # collect data.
+            ns = np.concatenate([np.nanmean(n, axis=0) for n in neu_seq], axis=0)
+            ss = np.nanmean(np.concatenate(stim_seq, axis=0), axis=0)
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
+            # get response within cluster.
+            neu_mean, neu_sem = get_mean_sem_cluster(ns, self.n_clusters, cluster_id)
+            norm_params = [get_norm01_params(neu_mean[ci,:]) for ci in range(self.n_clusters)]
+            # define layouts.
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 0.5, 0.95], transform=ax.transAxes)
+            # plot results.
+            self.plot_cluster_mean_sem(
+                ax, neu_mean, neu_sem,
+                self.alignment['neu_time'], norm_params,
+                ss[c_idx,:].reshape(1,2), [color0], [color0]*self.n_clusters, xlim)
+            # adjust layouts.
+            ax.set_xlabel('time since stim (ms)')
+        @show_resource_usage
+        def plot_stim_heatmap(ax):
+            # collect data.
+            ns = np.concatenate([np.nanmean(n, axis=0) for n in neu_seq], axis=0)
+            ss = np.nanmean(np.concatenate(stim_seq, axis=0), axis=0)
+            xlim = [ss[c_idx,0]-500, ss[c_idx,1]+500]
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
+            neu_time = self.alignment['neu_time'][l_idx:r_idx]
+            neu_ci = [ns[cluster_id==ci,l_idx:r_idx] for ci in range(self.n_clusters)]
+            # define layouts.
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            axs_hm = [ax.inset_axes([0.2, ci/self.n_clusters, 0.3, 0.75/self.n_clusters], transform=ax.transAxes)
+                      for ci in range(self.n_clusters)]
+            axs_cb = [ax.inset_axes([0.6, ci/self.n_clusters, 0.1, 0.75/self.n_clusters], transform=ax.transAxes)
+                      for ci in range(self.n_clusters)]
+            axs_hm.reverse()
+            axs_cb.reverse()
+            # plot results for each class.
+            for ci in range(self.n_clusters):
+                if np.sum(cluster_id==ci) > 0:
+                    self.plot_heatmap_neuron(axs_hm[ci], axs_cb[ci], neu_ci[ci], neu_time, neu_ci[ci],
+                                             sort_method='shuffle', norm_mode='share', neu_seq_share=neu_ci)
+                    # add stimulus line.
+                    axs_hm[ci].axvline(0, color='black', lw=1, linestyle='--')
+                # adjust layouts.
+                axs_hm[ci].tick_params(axis='y', labelrotation=0)
+                axs_hm[ci].set_ylabel(None)
+                if ci != self.n_clusters-1:
+                    axs_hm[ci].set_xticks([])
+                hide_all_axis(axs_cb[ci])
+            axs_hm[self.n_clusters-1].set_xlabel('time since stim (ms)')
+            ax.set_ylabel('neuron id')
+            hide_all_axis(ax)
+        @show_resource_usage
         def plot_interval_heatmap(ax, norm_mode):
             xlim = [-1000, 3500]
             l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
@@ -137,10 +179,8 @@ class plotter_utils(utils_basic):
                 for ci in range(self.n_clusters)]
             neu_ci = [nc[np.argsort(np.concatenate(post_isi)), l_idx:r_idx] for nc in neu_ci]
             # define layouts.
-            ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
-            ax0 = ax.inset_axes([0.1, 0, 0.5, 0.95], transform=ax.transAxes)
-            ax1 = ax.inset_axes([0.7, 0, 0.3, 0.95], transform=ax.transAxes)
+            ax0 = ax.inset_axes([0.2, 0, 0.5, 0.95], transform=ax.transAxes)
+            ax1 = ax.inset_axes([0.7, 0, 0.1, 0.95], transform=ax.transAxes)
             axs_hm = [ax0.inset_axes([0, 0.05+ci/self.n_clusters, 1, 0.8/self.n_clusters], transform=ax0.transAxes)
                       for ci in range(self.n_clusters)]
             axs_cb = [ax1.inset_axes([0, 0.05+ci/self.n_clusters, 1, 0.8/self.n_clusters], transform=ax1.transAxes)
@@ -151,13 +191,13 @@ class plotter_utils(utils_basic):
             for ci in range(self.n_clusters):
                 if np.sum(cluster_id==ci) > 0:
                     self.plot_heatmap_trial(
-                            axs_hm[ci], neu_ci[ci], neu_time,
+                            axs_hm[ci], axs_cb[ci], neu_ci[ci], neu_time,
                             norm_mode=norm_mode, neu_seq_share=neu_ci)
                     hide_all_axis(axs_cb[ci])
             # adjust layouts.
             for ci in range(self.n_clusters):
                 axs_hm[ci].set_xlim(xlim)
-                axs_hm[ci].set_yticklabels((((np.arange(2)+0.5)/2)*2000+500).astype('int32'))
+                axs_hm[ci].set_yticklabels((((np.arange(2)+0.5)/2)*2000+500)[::-1].astype('int32'))
                 if ci != self.n_clusters-1:
                     axs_hm[ci].set_xticklabels([])
             axs_hm[self.n_clusters-1].set_xlabel('time since stim (ms)')
@@ -184,7 +224,7 @@ class plotter_utils(utils_basic):
             norm_params = [get_norm01_params(cluster_bin_neu_mean[:,i,:]) for i in range(self.n_clusters)]
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
             # plot results.
             ax.fill_between(
                 np.nanmean(bin_stim_seq, axis=0)[c_idx,:],
@@ -219,7 +259,7 @@ class plotter_utils(utils_basic):
             bin_win_neu_seq = [bwe - bwb for bwe, bwb in zip (bin_win_evoked, bin_win_baseline)]
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
             axs = [ax.inset_axes([0.1, ci/self.n_clusters, 0.4, 0.7/self.n_clusters], transform=ax.transAxes)
                       for ci in range(self.n_clusters)]
             axs.reverse()
@@ -240,7 +280,6 @@ class plotter_utils(utils_basic):
                         bin_center[-1]*1.2, upper-0.4*(upper-lower), f'{mape:.3f}', color=color0,
                         ha='center', va='center')
                     # adjust layouts.
-                    axs[ci].tick_params(direction='in')
                     axs[ci].spines['right'].set_visible(False)
                     axs[ci].spines['top'].set_visible(False)
                     axs[ci].set_xlim(self.bin_win)
@@ -271,7 +310,7 @@ class plotter_utils(utils_basic):
                     neu_z[ci,:,:,:] = z
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
             ax.axis('off')
             axs = [ax.inset_axes([0, ci/self.n_clusters, 0.5, 0.8/self.n_clusters], transform=ax.transAxes)
                    for ci in range(self.n_clusters)]
@@ -294,13 +333,13 @@ class plotter_utils(utils_basic):
         def plot_neu_fraction(ax):
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
             self.plot_cluster_neu_fraction_in_cluster(ax, cluster_id, color0)
         @show_resource_usage
         def plot_fraction(ax):
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
             self.plot_cluster_cate_fraction_in_cluster(ax, cluster_id, neu_labels, self.label_names, color0)
         @show_resource_usage
         def plot_legend(ax):
@@ -313,27 +352,31 @@ class plotter_utils(utils_basic):
         # plot all.
         try: plot_glm_kernel(axs[0])
         except Exception as e: print(e)
-        try: plot_interval_heatmap(axs[1], 'none')
+        try: plot_stim(axs[1])
         except Exception as e: print(e)
-        try: plot_interval_heatmap(axs[2], 'minmax')
+        try: plot_stim_heatmap(axs[2])
         except Exception as e: print(e)
-        try: plot_interval_heatmap(axs[3], 'share')
+        try: plot_interval_heatmap(axs[3], 'none')
         except Exception as e: print(e)
-        try: plot_interval_bin(axs[4], 'pre')
+        try: plot_interval_heatmap(axs[4], 'minmax')
         except Exception as e: print(e)
-        try: plot_interval_bin(axs[5], 'post')
+        try: plot_interval_heatmap(axs[5], 'share')
         except Exception as e: print(e)
-        try: plot_interval_scaling(axs[6])
+        try: plot_interval_bin(axs[6], 'pre')
         except Exception as e: print(e)
-        try: plot_interval_bin_latent(axs[7])
+        try: plot_interval_bin(axs[7], 'post')
         except Exception as e: print(e)
-        try: plot_neu_fraction(axs[8])
+        try: plot_interval_scaling(axs[8])
         except Exception as e: print(e)
-        try: plot_fraction(axs[9])
+        try: plot_interval_bin_latent(axs[9])
         except Exception as e: print(e)
-        try: plot_legend(axs[10])
+        try: plot_neu_fraction(axs[10])
         except Exception as e: print(e)
-    
+        try: plot_fraction(axs[11])
+        except Exception as e: print(e)
+        try: plot_legend(axs[12])
+        except Exception as e: print(e)
+
     def plot_cluster_heatmap_all(self, axs, cate):
         kernel_all = get_glm_cate(self.glm, self.list_labels, self.list_significance, cate)
         cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
@@ -380,19 +423,22 @@ class plotter_utils(utils_basic):
             neu_seq = neu_seq[:,l_idx:r_idx]
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
             # define layouts.
-            ax.axis('off')
-            ax = ax.inset_axes([0, 0, 0.5, 1], transform=ax.transAxes)
+            ax_hm = ax.inset_axes([0, 0, 0.5, 1], transform=ax.transAxes)
+            ax_cb = ax.inset_axes([0.6, 0, 0.1, 1], transform=ax.transAxes)
             # plot results.
-            self.plot_heatmap_neuron(ax, neu_seq, neu_time, neu_seq, norm_mode='minmax')
+            self.plot_heatmap_neuron(ax_hm, ax_cb, neu_seq, neu_time, neu_seq, norm_mode='minmax')
             # adjust layouts.
-            ax.set_xlabel('time since stim (ms)')
-            ax.axvline(stim_seq[c_idx,0], color='black', lw=1, linestyle='--')
+            ax_hm.set_xlabel('time since stim (ms)')
+            ax_hm.axvline(stim_seq[c_idx,0], color='black', lw=1, linestyle='--')
+            hide_all_axis(ax)
         # plot all.
         try: plot_cluster_features(axs[0])
         except Exception as e: print(e)
         try: plot_hierarchical_dendrogram(axs[1])
         except Exception as e: print(e)
         try: plot_glm_kernel(axs[2])
+        except Exception as e: print(e)
+        try: plot_stim(axs[3])
         except Exception as e: print(e)
     
     def plot_cross_sess_adapt(self, axs, cate):
@@ -423,8 +469,6 @@ class plotter_utils(utils_basic):
                     nt = len(con_day_cluster_id[di]) + 1e-5
                     fraction[di,ci] = nc / nt
             # define layouts.
-            ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
             axs = [ax.inset_axes([0.2, ci/self.n_clusters, 0.5, 0.75/self.n_clusters], transform=ax.transAxes)
                       for ci in range(self.n_clusters)]
             axs.reverse()
@@ -473,9 +517,7 @@ class plotter_utils(utils_basic):
             con_day_neu_seq_1 = [np.concatenate(day_neu_seq_1[di::n_day],axis=0) for di in range(n_day)]
             con_day_cluster_id = [np.concatenate(day_cluster_id[di::n_day]) for di in range(n_day)]
             # define layouts.
-            ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
-            axs = [ax.inset_axes([di/n_day, 0, 0.8/n_day, 0.95], transform=ax.transAxes) for di in range(n_day)]
+            axs = [ax.inset_axes([di/n_day, 0, 0.8/n_day, 1], transform=ax.transAxes) for di in range(n_day)]
             # plot results for each day.
             for di in range(n_day):
                 # get response within cluster.
@@ -516,7 +558,7 @@ class plotter_utils(utils_basic):
             con_day_cluster_id = [np.concatenate(day_cluster_id[di::n_day]) for di in range(n_day)]
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 0.5, 0.75], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 0.5, 1], transform=ax.transAxes)
             # get response within cluster.
             neu_ci = [get_mean_sem_cluster(
                 con_day_neu_seq[di], self.n_clusters, con_day_cluster_id[di])
@@ -578,18 +620,22 @@ class plotter_utils(utils_basic):
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
             neu_ci = [neu_seq[cluster_id==ci,:] for ci in range(self.n_clusters)]
             # define layouts.
-            ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
-            axs = [ax.inset_axes([0.1, 0.1+ci/self.n_clusters, 0.5, 0.75/self.n_clusters], transform=ax.transAxes)
+            axs_hm = [ax.inset_axes([0.1, ci/self.n_clusters, 0.5, 0.8/self.n_clusters], transform=ax.transAxes)
                       for ci in range(self.n_clusters)]
-            axs.reverse()
+            axs_cb = [ax.inset_axes([0.7, ci/self.n_clusters, 0.1, 0.8/self.n_clusters], transform=ax.transAxes)
+                      for ci in range(self.n_clusters)]
+            axs_hm.reverse()
+            axs_cb.reverse()
             # plot results for each class.
             for ci in range(self.n_clusters):
                 if np.sum(cluster_id==ci) > 0:
-                    self.plot_heatmap_neuron(axs[ci], neu_ci[ci], neu_time, neu_ci[ci], norm_mode='minmax')
+                    self.plot_heatmap_neuron(axs_hm[ci], axs_cb[ci], neu_ci[ci], neu_time, neu_ci[ci],
+                                             norm_mode='minmax', sort_method='shuffle')
                 # adjust layouts.
-                axs[ci].set_ylabel(None)
-            ax.set_xlabel('time since stim (ms)')
+                if ci != self.n_clusters-1:
+                    axs_hm[ci].set_xticks([])
+                axs_hm[ci].set_ylabel(None)
+            axs_hm[self.n_clusters-1].set_xlabel('time since stim (ms)')
             ax.set_ylabel('neuron id')
             hide_all_axis(ax)
         @show_resource_usage
@@ -617,7 +663,7 @@ class plotter_utils(utils_basic):
             norm_params = [get_norm01_params(cluster_bin_neu_mean[:,i,:]) for i in range(self.n_clusters)]
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0.1, 0, 1, 0.85], transform=ax.transAxes)
+            ax = ax.inset_axes([0.1, 0, 1, 1], transform=ax.transAxes)
             # plot results.
             for si in range(stim_seq.shape[0]):
                 ax.fill_between(
@@ -679,9 +725,7 @@ class plotter_utils(utils_basic):
             bin_win_pre  = [bwe - bwb for bwe, bwb in zip (bin_win_evoked_pre, bin_win_baseline)]
             bin_win_post = [bwe - bwb for bwe, bwb in zip (bin_win_evoked_post, bin_win_baseline)]
             # define layouts.
-            ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
-            axs = [ax.inset_axes([0.1, ci/self.n_clusters, 0.4, 0.7/self.n_clusters], transform=ax.transAxes)
+            axs = [ax.inset_axes([0.1, ci/self.n_clusters, 0.4, 0.8/self.n_clusters], transform=ax.transAxes)
                       for ci in range(self.n_clusters)]
             axs.reverse()
             # plot results for each class.
@@ -740,84 +784,58 @@ class plotter_utils(utils_basic):
         except Exception as e: print(e)
         try: plot_legend(axs[3])
         except Exception as e: print(e)
-            
-    def plot_latent_individual(self, ax, cate):
-        lbl = ['all'] + [f'cluster # {ci}' for ci in range(self.n_clusters)]
+        
+    def plot_latent_all(self, axs, cate=None):
         color0 = 'dimgrey'
-        xlim = [-1500,5000]
-        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
         cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
-        split_idx = get_split_idx(self.list_labels, self.list_significance, cate)
-        day_cluster_id = np.split(cluster_id, split_idx)
         # collect data.
-        [_, [neu_seq, stim_seq, _, _, _], _, _] = get_neu_trial(
+        [_, [neu_seq, stim_seq, camera_pupil, pre_isi, post_isi], _,
+         [n_trials, n_neurons]] = get_neu_trial(
             self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
-            trial_idx=[np.concatenate([np.ones(1), np.zeros(sl.shape[0]-1)]).astype('bool')
-                       for sl in self.list_stim_labels],
-            mean_sem=False, cate=cate, roi_id=None)
-        neu_time = self.alignment['neu_time'][l_idx:r_idx]
-        # find one session with the most neurons.
-        idx = np.argmax([ns.shape[1] for ns in neu_seq])
-        neu_seq = neu_seq[idx][0,:,:]
-        stim_seq = stim_seq[idx][0,:,:]
-        c_stim = [color0] * stim_seq.shape[-2]
-        cluster_id = day_cluster_id[idx]
-        def plot_latent(axs):
-            # collect data.
-            neu_x = [neu_seq[:,l_idx:r_idx]]
-            for ci in range(self.n_clusters):
-                if np.sum(cluster_id==ci) > self.d_latent:
-                    neu_x.append(neu_seq[cluster_id==ci,l_idx:r_idx])
-                else:
-                    neu_x.append(np.ones([self.d_latent,len(neu_time)])*np.nan)
+            mean_sem=False,
+            cate=cate, roi_id=None)
+        c_idx = np.nanmean(np.concatenate(stim_seq, axis=0), axis=0).shape[0]//2
+        @show_resource_usage
+        def plot_interval_bin_latent_all(axs):
+            bin_num = 10
+            colors = get_cmap_color(bin_num, cmap=self.random_bin_cmap)
+            # bin data based on isi.
+            [_, _, _, bin_neu_seq, _, _, bin_stim_seq, _] = get_isi_bin_neu(
+                neu_seq, stim_seq, camera_pupil, post_isi, self.bin_win, bin_num)
+            # get latent dynamics.
+            neu_x = np.concatenate([bns for bns in bin_neu_seq], axis=1)
             # fit model.
-            neu_z = []
-            for ci in range(self.n_clusters+1):
-                try:
-                    model = PCA(n_components=self.d_latent)
-                    nz = model.fit_transform(
-                        neu_x[ci].reshape(neu_x[ci].shape[0],-1).T
-                        ).T.reshape(self.d_latent, -1)
-                    neu_z.append(nz)
-                except:
-                    neu_z.append(np.ones([3,len(neu_time)])*np.nan)
-            # plot results.
-            for ai in range(self.n_clusters+1):
-                if not np.isnan(np.sum(neu_z[ai])):
-                    # define layouts.
-                    axs[ai].axis('off')
-                    ax0 = axs[ai].inset_axes([0,   0.8, 0.7, 0.2], transform=axs[ai].transAxes)
-                    ax1 = axs[ai].inset_axes([0,   0,   0.7, 0.7], transform=axs[ai].transAxes, projection='3d')
-                    ax2 = axs[ai].inset_axes([0.8, 0,   0.2,   1], transform=axs[ai].transAxes)
-                    # plot mean trace.
-                    neu_mean, neu_sem = get_mean_sem(neu_x[ai])
-                    c_neu = get_cmap_color(neu_mean.shape[0], cmap=self.latent_cmap)
-                    # find bounds.
-                    upper = np.nanmax(neu_mean) + np.nanmax(neu_sem)
-                    lower = np.nanmin(neu_mean) - np.nanmax(neu_sem)
-                    # plot stimulus.
-                    for si in range(stim_seq.shape[0]):
-                        ax0.fill_between(
-                            stim_seq[si,:],
-                            lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
-                            color=color0, edgecolor='none', alpha=0.25, step='mid')
-                    # plot neural traces.
-                    self.plot_mean_sem(ax0, neu_time, neu_mean, neu_sem, color0, None)
-                    for t in range(neu_mean.shape[0]-1):
-                        ax0.plot(neu_time[t:t+2], neu_mean[t:t+2], color=c_neu[t])
-                    # adjust layouts.
-                    adjust_layout_neu(ax0)
-                    ax0.set_xlim(xlim)
-                    ax0.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
-                    ax0.set_xlabel('time since pre oddball stim (ms)')
-                    ax0.set_title(lbl[ai])
-                    # plot 3d dynamics.
-                    self.plot_3d_latent_dynamics(ax1, neu_z[ai], stim_seq, neu_time, c_stim)
-                    # adjust layouts.
-                    adjust_layout_3d_latent(ax1, neu_z[ai], None, neu_time, 'time since transition (ms)')
+            model = PCA(n_components=3)
+            model.fit(neu_x.reshape(neu_x.shape[0],-1).T)
+            z = model.transform(neu_x.reshape(neu_x.shape[0],-1).T)
+            neu_z = z.reshape(bin_num, -1, 3).transpose([0,2,1])
+            # random rotate dynamics.
+            for ai in range(len(axs)):
+                # get random matrix.
+                rm = get_random_rotate_mat_3d()
+                # define layouts.
+                axs[ai].axis('off')
+                ax1 = axs[ai].inset_axes([0, 0, 0.6, 0.6], transform=axs[ai].transAxes, projection='3d')
+                ax2 = axs[ai].inset_axes([0.6, 0, 0.1, 0.4], transform=axs[ai].transAxes)
+                ax3 = axs[ai].inset_axes([0.8, 0, 0.1, 0.4], transform=axs[ai].transAxes)
+                # plot 3d dynamics.
+                for bi in range(bin_num):
+                    l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, bin_stim_seq[bi,c_idx,0], bin_stim_seq[bi,c_idx+1,0])
+                    neu_time = self.alignment['neu_time'][l_idx:r_idx]
+                    cmap, _ = get_cmap_color(len(neu_time), base_color=['lemonchiffon', colors[bi]], return_cmap=True)
+                    self.plot_3d_latent_dynamics(ax1, np.matmul(rm, neu_z[bi,:,l_idx:r_idx]), None, neu_time, cmap=cmap, add_stim=False)
+                # adjust layouts.
+                adjust_layout_3d_latent(ax1)
+                # add colorbar.
+                yticklabels = [int(self.bin_win[0]+0.2*(self.bin_win[1]-self.bin_win[0])), int(2500-0.2*(self.bin_win[1]-self.bin_win[0]))]
+                add_heatmap_colorbar(ax2, self.random_bin_cmap, None, 'interval (ms)', yticklabels)
+                t_cmap, _ = get_cmap_color(len(neu_time), base_color=['lemonchiffon', color0], return_cmap=True)
+                add_heatmap_colorbar(ax3, t_cmap, None, 'interval progress since stim onset')
+        # plot all.
+        try: plot_interval_bin_latent_all(axs[0])
+        except Exception as e: print(e)
 
-        
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
     def __init__(self, neural_trials, labels, significance, label_names, temp_folder, cate_list):
@@ -831,17 +849,7 @@ class plotter_main(plotter_utils):
                 print(f'plotting results for {label_name}')
                 
                 self.plot_cluster_interval_bin_all(axs, cate=cate)
-                axs[0].set_title(f'GLM kernels \n {label_name}')
-                axs[1].set_title(f'reponse to single interval \n {label_name}')
-                axs[2].set_title(f'reponse to single interval \n {label_name}')
-                axs[3].set_title(f'reponse to single interval \n {label_name}')
-                axs[4].set_title(f'reponse to binned (pre) interval \n {label_name}')
-                axs[5].set_title(f'reponse to binned (post) interval \n {label_name}')
-                axs[6].set_title(f'response to interval regression \n {label_name}')
-                axs[7].set_title(f'latent dynamics with binned interval \n {label_name}')
-                axs[8].set_title(f'fraction of neurons in cluster \n {label_name}')
-                axs[9].set_title(f'fraction of cell-types in cluster \n {label_name}')
-                axs[10].set_title(f'legend \n {label_name}')
+
             except Exception as e: print(e)
     
     def cluster_heatmap_all(self, axs_all):
@@ -851,9 +859,6 @@ class plotter_main(plotter_utils):
                 print(f'plotting results for {label_name}')
 
                 self.plot_cluster_heatmap_all(axs, cate=cate)
-                axs[0].set_title(f'clustered latent features \n {label_name}')
-                axs[1].set_title(f'cluster dendrogram \n {label_name}')
-                axs[2].set_title(f'GLM kernel course \n {label_name}')
 
             except Exception as e: print(e)
     
@@ -912,7 +917,7 @@ class plotter_main(plotter_utils):
             try:
                 label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
                 print(f'plotting results for {label_name}')
-
-                self.plot_latent_individual(axs, cate=cate)              
+                
+                self.plot_latent_all(axs, cate=cate)
 
             except Exception as e: print(e)

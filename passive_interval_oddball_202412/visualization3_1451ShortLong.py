@@ -114,14 +114,14 @@ def run(session_config_list, smooth, cate_list):
             print('-----------------------------------------------')
             print(title)
             filename = '1451ShortLong_cluster_all'
-            cate_gap = 4
+            cate_gap = 5
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 15
+            n_col = 12
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+2, i]) for i in range(15)]
+                a = [plt.subplot(gs[s:s+3, i]) for i in range(12)]
                 axs_all.append(a)
             plotter.cluster_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -133,7 +133,7 @@ def run(session_config_list, smooth, cate_list):
             print('-----------------------------------------------')
             print(title)
             filename = '1451ShortLong_cluster_heatmap_all'
-            cate_gap = 4
+            cate_gap = 5
             n_row = cate_gap*len(plotter.cate_list)
             n_col = 8
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
@@ -142,7 +142,7 @@ def run(session_config_list, smooth, cate_list):
             for s in cate_gap*np.arange(len(plotter.cate_list)):
                 a = [plt.subplot(gs[s:s+2, 0:2])]
                 a+= [plt.subplot(gs[s+2, 0:2])]
-                a+= [plt.subplot(gs[s:s+2, i]) for i in [2,3,4,5,6]]
+                a+= [plt.subplot(gs[s:s+1, i]) for i in [2,3,4,5,6]]
                 axs_all.append(a)
             plotter.cluster_heatmap_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -154,19 +154,20 @@ def run(session_config_list, smooth, cate_list):
             print('-----------------------------------------------')
             print(title)
             filename = '1451ShortLong_cluster_adapt_all'
-            cate_gap = 4
+            cate_gap = 5
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 12
+            n_col = 13
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+2, i]) for i in [0,1,2]]
-                a+= [plt.subplot(gs[s:s+2, 3:5])]
-                a+= [plt.subplot(gs[s:s+2, 5:7])]
-                a+= [plt.subplot(gs[s:s+2, 7:9])]
-                a+= [plt.subplot(gs[s:s+2, 9])]
-                a+= [plt.subplot(gs[s:s+2, 10])]
+                a = [plt.subplot(gs[s:s+3, i]) for i in [0,1,2]]
+                a+= [plt.subplot(gs[s:s+3, 3:5])]
+                a+= [plt.subplot(gs[s:s+3, 5:7])]
+                a+= [plt.subplot(gs[s:s+3, 7:9])]
+                a+= [plt.subplot(gs[s:s+3, 9:11])]
+                a+= [plt.subplot(gs[s:s+3, 11])]
+                a+= [plt.subplot(gs[s:s+3, 12])]
                 axs_all.append(a)
             plotter.cluster_adapt_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -178,14 +179,14 @@ def run(session_config_list, smooth, cate_list):
             print('-----------------------------------------------')
             print(title)
             filename = '1451ShortLong_sorted_heatmaps_all'
-            cate_gap = 3
+            cate_gap = 5
             n_row = cate_gap*len(plotter.cate_list)
             n_col = 6
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+2, i]) for i in [0,1,2,3,4,5]]
+                a = [plt.subplot(gs[s:s+1, i]) for i in [0,1,2,3,4,5]]
                 axs_all.append(a)
             plotter.sorted_heatmaps_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -197,17 +198,40 @@ def run(session_config_list, smooth, cate_list):
             print('-----------------------------------------------')
             print(title)
             filename = '1451ShortLong_latent_all'
-            cate_gap = 7
+            cate_gap = 3
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 2*(plotter.n_clusters+1)
+            n_col = 20
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [[plt.subplot(gs[s+0:s+1, i:i+1]) for i in np.arange(plotter.n_clusters+1)]]
-                a+= [[plt.subplot(gs[s+1:s+2, i:i+1]) for i in np.arange(plotter.n_clusters+1)]]
+                a = [[plt.subplot(gs[s+0:s+2, i:i+2]) for i in 2*np.arange(10)]]
                 axs_all.append(a)
             plotter.latent_all(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        def plot_decode_all():
+            title = 'standard interval time decoding'
+            print('-----------------------------------------------')
+            print(title)
+            filename = '1451ShortLong_decode_all'
+            cate_gap = 10
+            n_row = cate_gap*len(plotter.cate_list)
+            n_col = 10
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in cate_gap*np.arange(len(plotter.cate_list)):
+                a0 = [plt.subplot(gs[s+0:s+3, i:i+2]) for i in 2*np.arange(5)]
+                a0+= [plt.subplot(gs[s+3, i]) for i in range(10)]
+                a0+= [plt.subplot(gs[s+4, i]) for i in range(10)]
+                a1 = [plt.subplot(gs[s+5:s+8, i:i+2]) for i in 2*np.arange(5)]
+                a1+= [plt.subplot(gs[s+8, i]) for i in range(10)]
+                a1+= [plt.subplot(gs[s+9, i]) for i in range(10)]
+                axs_all.append([a0,a1])
+            plotter.decode_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
@@ -220,6 +244,7 @@ def run(session_config_list, smooth, cate_list):
             plot_cluster_adapt_all(),
             plot_sorted_heatmaps_all(),
             plot_latent_all(),
+            plot_decode_all(),
             ]
         print('Clearing memory usage')
         del list_labels
