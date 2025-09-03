@@ -568,3 +568,26 @@
 - Now plot_dist plots normalized cumulative distribution.
 - Fixed plot_stim.
 - Added window to plot_win_mag_quant_stat.
+- Adjusted plot_time_decode_confusion_matrix layouts.
+- Added plot_half_violin.
+- Now plot_cluster_pred_mod_index_compare plots violin.
+- Adjusted plot_pred_mod_index_box layouts.
+- Added plot_cluster_stim_all.
+
+## 2025.09.02
+- Deleted plot_cluster_ca_transient.
+- Deleted plot_cluster_fraction.
+- Moved plot_glm_kernel to utils.
+- Removed y=0 in plot_cluster_mean_sem.
+- Added cluster id to plot_glm_kernel.
+- Now plot_cross_day has option of scaled or not.
+- Now plot_cross_epoch has option of scaled or not.
+- Removed plot_oddball.
+- Fixed DFF labels.
+- Adjusted adjust_layout_cluster_neu layouts.
+- Now plot_standard_heatmap plots both standard.
+- Now plot_standard has option of scaled or not.
+- Adjusted plot_standard layouts.
+- Now clustering_neu_response_mode can use both kshape and kmeans.
+- Rewritten run_clustering.
+- Now size_scale set to 2.5.

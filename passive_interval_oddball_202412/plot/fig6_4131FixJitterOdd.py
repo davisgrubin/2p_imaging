@@ -59,10 +59,11 @@ class plotter_utils(utils_basic):
         self.list_significance = list_significance
         self.bin_win = [450,2550]
         self.bin_num = 2
-        self.n_clusters = 8
         self.d_latent = 3
         self.glm = self.run_glm()
-        self.cluster_id = self.run_clustering()
+        self.n_up = 3
+        self.n_dn = 3
+        self.cluster_id = self.run_clustering(self.n_up, self.n_dn)
 
     def get_neu_seq_trial_fix_jitter(self, jitter_trial_mode, oddball, cate, isi_win):
         # jitter oddball.  
@@ -126,24 +127,11 @@ class plotter_utils(utils_basic):
         color1 = 'hotpink'
         color2 = 'darkviolet'
         xlim = [-2500, 4000]
-        kernel_all = get_glm_cate(self.glm, self.list_labels, self.list_significance, cate)
         cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
         @show_resource_usage
         def plot_glm_kernel(ax):
-            # define layouts.
-            ax.axis('off')
-            ax = ax.inset_axes([0, 0, 0.5, 1], transform=ax.transAxes)
-            # get cluster average.
-            glm_mean, glm_sem = get_mean_sem_cluster(kernel_all, self.n_clusters, cluster_id)
-            norm_params = [get_norm01_params(glm_mean[ci,:]) for ci in range(self.n_clusters)]
-            # plot results.
-            ax.axvline(0, color=color0, lw=1, linestyle='--')
-            self.plot_cluster_mean_sem(
-                ax, glm_mean, glm_sem, self.glm['kernel_time'],
-                norm_params, None, None, [color0]*self.n_clusters,
-                [np.nanmin(self.glm['kernel_time']), np.nanmax(self.glm['kernel_time'])])
-            # adjust layouts.
-            ax.set_xlabel('time since stim (ms)')
+            kernel_all = get_glm_cate(self.glm, self.list_labels, self.list_significance, cate)
+            self.plot_glm_kernel(ax, kernel_all, cluster_id, color0, 1)
         @show_resource_usage
         def plot_standard_fix(ax):
             # collect data.
@@ -374,11 +362,12 @@ class plotter_utils(utils_basic):
             # plot results.
             self.plot_cluster_pred_mod_index_compare(
                 axs, day_cluster_id, neu_seq_1, neu_seq_2, self.alignment['neu_time'],
-                win_eval, win_eval, color1, color2, 0, average_axis=0)
+                win_eval, win_eval, color1, color2, 0, average_axis=1)
             # adjust layouts.
             for ci in range(self.n_clusters):
                 if ci != self.n_clusters-1:
                     axs[ci].set_xticks([])
+                    axs[ci].set_yticklabels([])
             axs[self.n_clusters-1].set_xticklabels(['fix', 'jitter'])
             ax.set_title(pe+' PE')
             hide_all_axis(ax)
@@ -711,10 +700,8 @@ class plotter_utils(utils_basic):
         color2 = 'coral'
         cs = [color1, color2]
         win_lbl = ['early', 'late', 'post']
-        isi_win = 250
         xlim = [-3000, 4000]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
-        kernel_all = get_glm_cate(self.glm, self.list_labels, self.list_significance, cate)
         cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
         split_idx = get_split_idx(self.list_labels, self.list_significance, cate)
         day_cluster_id = np.split(cluster_id, split_idx)

@@ -17,9 +17,11 @@ from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
 from scipy.cluster.hierarchy import dendrogram
 
+from modeling.clustering import get_mean_sem_cluster
 from modeling.clustering import clustering_neu_response_mode
 from modeling.clustering import remap_cluster_id
 from modeling.generative import run_glm_multi_sess
+from modeling.quantifications import fit_trf_model
 
 #%% general data processing
 
@@ -67,7 +69,7 @@ def get_bin_idx(data, bin_win, bin_num):
     bin_idx = np.digitize(data, bins) - 1
     return bins, bin_center, bin_idx
 
-# compute mean and sem for average df/f within given time window.
+# compute mean and sem for average dF/F within given time window.
 def get_mean_sem_win(neu_seq, neu_time, c_time, l_time, r_time, mode):
     pct = 50
     l_idx, r_idx = get_frame_idx_from_time(
@@ -233,7 +235,7 @@ def get_neu_trial(
         trial_idx=trial_idx, trial_param=trial_param, mean_sem=mean_sem, sub_sampling=sub_sampling, frac=frac)
     return colors, neu_trial, [neu_labels, neu_sig], neu_num
 
-# compute indice with givn time window for df/f.
+# compute indice with givn time window for dF/F.
 def get_frame_idx_from_time(timestamps, c_time, l_time, r_time):
     l_idx = np.searchsorted(timestamps, c_time+l_time)
     r_idx = np.searchsorted(timestamps, c_time+r_time)
@@ -367,6 +369,11 @@ def exclude_odd_stim(stim_labels):
     return stim_labels_mark
 
 #%% detailed processing
+
+# compute modulation index.
+def get_modulation_index(v_pre, v_post):
+    m = (v_post - v_pre) / (np.abs(v_pre) + np.abs(v_post) + 1e-8)
+    return m
 
 # get isi based binning average neural response.
 def get_isi_bin_neu(
@@ -817,9 +824,9 @@ def adjust_layout_isi_example_epoch(ax, trial_win, bin_win):
 def adjust_layout_neu(ax):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    ax.set_ylabel('df/f (z-scored)')
+    ax.set_ylabel('dF/F (z-scored)')
     ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
-    ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+    ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=1))
 
 # adjust layout for grand average neural traces for clustering.
 def adjust_layout_cluster_neu(ax, n_clusters, xlim):
@@ -831,7 +838,7 @@ def adjust_layout_cluster_neu(ax, n_clusters, xlim):
     ax.set_xticks([0])
     ax.set_yticks([])
     ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
-    ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+    ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
 
 # adjust layout for scatter comparison.
 def adjust_layout_scatter(ax, upper, lower):
@@ -930,7 +937,7 @@ class utils_basic:
     @show_resource_usage
     def run_glm(self,):
         # define kernel window.
-        kernel_win = [-500,3000]
+        kernel_win = [-1500,1500]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, kernel_win[0], kernel_win[1])
         kernel_time = self.alignment['neu_time'][l_idx:r_idx]
         l_idx = np.searchsorted(self.alignment['neu_time'], 0) - l_idx
@@ -952,17 +959,64 @@ class utils_basic:
             }
         return glm
     
-    def run_clustering(self,):
+    def run_clustering(self, n_up, n_dn):
+        r2_thres = 0.4
+        # get data within range.
+        z_idx = get_frame_idx_from_time(self.glm['kernel_time'], 0, -100, 0)[0]
+        neu_seq_l = self.glm['kernel_all'][:,:z_idx]
+        neu_time_l = self.glm['kernel_time'][:z_idx]
+        neu_seq_r = self.glm['kernel_all'][:,z_idx:]
+        neu_time_r = self.glm['kernel_time'][z_idx:]
+        # fit response model.
+        [trf_param_up, pred_up, r2_all_up,
+         trf_param_dn, pred_dn, r2_all_dn] = fit_trf_model(
+             neu_seq_l, neu_time_l, neu_seq_r, neu_time_r)
+        # initilize clustering.
+        self.n_clusters = n_up + n_dn
+        cluster_id = np.ones(self.glm['kernel_all'].shape[0]) * -1
+        # get good ramp index.
+        idx_up = (r2_all_up > r2_thres) * (r2_all_up > r2_all_dn)
+        idx_dn = (r2_all_dn > r2_thres) * (r2_all_dn > r2_all_up)
         # run clustering.
-        cluster_id = clustering_neu_response_mode(self.glm['kernel_all'], self.n_clusters)
-        # relabel.
-        cluster_id = remap_cluster_id(self.glm['kernel_all'], self.n_clusters, cluster_id)
+        cluster_id_up = clustering_neu_response_mode(trf_param_up[idx_up,3].reshape(-1,1), n_up, 'kmeans')
+        cluster_id_dn = clustering_neu_response_mode(trf_param_dn[idx_dn,3].reshape(-1,1), n_dn, 'kmeans')
+        # relabel based on temporal receptive field.
+        sorted_up = np.argsort([np.nanmean(trf_param_up[idx_up,3][cluster_id_up==ci]) for ci in range(n_up)])[::-1]
+        sorted_dn = np.argsort([np.nanmean(trf_param_dn[idx_dn,3][cluster_id_dn==ci]) for ci in range(n_dn)])
+        map_up = {val: i for i, val in enumerate(sorted_up)}
+        map_dn = {val: i for i, val in enumerate(sorted_dn)}
+        cluster_id_up = np.vectorize(map_up.get)(cluster_id_up)
+        cluster_id_dn = np.vectorize(map_dn.get)(cluster_id_dn)
+        cluster_id[idx_up] = cluster_id_up
+        cluster_id[idx_dn] = cluster_id_dn+n_up
         return cluster_id
+    
+    def plot_cluster_type_percentage(self, ax):
+        #fig, ax = plt.subplots(1, 1, figsize=(3, 3))
+        colors = ['hotpink', 'coral', 'cornflowerblue', 'mediumseagreen']
+        lbls = ['stim-act-fast','stim-act-slow', 'stim-inh-fast', 'stim-inh-slow']
+        #num = [1374, 455+1821, 572+420, 1875+1068+593]
+        num = [548+923, 734+475, 265+301, 250+701+734]
+        ax.pie(
+            num,
+            labels=[f'{lbls[i]}' for i in range(4)],
+            colors=colors,
+            autopct='%1.1f%%',
+            wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
 
     def plot_mean_sem(self, ax, t, m, s, c, l, a=1.0):
         ax.plot(t, m, color=c, label=l, alpha=a)
         ax.fill_between(t, m - s, m + s, color=c, alpha=0.25, edgecolor='none')
         ax.set_xlim([np.min(t), np.max(t)])
+    
+    def plot_half_violin(self, ax, y, x, color, side):
+        p = ax.violinplot([y], positions=[x], widths=1, showextrema=False)
+        v = p['bodies'][0].get_paths()[0].vertices
+        p['bodies'][0].set(facecolor=color, alpha=0.3)
+        p['bodies'][0].set_edgecolor(color)
+        p['bodies'][0].set_linewidth(1)
+        m = v[:,0].mean()
+        v[:,0] = np.minimum(v[:,0], m) if side.lower().startswith('l') else np.maximum(v[:,0], m)
 
     def plot_vol(self, ax, st, sv, c, u, l):
         v = np.mean(sv, axis=0)
@@ -1017,40 +1071,32 @@ class utils_basic:
         # adjust layouts.
         adjust_layout_scatter(ax, upper, lower)
     
-    def plot_raincloud_compare(self, ax, d1, d2, color1, color2):
-        m1, s1 = get_mean_sem(d1.reshape(-1,1))
-        m2, s2 = get_mean_sem(d2.reshape(-1,1))
-        # find bounds.
-        upper = np.nanmax([m1, m2]) + 4*np.nanmax([s1, s2])
-        lower = np.nanmin([m1, m2]) - 4*np.nanmax([s1, s2])
-        # plot scatter.
-        l1 = 0 + np.random.uniform(-0.1, 0.1, size=len(d1))
-        l2 = 1 + np.random.uniform(-0.1, 0.1, size=len(d2))
-        ax.scatter(l1, d1, alpha=0.2, color=color1,s=0.5)
-        ax.scatter(l2, d2, alpha=0.2, color=color2,s=0.5)
-        # plot errorbar.
-        ax.errorbar(
-            0, m1, s1,
-            color='black',
-            capsize=2, marker='o', linestyle='none',
-            markeredgecolor='white', markeredgewidth=0.1)
-        ax.errorbar(
-            1, m2, s2,
-            color='black',
-            capsize=2, marker='o', linestyle='none',
-            markeredgecolor='white', markeredgewidth=0.1)
-        # plot statistics test.
-        r_m = get_stat_test(d1, d2, 'mean')[1]
-        ax.text(0.5, upper-0.1*(upper-lower), self.stat_sym[r_m], ha='center', va='center')
+    def plot_glm_kernel(self, ax, kernel_all, cluster_id, color, height):
+        gap = 0.05
+        # define layouts.
+        ax.axis('off')
+        ax_lbl = ax.inset_axes([0, 0, 0.4, height], transform=ax.transAxes)
+        ax_glm = ax.inset_axes([0.5, 0, 0.5, height], transform=ax.transAxes)
+        # get cluster average.
+        glm_mean, glm_sem = get_mean_sem_cluster(kernel_all, self.n_clusters, cluster_id)
+        norm_params = [get_norm01_params(glm_mean[ci,:]) for ci in range(self.n_clusters)]
+        # plot results.
+        ax_glm.axvline(0, color=color, lw=1, linestyle='--')
+        self.plot_cluster_mean_sem(
+            ax_glm, glm_mean, glm_sem, self.glm['kernel_time'],
+            norm_params, None, None, [color]*self.n_clusters,
+            [np.nanmin(self.glm['kernel_time']), np.nanmax(self.glm['kernel_time'])])
         # adjust layouts.
-        ax.tick_params(axis='x', tick1On=False)
-        ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False) 
-        ax.set_xlim([-0.5,1.5])
-        ax.set_ylim([lower, upper])
-        ax.set_xticks([0,1])
-
+        ax_lbl.spines['right'].set_visible(False)
+        ax_lbl.spines['top'].set_visible(False)
+        ax_lbl.spines['bottom'].set_visible(False)
+        ax_lbl.set_ylim([-0.2, self.n_clusters+0.1])
+        ax_lbl.set_xticks([])
+        ax_lbl.set_yticks([(1-2*gap)+gap+self.n_clusters-ci-1.5 for ci in range(self.n_clusters)])
+        ax_lbl.set_yticklabels(np.arange(self.n_clusters))
+        ax_lbl.set_ylabel('Cluster ID')
+        ax_glm.set_xlabel('time since stim (ms)')
+        
     def plot_heatmap_neuron(
             self, ax_hm, ax_cb, neu_seq, neu_time, neu_seq_sort,
             sort_method='rastermap',
@@ -1091,7 +1137,7 @@ class utils_basic:
             ax_hm.set_yticks((((np.arange(n_yticks)+0.5)/n_yticks)*data.shape[0]).astype('int32'))
             ax_hm.set_yticklabels((((np.arange(n_yticks)+0.5)/n_yticks)*n_neurons).astype('int32'))
             # add colorbar.
-            add_heatmap_colorbar(ax_cb, hm_cmap, hm_norm, 'df/f (z-scored)')
+            add_heatmap_colorbar(ax_cb, hm_cmap, hm_norm, 'dF/F')
     
     def plot_heatmap_trial(
             self, ax_hm, ax_cb, neu_seq, neu_time,
@@ -1125,7 +1171,7 @@ class utils_basic:
             ax_hm.set_yticks((((np.arange(n_yticks)+0.5)/n_yticks)*data.shape[0]).astype('int32'))
             ax_hm.set_yticklabels((((np.arange(n_yticks)+0.5)/n_yticks)*neu_seq.shape[0]).astype('int32'))
             # add colorbar.
-            add_heatmap_colorbar(ax_cb, hm_cmap, hm_norm, 'df/f (z-scored)')
+            add_heatmap_colorbar(ax_cb, hm_cmap, hm_norm, 'dF/F (z-scored)')
 
     def plot_win_mag_quant_win_eval(
             self, ax, win_eval, color, xlim, baseline=True
@@ -1211,42 +1257,6 @@ class utils_basic:
         ax.spines['top'].set_visible(False)
         ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
         add_legend(ax, [color2,color1], ['model','chance'], 'upper left')
-
-    def plot_cluster_ca_transient(self, ax, colors, cluster_id, cate):
-        lbl = ['cluster #'+str(i) for i in range(self.n_clusters)]
-        # compute calcium transient.
-        _, dff_ca_neu, dff_ca_time = get_ca_transient_multi_sess(self.list_neural_trials)
-        # get category.
-        dff_ca_cate = np.array(dff_ca_neu,dtype='object')[
-            np.in1d(np.concatenate(self.list_labels), cate)].copy().tolist()
-        # average across trials.
-        dff_ca_cate = [get_mean_sem(d)[0].reshape(1,-1) for d in dff_ca_cate]
-        dff_ca_cate = np.concatenate(dff_ca_cate, axis=0)
-        # collect within cluster average.
-        neu_mean = [get_mean_sem(dff_ca_cate[cluster_id==i])[0] for i in range(self.n_clusters)]
-        neu_sem = [get_mean_sem(dff_ca_cate[cluster_id==i])[1] for i in range(self.n_clusters)]
-        # plot results.
-        for i in range(self.n_clusters): 
-            self.plot_mean_sem(ax, dff_ca_time, neu_mean[i], neu_sem[i], colors[i], None)
-        # adjust layouts.
-        ax.tick_params(axis='y', tick1On=False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['top'].set_visible(False)
-        ax.set_xlabel('time since calcium transient triggered (ms)')
-        ax.set_ylabel('df/f (z-scored)')
-        ax.set_title('calcium transient average')
-        add_legend(ax, colors, lbl, None, None, None, 'upper right')
-    
-    # plot fraction of each cluster.
-    def plot_cluster_fraction(self, ax, colors, cluster_id):
-        num = [np.nansum(cluster_id==i) for i in range(self.n_clusters)]
-        ax.pie(
-            num,
-            labels=[str(num[i])+' cluster # '+str(i) for i in range(len(num))],
-            colors=colors,
-            autopct='%1.1f%%',
-            wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
-        ax.set_title('fraction of neurons in each cluster')
 
     def plot_cluster_neu_fraction_in_cluster(self, ax, cluster_id, color):
         bar_width = 0.2
@@ -1353,7 +1363,7 @@ class utils_basic:
         for ci in range(self.n_clusters):
             a, b, c, d = norm_params[ci]
             # add y=0 line.
-            ax.hlines(ci+b, xlim[0]*0.99, xlim[1]*0.99, linestyle=':', color='#2C2C2C', alpha=0.2)
+            #ax.hlines(ci+b, xlim[0]*0.99, xlim[1]*0.99, linestyle=':', color='#2C2C2C', alpha=0.2)
             # plot neural traces.
             self.plot_mean_sem(
                 ax, neu_time,
@@ -1567,34 +1577,33 @@ class utils_basic:
                 q1 = [quant_1[1][0], quant_1[2][0]]
                 q2 = [quant_2[1][0], quant_2[2][0]]
             # compute modulation index.
-            mod1 = (q1[1] - q1[0]) / (q1[1] + q1[0] + 1e-8)
-            mod2 = (q2[1] - q2[0]) / (q2[1] + q2[0] + 1e-8)
+            mod1 = get_modulation_index(q1[1], q1[0])
+            mod2 = get_modulation_index(q2[1], q2[0])
             m1, s1 = get_mean_sem(mod1.reshape(-1,1))
             m2, s2 = get_mean_sem(mod2.reshape(-1,1))
-            # find bounds.
-            upper = np.nanmax([m1, m2]) + 2*np.nanmax([s1, s2])
-            lower = np.nanmin([m1, m2]) - 2*np.nanmax([s1, s2])
             # plot errorbar.
+            self.plot_half_violin(axs[ci], mod1, 0, color1, 'left')
+            self.plot_half_violin(axs[ci], mod2, 1, color2, 'right')
             axs[ci].errorbar(
                 0, m1, s1,
-                color=color1,
+                color='black',
                 capsize=2, marker='o', linestyle='none',
                 markeredgecolor='white', markeredgewidth=0.1)
             axs[ci].errorbar(
                 1, m2, s2,
-                color=color2,
+                color='black',
                 capsize=2, marker='o', linestyle='none',
                 markeredgecolor='white', markeredgewidth=0.1)
             # plot statistics test.
             r_m = get_stat_test(mod1, mod2, 'mean')[1]
-            axs[ci].text(0.5, upper-0.1*(upper-lower), self.stat_sym[r_m], ha='center', va='center')
+            axs[ci].text(0.5, 0.8, self.stat_sym[r_m], ha='center', va='center')
             # adjust layouts.
             axs[ci].tick_params(axis='x', tick1On=False)
             axs[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
             axs[ci].spines['right'].set_visible(False)
             axs[ci].spines['top'].set_visible(False) 
-            axs[ci].set_xlim([-0.5,1.5])
-            axs[ci].set_ylim([lower, upper])
+            axs[ci].set_xlim([-1,2])
+            axs[ci].set_ylim([-1.2, 1.2])
             axs[ci].set_xticks([0,1])
                 
     def plot_cluster_heatmap_trial(
@@ -1751,6 +1760,8 @@ class utils_basic:
             extent=[t_range[0], t_range[-1], t_range[0], t_range[-1]],
             interpolation='nearest', cmap=cmap, vmin=0, vmax=1)
         # adjust layout.
+        ax_hm.spines['right'].set_visible(False)
+        ax_hm.spines['top'].set_visible(False)
         ax_hm.tick_params(tick1On=True, bottom=False, top=False, labelbottom=True, labeltop=False)
         # add colorbar.
         if ax_cb != None:

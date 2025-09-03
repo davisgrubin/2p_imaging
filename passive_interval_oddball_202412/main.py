@@ -81,7 +81,7 @@ def run(session_config_list, cate_list):
     print('========= plotting 3331Random results =========')
     print('===============================================')
     fn2 = visualization2_3331Random.run(session_config_list, smooth, cate_list)
-    fn2 = []
+    #fn2 = []
 
     print('===============================================')
     print('======= plotting 1451ShortLong results ========')
@@ -93,7 +93,7 @@ def run(session_config_list, cate_list):
     print('====== plotting 4131FixJitterOdd results ======')
     print('===============================================')
     fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
-    fn4 = []
+    #fn4 = []
     
     print('===============================================')
     print('===== plotting 3331RandomExtended results =====')
@@ -149,9 +149,9 @@ if __name__ == "__main__":
                 #'YH18VT_V1_20250528_3331Random' : 'random',
                 #'YH18VT_V1_20250529_3331Random' : 'random',
                 #'YH18VT_V1_20250530_3331Random' : 'random',
-                'YH18VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
-                'YH18VT_V1_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
-                'YH18VT_V1_20250331_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'YH18VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'YH18VT_V1_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'YH18VT_V1_20250331_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250401_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250402_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250403_4131FixJitterOdd' : 'fix_jitter_odd',
@@ -159,11 +159,11 @@ if __name__ == "__main__":
                 #'YH18VT_V1_20250408_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250409_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250410_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250415_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250416_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250417_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250418_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250421_1451ShortLong' : 'short_long',
+                'YH18VT_V1_20250415_1451ShortLong' : 'short_long',
+                'YH18VT_V1_20250416_1451ShortLong' : 'short_long',
+                'YH18VT_V1_20250417_1451ShortLong' : 'short_long',
+                'YH18VT_V1_20250418_1451ShortLong' : 'short_long',
+                'YH18VT_V1_20250421_1451ShortLong' : 'short_long',
                 #'YH18VT_V1_20250422_1451ShortLong' : 'short_long',
                 #'YH18VT_V1_20250423_1451ShortLong' : 'short_long',
                 #'YH18VT_V1_20250424_1451ShortLong' : 'short_long',
@@ -211,7 +211,7 @@ if __name__ == "__main__":
         from modules.ReadResults import read_all
         [list_labels, list_masks,
          list_neural_trials, list_move_offset, list_significance
-         ] = read_all(session_config_list, smooth=True)
+         ] = read_all(session_config_list, smooth=False)
         neural_trials = list_neural_trials[0]
         dff = neural_trials['dff']
         label_names = {'-1':'Exc', '1':'Inh_VIP', '2':'Inh_SST'}

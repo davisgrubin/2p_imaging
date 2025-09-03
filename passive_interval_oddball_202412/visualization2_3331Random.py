@@ -26,7 +26,7 @@ from plot.fig3_intervals import plot_trial_legend
 from plot.fig4_3331Random import plotter_main
 
 def run(session_config_list, smooth, cate_list):
-    size_scale = 3
+    size_scale = 2.5
     target_sess = 'random'
     idx_target_sess = np.array(list(session_config_list['list_session_name'].values())) == target_sess
     print('Found {} {} sessions'.format(np.sum(idx_target_sess), target_sess))
@@ -109,21 +109,40 @@ def run(session_config_list, smooth, cate_list):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
-        def plot_cluster_all():
-            title = 'all cluster neural traces on binned stimlus interval'
+        def plot_cluster_stim_all():
+            title = 'all cluster neural traces on stimulus'
             print('-----------------------------------------------')
             print(title)
-            filename = '3331Random_cluster_all'
-            cate_gap = 5
+            filename = '3331Random_cluster_stim_all'
+            cate_gap = 3
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 13
+            n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+3, i]) for i in range(13)]
+                a = [plt.subplot(gs[s:s+2, i]) for i in range(10)]
                 axs_all.append(a)
-            plotter.cluster_all(axs_all)
+            plotter.cluster_stim_all(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
+        def plot_cluster_interval_bin_all():
+            title = 'all cluster neural traces on binned stimlus interval'
+            print('-----------------------------------------------')
+            print(title)
+            filename = '3331Random_cluster_interval_bin_all'
+            cate_gap = 4
+            n_row = cate_gap*len(plotter.cate_list)
+            n_col = 8
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in cate_gap*np.arange(len(plotter.cate_list)):
+                a = [plt.subplot(gs[s:s+2, i]) for i in range(8)]
+                axs_all.append(a)
+            plotter.cluster_interval_bin_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
@@ -156,15 +175,17 @@ def run(session_config_list, smooth, cate_list):
             filename = '3331Random_cross_sess_adapt'
             cate_gap = 4
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 6
+            n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+3, 0])]
-                a+= [plt.subplot(gs[s:s+3, 1:4])]
-                a+= [plt.subplot(gs[s:s+3, 4])]
-                a+= [plt.subplot(gs[s:s+3, 5])]
+                a = [plt.subplot(gs[s:s+2, 0])]
+                a+= [plt.subplot(gs[s:s+2, 1:4])]
+                a+= [plt.subplot(gs[s:s+2, 4:7])]
+                a+= [plt.subplot(gs[s:s+2, 7])]
+                a+= [plt.subplot(gs[s:s+2, 8])]
+                a+= [plt.subplot(gs[s:s+2, 9])]
                 axs_all.append(a)
             plotter.cross_sess_adapt(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -183,7 +204,7 @@ def run(session_config_list, smooth, cate_list):
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+3, i]) for i in range(4)]
+                a = [plt.subplot(gs[s:s+2, i]) for i in range(4)]
                 axs_all.append(a)
             plotter.cluster_local_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -212,7 +233,8 @@ def run(session_config_list, smooth, cate_list):
         fig_all = [
             #plot_intervals(),
             plot_trial(),
-            plot_cluster_all(),
+            plot_cluster_stim_all(),
+            plot_cluster_interval_bin_all(),
             #plot_cluster_heatmap_all(),
             plot_cross_sess_adapt(),
             #plot_cluster_local_all(),

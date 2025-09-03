@@ -26,7 +26,7 @@ from plot.fig3_intervals import plot_trial_legend
 from plot.fig6_4131FixJitterOdd import plotter_main
 
 def run(session_config_list, smooth, cate_list):
-    size_scale = 3
+    size_scale = 2.5
     target_sess = 'fix_jitter_odd'
     idx_target_sess = np.array(list(session_config_list['list_session_name'].values())) == target_sess
     print('Found {} {} sessions'.format(np.sum(idx_target_sess), target_sess))
@@ -121,7 +121,7 @@ def run(session_config_list, smooth, cate_list):
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+3, i]) for i in range(8)]
+                a = [plt.subplot(gs[s:s+2, i]) for i in range(8)]
                 axs_all.append(a)
             plotter.cluster_oddball_fix_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -180,8 +180,8 @@ def run(session_config_list, smooth, cate_list):
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+3, i]) for i in range(16)]
-                a+= [plt.subplot(gs[s+3, i]) for i in range(16)]
+                a = [plt.subplot(gs[s:s+2, i]) for i in range(16)]
+                a+= [plt.subplot(gs[s+2, i]) for i in range(16)]
                 axs_all.append(a)
             plotter.cluster_oddball_jitter_global_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -200,7 +200,7 @@ def run(session_config_list, smooth, cate_list):
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+3, i]) for i in range(15)]
+                a = [plt.subplot(gs[s:s+2, i]) for i in range(15)]
                 axs_all.append(a)
             plotter.cluster_oddball_jitter_local_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)

@@ -2,26 +2,28 @@
 
 import numpy as np
 import rastermap as rm
+from sklearn.cluster import KMeans
 from tslearn.clustering import KShape
 from tslearn.preprocessing import TimeSeriesScalerMeanVariance
  
 from modeling.utils import norm01
 from modeling.utils import get_mean_sem
-from modeling.utils import get_frame_idx_from_time
 
 # clustering neural response.
-def clustering_neu_response_mode(x_in, n_clusters):
+def clustering_neu_response_mode(x_in, n_clusters, method='kmeans'):
     print('Running clustering')
-    # cluster number must be less than sample number.
-    n_clusters = n_clusters if n_clusters < x_in.shape[0] else x_in.shape[0]
-    # feature normalization.
-    x_in = TimeSeriesScalerMeanVariance().fit_transform(x_in)
-    # run clustering model.
-    model = KShape(
-        n_clusters=n_clusters,
-        n_init=1,
-        verbose=True)
-    cluster_id = model.fit_predict(x_in)
+    if method == 'kshape':
+        # feature normalization.
+        x_in = TimeSeriesScalerMeanVariance().fit_transform(x_in)
+        # run clustering model.
+        model = KShape(
+            n_clusters=n_clusters,
+            n_init=1,
+            verbose=True)
+        cluster_id = model.fit_predict(x_in)
+    if method == 'kmeans':
+        model = KMeans(init="k-means++", n_clusters=n_clusters, n_init=25)
+        cluster_id = model.fit_predict(x_in)
     return cluster_id
 
 # organize cluster labels based on stimulus evoked magnitude.

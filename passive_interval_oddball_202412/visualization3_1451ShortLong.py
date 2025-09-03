@@ -26,7 +26,7 @@ from plot.fig3_intervals import plot_trial_legend
 from plot.fig5_1451ShortLong import plotter_main
 
 def run(session_config_list, smooth, cate_list):
-    size_scale = 3
+    size_scale = 2.5
     target_sess = 'short_long'
     idx_target_sess = np.array(list(session_config_list['list_session_name'].values())) == target_sess
     print('Found {} {} sessions'.format(np.sum(idx_target_sess), target_sess))
@@ -114,14 +114,16 @@ def run(session_config_list, smooth, cate_list):
             print('-----------------------------------------------')
             print(title)
             filename = '1451ShortLong_cluster_all'
-            cate_gap = 5
+            cate_gap = 7
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 12
+            n_col = 10
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+3, i]) for i in range(12)]
+                a = [plt.subplot(gs[s:s+2, i]) for i in [0,1,2,3]]
+                a+= [plt.subplot(gs[s:s+2, i:i+2]) for i in [4,6,8]]
+                a+= [plt.subplot(gs[s+2:s+4, i]) for i in [0,1,2,3,4,5,6,7,8,9]]
                 axs_all.append(a)
             plotter.cluster_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -161,13 +163,13 @@ def run(session_config_list, smooth, cate_list):
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+3, i]) for i in [0,1,2]]
-                a+= [plt.subplot(gs[s:s+3, 3:5])]
-                a+= [plt.subplot(gs[s:s+3, 5:7])]
-                a+= [plt.subplot(gs[s:s+3, 7:9])]
-                a+= [plt.subplot(gs[s:s+3, 9:11])]
-                a+= [plt.subplot(gs[s:s+3, 11])]
-                a+= [plt.subplot(gs[s:s+3, 12])]
+                a = [plt.subplot(gs[s:s+2, i]) for i in [0,1,2]]
+                a+= [plt.subplot(gs[s:s+2, 3:5])]
+                a+= [plt.subplot(gs[s:s+2, 5:7])]
+                a+= [plt.subplot(gs[s:s+2, 7:9])]
+                a+= [plt.subplot(gs[s:s+2, 9:11])]
+                a+= [plt.subplot(gs[s:s+2, 11])]
+                a+= [plt.subplot(gs[s:s+2, 12])]
                 axs_all.append(a)
             plotter.cluster_adapt_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -224,12 +226,12 @@ def run(session_config_list, smooth, cate_list):
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a0 = [plt.subplot(gs[s+0:s+3, i:i+2]) for i in 2*np.arange(5)]
+                a0 = [plt.subplot(gs[s+0:s+2, i]) for i in range(10)]
+                a0+= [plt.subplot(gs[s+2, i]) for i in range(10)]
                 a0+= [plt.subplot(gs[s+3, i]) for i in range(10)]
-                a0+= [plt.subplot(gs[s+4, i]) for i in range(10)]
-                a1 = [plt.subplot(gs[s+5:s+8, i:i+2]) for i in 2*np.arange(5)]
-                a1+= [plt.subplot(gs[s+8, i]) for i in range(10)]
-                a1+= [plt.subplot(gs[s+9, i]) for i in range(10)]
+                a1 = [plt.subplot(gs[s+4:s+6, i]) for i in range(10)]
+                a1+= [plt.subplot(gs[s+6, i]) for i in range(10)]
+                a1+= [plt.subplot(gs[s+7, i]) for i in range(10)]
                 axs_all.append([a0,a1])
             plotter.decode_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -240,7 +242,7 @@ def run(session_config_list, smooth, cate_list):
             plot_intervals(),
             plot_trial(),
             plot_cluster_all(),
-            plot_cluster_heatmap_all(),
+            #plot_cluster_heatmap_all(),
             plot_cluster_adapt_all(),
             plot_sorted_heatmaps_all(),
             plot_latent_all(),
