@@ -14,7 +14,7 @@ from plot.fig2_raw_traces import plot_sess_example_traces
 from plot.misc import plot_surgery_window
 
 def run(session_config_list, smooth, cate_list):
-    size_scale = 2.5
+    size_scale = 3
     [list_labels, list_masks, list_neural_trials, list_move_offset, _
      ] = read_all(session_config_list, smooth)
     def plot_window():

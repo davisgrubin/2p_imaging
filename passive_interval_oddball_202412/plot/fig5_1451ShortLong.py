@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import traceback
 import numpy as np
 import matplotlib.ticker as mtick
 from sklearn.decomposition import PCA
@@ -38,7 +39,7 @@ from utils import utils_basic
 
 # fig, axs = plt.subplots(1, 2, figsize=(6, 6))
 # fig, ax = plt.subplots(1, 1, figsize=(2, 20))
-# fig, ax = plt.subplots(1, 1, figsize=(3, 9))
+# fig, ax = plt.subplots(1, 1, figsize=(3, 6))
 # fig, axs = plt.subplots(1, 8, figsize=(24, 3))
 # fig, ax = plt.subplots(1, 1, figsize=(6, 6), subplot_kw={"projection": "3d"})
 # cluster_id = run_clustering()
@@ -66,7 +67,7 @@ class plotter_utils(utils_basic):
         self.bin_num = 2
         self.d_latent = 3
         self.glm = self.run_glm()
-        self.n_up = 3
+        self.n_up = 2
         self.n_dn = 3
         self.cluster_id = self.run_clustering(self.n_up, self.n_dn)
 
@@ -300,35 +301,35 @@ class plotter_utils(utils_basic):
             add_legend(ax, cs, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
             ax.axis('off')
         try: plot_glm_kernel(axs[0])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_neu_fraction(axs[1])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_fraction(axs[2])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_legend(axs[3])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_heatmap(axs[4], 'none')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_heatmap(axs[5], 'minmax')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_heatmap(axs[6], 'share')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard(axs[7], 0, False)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard(axs[8], 0, True)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard(axs[9], 1, False)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard(axs[10], 1, True)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard(axs[11], 'both', False)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard(axs[12], 'both', True)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_scale(axs[13], False)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_scale(axs[14], True)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
     
     def plot_cluster_heatmap_all(self, axs, cate):
         kernel_all = get_glm_cate(self.glm, self.list_labels, self.list_significance, cate)
@@ -405,19 +406,19 @@ class plotter_utils(utils_basic):
             hide_all_axis(ax)
         # plot all.
         try: plot_cluster_features(axs[0])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_hierarchical_dendrogram(axs[1])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_glm_kernel(axs[2])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard(axs[3], 0, True)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard(axs[4], 1, True)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard(axs[5], 0, False)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard(axs[6], 1, False)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
 
     def plot_cluster_adapt_all(self, axs, cate=None):
         color0 = 'dimgrey'
@@ -979,23 +980,23 @@ class plotter_utils(utils_basic):
             ax.axis('off')
         # plot all.
         try: plot_tansition_trial_heatmap(axs[0], 'none')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_tansition_trial_heatmap(axs[1], 'minmax')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_tansition_trial_heatmap(axs[2], 'share')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_tansition(axs[3])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_trial_quant(axs[4])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_transition_trial(axs[5])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_trial_corr(axs[6])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_win_mag_scatter_epoch(axs[7])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_legend(axs[8])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
     
     def plot_sorted_heatmaps_all(self, axs, norm_mode, cate):
         xlim = [-2000,3000]
@@ -1132,7 +1133,7 @@ class plotter_utils(utils_basic):
                 add_heatmap_colorbar(ax21, cmap_1, None, 'time since stim (L)', yticklabels)
         # plot all.
         try: plot_standard(axs[0])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
     
     def plot_decode_all(self, axs, standard, cate):
         r2_thres = 0.3
@@ -1518,42 +1519,42 @@ class plotter_utils(utils_basic):
                         axs_hm.axvline(xl, color='black', lw=1, linestyle='--')
         # plot all.
         try: plot_standard_time_decode([axs[0], axs[1], axs[2]])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_time_decode_all(axs[10], 'all')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_time_decode_all(axs[11], 'up')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_time_decode_all(axs[12], 'down')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_ramp_params(axs[13], 0)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_ramp_params(axs[14], 1)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_ramp_params(axs[15], 2)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_ramp_params(axs[16], 3)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_ramp_params(axs[17], 4)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_time_regress_drop_neu_all(axs[18])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_example_ramp_fit(axs[19])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         
         try: plot_standard_ramp_params_all(axs[15], 0)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_ramp_params_all(axs[16], 1)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_ramp_params_all(axs[17], 2)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_ramp_params_all(axs[18], 3)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_standard_ramp_params_all(axs[19], 4)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_ramp_heatmap(axs[20], 'up')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_ramp_heatmap(axs[21], 'down')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
 
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
@@ -1569,7 +1570,7 @@ class plotter_main(plotter_utils):
 
                 self.plot_cluster_all(axs, cate=cate)
 
-            except Exception as e: print(e)
+            except: traceback.print_exc()()
 
     def cluster_heatmap_all(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -1579,7 +1580,7 @@ class plotter_main(plotter_utils):
 
                 self.plot_cluster_heatmap_all(axs, cate=cate)
 
-            except Exception as e: print(e)
+            except: traceback.print_exc()()
 
     def cluster_adapt_all(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -1589,7 +1590,7 @@ class plotter_main(plotter_utils):
 
                 self.plot_cluster_adapt_all(axs, cate=cate)
                 
-            except Exception as e: print(e)
+            except: traceback.print_exc()()
     
     def sorted_heatmaps_all(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -1600,7 +1601,7 @@ class plotter_main(plotter_utils):
                 for axss, norm_mode in zip([axs[0:2], axs[2:4], axs[4:8]], ['none', 'minmax', 'share']):
                     self.plot_sorted_heatmaps_all(axss, norm_mode, cate=cate)
                     
-            except Exception as e: print(e)
+            except: traceback.print_exc()()
     
     def latent_all(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -1610,7 +1611,7 @@ class plotter_main(plotter_utils):
 
                 self.plot_latent_all(axs, cate=cate)              
 
-            except Exception as e: print(e)
+            except: traceback.print_exc()()
     
     def decode_all(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -1621,4 +1622,4 @@ class plotter_main(plotter_utils):
                 #self.plot_decode_all(axs[0], 0, cate=cate)
                 self.plot_decode_all(axs[1], 1, cate=cate)              
 
-            except Exception as e: print(e)
+            except: traceback.print_exc()()

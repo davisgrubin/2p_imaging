@@ -590,4 +590,7 @@
 - Adjusted plot_standard layouts.
 - Now clustering_neu_response_mode can use both kshape and kmeans.
 - Rewritten run_clustering.
-- Now size_scale set to 2.5.
+
+## 2025.09.03
+- Now exception gives full error log.
+- Now plot_jitter_global_oddball can plot individual or both conditions.

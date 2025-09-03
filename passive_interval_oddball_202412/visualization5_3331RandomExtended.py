@@ -26,7 +26,7 @@ from plot.fig3_intervals import plot_trial_legend
 from plot.fig7_3331RandomExtended import plotter_main
 
 def run(session_config_list, smooth, cate_list):
-    size_scale = 2.5
+    size_scale = 3
     target_sess = 'extended_random'
     idx_target_sess = np.array(list(session_config_list['list_session_name'].values())) == target_sess
     print('Found {} {} sessions'.format(np.sum(idx_target_sess), target_sess))

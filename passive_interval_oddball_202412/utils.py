@@ -981,7 +981,7 @@ class utils_basic:
         cluster_id_up = clustering_neu_response_mode(trf_param_up[idx_up,3].reshape(-1,1), n_up, 'kmeans')
         cluster_id_dn = clustering_neu_response_mode(trf_param_dn[idx_dn,3].reshape(-1,1), n_dn, 'kmeans')
         # relabel based on temporal receptive field.
-        sorted_up = np.argsort([np.nanmean(trf_param_up[idx_up,3][cluster_id_up==ci]) for ci in range(n_up)])[::-1]
+        sorted_up = np.argsort([np.nanmean(trf_param_up[idx_up,3][cluster_id_up==ci]) for ci in range(n_up)])
         sorted_dn = np.argsort([np.nanmean(trf_param_dn[idx_dn,3][cluster_id_dn==ci]) for ci in range(n_dn)])
         map_up = {val: i for i, val in enumerate(sorted_up)}
         map_dn = {val: i for i, val in enumerate(sorted_dn)}
@@ -1171,7 +1171,7 @@ class utils_basic:
             ax_hm.set_yticks((((np.arange(n_yticks)+0.5)/n_yticks)*data.shape[0]).astype('int32'))
             ax_hm.set_yticklabels((((np.arange(n_yticks)+0.5)/n_yticks)*neu_seq.shape[0]).astype('int32'))
             # add colorbar.
-            add_heatmap_colorbar(ax_cb, hm_cmap, hm_norm, 'dF/F (z-scored)')
+            add_heatmap_colorbar(ax_cb, hm_cmap, hm_norm, 'dF/F')
 
     def plot_win_mag_quant_win_eval(
             self, ax, win_eval, color, xlim, baseline=True

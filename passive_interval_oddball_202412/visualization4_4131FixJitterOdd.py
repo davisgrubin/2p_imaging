@@ -26,7 +26,7 @@ from plot.fig3_intervals import plot_trial_legend
 from plot.fig6_4131FixJitterOdd import plotter_main
 
 def run(session_config_list, smooth, cate_list):
-    size_scale = 2.5
+    size_scale = 3
     target_sess = 'fix_jitter_odd'
     idx_target_sess = np.array(list(session_config_list['list_session_name'].values())) == target_sess
     print('Found {} {} sessions'.format(np.sum(idx_target_sess), target_sess))
@@ -212,17 +212,19 @@ def run(session_config_list, smooth, cate_list):
             print('-----------------------------------------------')
             print(title)
             filename = '4131FixJitterOdd_oddball_latent_all'
-            cate_gap = 9
+            cate_gap = 14
             n_row = cate_gap*len(plotter.cate_list)
             n_col = 20
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [[plt.subplot(gs[s+0:s+2, i:i+2]) for i in 2*np.arange(10)]]
-                a+= [[plt.subplot(gs[s+2:s+4, i:i+2]) for i in 2*np.arange(10)]]
-                a+= [[plt.subplot(gs[s+4:s+6, i:i+2]) for i in 2*np.arange(10)]]
-                a+= [[plt.subplot(gs[s+6:s+8, i:i+2]) for i in 2*np.arange(10)]]
+                a = [[plt.subplot(gs[s+0:s+2,   i:i+2]) for i in 2*np.arange(10)]]
+                a+= [[plt.subplot(gs[s+2:s+4,   i:i+2]) for i in 2*np.arange(10)]]
+                a+= [[plt.subplot(gs[s+4:s+6,   i:i+2]) for i in 2*np.arange(10)]]
+                a+= [[plt.subplot(gs[s+6:s+8,   i:i+2]) for i in 2*np.arange(10)]]
+                a+= [[plt.subplot(gs[s+6:s+10,  i:i+2]) for i in 2*np.arange(10)]]
+                a+= [[plt.subplot(gs[s+10:s+12, i:i+2]) for i in 2*np.arange(10)]]
                 axs_all.append(a)
             plotter.latent_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import traceback
 import numpy as np
 import matplotlib.ticker as mtick
 from sklearn.decomposition import PCA
@@ -56,7 +57,7 @@ class plotter_utils(utils_basic):
         self.bin_num = 4
         self.d_latent = 3
         self.glm = self.run_glm()
-        self.n_up = 3
+        self.n_up = 2
         self.n_dn = 2
         self.cluster_id = self.run_clustering(self.n_up, self.n_dn)
 
@@ -163,21 +164,21 @@ class plotter_utils(utils_basic):
             self.plot_cluster_cate_fraction_in_cluster(ax, cluster_id, neu_labels, self.label_names, color0)
         # plot all.
         try: plot_glm_kernel(axs[0])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_stim(axs[1], False)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_stim(axs[2], True)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_stim_heatmap(axs[3], 'none')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_stim_heatmap(axs[4], 'minmax')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_stim_heatmap(axs[5], 'share')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_neu_fraction(axs[6])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_fraction(axs[7])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
 
     def plot_cluster_interval_bin_all(self, axs, cate=None):
         color0 = 'dimgrey'
@@ -365,21 +366,21 @@ class plotter_utils(utils_basic):
             ax.axis('off')
         # plot all.
         try: plot_interval_heatmap(axs[0], 'none')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_interval_heatmap(axs[1], 'minmax')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_interval_heatmap(axs[2], 'share')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_interval_bin(axs[3], 'pre')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_interval_bin(axs[4], 'post')
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_interval_scaling(axs[5])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_interval_bin_latent(axs[6])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_legend(axs[7])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
 
     def plot_cluster_heatmap_all(self, axs, cate):
         kernel_all = get_glm_cate(self.glm, self.list_labels, self.list_significance, cate)
@@ -437,13 +438,13 @@ class plotter_utils(utils_basic):
             hide_all_axis(ax)
         # plot all.
         try: plot_cluster_features(axs[0])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_hierarchical_dendrogram(axs[1])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_glm_kernel(axs[2])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_stim(axs[3])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
     
     def plot_cross_sess_adapt(self, axs, cate):
         n_day = 5
@@ -599,17 +600,17 @@ class plotter_utils(utils_basic):
             ax.axis('off')
         # plot all.
         try: plot_dist_cluster_fraction(axs[0])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_cross_epoch(axs[1], False)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_cross_epoch(axs[2], True)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_cross_day(axs[3], False)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_cross_day(axs[4], True)
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_legend(axs[5])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
     
     def plot_cluster_local_all(self, axs, cate):
         isi_win = 200
@@ -794,13 +795,13 @@ class plotter_utils(utils_basic):
             ax.axis('off')
         # plot all.
         try: plot_heatmap(axs[0])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_interval_bin(axs[1])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_interval_scaling(axs[2])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         try: plot_legend(axs[3])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
         
     def plot_latent_all(self, axs, cate=None):
         color0 = 'dimgrey'
@@ -851,7 +852,7 @@ class plotter_utils(utils_basic):
                 add_heatmap_colorbar(ax3, t_cmap, None, 'interval progress since stim onset')
         # plot all.
         try: plot_interval_bin_latent_all(axs[0])
-        except Exception as e: print(e)
+        except: traceback.print_exc()()
 
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
@@ -867,7 +868,7 @@ class plotter_main(plotter_utils):
                 
                 self.plot_cluster_stim_all(axs, cate=cate)
 
-            except Exception as e: print(e)
+            except: traceback.print_exc()()
 
     def cluster_interval_bin_all(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -877,7 +878,7 @@ class plotter_main(plotter_utils):
                 
                 self.plot_cluster_interval_bin_all(axs, cate=cate)
 
-            except Exception as e: print(e)
+            except: traceback.print_exc()()
     
     def cluster_heatmap_all(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -887,7 +888,7 @@ class plotter_main(plotter_utils):
 
                 self.plot_cluster_heatmap_all(axs, cate=cate)
 
-            except Exception as e: print(e)
+            except: traceback.print_exc()()
     
     def cluster_individual_pre(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -897,7 +898,7 @@ class plotter_main(plotter_utils):
                 
                 self.plot_cluster_interval_bin_individual(axs, 'pre', cate=cate)
 
-            except Exception as e: print(e)
+            except: traceback.print_exc()()
     
     def cluster_individual_post(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -907,7 +908,7 @@ class plotter_main(plotter_utils):
                 
                 self.plot_cluster_interval_bin_individual(axs, 'post', cate=cate)
 
-            except Exception as e: print(e)
+            except: traceback.print_exc()()
     
     def separability_local(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -917,7 +918,7 @@ class plotter_main(plotter_utils):
                 
                 self.plot_separability_local(axs, cate=cate)
 
-            except Exception as e: print(e)
+            except: traceback.print_exc()()
 
     def cross_sess_adapt(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -927,7 +928,7 @@ class plotter_main(plotter_utils):
                 
                 self.plot_cross_sess_adapt(axs, cate=cate)
 
-            except Exception as e: print(e)
+            except: traceback.print_exc()()
     
     def cluster_local_all(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -937,7 +938,7 @@ class plotter_main(plotter_utils):
                 
                 self.plot_cluster_local_all(axs, cate=cate)
 
-            except Exception as e: print(e)
+            except: traceback.print_exc()()
     
     def latent_all(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -947,4 +948,4 @@ class plotter_main(plotter_utils):
                 
                 self.plot_latent_all(axs, cate=cate)
 
-            except Exception as e: print(e)
+            except: traceback.print_exc()()

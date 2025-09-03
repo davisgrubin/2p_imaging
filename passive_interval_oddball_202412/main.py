@@ -123,7 +123,7 @@ def run(session_config_list, cate_list):
 
 
 if __name__ == "__main__":
-    COMMANDLINE_MODE = 1
+    COMMANDLINE_MODE = 0
     cate_list = [[-1,1,2]]
     from session_configs import all_config_list
     
@@ -149,21 +149,21 @@ if __name__ == "__main__":
                 #'YH18VT_V1_20250528_3331Random' : 'random',
                 #'YH18VT_V1_20250529_3331Random' : 'random',
                 #'YH18VT_V1_20250530_3331Random' : 'random',
-                #'YH18VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250331_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250401_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250402_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250331_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250401_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250402_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250403_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250407_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250408_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250409_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250410_4131FixJitterOdd' : 'fix_jitter_odd',
-                'YH18VT_V1_20250415_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250416_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250417_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250418_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250421_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250415_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250416_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250417_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250418_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250421_1451ShortLong' : 'short_long',
                 #'YH18VT_V1_20250422_1451ShortLong' : 'short_long',
                 #'YH18VT_V1_20250423_1451ShortLong' : 'short_long',
                 #'YH18VT_V1_20250424_1451ShortLong' : 'short_long',
