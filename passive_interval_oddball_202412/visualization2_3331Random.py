@@ -42,17 +42,17 @@ def run(session_config_list, smooth, cate_list):
         plotter = plotter_main(
             list_neural_trials, list_labels, list_significance,
             session_config_list['label_names'], 'temp_'+session_config_list['subject_name'], cate_list)
-        def plot_sess_significance():
-            title = 'significance'
+        def plot_cell_fraction():
+            title = 'cell type fraction'
             print('-----------------------------------------------')
             print(title)
-            filename = '3331Random_significance'
+            filename = '3331Random_fraction'
             n_row = 1
             n_col = 1
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            sign_ax = plt.subplot(gs[0, 0])
-            plot_significance(sign_ax, list_significance, list_labels)
+            ax = plt.subplot(gs[0, 0])
+            plotter.plot_neuron_fraction(ax)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
@@ -231,13 +231,14 @@ def run(session_config_list, smooth, cate_list):
             plt.close(fig)
             return [filename, n_row, n_col, title]
         fig_all = [
-            #plot_intervals(),
+            plot_cell_fraction(),
+            plot_intervals(),
             plot_trial(),
             plot_cluster_stim_all(),
             plot_cluster_interval_bin_all(),
             #plot_cluster_heatmap_all(),
-            plot_cross_sess_adapt(),
-            #plot_cluster_local_all(),
+            #plot_cross_sess_adapt(),
+            plot_cluster_local_all(),
             plot_latent_all(),
             ]
         print('Clearing memory usage')

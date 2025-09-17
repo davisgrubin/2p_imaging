@@ -42,17 +42,17 @@ def run(session_config_list, smooth, cate_list):
         plotter = plotter_main(
             list_neural_trials, list_labels, list_significance,
             session_config_list['label_names'], 'temp_'+session_config_list['subject_name'], cate_list)
-        def plot_sess_significance():
-            title = 'significance'
+        def plot_cell_fraction():
+            title = 'cell type fraction'
             print('-----------------------------------------------')
             print(title)
-            filename = '4131FixJitterOdd_significance'
+            filename = '4131FixJitterOdd_fraction'
             n_row = 1
             n_col = 1
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            sign_ax = plt.subplot(gs[0, 0])
-            plot_significance(sign_ax, list_significance, list_labels)
+            ax = plt.subplot(gs[0, 0])
+            plotter.plot_neuron_fraction(ax)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
@@ -214,17 +214,17 @@ def run(session_config_list, smooth, cate_list):
             filename = '4131FixJitterOdd_oddball_latent_all'
             cate_gap = 14
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 20
+            n_col = 40
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [[plt.subplot(gs[s+0:s+2,   i:i+2]) for i in 2*np.arange(10)]]
-                a+= [[plt.subplot(gs[s+2:s+4,   i:i+2]) for i in 2*np.arange(10)]]
-                a+= [[plt.subplot(gs[s+4:s+6,   i:i+2]) for i in 2*np.arange(10)]]
-                a+= [[plt.subplot(gs[s+6:s+8,   i:i+2]) for i in 2*np.arange(10)]]
-                a+= [[plt.subplot(gs[s+6:s+10,  i:i+2]) for i in 2*np.arange(10)]]
-                a+= [[plt.subplot(gs[s+10:s+12, i:i+2]) for i in 2*np.arange(10)]]
+                a = [[plt.subplot(gs[s+0:s+2,   i:i+2]) for i in 2*np.arange(20)]]
+                a+= [[plt.subplot(gs[s+2:s+4,   i:i+2]) for i in 2*np.arange(20)]]
+                a+= [[plt.subplot(gs[s+4:s+6,   i:i+2]) for i in 2*np.arange(20)]]
+                a+= [[plt.subplot(gs[s+6:s+8,   i:i+2]) for i in 2*np.arange(20)]]
+                a+= [[plt.subplot(gs[s+6:s+10,  i:i+2]) for i in 2*np.arange(20)]]
+                a+= [[plt.subplot(gs[s+10:s+12, i:i+2]) for i in 2*np.arange(20)]]
                 axs_all.append(a)
             plotter.latent_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -232,12 +232,13 @@ def run(session_config_list, smooth, cate_list):
             plt.close(fig)
             return [filename, n_row, n_col, title]
         fig_all = [
+            #plot_cell_fraction(),
             #plot_intervals(),
             #plot_trial(),
             #plot_cluster_oddball_fix_all(),
             #plot_cluster_oddball_fix_heatmap_all(),
             #plot_sorted_heatmaps_fix_all(),
-            plot_cluster_oddball_jitter_global_all(),
+            #plot_cluster_oddball_jitter_global_all(),
             #plot_cluster_oddball_jitter_local_all(),
             plot_latent_all(),
         ]

@@ -594,3 +594,46 @@
 ## 2025.09.03
 - Now exception gives full error log.
 - Now plot_jitter_global_oddball can plot individual or both conditions.
+- Fixed stimulus in plot_latent_all.
+- Adjusted plot_standard layouts.
+- Added plot_standard_pred.
+- Added plot_cluster_box.
+- Added plot_cluster_standard_params_box.
+
+## 2025.09.04
+- Fixed plot_decode_all layouts.
+- Fixed plot_cluster_adapt_all layouts.
+- Now plot_3d_latent_dynamics can specify the end point color.
+- Improved plot_interval_bin_latent_all layouts.
+- Rewritten decoding_time_confusion.
+
+## 2025.09.05
+- Changed names of model parameters.
+- Changed plot_decode_all colors.
+- Changed plot_cluster_standard_time_decode layouts.
+- Changed plot_cluster_standard_pred layouts.
+- Rewritten plot_dist.
+
+## 2025.09.07
+- Added smoothing to decoding accuracy line.
+- Fixed plot_standard_ramp_params_all range.
+- Now plot_standard_ramp_params_all can plot violin.
+- Adjusted plot_cluster_standard_pred layouts.
+- Added plot_cluster_standard_time_decode subsampling.
+- Now plot_time_decode_confusion_matrix can specify vmax.
+- Removed diag plot in plot_cluster_standard_time_decode_confusion.
+- Removed average across splits in decoding_time_confusion.
+- Now plot_standard_ramp_params_all plots cummulative distribution.
+- Added plot_neuron_fraction.
+
+## 2025.09.09
+- Now plot_standard_ramp_params_all latency plots negative.
+- Now add_heatmap_colorbar plots 2 digits.
+- Added plot_neu_Frac_all.
+- Fixed plot_standard_heatmap colorbar.
+- Changed colors in plot_decode_all.
+- Set plot_cluster_standard_time_decode_single ylim.
+
+## 2025.09.10
+- Fixed y label in plot_transition_trial.
+- Changed plot_cluster_standard_time_decode_confusion colorbar.

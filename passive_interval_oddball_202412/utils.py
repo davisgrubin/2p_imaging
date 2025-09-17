@@ -8,6 +8,7 @@ import rastermap as rm
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.ticker as mtick
+from datetime import datetime
 from scipy.stats import mannwhitneyu
 from scipy.stats import levene
 from scipy.spatial.distance import pdist
@@ -36,8 +37,9 @@ def show_resource_usage(func):
         elapsed = time.perf_counter() - start
         current, peak = tracemalloc.get_traced_memory()
         tracemalloc.stop()
-        print(f'--- time: {elapsed:.2f}s')
-        print(f'--- memory current: {current/1024/1024:.2f} MB')
+        print(f'--- current time: {datetime.now().strftime("%Y.%m.%d %H:%M:%S")}')
+        print(f'--- time cost: {elapsed:.2f}s')
+        print(f'--- current memory: {current/1024/1024:.2f} MB')
         print(f'--- memory peak: {peak/1024/1024:.2f} MB')
         return result
     return wrapper
@@ -913,8 +915,8 @@ def add_heatmap_colorbar(ax, cmap, norm, label, yticklabels=None):
             cax=cax)
         cbar.outline.set_linewidth(0.25)
         cbar.ax.set_ylabel(label, rotation=90, labelpad=10)
-        cbar.ax.tick_params(axis='y', labelrotation=90)
-        cbar.ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+        cbar.ax.tick_params(axis='y')
+        cbar.ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
         cbar.ax.yaxis.set_major_locator(
             mtick.FixedLocator([norm.vmin+0.2*(norm.vmax-norm.vmin),
                                 norm.vmax-0.2*(norm.vmax-norm.vmin)]))
@@ -927,7 +929,8 @@ class utils_basic:
 
     def __init__(self):
         self.min_num_trial = 5
-        self.cluster_cmap = plt.cm.nipy_spectral
+        self.cluster_up_cmap = plt.cm.spring
+        self.cluster_dn_cmap = plt.cm.winter
         self.latent_cmap = plt.cm.nipy_spectral
         self.random_bin_cmap = plt.cm.gist_ncar
         self.cross_day_cmap = plt.cm.gnuplot_r
@@ -1004,13 +1007,13 @@ class utils_basic:
             autopct='%1.1f%%',
             wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
 
-    def plot_mean_sem(self, ax, t, m, s, c, l, a=1.0):
+    def plot_mean_sem(self, ax, t, m, s, c, l=None, a=1.0):
         ax.plot(t, m, color=c, label=l, alpha=a)
         ax.fill_between(t, m - s, m + s, color=c, alpha=0.25, edgecolor='none')
         ax.set_xlim([np.min(t), np.max(t)])
     
-    def plot_half_violin(self, ax, y, x, color, side):
-        p = ax.violinplot([y], positions=[x], widths=1, showextrema=False)
+    def plot_half_violin(self, ax, data, x, color, side):
+        p = ax.violinplot(data[~np.isnan(data)], positions=[x], widths=1, showextrema=False)
         v = p['bodies'][0].get_paths()[0].vertices
         p['bodies'][0].set(facecolor=color, alpha=0.3)
         p['bodies'][0].set_edgecolor(color)
@@ -1028,16 +1031,19 @@ class utils_basic:
         ax.plot(nt, cp, color=c, lw=0.5, linestyle=':')
     
     def plot_dist(self, ax, data, c, cumulative):
-        bins = 50
-        d, b = np.histogram(data, bins=bins, density=True)
-        cb = (b[:-1] + b[1:]) / 2
-        cb = cb[1:-1]
-        d = d[1:-1]
+        bins = 25
+        # raw counts
+        counts, bin_edges = np.histogram(data, bins=bins)
+        # fraction of samples in each bin.
+        total = counts.sum()
+        fractions = counts / total  
+        # bin centers
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+        # cumulative.
         if cumulative:
-            d = np.cumsum(d) * np.diff(b[1:-1])
-            d = d / d[-1]
-        ax.plot(cb, d, color=c)
-        return d
+            fractions = np.cumsum(fractions)
+        # plot line.
+        ax.plot(bin_centers, fractions, color=c)
     
     def plot_scatter(self, ax, q1, q2, c):
         # subsampling if lengths differ.
@@ -1120,7 +1126,6 @@ class utils_basic:
             # compute share scale if give.
             if neu_seq_share != None:
                 data_share = np.concatenate(neu_seq_share, axis=0)
-                data_share = rm.utils.bin1d(data_share, bin_size=nbin, axis=0)
             else:
                 data_share = np.nan
             # prepare heatmap.
@@ -1354,7 +1359,7 @@ class utils_basic:
         # plot stimulus.
         if not stim_seq is None:
             for si in range(stim_seq.shape[0]):
-                if stim_seq[si,0] > xlim[0] and stim_seq[si,1] < xlim[1]:
+                if stim_seq[si,0] >= xlim[0] and stim_seq[si,1] <= xlim[1]:
                     ax.fill_between(
                         stim_seq[si,:],
                         0, nm.shape[0],
@@ -1382,6 +1387,22 @@ class utils_basic:
         # adjust layouts.
         adjust_layout_cluster_neu(ax, nm.shape[0], xlim)
     
+    def plot_cluster_box(self, ax, cluster_id, means, sems, colors):
+        # plot results for each class.                 
+        for ci in range(self.n_clusters):
+            if np.sum(cluster_id==ci) > 0:
+                ax.errorbar(
+                    means[ci], self.n_clusters-ci-1,
+                    xerr=sems[ci],
+                    color=colors[ci],
+                    capsize=2, marker='o', linestyle='none',
+                    markeredgecolor='white', markeredgewidth=0.1)
+        # adjust layouts.
+        ax.spines['left'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.set_yticks([])
+        
     def plot_cluster_win_mag_quant(
             self, axs, day_cluster_id, neu_seq, neu_time,
             win_eval, color, c_time, offset, average_axis=0
@@ -1703,7 +1724,7 @@ class utils_basic:
         ax.set_xlabel('number of points in node')
         ax.set_yticks([])
 
-    def plot_3d_latent_dynamics(self, ax, neu_z, stim_seq, neu_time, c_stim=None, cmap=None, add_stim=True, add_mark=None):
+    def plot_3d_latent_dynamics(self, ax, neu_z, stim_seq, neu_time, end_color='black', c_stim=None, cmap=None, add_stim=True, add_mark=None):
         resampling = 5
         cmap = self.latent_cmap if cmap==None else cmap
         # interpolation.
@@ -1718,7 +1739,7 @@ class utils_basic:
             ax.plot(z[0,ti:ti+2]-z[0,0], z[1,ti:ti+2]-z[1,0], z[2,ti:ti+2]-z[2,0], color=c_neu[ti], lw=0.5)
         # end point.
         ax.scatter(z[0,0]-z[0,0], z[1,0]-z[1,0], z[2,0]-z[2,0], color='black', marker='x', lw=1)
-        ax.scatter(z[0,-1]-z[0,0], z[1,-1]-z[1,0], z[2,-1]-z[2,0], color='black', marker='o', lw=1)
+        ax.scatter(z[0,-1]-z[0,0], z[1,-1]-z[1,0], z[2,-1]-z[2,0], color=end_color, marker='o', lw=1)
         # stimulus.
         if add_stim:
             for j in range(stim_seq.shape[0]):
@@ -1752,20 +1773,21 @@ class utils_basic:
         ax_hm.set_xticks(np.arange(d.shape[0]))
         ax_hm.set_yticks(np.arange(d.shape[0]))
     
-    def plot_time_decode_confusion_matrix(self, ax_hm, acc_mat, t_range, ax_cb=None):
+    def plot_time_decode_confusion_matrix(self, ax_hm, acc_mat, t_range, ax_cb=None, vmax=None):
         cmap = plt.cm.magma
+        vmax = 1 if vmax == None else vmax
         # plot matrix.
         ax_hm.matshow(
             acc_mat[::-1,:],
             extent=[t_range[0], t_range[-1], t_range[0], t_range[-1]],
-            interpolation='nearest', cmap=cmap, vmin=0, vmax=1)
+            interpolation='nearest', cmap=cmap, vmin=0.45, vmax=vmax)
         # adjust layout.
         ax_hm.spines['right'].set_visible(False)
         ax_hm.spines['top'].set_visible(False)
         ax_hm.tick_params(tick1On=True, bottom=False, top=False, labelbottom=True, labeltop=False)
         # add colorbar.
         if ax_cb != None:
-            norm = mcolors.Normalize(vmin=0, vmax=1)
+            norm = mcolors.Normalize(vmin=0.45, vmax=vmax if vmax==None else vmax)
             add_heatmap_colorbar(ax_cb, cmap, norm, 'decoding accuracy')
             
 

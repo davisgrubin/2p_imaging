@@ -42,17 +42,17 @@ def run(session_config_list, smooth, cate_list):
         plotter = plotter_main(
             list_neural_trials, list_labels, list_significance,
             session_config_list['label_names'], 'temp_'+session_config_list['subject_name'], cate_list)
-        def plot_sess_significance():
-            title = 'significance'
+        def plot_cell_fraction():
+            title = 'cell type fraction'
             print('-----------------------------------------------')
             print(title)
-            filename = '1451ShortLong_significance'
+            filename = '1451ShortLong_fraction'
             n_row = 1
             n_col = 1
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
-            sign_ax = plt.subplot(gs[0, 0])
-            plot_significance(sign_ax, list_significance, list_labels)
+            ax = plt.subplot(gs[0, 0])
+            plotter.plot_neuron_fraction(ax)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
@@ -221,17 +221,17 @@ def run(session_config_list, smooth, cate_list):
             filename = '1451ShortLong_decode_all'
             cate_gap = 10
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 10
+            n_col = 15
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a0 = [plt.subplot(gs[s+0:s+2, i]) for i in range(10)]
-                a0+= [plt.subplot(gs[s+2, i]) for i in range(10)]
-                a0+= [plt.subplot(gs[s+3, i]) for i in range(10)]
-                a1 = [plt.subplot(gs[s+4:s+6, i]) for i in range(10)]
-                a1+= [plt.subplot(gs[s+6, i]) for i in range(10)]
-                a1+= [plt.subplot(gs[s+7, i]) for i in range(10)]
+                a0 = [[plt.subplot(gs[s+0:s+2, i]) for i in range(15)],
+                      [plt.subplot(gs[s+2, i]) for i in range(15)],
+                      [plt.subplot(gs[s+3, i]) for i in range(15)]]
+                a1 = [[plt.subplot(gs[s+4:s+6, i]) for i in range(15)],
+                      [plt.subplot(gs[s+6, i]) for i in range(15)],
+                      [plt.subplot(gs[s+7, i]) for i in range(15)]]
                 axs_all.append([a0,a1])
             plotter.decode_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -239,13 +239,14 @@ def run(session_config_list, smooth, cate_list):
             plt.close(fig)
             return [filename, n_row, n_col, title]
         fig_all = [
-            plot_intervals(),
-            plot_trial(),
-            plot_cluster_all(),
+            #plot_cell_fraction(),
+            #plot_intervals(),
+            #plot_trial(),
+            #plot_cluster_all(),
             #plot_cluster_heatmap_all(),
-            plot_cluster_adapt_all(),
-            plot_sorted_heatmaps_all(),
-            plot_latent_all(),
+            #plot_cluster_adapt_all(),
+            #plot_sorted_heatmaps_all(),
+            #plot_latent_all(),
             plot_decode_all(),
             ]
         print('Clearing memory usage')

@@ -120,3 +120,57 @@ def plot_roi_significance(ax, significance, roi_id):
     ax.set_xlim([-1,len(labels)+1])
     ax.set_xticks(np.arange(len(labels)))
     ax.set_xticklabels(labels, rotation='vertical')
+
+# neuron fraction summary.
+def plot_neu_Frac_all(ax1, ax2):
+    # ramp fraction.
+    ax1.axis('off')
+    ax_up_v1 = ax1.inset_axes([0, 0, 0.4, 0.4], transform=ax1.transAxes)
+    ax_dn_v1 = ax1.inset_axes([0.6, 0, 0.4, 0.4], transform=ax1.transAxes)
+    ax_up_ppc = ax1.inset_axes([0, 0.6, 0.4, 0.4], transform=ax1.transAxes)
+    ax_dn_ppc = ax1.inset_axes([0.6, 0.6, 0.4, 0.4], transform=ax1.transAxes)
+    colors = ['cornflowerblue', 'violet', 'mediumseagreen']
+    up_v1 = np.array([2430*0.27 + 699*0.08,
+                      2430*0.34 + 699*0.09,
+                      2430*0.10 + 699*0.02])
+    dn_v1 = np.array([2742*0.31 + 173*0.19 + 250*0.03,
+                      2742*0.25 + 173*0.15 + 250*0.03,
+                      2742*0.42 + 173*0.31 + 250*0.02])
+    up_ppc = np.array([952*0.21 + 320*0.07,
+                       952*0.23 + 320*0.07,
+                       952*0.03 + 320*0.01])
+    dn_ppc = np.array([1613*0.30 + 1367*0.27 + 140*0.03,
+                       1613*0.28 + 1367*0.31 + 140*0.04,
+                       1613*0.54 + 1367*0.31 + 140*0.02])
+    ax_up_v1.pie(
+        up_v1,
+        labels=['Exc', 'VIP', 'SST'],
+        colors=colors,
+        autopct='%1.1f%%',
+        wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+    ax_dn_v1.pie(
+        dn_v1,
+        labels=['Exc', 'VIP', 'SST'],
+        colors=colors,
+        autopct='%1.1f%%',
+        wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+    ax_up_ppc.pie(
+        up_ppc,
+        labels=['Exc', 'VIP', 'SST'],
+        colors=colors,
+        autopct='%1.1f%%',
+        wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+    ax_dn_ppc.pie(
+        dn_ppc,
+        labels=['Exc', 'VIP', 'SST'],
+        colors=colors,
+        autopct='%1.1f%%',
+        wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+    ax_up_v1.set_title('V1 stim inh')
+    ax_dn_v1.set_title('V1 stim act')
+    ax_up_ppc.set_title('PPC stim inh')
+    ax_dn_ppc.set_title('PPC stim act')
+
+    
+    
+    

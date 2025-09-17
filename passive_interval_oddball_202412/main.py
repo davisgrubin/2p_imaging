@@ -25,12 +25,6 @@ def combine_session_config_list(session_config_list):
     session_config_list['list_session_data_path'] = list_session_data_path
     return session_config_list
 
-def get_roi_sign(significance, roi_id):
-    r = significance['r_standard'][roi_id] +\
-        significance['r_change'][roi_id] +\
-        significance['r_oddball'][roi_id]
-    return r
-
 import visualization1_FieldOfView
 import visualization2_3331Random
 import visualization3_1451ShortLong
@@ -61,7 +55,7 @@ def run(session_config_list, cate_list):
     for i in range(len(list_ops)):
         print('Trializing {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
-        #Trialization.run(list_ops[i])
+        Trialization.run(list_ops[i])
 
     print('===============================================')
     print('============== significance test ==============')
@@ -69,31 +63,31 @@ def run(session_config_list, cate_list):
     for i in range(len(list_ops)):
         print('Running significance test for {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
-        #StatTest.run(list_ops[i])
+        StatTest.run(list_ops[i])
 
     print('===============================================')
     print('======== plotting representative masks ========')
     print('===============================================')
-    fn1 = visualization1_FieldOfView.run(session_config_list, smooth, cate_list)
-    #fn1 = []
+    #fn1 = visualization1_FieldOfView.run(session_config_list, smooth, cate_list)
+    fn1 = []
 
     print('===============================================')
     print('========= plotting 3331Random results =========')
     print('===============================================')
-    fn2 = visualization2_3331Random.run(session_config_list, smooth, cate_list)
-    #fn2 = []
+    #fn2 = visualization2_3331Random.run(session_config_list, smooth, cate_list)
+    fn2 = []
 
     print('===============================================')
     print('======= plotting 1451ShortLong results ========')
     print('===============================================')
-    fn3 = visualization3_1451ShortLong.run(session_config_list, smooth, cate_list)
-    #fn3 = []
+    #fn3 = visualization3_1451ShortLong.run(session_config_list, smooth, cate_list)
+    fn3 = []
 
     print('===============================================')
     print('====== plotting 4131FixJitterOdd results ======')
     print('===============================================')
-    fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
-    #fn4 = []
+    #fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
+    fn4 = []
     
     print('===============================================')
     print('===== plotting 3331RandomExtended results =====')
@@ -144,16 +138,16 @@ if __name__ == "__main__":
 
         session_config_YH18VT = {
             'list_session_name' : {
-                #'YH18VT_V1_20250526_3331Random' : 'random',
-                #'YH18VT_V1_20250527_3331Random' : 'random',
-                #'YH18VT_V1_20250528_3331Random' : 'random',
+                'YH18VT_V1_20250526_3331Random' : 'random',
+                'YH18VT_V1_20250527_3331Random' : 'random',
+                'YH18VT_V1_20250528_3331Random' : 'random',
                 #'YH18VT_V1_20250529_3331Random' : 'random',
                 #'YH18VT_V1_20250530_3331Random' : 'random',
-                'YH18VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
-                'YH18VT_V1_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
-                'YH18VT_V1_20250331_4131FixJitterOdd' : 'fix_jitter_odd',
-                'YH18VT_V1_20250401_4131FixJitterOdd' : 'fix_jitter_odd',
-                'YH18VT_V1_20250402_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'YH18VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'YH18VT_V1_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'YH18VT_V1_20250331_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'YH18VT_V1_20250401_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'YH18VT_V1_20250402_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250403_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250407_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250408_4131FixJitterOdd' : 'fix_jitter_odd',
@@ -181,6 +175,9 @@ if __name__ == "__main__":
                 #'YH18VT_V1_20250626_3331RandomExtended' : 'extended_random',
                 #'YH18VT_V1_20250627_3331RandomExtended' : 'extended_random',
                 #'test_YH18VT_V1_20250505_1451ShortLong' : 'short_long',
+                #'testYH19VT_20250824_1451ShortLong_NoCell' : 'short_long',
+                #'testYH19VT_20250824_1451ShortLong_NoLightDeep' : 'short_long',
+                #'testYH19VT_20250824_1451ShortLong_NoMouse' : 'short_long',
                 },
             'session_folder' : 'YH18VT',
             'sig_tag' : 'all',
@@ -228,5 +225,5 @@ if __name__ == "__main__":
         temp_folder = 'temp_'+session_config_list['subject_name']
         if not os.path.exists(os.path.join('results', 'temp_'+session_config_list['subject_name'])):
             os.makedirs(os.path.join('results', 'temp_'+session_config_list['subject_name']))
-            
+
         '''

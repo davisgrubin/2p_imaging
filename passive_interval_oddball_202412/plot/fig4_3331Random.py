@@ -31,7 +31,7 @@ from utils import add_legend
 from utils import add_heatmap_colorbar
 from utils import utils_basic
 
-# fig, ax = plt.subplots(1, 1, figsize=(3, 9))
+# fig, ax = plt.subplots(1, 1, figsize=(3, 6))
 # fig, axs = plt.subplots(1, 8, figsize=(24, 3))
 # axs = [plt.subplots(1, 8, figsize=(24, 3))[1], plt.subplots(1, 8, figsize=(24, 3))[1]]
 # fig, ax = plt.subplots(1, 1, figsize=(6, 6), subplot_kw={"projection": "3d"})
@@ -57,9 +57,27 @@ class plotter_utils(utils_basic):
         self.bin_num = 4
         self.d_latent = 3
         self.glm = self.run_glm()
-        self.n_up = 2
+        self.n_up = 3
         self.n_dn = 2
         self.cluster_id = self.run_clustering(self.n_up, self.n_dn)
+    
+    def plot_neuron_fraction(self, ax):
+        try:
+            colors = ['cornflowerblue', 'violet', 'mediumseagreen']
+            cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, [-1,1,2])
+            exc = np.sum(neu_labels==-1)
+            vip = np.sum(neu_labels==1)
+            sst = np.sum(neu_labels==2)
+            ax.pie(
+                [exc, vip, sst],
+                labels=['{} Exc'.format(exc),
+                        '{} VIP'.format(vip),
+                        '{} SST'.format(sst)],
+                colors=colors,
+                autopct='%1.1f%%',
+                wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+            ax.set_title('fraction of {} neuron labels'.format(len(neu_labels)))
+        except: traceback.print_exc()
 
     def plot_isi_seting(self, ax):
         gap = 25
@@ -73,7 +91,7 @@ class plotter_utils(utils_basic):
         ax.set_xticks([500,1500,2500])
         ax.set_yticks([])
         ax.set_xticklabels([500,1500,2500])
-    
+        
     def plot_isi_example_epoch(self, ax):
         trial_win = [1000,1500]
         # get isi and trial labels.
@@ -164,21 +182,21 @@ class plotter_utils(utils_basic):
             self.plot_cluster_cate_fraction_in_cluster(ax, cluster_id, neu_labels, self.label_names, color0)
         # plot all.
         try: plot_glm_kernel(axs[0])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_stim(axs[1], False)
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_stim(axs[2], True)
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_stim_heatmap(axs[3], 'none')
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_stim_heatmap(axs[4], 'minmax')
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_stim_heatmap(axs[5], 'share')
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_neu_fraction(axs[6])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_fraction(axs[7])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
 
     def plot_cluster_interval_bin_all(self, axs, cate=None):
         color0 = 'dimgrey'
@@ -366,21 +384,21 @@ class plotter_utils(utils_basic):
             ax.axis('off')
         # plot all.
         try: plot_interval_heatmap(axs[0], 'none')
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_interval_heatmap(axs[1], 'minmax')
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_interval_heatmap(axs[2], 'share')
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_interval_bin(axs[3], 'pre')
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_interval_bin(axs[4], 'post')
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_interval_scaling(axs[5])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_interval_bin_latent(axs[6])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_legend(axs[7])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
 
     def plot_cluster_heatmap_all(self, axs, cate):
         kernel_all = get_glm_cate(self.glm, self.list_labels, self.list_significance, cate)
@@ -438,13 +456,13 @@ class plotter_utils(utils_basic):
             hide_all_axis(ax)
         # plot all.
         try: plot_cluster_features(axs[0])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_hierarchical_dendrogram(axs[1])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_glm_kernel(axs[2])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_stim(axs[3])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
     
     def plot_cross_sess_adapt(self, axs, cate):
         n_day = 5
@@ -600,17 +618,17 @@ class plotter_utils(utils_basic):
             ax.axis('off')
         # plot all.
         try: plot_dist_cluster_fraction(axs[0])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_cross_epoch(axs[1], False)
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_cross_epoch(axs[2], True)
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_cross_day(axs[3], False)
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_cross_day(axs[4], True)
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_legend(axs[5])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
     
     def plot_cluster_local_all(self, axs, cate):
         isi_win = 200
@@ -795,13 +813,13 @@ class plotter_utils(utils_basic):
             ax.axis('off')
         # plot all.
         try: plot_heatmap(axs[0])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_interval_bin(axs[1])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_interval_scaling(axs[2])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         try: plot_legend(axs[3])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
         
     def plot_latent_all(self, axs, cate=None):
         color0 = 'dimgrey'
@@ -819,7 +837,7 @@ class plotter_utils(utils_basic):
             bin_num = 10
             colors = get_cmap_color(bin_num, cmap=self.random_bin_cmap)
             # bin data based on isi.
-            [_, _, _, bin_neu_seq, _, _, bin_stim_seq, _] = get_isi_bin_neu(
+            [bins, _, _, bin_neu_seq, _, _, bin_stim_seq, _] = get_isi_bin_neu(
                 neu_seq, stim_seq, camera_pupil, post_isi, self.bin_win, bin_num)
             # get latent dynamics.
             neu_x = np.concatenate([bns for bns in bin_neu_seq], axis=1)
@@ -829,30 +847,34 @@ class plotter_utils(utils_basic):
             z = model.transform(neu_x.reshape(neu_x.shape[0],-1).T)
             neu_z = z.reshape(bin_num, -1, 3).transpose([0,2,1])
             # random rotate dynamics.
-            for ai in range(len(axs)):
+            for ai in range(len(axs)-1):
                 # get random matrix.
                 rm = get_random_rotate_mat_3d()
                 # define layouts.
                 axs[ai].axis('off')
                 ax1 = axs[ai].inset_axes([0, 0, 0.6, 0.6], transform=axs[ai].transAxes, projection='3d')
-                ax2 = axs[ai].inset_axes([0.6, 0, 0.1, 0.4], transform=axs[ai].transAxes)
-                ax3 = axs[ai].inset_axes([0.8, 0, 0.1, 0.4], transform=axs[ai].transAxes)
                 # plot 3d dynamics.
                 for bi in range(bin_num):
                     l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, bin_stim_seq[bi,c_idx,0], bin_stim_seq[bi,c_idx+1,0])
                     neu_time = self.alignment['neu_time'][l_idx:r_idx]
-                    cmap, _ = get_cmap_color(len(neu_time), base_color=['lemonchiffon', colors[bi]], return_cmap=True)
-                    self.plot_3d_latent_dynamics(ax1, np.matmul(rm, neu_z[bi,:,l_idx:r_idx]), None, neu_time, cmap=cmap, add_stim=False)
+                    cmap, _ = get_cmap_color(len(neu_time), base_color=['lemonchiffon', colors[bi], 'black'], return_cmap=True)
+                    self.plot_3d_latent_dynamics(
+                        ax1, np.matmul(rm, neu_z[bi,:,l_idx:r_idx]), None, neu_time,
+                        cmap=cmap, end_color=colors[bi], add_stim=False)
                 # adjust layouts.
                 adjust_layout_3d_latent(ax1)
-                # add colorbar.
-                yticklabels = [int(self.bin_win[0]+0.2*(self.bin_win[1]-self.bin_win[0])), int(2500-0.2*(self.bin_win[1]-self.bin_win[0]))]
-                add_heatmap_colorbar(ax2, self.random_bin_cmap, None, 'interval (ms)', yticklabels)
-                t_cmap, _ = get_cmap_color(len(neu_time), base_color=['lemonchiffon', color0], return_cmap=True)
-                add_heatmap_colorbar(ax3, t_cmap, None, 'interval progress since stim onset')
+            ax2 = axs[-1].inset_axes([0, 0, 0.5, 1], transform=axs[-1].transAxes)
+            ax3 = axs[-1].inset_axes([0.5, 0, 0.1, 0.6], transform=axs[-1].transAxes)
+            # add colorbar.
+            add_legend(ax2, colors, ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(bin_num)], None, None, None, 'upper left')
+            t_cmap, _ = get_cmap_color(len(neu_time), base_color=['lemonchiffon', 'black'], return_cmap=True)
+            add_heatmap_colorbar(ax3, t_cmap, None, 'interval progress since stim onset')
+            hide_all_axis(axs[-1])
+            hide_all_axis(ax2)
+            hide_all_axis(ax3)
         # plot all.
         try: plot_interval_bin_latent_all(axs[0])
-        except: traceback.print_exc()()
+        except: traceback.print_exc()
 
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
@@ -868,7 +890,7 @@ class plotter_main(plotter_utils):
                 
                 self.plot_cluster_stim_all(axs, cate=cate)
 
-            except: traceback.print_exc()()
+            except: traceback.print_exc()
 
     def cluster_interval_bin_all(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -878,7 +900,7 @@ class plotter_main(plotter_utils):
                 
                 self.plot_cluster_interval_bin_all(axs, cate=cate)
 
-            except: traceback.print_exc()()
+            except: traceback.print_exc()
     
     def cluster_heatmap_all(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -888,7 +910,7 @@ class plotter_main(plotter_utils):
 
                 self.plot_cluster_heatmap_all(axs, cate=cate)
 
-            except: traceback.print_exc()()
+            except: traceback.print_exc()
     
     def cluster_individual_pre(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -898,7 +920,7 @@ class plotter_main(plotter_utils):
                 
                 self.plot_cluster_interval_bin_individual(axs, 'pre', cate=cate)
 
-            except: traceback.print_exc()()
+            except: traceback.print_exc()
     
     def cluster_individual_post(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -908,7 +930,7 @@ class plotter_main(plotter_utils):
                 
                 self.plot_cluster_interval_bin_individual(axs, 'post', cate=cate)
 
-            except: traceback.print_exc()()
+            except: traceback.print_exc()
     
     def separability_local(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -918,7 +940,7 @@ class plotter_main(plotter_utils):
                 
                 self.plot_separability_local(axs, cate=cate)
 
-            except: traceback.print_exc()()
+            except: traceback.print_exc()
 
     def cross_sess_adapt(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -928,7 +950,7 @@ class plotter_main(plotter_utils):
                 
                 self.plot_cross_sess_adapt(axs, cate=cate)
 
-            except: traceback.print_exc()()
+            except: traceback.print_exc()
     
     def cluster_local_all(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -938,7 +960,7 @@ class plotter_main(plotter_utils):
                 
                 self.plot_cluster_local_all(axs, cate=cate)
 
-            except: traceback.print_exc()()
+            except: traceback.print_exc()
     
     def latent_all(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
@@ -948,4 +970,4 @@ class plotter_main(plotter_utils):
                 
                 self.plot_latent_all(axs, cate=cate)
 
-            except: traceback.print_exc()()
+            except: traceback.print_exc()
