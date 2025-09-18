@@ -10,7 +10,6 @@ import argparse
 from datetime import datetime
 
 from modules import Trialization
-from modules import StatTest
 from modules.ReadResults import read_ops
 
 def combine_session_config_list(session_config_list):
@@ -56,14 +55,6 @@ def run(session_config_list, cate_list):
         print('Trializing {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
         Trialization.run(list_ops[i])
-
-    print('===============================================')
-    print('============== significance test ==============')
-    print('===============================================')
-    for i in range(len(list_ops)):
-        print('Running significance test for {}'.format(
-            list(session_config_list['list_session_name'].keys())[i]))
-        StatTest.run(list_ops[i])
 
     print('===============================================')
     print('======== plotting representative masks ========')
@@ -207,7 +198,7 @@ if __name__ == "__main__":
 
         from modules.ReadResults import read_all
         [list_labels, list_masks,
-         list_neural_trials, list_move_offset, list_significance
+         list_neural_trials, list_move_offset
          ] = read_all(session_config_list, smooth=False)
         neural_trials = list_neural_trials[0]
         dff = neural_trials['dff']

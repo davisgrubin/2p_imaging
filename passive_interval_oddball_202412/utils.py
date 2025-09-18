@@ -207,26 +207,22 @@ def get_multi_sess_neu_trial(
 
 # find neuron category and trial data.
 def get_neu_trial(
-        alignment, list_labels, list_significance, list_stim_labels,
+        alignment, list_labels, list_stim_labels,
         trial_idx=None, trial_param=None, mean_sem=True, frac=1, sub_sampling=False,
         cate=None, roi_id=None,
         ):
     if cate != None:
         idx = np.concatenate(
-            [np.in1d(list_labels[i],cate)*list_significance[i]['r_standard']
+            [np.in1d(list_labels[i],cate)
              for i in range(len(list_stim_labels))])
         if np.sum(idx) == 0:
             raise ValueError(f'No available neurons in given category {cate}')
         list_neu_seq = alignment['list_neu_seq']
         colors = get_roi_label_color(cate=cate)
         neu_labels = np.concatenate([
-            list_labels[i][np.in1d(list_labels[i],cate)*list_significance[i]['r_standard']]
+            list_labels[i][np.in1d(list_labels[i],cate)]
             for i in range(len(list_stim_labels))])
-        neu_sig = np.concatenate([
-            list_significance[i]['r_standard'][np.in1d(list_labels[i],cate)]
-            for i in range(len(list_stim_labels))])
-        r_standards = [sig['r_standard'] for sig in list_significance]
-        masks = [np.isin(labels, cate) & r_std.astype(bool) for labels, r_std in zip(list_labels, r_standards)]
+        masks = [np.isin(labels, cate) for labels in list_labels]
         neu_cate = [neu_seq[:, mask, :] for neu_seq, mask in zip(list_neu_seq, masks)]
     if roi_id != None:
         colors = get_roi_label_color(list_labels, roi_id=roi_id)
@@ -235,7 +231,7 @@ def get_neu_trial(
     neu_trial, neu_num = get_multi_sess_neu_trial(
         list_stim_labels, neu_cate, alignment,
         trial_idx=trial_idx, trial_param=trial_param, mean_sem=mean_sem, sub_sampling=sub_sampling, frac=frac)
-    return colors, neu_trial, [neu_labels, neu_sig], neu_num
+    return colors, neu_trial, neu_labels, neu_num
 
 # compute indice with givn time window for dF/F.
 def get_frame_idx_from_time(timestamps, c_time, l_time, r_time):
@@ -353,8 +349,8 @@ def get_change_prepost_idx(stim_labels):
     return idx_pre, idx_post
 
 # get index to split concatenated labels for categories.
-def get_split_idx(list_labels, list_significance, cate):
-    split_idx = [len(list_labels[i][np.in1d(list_labels[i],cate)*list_significance[i]['r_standard']])
+def get_split_idx(list_labels, cate):
+    split_idx = [len(list_labels[i][np.in1d(list_labels[i],cate)])
         for i in range(len(list_labels))]
     split_idx = np.cumsum(split_idx)[:-1]
     return split_idx
@@ -963,7 +959,10 @@ class utils_basic:
         return glm
     
     def run_clustering(self, n_up, n_dn):
-        r2_thres = 0.4
+        0.1
+        0.3
+        0.8
+        r2_thres = 0.3
         # get data within range.
         z_idx = get_frame_idx_from_time(self.glm['kernel_time'], 0, -100, 0)[0]
         neu_seq_l = self.glm['kernel_all'][:,:z_idx]

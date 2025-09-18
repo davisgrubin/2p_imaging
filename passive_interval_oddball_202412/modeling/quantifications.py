@@ -40,17 +40,15 @@ def optimize_params(
         max_iter, lr, l2_weights, n_inits, device):
     best_params = torch.zeros((n_neurons, 5), device=device)
     best_loss = torch.full((n_neurons,), np.inf, device=device)
-
     bounds_lo = torch.tensor([-1, 0.0, -0.5, 0.01,    0], dtype=torch.float32, device=device)
     bounds_hi = torch.tensor([ 1, 5.0,    0,   1.0, 5.0], dtype=torch.float32, device=device)
     criterion = LossFunction(l2_weights)
-
+    # random init.
     for _ in tqdm(range(n_inits)):
-        # random init
         init = torch.rand((n_neurons, 5), device=device)
         params = (bounds_lo + (bounds_hi - bounds_lo) * init).requires_grad_(True)
         optimizer = torch.optim.Adam([params], lr=lr)
-
+        # optimize step.
         for _ in range(max_iter):
             optimizer.zero_grad()
             pred = model_fn(x, *params.T)
@@ -59,20 +57,21 @@ def optimize_params(
             optimizer.step()
             with torch.no_grad():
                 params.data = torch.max(torch.min(params.data, bounds_hi), bounds_lo)
-
+        # pick best results.
         with torch.no_grad():
             pred = model_fn(x, *params.T)
             mse = ((pred - y) ** 2).mean(dim=1)
             improved = mse < best_loss
             best_loss[improved] = mse[improved]
             best_params[improved] = params[improved]
-
     return best_params.detach()
 
 # preprocessing.
 def preprocess_data(neu_seq_l, neu_time_l, neu_seq_r, neu_time_r, device):
+    # normalize data points.
     nsl = torch.tensor([norm01(x) for x in neu_seq_l], dtype=torch.float32, device=device)
     nsr = torch.tensor([norm01(x) for x in neu_seq_r], dtype=torch.float32, device=device)
+    # normalize time.
     ntl = torch.tensor(norm01(neu_time_l) - 1, dtype=torch.float32, device=device)
     ntr = torch.tensor(norm01(neu_time_r), dtype=torch.float32, device=device)
     return nsl, ntl, nsr, ntr
@@ -124,19 +123,57 @@ axs[0].plot(ntl, trf_model_up(ntl, 0, 1.5, -0.4, 0.15, 0.5))
 axs[8].plot(ntl, trf_model_up(ntl, 0.2, 1.5, -0.1, 0.1, 0.5))
 axs[10].plot(ntl, trf_model_up(ntl, 0.2, 1.5, -0.1, 0.1, 0.5))
 
+
+fig, ax = plt.subplots(1, 1, figsize=(3, 3))
+ax.scatter(ntr, nsr[7],s=3, color='black')
+
+
 fig, axs = plt.subplots(6, 8, figsize=(12, 8))
 axs = [x for xs in axs for x in xs]
 for ni in range(48):
     axs[ni].plot(ntl,nsl[ni])
     axs[ni].plot(ntl,pred_up[ni])
     axs[ni].axis('off')
-    
+    axs[ni].set_title(f'{r2_up[ni]:.2f}')
 fig, axs = plt.subplots(6, 8, figsize=(12, 8))
 axs = [x for xs in axs for x in xs]
 for ni in range(48):
     axs[ni].plot(ntr,nsr[ni])
     axs[ni].plot(ntr,pred_dn[ni])
     axs[ni].axis('off')
+    axs[ni].set_title(f'{r2_dn[ni]:.2f}')
+
+fig, ax = plt.subplots(1, 1, figsize=(3, 3))
+ax.scatter(r2_up, r2_dn)
+
+i = (r2_up>0.8)*(r2_dn>0.8)
+fig, axs = plt.subplots(6, 8, figsize=(18, 12))
+axs = [x for xs in axs for x in xs]
+for ni in range(48):
+    axs[ni].scatter(ntl,nsl[i][ni],s=3, color='black')
+    axs[ni].plot(ntl,pred_up[i][ni], color='mediumseagreen')
+    axs[ni].scatter(ntr,nsr[i][ni],s=3, color='black')
+    axs[ni].plot(ntr,pred_dn[i][ni], color='coral')
+    axs[ni].axvline(0, color='black', lw=1, linestyle='-')
+    axs[ni].axis('off')
+    axs[ni].set_title(f'up:{r2_up[i][ni]:.2f},dn:{r2_dn[i][ni]:.2f}')
+
+i = (r2_up<0.1)*(r2_dn<0.1)
+fig, axs = plt.subplots(6, 8, figsize=(18, 12))
+axs = [x for xs in axs for x in xs]
+for ni in range(48):
+    axs[ni].scatter(ntl,nsl[i][ni],s=3, color='black')
+    axs[ni].plot(ntl,pred_up[i][ni], color='mediumseagreen')
+    axs[ni].scatter(ntr,nsr[i][ni],s=3, color='black')
+    axs[ni].plot(ntr,pred_dn[i][ni], color='coral')
+    axs[ni].axvline(0, color='black', lw=1, linestyle='-')
+    axs[ni].axis('off')
+    axs[ni].set_title(f'up:{r2_up[i][ni]:.2f},dn:{r2_dn[i][ni]:.2f}')
+    
+    
+    
+    
+    
 
 fig, ax = plt.subplots(1, 1, figsize=(3, 3))
 ax.plot(ntr,nsr[12])

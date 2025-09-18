@@ -43,7 +43,7 @@ class plotter_utils(utils_basic):
 
     def __init__(
             self,
-            list_neural_trials, list_labels, list_significance,
+            list_neural_trials, list_labels,
             temp_folder, cate_list
             ):
         super().__init__()
@@ -57,7 +57,6 @@ class plotter_utils(utils_basic):
             get_odd_stim_prepost_idx(sl) for sl in self.list_stim_labels]
         self.expect = np.array(np.mean([get_expect_interval(sl)[0] for sl in self.list_stim_labels]))
         self.list_block_start = [get_block_1st_idx(sl, 3) for sl in self.list_stim_labels]
-        self.list_significance = list_significance
         self.bin_win = [450,2550]
         self.bin_num = 2
         self.d_latent = 3
@@ -69,14 +68,14 @@ class plotter_utils(utils_basic):
     def get_neu_seq_trial_fix_jitter(self, jitter_trial_mode, oddball, cate, isi_win):
         # jitter oddball.  
         [_, [neu_seq_jitter, _, _, pre_isi, _], _, _] = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_idx=[l[oddball] for l in self.list_odd_idx],
             trial_param=[None, None, [1], None, [0], [0]],
             mean_sem=False,
             cate=cate, roi_id=None)
         # fix oddball.
         [_, [neu_seq_fix, _, _, _, _], _, _] = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_idx=[l[oddball] for l in self.list_odd_idx],
             trial_param=[None, None, [0], None, [0], [0]],
             mean_sem=False,
@@ -95,7 +94,7 @@ class plotter_utils(utils_basic):
     def plot_neuron_fraction(self, ax):
         try:
             colors = ['cornflowerblue', 'violet', 'mediumseagreen']
-            cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, [-1,1,2])
+            cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, [-1,1,2])
             exc = np.sum(neu_labels==-1)
             vip = np.sum(neu_labels==1)
             sst = np.sum(neu_labels==2)
@@ -146,17 +145,17 @@ class plotter_utils(utils_basic):
         color1 = 'hotpink'
         color2 = 'darkviolet'
         xlim = [-2500, 4000]
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
         @show_resource_usage
         def plot_glm_kernel(ax):
-            kernel_all = get_glm_cate(self.glm, self.list_labels, self.list_significance, cate)
+            kernel_all = get_glm_cate(self.glm, self.list_labels, cate)
             self.plot_glm_kernel(ax, kernel_all, cluster_id, color0, 1)
         @show_resource_usage
         def plot_standard_fix(ax):
             # collect data.
             [_, [neu_seq, _, stim_seq, _],
-             [neu_labels, neu_sig], _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+             neu_labels, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
             # get response within cluster.
@@ -174,7 +173,7 @@ class plotter_utils(utils_basic):
         def plot_oddball_fix(ax, oddball):
             # collect data.
             [_, [neu_seq, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
@@ -199,16 +198,16 @@ class plotter_utils(utils_basic):
             win = 300
             # collect data.
             [_, [neu_seq_standard, _, stim_seq_standard, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
             [_, [neu_seq_short, _, stim_seq_short, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[0] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
             [_, [neu_seq_long, _, stim_seq_long, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[1] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
@@ -270,7 +269,7 @@ class plotter_utils(utils_basic):
         def plot_legend(ax):
             [[color0, color1, color2, _], _, _,
              [n_trials, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[-1], None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
             cs = [color0, color1, color2, 'gold']
@@ -304,14 +303,14 @@ class plotter_utils(utils_basic):
         isi_win = 250
         xlim = [-2500, 4000]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
-        split_idx = get_split_idx(self.list_labels, self.list_significance, cate)
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
+        split_idx = get_split_idx(self.list_labels, cate)
         day_cluster_id = np.split(cluster_id, split_idx)
         @show_resource_usage
         def plot_oddball_jitter(ax, oddball):
             # collect data.
             [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
@@ -348,7 +347,7 @@ class plotter_utils(utils_basic):
             # collect data.
             neu_seq_1, neu_seq_2 = self.get_neu_seq_trial_fix_jitter(jitter_trial_mode, oddball, cate, isi_win)
             [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
@@ -398,7 +397,7 @@ class plotter_utils(utils_basic):
             # collect data.
             neu_seq_fix, neu_seq_jitter = self.get_neu_seq_trial_fix_jitter(jitter_trial_mode, oddball, cate, isi_win)
             [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
@@ -436,7 +435,7 @@ class plotter_utils(utils_basic):
             # collect data.
             neu_seq_1, neu_seq_2 = self.get_neu_seq_trial_fix_jitter(jitter_trial_mode, oddball, cate, isi_win)
             [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
@@ -466,7 +465,7 @@ class plotter_utils(utils_basic):
             # collect data.
             neu_seq_fix, neu_seq_jitter = self.get_neu_seq_trial_fix_jitter(jitter_trial_mode, oddball, cate, isi_win)
             [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
@@ -546,13 +545,13 @@ class plotter_utils(utils_basic):
             bin_times = 50
             # collect data.
             [_, [neu_seq_0, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 sub_sampling=True,
                 cate=cate, roi_id=None)
             [_, [neu_seq_1, _, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [1], None, [0], [0]],
                 sub_sampling=True,
@@ -618,7 +617,7 @@ class plotter_utils(utils_basic):
         @show_resource_usage
         def plot_legend(ax):
             [_, _, _, [n_trials, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[-1], None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
             cs = [color1, color2, 'gold', color0, color_model]
@@ -632,7 +631,7 @@ class plotter_utils(utils_basic):
             # collect data.
             neu_seq_fix, neu_seq_jitter = self.get_neu_seq_trial_fix_jitter(jitter_trial_mode, oddball, cate, isi_win)
             [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
@@ -721,14 +720,14 @@ class plotter_utils(utils_basic):
         win_lbl = ['early', 'late', 'post']
         xlim = [-3000, 4000]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
-        split_idx = get_split_idx(self.list_labels, self.list_significance, cate)
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
+        split_idx = get_split_idx(self.list_labels, cate)
         day_cluster_id = np.split(cluster_id, split_idx)
         @show_resource_usage
         def plot_oddball_jitter(ax, oddball):
             # collect data.
             [_, [neu_seq, stim_seq, camera_pupil, pre_isi, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [1], None, [0], [0]],
                 mean_sem=False,
@@ -768,7 +767,7 @@ class plotter_utils(utils_basic):
             offset = [0, 0.1]
             # collect data.
             [_, [neu_seq, stim_seq, camera_pupil, pre_isi, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [1], None, [0], [0]],
                 mean_sem=False,
@@ -833,7 +832,7 @@ class plotter_utils(utils_basic):
             average_axis = 1
             # collect data.
             [_, [neu_seq, stim_seq, camera_pupil, pre_isi, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [1], None, [0], [0]],
                 mean_sem=False,
@@ -875,7 +874,7 @@ class plotter_utils(utils_basic):
         def plot_win_mag_dist(ax, oddball, wi, cumulative):
             # collect data.
             [_, [neu_seq, stim_seq, camera_pupil, pre_isi, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [1], None, [0], [0]],
                 mean_sem=False,
@@ -919,7 +918,7 @@ class plotter_utils(utils_basic):
             order = 2
             # collect data.
             [_, [neu_seq, stim_seq, camera_pupil, pre_isi, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [1], None, [0], [0]],
                 mean_sem=False,
@@ -988,7 +987,7 @@ class plotter_utils(utils_basic):
             win_sample = 400
             # collect data.
             [_, [neu_seq, stim_seq, camera_pupil, pre_isi, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [1], None, [0], [0]],
                 mean_sem=False,
@@ -1089,7 +1088,7 @@ class plotter_utils(utils_basic):
         @show_resource_usage
         def plot_legend(ax):
             [_, _, _, [n_trials, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[-1], None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
             cs = [color1, color2, 'gold']
@@ -1131,8 +1130,8 @@ class plotter_utils(utils_basic):
     def plot_cluster_oddball_fix_heatmap_all(self, axs, cate):
         xlim = [-2500, 4000]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
-        kernel_all = get_glm_cate(self.glm, self.list_labels, self.list_significance, cate)
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
+        kernel_all = get_glm_cate(self.glm, self.list_labels, cate)
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
         @show_resource_usage
         def plot_cluster_features(ax):
             # fit model.
@@ -1149,7 +1148,7 @@ class plotter_utils(utils_basic):
         def plot_hierarchical_dendrogram(ax):
             # collect data.
             [_, _, _, cmap], _, _, _ = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
             # plot results.
@@ -1160,7 +1159,7 @@ class plotter_utils(utils_basic):
             ax = ax.inset_axes([0, 0, 0.5, 1], transform=ax.transAxes)
             # collect data.
             [[_, _, _, cmap], [_, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
             c_idx = stim_seq.shape[0]//2
@@ -1174,7 +1173,7 @@ class plotter_utils(utils_basic):
             # collect data.
             [[_, _, _, cmap],
              [neu_seq, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
             c_idx = stim_seq.shape[0]//2
@@ -1197,7 +1196,7 @@ class plotter_utils(utils_basic):
             # collect data.
             [[_, _, _, cmap],
              [neu_seq, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
@@ -1243,7 +1242,7 @@ class plotter_utils(utils_basic):
         neu_time = self.alignment['neu_time'][l_idx:r_idx]
         # standard.
         _, [neu_seq, _, stim_seq, _], _, _ = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, [0], None, [0], [0]],
             cate=cate, roi_id=None)
         neu_seq = neu_seq[:,l_idx:r_idx]
@@ -1251,7 +1250,7 @@ class plotter_utils(utils_basic):
         stim_x.append(stim_seq)
         # short oddball.
         _, [neu_seq, _, stim_seq, _], _, _ = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_idx=[l[0] for l in self.list_odd_idx],
             trial_param=[None, None, [0], None, [0], [0]],
             cate=cate, roi_id=None)
@@ -1260,7 +1259,7 @@ class plotter_utils(utils_basic):
         stim_x.append(stim_seq)
         # long oddball.
         _, [neu_seq, _, stim_seq, _], _, _ = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_idx=[l[1] for l in self.list_odd_idx],
             trial_param=[None, None, [0], None, [0], [0]],
             cate=cate, roi_id=None)
@@ -1301,7 +1300,7 @@ class plotter_utils(utils_basic):
             base_color2 = ['deepskyblue', 'royalblue']
             # collect data.
             [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
@@ -1398,7 +1397,7 @@ class plotter_utils(utils_basic):
             base_color2 = ['mediumseagreen', 'forestgreen']
             # collect data.
             [_, [neu_seq, stim_seq, camera_pupil, pre_isi, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[oddball] for l in self.list_odd_idx],
                 trial_param=[None, None, [1], None, [0], [0]],
                 mean_sem=False,
@@ -1492,11 +1491,11 @@ class plotter_utils(utils_basic):
         except: traceback.print_exc()
         try: plot_jitter_global_oddball(axs[5], 1, [0,1])
         except: traceback.print_exc()
-        
+
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
-    def __init__(self, neural_trials, labels, significance, label_names, temp_folder, cate_list):
-        super().__init__(neural_trials, labels, significance, temp_folder, cate_list)
+    def __init__(self, neural_trials, labels, label_names, temp_folder, cate_list):
+        super().__init__(neural_trials, labels, temp_folder, cate_list)
         self.label_names = label_names
 
     def cluster_oddball_fix_all(self, axs_all):

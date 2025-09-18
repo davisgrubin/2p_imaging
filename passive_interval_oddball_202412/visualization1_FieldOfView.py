@@ -15,7 +15,7 @@ from plot.misc import plot_surgery_window
 
 def run(session_config_list, smooth, cate_list):
     size_scale = 3
-    [list_labels, list_masks, list_neural_trials, list_move_offset, _
+    [list_labels, list_masks, list_neural_trials, list_move_offset
      ] = read_all(session_config_list, smooth)
     def plot_window():
         title = 'surgery window'

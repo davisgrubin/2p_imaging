@@ -51,7 +51,7 @@ class plotter_utils(utils_basic):
 
     def __init__(
             self,
-            list_neural_trials, list_labels, list_significance,
+            list_neural_trials, list_labels,
             temp_folder, cate_list
             ):
         super().__init__()
@@ -65,7 +65,6 @@ class plotter_utils(utils_basic):
             get_odd_stim_prepost_idx(sl) for sl in self.list_stim_labels]
         self.expect = np.nanmin(np.array([get_expect_interval(sl) for sl in self.list_stim_labels]),axis=0)
         self.list_block_start = [get_block_1st_idx(sl, 3) for sl in self.list_stim_labels]
-        self.list_significance = list_significance
         self.bin_win = [450,2550]
         self.bin_num = 2
         self.d_latent = 3
@@ -77,7 +76,7 @@ class plotter_utils(utils_basic):
     def plot_neuron_fraction(self, ax):
         try:
             colors = ['cornflowerblue', 'violet', 'mediumseagreen']
-            cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, [-1,1,2])
+            cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, [-1,1,2])
             exc = np.sum(neu_labels==-1)
             vip = np.sum(neu_labels==1)
             sst = np.sum(neu_labels==2)
@@ -122,20 +121,20 @@ class plotter_utils(utils_basic):
         color0 = 'dimgrey'
         color1 = 'dodgerblue'
         color2 = 'springgreen'
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
         # collect data.
         [_, [neu_seq_0, _, stim_seq_0, _], _, _] = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_param=[[2,3,4,5], [0], None, None, [0], [0]],
             cate=cate, roi_id=None)
         [_, [neu_seq_1, _, stim_seq_1, _], _, _] = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_param=[[2,3,4,5], [1], None, None, [0], [0]],
             cate=cate, roi_id=None)
         c_idx = stim_seq_0.shape[0]//2
         @show_resource_usage
         def plot_glm_kernel(ax):
-            kernel_all = get_glm_cate(self.glm, self.list_labels, self.list_significance, cate)
+            kernel_all = get_glm_cate(self.glm, self.list_labels, cate)
             self.plot_glm_kernel(ax, kernel_all, cluster_id, color0, 0.9)
         @show_resource_usage
         def plot_standard_heatmap(ax, norm_mode):
@@ -313,7 +312,7 @@ class plotter_utils(utils_basic):
             [_, [neu_seq, stim_seq, camera_pupil, pre_isi, post_isi],
              [neu_labels, _],
              [n_trials, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, None, None, [0], [0]],
                 mean_sem=False,
                 cate=cate, roi_id=None)
@@ -353,8 +352,8 @@ class plotter_utils(utils_basic):
         except: traceback.print_exc()
     
     def plot_cluster_heatmap_all(self, axs, cate):
-        kernel_all = get_glm_cate(self.glm, self.list_labels, self.list_significance, cate)
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
+        kernel_all = get_glm_cate(self.glm, self.list_labels, cate)
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
         @show_resource_usage
         def plot_cluster_features(ax):
             # fit model.
@@ -371,7 +370,7 @@ class plotter_utils(utils_basic):
         def plot_hierarchical_dendrogram(ax):
             # collect data.
             [_, _, _, cmap], _, _, _ = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
             # plot results.
@@ -384,7 +383,7 @@ class plotter_utils(utils_basic):
             ax_cb = ax.inset_axes([0.8, 0, 0.1, 1], transform=ax.transAxes)
             # collect data.
             [[_, _, _, cmap], [_, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
             c_idx = stim_seq.shape[0]//2
@@ -399,7 +398,7 @@ class plotter_utils(utils_basic):
             l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
             # collect data.
             _, [neu_seq, _, stim_seq, _], _, _ = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], [standard], None, None, [0], [0]],
                 cate=cate, roi_id=None)
             c_idx = stim_seq.shape[0]//2
@@ -446,13 +445,13 @@ class plotter_utils(utils_basic):
         color1 = 'dodgerblue'
         color2 = 'springgreen'
         trials_around = 40
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
-        split_idx = get_split_idx(self.list_labels, self.list_significance, cate)
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
+        split_idx = get_split_idx(self.list_labels, cate)
         day_cluster_id = np.split(cluster_id, split_idx)
         # collect data.
         [_, [_, _, stim_seq, _], _,
          [n_trials, n_neurons]] = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_param=[None, None, None, None, [0], [0]],
             cate=cate, roi_id=None)
         c_idx = stim_seq.shape[0]//2
@@ -468,13 +467,13 @@ class plotter_utils(utils_basic):
             gap_margin = 5
             # collect data.
             [_, [neu_trans_0to1, _, _, _, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[None, None, None, None, [0], [0]],
                 trial_idx=list_trans_0to1,
                 mean_sem=False,
                 cate=cate, roi_id=None)
             [_, [neu_trans_1to0, _, _, _, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[None, None, None, None, [0], [0]],
                 trial_idx=list_trans_1to0,
                 mean_sem=False,
@@ -544,11 +543,11 @@ class plotter_utils(utils_basic):
             l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
             # collect data.
             [_, [neu_trans_0to1, _, stim_seq_0to1, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[1] for l in self.list_block_start],
                 cate=cate, roi_id=None)
             [_, [neu_trans_1to0, _, stim_seq_1to0, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[0] for l in self.list_block_start],
                 cate=cate, roi_id=None)
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
@@ -624,12 +623,12 @@ class plotter_utils(utils_basic):
             # collect data.
             [_, [neu_trans_0to1, _, stim_seq_0to1, _], _,
              [n_trials, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[1] for l in self.list_block_start],
                 cate=cate, roi_id=None)
             [_, [neu_trans_1to0, _, stim_seq_1to0, _], _,
              [n_trials, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[0] for l in self.list_block_start],
                 cate=cate, roi_id=None)
             # compute response within window.
@@ -753,11 +752,11 @@ class plotter_utils(utils_basic):
             colors_1 = ['dodgerblue', 'red', 'springgreen', 'black']
             # collect data.
             [_, [neu_trans_0to1, _, stim_seq_0to1, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[1] for l in self.list_block_start],
                 cate=cate, roi_id=None)
             [_, [neu_trans_1to0, _, stim_seq_1to0, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[0] for l in self.list_block_start],
                 cate=cate, roi_id=None)
             l_idx_0, r_idx_0 = get_frame_idx_from_time(self.alignment['neu_time'], 0, stim_seq_1to0[c_idx,0], stim_seq_1to0[c_idx+1,0])
@@ -863,23 +862,23 @@ class plotter_utils(utils_basic):
             trials_eval = 40
             # collect data.
             [_, [neu_trans_0to1, _, _, _, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[None, None, None, None, [0], [0]],
                 trial_idx=list_trans_0to1,
                 mean_sem=False,
                 cate=cate, roi_id=None)
             [_, [neu_trans_1to0, _, _, _, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[None, None, None, None, [0], [0]],
                 trial_idx=list_trans_1to0,
                 mean_sem=False,
                 cate=cate, roi_id=None)
             [_, [_, _, stim_seq_0to1, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[1] for l in self.list_block_start],
                 cate=cate, roi_id=None)
             [_, [_, _, stim_seq_1to0, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[0] for l in self.list_block_start],
                 cate=cate, roi_id=None)
             c_idx = stim_seq_1to0.shape[0]//2
@@ -951,11 +950,11 @@ class plotter_utils(utils_basic):
             average_axis = 0
             # collect data.
             [_, [neu_trans_0to1, stim_seq_0to1, _, _, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[1] for l in self.list_block_start],
                 mean_sem=False, cate=cate, roi_id=None)
             [_, [neu_trans_1to0, stim_seq_1to0, _, _, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[0] for l in self.list_block_start],
                 mean_sem=False, cate=cate, roi_id=None)
             stim_seq_0to1 = np.nanmean(np.concatenate(stim_seq_0to1, axis=0),axis=0)
@@ -1028,7 +1027,7 @@ class plotter_utils(utils_basic):
         neu_time = self.alignment['neu_time'][l_idx:r_idx]
         # short.
         _, [neu_seq, _, stim_seq, _], _, _ = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_param=[[2,3,4,5], [0], None, None, [0], [0]],
             cate=cate, roi_id=None)
         neu_seq = neu_seq[:,l_idx:r_idx]
@@ -1036,7 +1035,7 @@ class plotter_utils(utils_basic):
         stim_x.append(stim_seq)
         # long.
         _, [neu_seq, _, stim_seq, _], _, _ = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_param=[[2,3,4,5], [1], None, None, [0], [0]],
             cate=cate, roi_id=None)
         neu_seq = neu_seq[:,l_idx:r_idx]
@@ -1066,11 +1065,11 @@ class plotter_utils(utils_basic):
         color0 = 'dimgrey'
         base_color1 = ['dodgerblue', 'darkviolet']
         base_color2 = ['greenyellow', 'mediumseagreen']
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
         # collect data.
         [_, [_, _, stim_seq, _], _,
          [n_trials, n_neurons]] = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_param=[None, None, None, None, [0], [0]],
             cate=cate, roi_id=None)
         c_idx = stim_seq.shape[0]//2
@@ -1078,11 +1077,11 @@ class plotter_utils(utils_basic):
             xlim = [-4500,5000]
             # collect data.
             [_, [neu_seq_0, _, stim_seq_0, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], [0], None, None, [0], [0]],
                 cate=cate, roi_id=None)
             [_, [neu_seq_1, _, stim_seq_1, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], [1], None, None, [0], [0]],
                 cate=cate, roi_id=None)
             c_stim = [color0] * stim_seq_0.shape[-2]
@@ -1163,10 +1162,10 @@ class plotter_utils(utils_basic):
         colors1 = get_cmap_color(self.n_up, base_color=['coral', 'crimson', 'maroon'])
         colors2 = get_cmap_color(self.n_dn, base_color=['mediumseagreen', 'cyan', 'royalblue'])
         colors = colors1 + colors2
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
         # collect data.
         [_, [neu_seq, _, stim_seq, _], _, _] = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_param=[[2,3,4,5], [standard], None, None, [0], [0]],
             cate=cate, roi_id=None)
         c_idx = stim_seq.shape[0]//2
@@ -1264,7 +1263,7 @@ class plotter_utils(utils_basic):
             tlim = [0, 2500]
             # collect data.
             [_, [neu_seq, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], [standard], None, None, [0], [0]],
                 sub_sampling=True,
                 cate=cate, roi_id=None)
@@ -1364,7 +1363,7 @@ class plotter_utils(utils_basic):
             tlim = [0, 2500]
             # collect data.
             [_, [neu_seq, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], [standard], None, None, [0], [0]],
                 sub_sampling=True,
                 cate=cate, roi_id=None)
@@ -1482,7 +1481,7 @@ class plotter_utils(utils_basic):
             tlim = [0, 2500]
             # collect data.
             [_, [neu_seq, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], [standard], None, None, [0], [0]],
                 sub_sampling=True,
                 cate=cate, roi_id=None)
@@ -1545,7 +1544,7 @@ class plotter_utils(utils_basic):
             tlim = [0, 2500]
             # collect data.
             [_, [neu_seq, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], [standard], None, None, [0], [0]],
                 sub_sampling=True,
                 cate=cate, roi_id=None)
@@ -1708,8 +1707,8 @@ class plotter_utils(utils_basic):
 
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
-    def __init__(self, neural_trials, labels, significance, label_names, temp_folder, cate_list):
-        super().__init__(neural_trials, labels, significance, temp_folder, cate_list)
+    def __init__(self, neural_trials, labels, label_names, temp_folder, cate_list):
+        super().__init__(neural_trials, labels, temp_folder, cate_list)
         self.label_names = label_names
     
     def cluster_all(self, axs_all):

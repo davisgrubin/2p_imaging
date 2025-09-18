@@ -11,7 +11,6 @@ from matplotlib.gridspec import GridSpec
 
 from modules.ReadResults import filter_session_config_list
 from modules.ReadResults import read_all
-from plot.misc import plot_significance
 from plot.fig3_intervals import plot_standard_type
 from plot.fig3_intervals import plot_fix_jitter_type
 from plot.fig3_intervals import plot_oddball_type
@@ -35,12 +34,12 @@ def run(session_config_list, smooth, cate_list):
     else:
         print('Reading saved results')
         sub_session_config_list = filter_session_config_list(session_config_list, target_sess)
-        [list_labels, _, list_neural_trials, _, list_significance
+        [list_labels, _, list_neural_trials, _
          ] = read_all(sub_session_config_list, smooth)
         print('Read {} session results'.format(np.sum(idx_target_sess)))
         print('Initiating alignment results')
         plotter = plotter_main(
-            list_neural_trials, list_labels, list_significance,
+            list_neural_trials, list_labels,
             session_config_list['label_names'], 'temp_'+session_config_list['subject_name'], cate_list)
         def plot_cell_fraction():
             title = 'cell type fraction'

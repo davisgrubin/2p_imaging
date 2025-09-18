@@ -41,7 +41,7 @@ class plotter_utils(utils_basic):
 
     def __init__(
             self,
-            list_neural_trials, list_labels, list_significance,
+            list_neural_trials, list_labels,
             temp_folder, cate_list
             ):
         super().__init__()
@@ -52,7 +52,6 @@ class plotter_utils(utils_basic):
         self.alignment = run_get_stim_response(temp_folder, list_neural_trials, expected='none')
         self.list_stim_labels = self.alignment['list_stim_labels']
         self.expect = np.array(np.mean([get_expect_interval(sl)[0] for sl in self.list_stim_labels]))
-        self.list_significance = list_significance
         self.bin_win = [450,2550]
         self.bin_num = 4
         self.d_latent = 3
@@ -64,7 +63,7 @@ class plotter_utils(utils_basic):
     def plot_neuron_fraction(self, ax):
         try:
             colors = ['cornflowerblue', 'violet', 'mediumseagreen']
-            cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, [-1,1,2])
+            cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, [-1,1,2])
             exc = np.sum(neu_labels==-1)
             vip = np.sum(neu_labels==1)
             sst = np.sum(neu_labels==2)
@@ -104,16 +103,16 @@ class plotter_utils(utils_basic):
 
     def plot_cluster_stim_all(self, axs, cate=None):
         color0 = 'dimgrey'
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
         # collect data.
         [_, [neu_seq, _, stim_seq, _], _, _] = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             cate=cate, roi_id=None)
         c_idx = stim_seq.shape[0]//2
         @show_resource_usage
         def plot_glm_kernel(ax):
-            kernel_all = get_glm_cate(self.glm, self.list_labels, self.list_significance, cate)
+            kernel_all = get_glm_cate(self.glm, self.list_labels, cate)
             self.plot_glm_kernel(ax, kernel_all, cluster_id, color0, 0.95)
         @show_resource_usage
         def plot_stim(ax, scaled):
@@ -201,13 +200,13 @@ class plotter_utils(utils_basic):
     def plot_cluster_interval_bin_all(self, axs, cate=None):
         color0 = 'dimgrey'
         colors = get_cmap_color(self.bin_num, cmap=self.random_bin_cmap)
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
-        split_idx = get_split_idx(self.list_labels, self.list_significance, cate)
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
+        split_idx = get_split_idx(self.list_labels, cate)
         day_cluster_id = np.split(cluster_id, split_idx)
         # collect data.
         [_, [neu_seq, stim_seq, camera_pupil, pre_isi, post_isi], _,
          [n_trials, n_neurons]] = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             mean_sem=False,
             cate=cate, roi_id=None)
@@ -401,11 +400,11 @@ class plotter_utils(utils_basic):
         except: traceback.print_exc()
 
     def plot_cluster_heatmap_all(self, axs, cate):
-        kernel_all = get_glm_cate(self.glm, self.list_labels, self.list_significance, cate)
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
+        kernel_all = get_glm_cate(self.glm, self.list_labels, cate)
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
         # collect data.
         [[_, _, _, cmap], [neu_seq, _, stim_seq, _], _, _] = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             cate=cate, roi_id=None)
         c_idx = stim_seq.shape[0]//2
@@ -438,7 +437,7 @@ class plotter_utils(utils_basic):
         def plot_stim(ax):
             # collect data.
             [[_, _, _, cmap], [neu_seq, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, None, None, [1], [0]],
                 cate=cate, roi_id=None)
             xlim = [stim_seq[c_idx,0]-500, stim_seq[c_idx,1]+500]
@@ -470,12 +469,12 @@ class plotter_utils(utils_basic):
         color1 = 'cornflowerblue'
         color_day = get_cmap_color(n_day, cmap=self.cross_day_cmap)
         epoch_len = 100
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
-        split_idx = get_split_idx(self.list_labels, self.list_significance, cate)
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
+        split_idx = get_split_idx(self.list_labels, cate)
         day_cluster_id = np.split(cluster_id, split_idx)
         [_, [_, _, stim_seq, _], _,
          [n_trials, n_neurons]] = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             cate=cate, roi_id=None)
         c_idx = stim_seq.shape[0]//2
@@ -524,13 +523,13 @@ class plotter_utils(utils_basic):
             xlim = [-1000, 1500]
             # collect data.
             [_, [neu_seq_0, _, _, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, None, None, [1], [0]],
                 trial_idx=[np.concatenate([np.ones(epoch_len), np.zeros(sl.shape[0]-epoch_len)]).astype('bool')
                            for sl in self.list_stim_labels],
                 cate=cate, roi_id=None)
             [_, [neu_seq_1, _, _, _,], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, None, None, [1], [0]],
                 trial_idx=[np.concatenate([np.zeros(sl.shape[0]-epoch_len), np.ones(epoch_len)]).astype('bool')
                            for sl in self.list_stim_labels],
@@ -579,7 +578,7 @@ class plotter_utils(utils_basic):
             xlim = [-1000, 1500]
             # collect data.
             [_, [neu_seq, _, _, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, None, None, [1], [0]],
                 cate=cate, roi_id=None)
             day_neu_seq = np.split(neu_seq, split_idx)
@@ -634,13 +633,13 @@ class plotter_utils(utils_basic):
         isi_win = 200
         color0 = 'dimgrey'
         colors = get_cmap_color(self.bin_num, cmap=self.random_bin_cmap)
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
         @show_resource_usage
         def plot_heatmap(ax):
             # collect data.
             [_, [neu_seq, stim_seq, camera_pupil, pre_isi, post_isi], _,
              [_, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, None, None, [1], [0]],
                 mean_sem=False,
                 cate=cate, roi_id=None)
@@ -680,7 +679,7 @@ class plotter_utils(utils_basic):
             # collect data.
             [_, [neu_seq, stim_seq, camera_pupil, pre_isi, post_isi], _,
              [_, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, None, None, [1], [0]],
                 mean_sem=False,
                 cate=cate, roi_id=None)
@@ -726,7 +725,7 @@ class plotter_utils(utils_basic):
             # collect data.
             [_, [neu_seq, stim_seq, camera_pupil, pre_isi, post_isi], _,
              [_, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, None, None, [1], [0]],
                 mean_sem=False,
                 cate=cate, roi_id=None)
@@ -799,7 +798,7 @@ class plotter_utils(utils_basic):
             # collect data.
             [_, [neu_seq, stim_seq, camera_pupil, pre_isi, post_isi], _,
              [_, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+                self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[2,3,4,5], None, None, None, [1], [0]],
                 mean_sem=False,
                 cate=cate, roi_id=None)
@@ -822,12 +821,11 @@ class plotter_utils(utils_basic):
         except: traceback.print_exc()
         
     def plot_latent_all(self, axs, cate=None):
-        color0 = 'dimgrey'
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, self.list_significance, cate)
+        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
         # collect data.
         [_, [neu_seq, stim_seq, camera_pupil, pre_isi, post_isi], _,
          [n_trials, n_neurons]] = get_neu_trial(
-            self.alignment, self.list_labels, self.list_significance, self.list_stim_labels,
+            self.alignment, self.list_labels, self.list_stim_labels,
             trial_param=[[2,3,4,5], None, None, None, [1], [0]],
             mean_sem=False,
             cate=cate, roi_id=None)
@@ -878,8 +876,8 @@ class plotter_utils(utils_basic):
 
 # colors = ['#989A9C', '#A4CB9E', '#9DB4CE', '#EDA1A4', '#F9C08A']
 class plotter_main(plotter_utils):
-    def __init__(self, neural_trials, labels, significance, label_names, temp_folder, cate_list):
-        super().__init__(neural_trials, labels, significance, temp_folder, cate_list)
+    def __init__(self, neural_trials, labels, label_names, temp_folder, cate_list):
+        super().__init__(neural_trials, labels, temp_folder, cate_list)
         self.label_names = label_names
     
     def cluster_stim_all(self, axs_all):

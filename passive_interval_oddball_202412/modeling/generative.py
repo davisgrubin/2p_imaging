@@ -91,8 +91,8 @@ def run_glm_multi_sess(
     return kernel_all
 
 # retrieve glm kernels for category.
-def get_glm_cate(glm, list_labels, list_significance, cate):
-    idx = np.concatenate([np.in1d(list_labels[i],cate)*list_significance[i]['r_standard']
+def get_glm_cate(glm, list_labels, cate):
+    idx = np.concatenate([np.in1d(list_labels[i],cate)
            for i in range(len(list_labels))])
     kernel_all = glm['kernel_all'][idx,:]
     return kernel_all

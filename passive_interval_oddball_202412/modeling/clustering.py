@@ -41,12 +41,12 @@ def remap_cluster_id(kernel_all, n_clusters, cluster_id):
     return cluster_id
 
 # retrieve cluster id for category.
-def get_cluster_cate(cluster_id_all, list_labels, list_significance, cate):
-    idx = np.concatenate([np.in1d(list_labels[i],cate)*list_significance[i]['r_standard']
+def get_cluster_cate(cluster_id_all, list_labels, cate):
+    idx = np.concatenate([np.in1d(list_labels[i],cate)
            for i in range(len(list_labels))])
     cluster_id = cluster_id_all[idx]
     neu_labels = np.concatenate([
-        list_labels[i][np.in1d(list_labels[i],cate)*list_significance[i]['r_standard']]
+        list_labels[i][np.in1d(list_labels[i],cate)]
         for i in range(len(list_labels))])
     return cluster_id, neu_labels
 

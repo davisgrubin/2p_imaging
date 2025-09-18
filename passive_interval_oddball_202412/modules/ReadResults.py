@@ -129,14 +129,6 @@ def read_neural_trials(ops, smooth):
         neural_trials['camera_pupil'] = create_memmap(f['neural_trials']['camera_pupil'], 'float32', os.path.join(mm_path, 'camera_pupil.mmap'))
     return neural_trials
 
-# read significance test label results.
-def read_significance(ops):
-    file_path = os.path.join(ops['save_path0'], 'significance.h5')
-    with h5py.File(file_path, 'r') as f:
-        significance = {}
-        significance['r_standard'] = np.array(f['significance']['r_standard'])
-    return significance
-
 # read bpod session data.
 def read_bpod_mat_data(ops):
     def _check_keys(d):
@@ -186,12 +178,11 @@ def read_bpod_mat_data(ops):
     return bpod_sess_data
 
 # get session results for one subject.
-def read_subject(list_ops, sig_tag, force_label, smooth):
+def read_subject(list_ops, force_label, smooth):
     list_labels = []
     list_masks = []
     list_neural_trials = []
     list_move_offset = []
-    list_significance = []
     for ops in tqdm(list_ops):
         if not os.path.exists(os.path.join(ops['save_path0'], 'memmap')):
             os.makedirs(os.path.join(ops['save_path0'], 'memmap'))
@@ -201,10 +192,6 @@ def read_subject(list_ops, sig_tag, force_label, smooth):
         neural_trials = read_neural_trials(ops, smooth)
         # movement offset.
         xoff, yoff = read_move_offset(ops)
-        # significance.
-        significance = read_significance(ops)
-        if sig_tag == 'all':
-            significance['r_standard'] = np.ones_like(significance['r_standard']).astype('bool')
         # labels.
         if force_label != None:
             labels = np.ones_like(labels) * force_label
@@ -216,16 +203,13 @@ def read_subject(list_ops, sig_tag, force_label, smooth):
              mean_anat, masks_anat])
         list_neural_trials.append(neural_trials)
         list_move_offset.append([xoff, yoff])
-        list_significance.append(significance)
         # clear memory usages.
         del labels
         del masks, mean_func, max_func, mean_anat, masks_anat
         del neural_trials
         del xoff, yoff
-        del significance
         gc.collect()
-    return [list_labels, list_masks,
-            list_neural_trials, list_move_offset, list_significance]
+    return [list_labels, list_masks, list_neural_trials, list_move_offset]
 
 # get session results for all subject.
 def read_all(session_config_list, smooth):
@@ -233,7 +217,6 @@ def read_all(session_config_list, smooth):
     list_masks = []
     list_neural_trials = []
     list_move_offset = []
-    list_significance = []
     for i in range(len(session_config_list['list_config'])):
         # read ops for each subject.
         print('Reading subject {}/{}'.format(i+1, len(session_config_list['list_config'])))
@@ -242,9 +225,8 @@ def read_all(session_config_list, smooth):
             for n in session_config_list['list_config'][i]['list_session_name']]
         list_ops = read_ops(list_session_data_path)
         # read results for each subject.
-        labels, masks, neural_trials, move_offset, significance = read_subject(
+        labels, masks, neural_trials, move_offset = read_subject(
              list_ops,
-             sig_tag=session_config_list['list_config'][i]['sig_tag'],
              force_label=session_config_list['list_config'][i]['force_label'],
              smooth=smooth)
         # append to list.
@@ -252,13 +234,10 @@ def read_all(session_config_list, smooth):
         list_masks += masks
         list_neural_trials += neural_trials
         list_move_offset += move_offset
-        list_significance += significance
         # clear memory usages.
         del labels
         del masks
         del neural_trials
         del move_offset
-        del significance
         gc.collect()
-    return [list_labels, list_masks,
-            list_neural_trials, list_move_offset, list_significance]
+    return [list_labels, list_masks, list_neural_trials, list_move_offset]
