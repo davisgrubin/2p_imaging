@@ -69,9 +69,9 @@ class plotter_utils(utils_basic):
         self.bin_num = 2
         self.d_latent = 3
         self.glm = self.run_glm()
-        self.n_up = 2
-        self.n_dn = 3
-        self.cluster_id = self.run_clustering(self.n_up, self.n_dn)
+        self.n_pre = 2
+        self.n_post = 3
+        self.cluster_id = self.run_clustering(self.n_pre, self.n_post)
 
     def plot_neuron_fraction(self, ax):
         try:
@@ -1159,9 +1159,9 @@ class plotter_utils(utils_basic):
         color0 = 'dimgrey'
         color1 = 'mediumseagreen'
         color2 = 'coral'
-        colors1 = get_cmap_color(self.n_up, base_color=['coral', 'crimson', 'maroon'])
-        colors2 = get_cmap_color(self.n_dn, base_color=['mediumseagreen', 'cyan', 'royalblue'])
-        colors = colors1 + colors2
+        colors1 = get_cmap_color(self.n_pre, base_color=['coral', 'crimson', 'maroon'])
+        colors2 = get_cmap_color(self.n_post, base_color=['mediumseagreen', 'cyan', 'royalblue'])
+        colors = colors1 + colors2 + [color0]
         cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
         # collect data.
         [_, [neu_seq, _, stim_seq, _], _, _] = get_neu_trial(
@@ -1177,11 +1177,9 @@ class plotter_utils(utils_basic):
         neu_seq_r = neu_seq[:,l_idx:r_idx]
         neu_time_r = self.alignment['neu_time'][l_idx:r_idx]
         # fit response model.
-        [trf_param_up, pred_up, r2_all_up,
-         trf_param_dn, pred_dn, r2_all_dn] = fit_trf_model(
+        [trf_param_pre, pred_pre, r2_pre,
+         trf_param_post, pred_post, r2_post] = fit_trf_model(
              neu_seq_l, neu_time_l, neu_seq_r, neu_time_r)
-        idx_up = (r2_all_up>r2_all_dn)
-        idx_dn = (r2_all_dn>r2_all_up)
         @show_resource_usage
         def plot_cluster_standard(ax, scaled):
             # get data within range.
@@ -1209,8 +1207,8 @@ class plotter_utils(utils_basic):
         @show_resource_usage
         def plot_cluster_standard_pred(ax):
             # get response within cluster.
-            neu_mean_0, neu_sem_0 = get_mean_sem_cluster(pred_up, self.n_clusters, cluster_id)
-            neu_mean_1, neu_sem_1 = get_mean_sem_cluster(pred_dn, self.n_clusters, cluster_id)
+            neu_mean_0, neu_sem_0 = get_mean_sem_cluster(pred_pre, self.n_clusters, cluster_id)
+            neu_mean_1, neu_sem_1 = get_mean_sem_cluster(pred_post, self.n_clusters, cluster_id)
             # define layouts.
             ax.axis('off')
             ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
@@ -1222,15 +1220,15 @@ class plotter_utils(utils_basic):
             # plot results for each class.                 
             for ci in range(self.n_clusters):
                 if np.sum(cluster_id==ci) > 0:
-                    if ci < self.n_up:
-                        self.plot_mean_sem(axs[ci], neu_time_l, neu_mean_0[ci,:], neu_sem_0[ci,:], colors1[ci])
+                    if ci < self.n_pre:
+                        self.plot_mean_sem(axs[ci], neu_time_l, neu_mean_0[ci,:], neu_sem_0[ci,:], colors[ci])
                         # plot stimulus.
                         axs[ci].fill_between(
                             stim_seq[c_idx,:], 0, 1,
                             color=color0, edgecolor='none', alpha=0.25, step='mid')
                         axs[ci].set_xlim(neu_time_l[0], neu_time_l[-1]+300)
                     else:
-                        self.plot_mean_sem(axs[ci], neu_time_r, neu_mean_1[ci,:], neu_sem_1[ci,:], colors2[ci-self.n_up])
+                        self.plot_mean_sem(axs[ci], neu_time_r, neu_mean_1[ci,:], neu_sem_1[ci,:], colors[ci])
                         # plot stimulus.
                         axs[ci].fill_between(
                             stim_seq[c_idx,:], 0, 1,
@@ -1259,7 +1257,7 @@ class plotter_utils(utils_basic):
         def plot_cluster_standard_time_decode_confusion(ax1, ax2):
             bin_times = 50
             subsampling_neuron = 125
-            subsampling_times = 25
+            subsampling_times = 5
             tlim = [0, 2500]
             # collect data.
             [_, [neu_seq, stim_seq, _], _, _] = get_neu_trial(
@@ -1288,7 +1286,7 @@ class plotter_utils(utils_basic):
                     results = []
                     # subsampling neurons.
                     for si in range(subsampling_times):
-                        x = nx[:,np.random.choice(nx.shape[1], subsampling_neuron, replace=False),:]
+                        x = nx[:,np.random.choice(nx.shape[1], np.min([subsampling_neuron, nx.shape[1]]), replace=False),:]
                         # run decoding.
                         results.append(decoding_time_confusion(x, neu_time, bin_times))
                     # combine results.
@@ -1330,7 +1328,7 @@ class plotter_utils(utils_basic):
                     ax2.plot(t_range, a_model, color=colors[ci])
             a_shuffle = np.full(len(t_range), np.nan)
             a_shuffle[:len(neu_time)] = acc_shuffle
-            ax2.plot(t_range, a_shuffle, color=color0)
+            ax2.plot(t_range, a_shuffle, color=color0, linestyle='--')
             # adjust layouts.
             for ci in range(self.n_clusters):
                 axs_hm[ci].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
@@ -1388,7 +1386,7 @@ class plotter_utils(utils_basic):
                     results = []
                     # subsampling neurons.
                     for si in range(subsampling_times):
-                        x = nx[:,np.random.choice(nx.shape[1], subsampling_neuron, replace=False),:]
+                        x = nx[:,np.random.choice(nx.shape[1], np.min([subsampling_neuron, nx.shape[1]]), replace=False),:]
                         # run decoding.
                         results.append(decoding_time_single(x, neu_time, bin_times))
                     # combine results.
@@ -1458,13 +1456,13 @@ class plotter_utils(utils_basic):
                 r'$r$ (width)',
                 r'$\tau$ (ramping speed)']
             # get parameters.
-            q_up = trf_param_up[:,param_idx].reshape(-1,1)
-            q_dn = trf_param_dn[:,param_idx].reshape(-1,1)
+            q_pre = trf_param_pre[:,param_idx].reshape(-1,1)
+            q_post = trf_param_post[:,param_idx].reshape(-1,1)
             # get results within cluster.
-            q_up_mean, q_up_sem = get_mean_sem_cluster(q_up, self.n_clusters, cluster_id)
-            q_dn_mean, q_dn_sem = get_mean_sem_cluster(q_dn, self.n_clusters, cluster_id)
-            q_mean = np.concatenate([q_up_mean[:self.n_up], q_dn_mean[self.n_up:]]).reshape(-1)
-            q_sem = np.concatenate([q_up_sem[:self.n_up], q_dn_sem[self.n_up:]]).reshape(-1)
+            q_pre_mean, q_pre_sem = get_mean_sem_cluster(q_pre, self.n_clusters, cluster_id)
+            q_post_mean, q_post_sem = get_mean_sem_cluster(q_post, self.n_clusters, cluster_id)
+            q_mean = np.concatenate([q_pre_mean[:self.n_pre], q_post_mean[self.n_pre:]]).reshape(-1)
+            q_sem = np.concatenate([q_pre_sem[:self.n_pre], q_post_sem[self.n_pre:]]).reshape(-1)
             # define layouts.
             ax.axis('off')
             ax = ax.inset_axes([0, 0, 0.6, 0.95], transform=ax.transAxes)
@@ -1498,9 +1496,9 @@ class plotter_utils(utils_basic):
             if target == 'all':
                 neu_x = neu_seq[:,:,l_idx:r_idx]
             if target == 'up':
-                neu_x = neu_seq[:,np.isin(cluster_id, [ci for ci in range(self.n_up)]),l_idx:r_idx]
+                neu_x = neu_seq[:,np.isin(cluster_id, [ci for ci in range(self.n_pre)]),l_idx:r_idx]
             if target == 'down':
-                neu_x = neu_seq[:,np.isin(cluster_id, [ci+self.n_up for ci in range(self.n_dn)]),l_idx:r_idx]
+                neu_x = neu_seq[:,np.isin(cluster_id, [ci+self.n_pre for ci in range(self.n_post)]),l_idx:r_idx]
             # subsampling neurons.
             neu_x = neu_x[:,np.random.choice(neu_x.shape[1], subsampling_neuron, replace=False),:]
             # get decoding matrix.
@@ -1560,20 +1558,20 @@ class plotter_utils(utils_basic):
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
             # select neurons.
             neu_x  = neu_seq[:,:,l_idx:r_idx]
-            neu_up = neu_seq[:,np.isin(cluster_id, [ci for ci in range(self.n_up)]),l_idx:r_idx]
-            neu_dn = neu_seq[:,np.isin(cluster_id, [ci+self.n_up for ci in range(self.n_dn)]),l_idx:r_idx]
+            neu_pre = neu_seq[:,np.isin(cluster_id, [ci for ci in range(self.n_pre)]),l_idx:r_idx]
+            neu_post = neu_seq[:,np.isin(cluster_id, [ci+self.n_pre for ci in range(self.n_post)]),l_idx:r_idx]
             # fit model.
             fracs = np.arange(0,max_frac,frac_step)+frac_step
             r2_all = regression_time_frac(neu_x,  neu_time, bin_times, fracs)
-            r2_up  = regression_time_frac(neu_up, neu_time, bin_times, fracs)
-            r2_dn  = regression_time_frac(neu_dn, neu_time, bin_times, fracs)
+            r2_pre  = regression_time_frac(neu_pre, neu_time, bin_times, fracs)
+            r2_post  = regression_time_frac(neu_post, neu_time, bin_times, fracs)
             # plot results.
             m_all, s_all = get_mean_sem(r2_all)
-            m_up,  s_up  = get_mean_sem(r2_up)
-            m_dn,  s_dn  = get_mean_sem(r2_dn)
+            m_pre,  s_pre  = get_mean_sem(r2_pre)
+            m_post,  s_post  = get_mean_sem(r2_post)
             self.plot_mean_sem(ax, fracs, m_all, s_all, color0, None)
-            self.plot_mean_sem(ax, fracs, m_up,  s_up,  color1, None)
-            self.plot_mean_sem(ax, fracs, m_dn,  s_dn,  color2, None)
+            self.plot_mean_sem(ax, fracs, m_pre,  s_pre,  color1, None)
+            self.plot_mean_sem(ax, fracs, m_post,  s_post,  color2, None)
             # adjust layouts.
             adjust_layout_neu(ax)
             ax.set_xlim([0,max_frac])
@@ -1591,18 +1589,16 @@ class plotter_utils(utils_basic):
                 r'$b$ (baseline)',
                 r'$a$ (amplitude)',
                 r'$-m$ (latency)',
-                r'$r$ (width)',
+                r'$r$ (temporal width)',
                 r'$1/\tau$ (ramping speed)']
             # get parameters.
             q_all = []
             for ci in range(self.n_clusters):
                 if np.sum(cluster_id==ci) > 0:
-                    ru = np.nanmean(r2_all_up[cluster_id==ci])
-                    rd = np.nanmean(r2_all_dn[cluster_id==ci])
-                    if ru > rd:
-                        q = trf_param_up[(cluster_id==ci)*idx_up,param_idx].copy()
+                    if ci < self.n_pre:
+                        q = trf_param_pre[cluster_id==ci,param_idx].copy()
                     else:
-                        q = trf_param_dn[(cluster_id==ci)*idx_dn,param_idx].copy()
+                        q = trf_param_post[cluster_id==ci,param_idx].copy()
                     q_all.append(q)
                 else:
                     q_all.append(np.array([np.nan]))

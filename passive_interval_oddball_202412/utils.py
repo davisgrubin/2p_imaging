@@ -9,11 +9,11 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.ticker as mtick
 from datetime import datetime
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.decomposition import PCA
 from scipy.stats import mannwhitneyu
 from scipy.stats import levene
 from scipy.spatial.distance import pdist
-from sklearn.cluster import AgglomerativeClustering
-from sklearn.decomposition import PCA
 from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
 from scipy.cluster.hierarchy import dendrogram
@@ -925,8 +925,8 @@ class utils_basic:
 
     def __init__(self):
         self.min_num_trial = 5
-        self.cluster_up_cmap = plt.cm.spring
-        self.cluster_dn_cmap = plt.cm.winter
+        self.cluster_pre_cmap = plt.cm.spring
+        self.cluster_post_cmap = plt.cm.winter
         self.latent_cmap = plt.cm.nipy_spectral
         self.random_bin_cmap = plt.cm.gist_ncar
         self.cross_day_cmap = plt.cm.gnuplot_r
@@ -958,39 +958,43 @@ class utils_basic:
             }
         return glm
     
-    def run_clustering(self, n_up, n_dn):
-        0.1
-        0.3
-        0.8
-        r2_thres = 0.3
+    def run_clustering(self, n_pre, n_post):
+        r2_thres = 0.4
         # get data within range.
-        z_idx = get_frame_idx_from_time(self.glm['kernel_time'], 0, -100, 0)[0]
+        z_idx = get_frame_idx_from_time(self.glm['kernel_time'], 0, 0, 0)[0]
         neu_seq_l = self.glm['kernel_all'][:,:z_idx]
         neu_time_l = self.glm['kernel_time'][:z_idx]
         neu_seq_r = self.glm['kernel_all'][:,z_idx:]
         neu_time_r = self.glm['kernel_time'][z_idx:]
         # fit response model.
-        [trf_param_up, pred_up, r2_all_up,
-         trf_param_dn, pred_dn, r2_all_dn] = fit_trf_model(
+        [trf_param_pre, pred_pre, r2_pre,
+         trf_param_post, pred_post, r2_post] = fit_trf_model(
              neu_seq_l, neu_time_l, neu_seq_r, neu_time_r)
+        self.trf_model = {
+            'trf_param_pre': trf_param_pre,
+            'pred_pre': pred_pre,
+            'r2_pre': r2_pre,
+            'trf_param_post': trf_param_post,
+            'pred_post': pred_post,
+            'r2_post': r2_post}
         # initilize clustering.
-        self.n_clusters = n_up + n_dn
+        self.n_clusters = n_pre + n_post
         cluster_id = np.ones(self.glm['kernel_all'].shape[0]) * -1
         # get good ramp index.
-        idx_up = (r2_all_up > r2_thres) * (r2_all_up > r2_all_dn)
-        idx_dn = (r2_all_dn > r2_thres) * (r2_all_dn > r2_all_up)
+        idx_pre = (r2_pre > r2_thres) * (r2_pre > r2_post)
+        idx_post = (r2_post > r2_thres) * (r2_post > r2_pre)
         # run clustering.
-        cluster_id_up = clustering_neu_response_mode(trf_param_up[idx_up,3].reshape(-1,1), n_up, 'kmeans')
-        cluster_id_dn = clustering_neu_response_mode(trf_param_dn[idx_dn,3].reshape(-1,1), n_dn, 'kmeans')
+        cluster_id_pre = clustering_neu_response_mode(trf_param_pre[idx_pre,3].reshape(-1,1), n_pre, 'kmeans')
+        cluster_id_post = clustering_neu_response_mode(trf_param_post[idx_post,3].reshape(-1,1), n_post, 'kmeans')
         # relabel based on temporal receptive field.
-        sorted_up = np.argsort([np.nanmean(trf_param_up[idx_up,3][cluster_id_up==ci]) for ci in range(n_up)])
-        sorted_dn = np.argsort([np.nanmean(trf_param_dn[idx_dn,3][cluster_id_dn==ci]) for ci in range(n_dn)])
-        map_up = {val: i for i, val in enumerate(sorted_up)}
-        map_dn = {val: i for i, val in enumerate(sorted_dn)}
-        cluster_id_up = np.vectorize(map_up.get)(cluster_id_up)
-        cluster_id_dn = np.vectorize(map_dn.get)(cluster_id_dn)
-        cluster_id[idx_up] = cluster_id_up
-        cluster_id[idx_dn] = cluster_id_dn+n_up
+        sorted_pre = np.argsort([np.nanmean(trf_param_pre[idx_pre,3][cluster_id_pre==ci]) for ci in range(n_pre)])
+        sorted_post = np.argsort([np.nanmean(trf_param_post[idx_post,3][cluster_id_post==ci]) for ci in range(n_post)])
+        map_pre = {val: i for i, val in enumerate(sorted_pre)}
+        map_post = {val: i for i, val in enumerate(sorted_post)}
+        cluster_id_pre = np.vectorize(map_pre.get)(cluster_id_pre)
+        cluster_id_post = np.vectorize(map_post.get)(cluster_id_post)
+        cluster_id[idx_pre] = cluster_id_pre
+        cluster_id[idx_post] = cluster_id_post+n_pre
         return cluster_id
     
     def plot_cluster_type_percentage(self, ax):
@@ -1027,7 +1031,7 @@ class utils_basic:
     
     def plot_pupil(self, ax, nt, cp, c, u, l):
         cp = rescale(cp, u, l)
-        ax.plot(nt, cp, color=c, lw=0.5, linestyle=':')
+        ax.plot(nt, cp, color=c)
     
     def plot_dist(self, ax, data, c, cumulative):
         bins = 25

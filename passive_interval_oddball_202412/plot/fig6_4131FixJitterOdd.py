@@ -61,9 +61,9 @@ class plotter_utils(utils_basic):
         self.bin_num = 2
         self.d_latent = 3
         self.glm = self.run_glm()
-        self.n_up = 2
-        self.n_dn = 3
-        self.cluster_id = self.run_clustering(self.n_up, self.n_dn)
+        self.n_pre = 2
+        self.n_post = 2
+        self.cluster_id = self.run_clustering(self.n_pre, self.n_post)
 
     def get_neu_seq_trial_fix_jitter(self, jitter_trial_mode, oddball, cate, isi_win):
         # jitter oddball.  
@@ -674,6 +674,81 @@ class plotter_utils(utils_basic):
             ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
             ax.set_xlabel('time since pre oddball stim (ms)')
             ax.set_ylabel('block decoding accuracy')
+        @show_resource_usage
+        def plot_latent_consistancy(ax):
+            # collect data.
+            # standard.
+            [_, [neu_seq_fix_0, stim_seq, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_stim_labels,
+                trial_param=[[2,3,4,5], None, [0], None, [0], [0]],
+                sub_sampling=True,
+                cate=cate, roi_id=None)
+            [_, [neu_seq_jitter_0, _, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_stim_labels,
+                trial_param=[[2,3,4,5], None, [1], None, [0], [0]],
+                sub_sampling=True,
+                cate=cate, roi_id=None)
+            c_idx = stim_seq.shape[0]//2
+            win_eval = [-500, stim_seq[c_idx,1]+500]
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_eval[0], win_eval[1])
+            neu_time_0 = self.alignment['neu_time'][l_idx:r_idx]
+            neu_seq_fix_0 = neu_seq_fix_0[:,:,l_idx:r_idx]
+            neu_seq_jitter_0 = neu_seq_jitter_0[:,:,l_idx:r_idx]
+            # short.
+            [_, [neu_seq_fix_1, stim_seq, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_stim_labels,
+                trial_idx=[l[0] for l in self.list_odd_idx],
+                trial_param=[None, None, [0], None, [0], [0]],
+                sub_sampling=True,
+                cate=cate, roi_id=None)
+            [_, [neu_seq_jitter_1, _, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_stim_labels,
+                trial_idx=[l[0] for l in self.list_odd_idx],
+                trial_param=[None, None, [1], None, [0], [0]],
+                sub_sampling=True,
+                cate=cate, roi_id=None)
+            c_idx = stim_seq.shape[0]//2
+            win_eval = [-500, stim_seq[c_idx+1,1]+500]
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_eval[0], win_eval[1])
+            neu_time_1 = self.alignment['neu_time'][l_idx:r_idx]
+            neu_seq_fix_1 = neu_seq_fix_1[:,:,l_idx:r_idx]
+            neu_seq_jitter_1 = neu_seq_jitter_1[:,:,l_idx:r_idx]
+            # long.
+            [_, [neu_seq_fix_2, stim_seq, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_stim_labels,
+                trial_idx=[l[1] for l in self.list_odd_idx],
+                trial_param=[None, None, [0], None, [0], [0]],
+                sub_sampling=True,
+                cate=cate, roi_id=None)
+            [_, [neu_seq_jitter_2, _, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_stim_labels,
+                trial_idx=[l[1] for l in self.list_odd_idx],
+                trial_param=[None, None, [1], None, [0], [0]],
+                sub_sampling=True,
+                cate=cate, roi_id=None)
+            c_idx = stim_seq.shape[0]//2
+            win_eval = [-500, stim_seq[c_idx+1,1]+500]
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_eval[0], win_eval[1])
+            neu_time_2 = self.alignment['neu_time'][l_idx:r_idx]
+            neu_seq_fix_2 = neu_seq_fix_2[:,:,l_idx:r_idx]
+            neu_seq_jitter_2 = neu_seq_jitter_2[:,:,l_idx:r_idx]
+            # fit model.
+            neu_x = np.concatenate([
+                np.nanmean(neu_seq_fix_0, axis=0), np.nanmean(neu_seq_jitter_0, axis=0),
+                np.nanmean(neu_seq_fix_1, axis=0), np.nanmean(neu_seq_jitter_1, axis=0),
+                np.nanmean(neu_seq_fix_2, axis=0), np.nanmean(neu_seq_jitter_2, axis=0)
+                ], axis=1)
+            model = PCA(n_components=self.d_latent)
+            model.fit(neu_x.reshape(neu_x.shape[0],-1).T)
+            # get latents dynamics.
+            n_tr = neu_seq_fix_0.shape[0]
+            n_neu = neu_seq_fix_0.shape[1]
+            neu_z_fix_0    = model.transform(np.transpose(neu_seq_fix_0,   [1,0,2]).reshape(n_neu,-1).T).T.reshape(n_tr,self.d_latent,-1)
+            neu_z_jitter_0 = model.transform(np.transpose(neu_seq_jitter_0,[1,0,2]).reshape(n_neu,-1).T).T.reshape(n_tr,self.d_latent,-1)
+            neu_z_fix_1    = model.transform(np.transpose(neu_seq_fix_1,   [1,0,2]).reshape(n_neu,-1).T).T.reshape(n_tr,self.d_latent,-1)
+            neu_z_jitter_1 = model.transform(np.transpose(neu_seq_jitter_1,[1,0,2]).reshape(n_neu,-1).T).T.reshape(n_tr,self.d_latent,-1)
+            neu_z_fix_2    = model.transform(np.transpose(neu_seq_fix_2,   [1,0,2]).reshape(n_neu,-1).T).T.reshape(n_tr,self.d_latent,-1)
+            neu_z_jitter_2 = model.transform(np.transpose(neu_seq_jitter_2,[1,0,2]).reshape(n_neu,-1).T).T.reshape(n_tr,self.d_latent,-1)
         # plot all.
         try: plot_oddball_jitter(axs[0], 0)
         except: traceback.print_exc()
@@ -1558,3 +1633,14 @@ class plotter_main(plotter_utils):
                 self.plot_latent_all(axs, cate=cate)
 
             except: traceback.print_exc()
+
+'''
+from cebra.integrations.sklearn.metrics import consistency_score
+# compute trial pairwise consistency score between latent dynamics.
+def get_latent_consistency(z0, z1):
+    s = np.zeros([z0.shape[0],z1.shape[0]])
+    for t0 in range(z0.shape[0]):
+        for t1 in range(z1.shape[0]):
+            s[t0,t1] = np.nanmean(consistency_score(embeddings=[z0[t0].T, z1[t0].T], between='runs')[0])
+    return s
+'''

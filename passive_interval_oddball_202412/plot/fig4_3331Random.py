@@ -56,9 +56,9 @@ class plotter_utils(utils_basic):
         self.bin_num = 4
         self.d_latent = 3
         self.glm = self.run_glm()
-        self.n_up = 3
-        self.n_dn = 2
-        self.cluster_id = self.run_clustering(self.n_up, self.n_dn)
+        self.n_pre = 2
+        self.n_post = 2
+        self.cluster_id = self.run_clustering(self.n_pre, self.n_post)
     
     def plot_neuron_fraction(self, ax):
         try:
@@ -113,7 +113,7 @@ class plotter_utils(utils_basic):
         @show_resource_usage
         def plot_glm_kernel(ax):
             kernel_all = get_glm_cate(self.glm, self.list_labels, cate)
-            self.plot_glm_kernel(ax, kernel_all, cluster_id, color0, 0.95)
+            self.plot_glm_kernel(ax, kernel_all, cluster_id, color0, 0.75)
         @show_resource_usage
         def plot_stim(ax, scaled):
             xlim = [-1000, 1500]
@@ -127,7 +127,7 @@ class plotter_utils(utils_basic):
                 norm_params = [get_norm01_params(neu_mean) for ci in range(self.n_clusters)]
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 0.5, 0.95], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 0.5, 0.75], transform=ax.transAxes)
             # plot results.
             self.plot_cluster_mean_sem(
                 ax, neu_mean, neu_sem,
@@ -144,7 +144,7 @@ class plotter_utils(utils_basic):
             neu_ci = [neu_seq[cluster_id==ci,l_idx:r_idx] for ci in range(self.n_clusters)]
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
             axs_hm = [ax.inset_axes([0.2, ci/self.n_clusters, 0.3, 0.75/self.n_clusters], transform=ax.transAxes)
                       for ci in range(self.n_clusters)]
             axs_cb = [ax.inset_axes([0.6, ci/self.n_clusters, 0.1, 0.75/self.n_clusters], transform=ax.transAxes)
@@ -171,13 +171,13 @@ class plotter_utils(utils_basic):
         def plot_neu_fraction(ax):
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
             self.plot_cluster_neu_fraction_in_cluster(ax, cluster_id, color0)
         @show_resource_usage
         def plot_fraction(ax):
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
             self.plot_cluster_cate_fraction_in_cluster(ax, cluster_id, neu_labels, self.label_names, color0)
         # plot all.
         try: plot_glm_kernel(axs[0])
@@ -223,8 +223,8 @@ class plotter_utils(utils_basic):
                 for ci in range(self.n_clusters)]
             neu_ci = [nc[np.argsort(np.concatenate(post_isi)), l_idx:r_idx] for nc in neu_ci]
             # define layouts.
-            ax0 = ax.inset_axes([0.2, 0, 0.5, 0.95], transform=ax.transAxes)
-            ax1 = ax.inset_axes([0.7, 0, 0.1, 0.95], transform=ax.transAxes)
+            ax0 = ax.inset_axes([0.2, 0, 0.5, 0.75], transform=ax.transAxes)
+            ax1 = ax.inset_axes([0.7, 0, 0.1, 0.75], transform=ax.transAxes)
             axs_hm = [ax0.inset_axes([0, 0.05+ci/self.n_clusters, 1, 0.8/self.n_clusters], transform=ax0.transAxes)
                       for ci in range(self.n_clusters)]
             axs_cb = [ax1.inset_axes([0, 0.05+ci/self.n_clusters, 1, 0.8/self.n_clusters], transform=ax1.transAxes)
@@ -268,7 +268,7 @@ class plotter_utils(utils_basic):
             norm_params = [get_norm01_params(cluster_bin_neu_mean[:,i,:]) for i in range(self.n_clusters)]
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
             # plot results.
             ax.fill_between(
                 np.nanmean(bin_stim_seq, axis=0)[c_idx,:],
@@ -303,7 +303,7 @@ class plotter_utils(utils_basic):
             bin_win_neu_seq = [bwe - bwb for bwe, bwb in zip (bin_win_evoked, bin_win_baseline)]
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
             axs = [ax.inset_axes([0.1, ci/self.n_clusters, 0.4, 0.7/self.n_clusters], transform=ax.transAxes)
                       for ci in range(self.n_clusters)]
             axs.reverse()
@@ -354,7 +354,7 @@ class plotter_utils(utils_basic):
                     neu_z[ci,:,:,:] = z
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
             ax.axis('off')
             axs = [ax.inset_axes([0, ci/self.n_clusters, 0.5, 0.8/self.n_clusters], transform=ax.transAxes)
                    for ci in range(self.n_clusters)]
@@ -491,6 +491,8 @@ class plotter_utils(utils_basic):
                     nt = len(con_day_cluster_id[di]) + 1e-5
                     fraction[di,ci] = nc / nt
             # define layouts.
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
             axs = [ax.inset_axes([0.2, ci/self.n_clusters, 0.5, 0.75/self.n_clusters], transform=ax.transAxes)
                       for ci in range(self.n_clusters)]
             axs.reverse()
@@ -540,6 +542,8 @@ class plotter_utils(utils_basic):
             con_day_neu_seq_1 = [np.concatenate(day_neu_seq_1[di::n_day],axis=0) for di in range(n_day)]
             con_day_cluster_id = [np.concatenate(day_cluster_id[di::n_day]) for di in range(n_day)]
             # define layouts.
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
             axs = [ax.inset_axes([di/n_day, 0, 0.8/n_day, 1], transform=ax.transAxes) for di in range(n_day)]
             # plot results for each day.
             for di in range(n_day):
@@ -593,6 +597,8 @@ class plotter_utils(utils_basic):
             else:
                 norm_params = [get_norm01_params(np.concatenate([nc[0] for nc in neu_ci])) for ci in range(self.n_clusters)]
             # define layouts.
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 1, 0.75], transform=ax.transAxes)
             ax.axis('off')
             ax = ax.inset_axes([0, 0, 0.5, 1], transform=ax.transAxes)
             # plot stimulus.
@@ -907,36 +913,6 @@ class plotter_main(plotter_utils):
                 print(f'plotting results for {label_name}')
 
                 self.plot_cluster_heatmap_all(axs, cate=cate)
-
-            except: traceback.print_exc()
-    
-    def cluster_individual_pre(self, axs_all):
-        for cate, axs in zip(self.cate_list, axs_all):
-            try:
-                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
-                print(f'plotting results for {label_name}')
-                
-                self.plot_cluster_interval_bin_individual(axs, 'pre', cate=cate)
-
-            except: traceback.print_exc()
-    
-    def cluster_individual_post(self, axs_all):
-        for cate, axs in zip(self.cate_list, axs_all):
-            try:
-                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
-                print(f'plotting results for {label_name}')
-                
-                self.plot_cluster_interval_bin_individual(axs, 'post', cate=cate)
-
-            except: traceback.print_exc()
-    
-    def separability_local(self, axs_all):
-        for cate, axs in zip(self.cate_list, axs_all):
-            try:
-                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
-                print(f'plotting results for {label_name}')
-                
-                self.plot_separability_local(axs, cate=cate)
 
             except: traceback.print_exc()
 

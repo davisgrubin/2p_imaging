@@ -3,6 +3,7 @@
 import numpy as np
 import rastermap as rm
 from sklearn.cluster import KMeans
+from sklearn.cluster import AgglomerativeClustering
 from tslearn.clustering import KShape
 from tslearn.preprocessing import TimeSeriesScalerMeanVariance
  
@@ -23,6 +24,9 @@ def clustering_neu_response_mode(x_in, n_clusters, method='kmeans'):
         cluster_id = model.fit_predict(x_in)
     if method == 'kmeans':
         model = KMeans(init="k-means++", n_clusters=n_clusters, n_init=25)
+        cluster_id = model.fit_predict(x_in)
+    if method == 'hierachy':
+        model = AgglomerativeClustering(n_clusters)
         cluster_id = model.fit_predict(x_in)
     return cluster_id
 

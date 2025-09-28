@@ -35,7 +35,7 @@ def run(session_config_list, smooth, cate_list):
     else:
         print('Reading saved results')
         sub_session_config_list = filter_session_config_list(session_config_list, target_sess)
-        [list_labels, _, list_neural_trials,
+        [list_labels, _, list_neural_trials, _
          ] = read_all(sub_session_config_list, smooth)
         print('Read {} session results'.format(np.sum(idx_target_sess)))
         print('Initiating alignment results')
@@ -232,20 +232,19 @@ def run(session_config_list, smooth, cate_list):
             plt.close(fig)
             return [filename, n_row, n_col, title]
         fig_all = [
-            #plot_cell_fraction(),
-            #plot_intervals(),
-            #plot_trial(),
-            #plot_cluster_oddball_fix_all(),
+            plot_cell_fraction(),
+            plot_intervals(),
+            plot_trial(),
+            plot_cluster_oddball_fix_all(),
             #plot_cluster_oddball_fix_heatmap_all(),
-            #plot_sorted_heatmaps_fix_all(),
-            #plot_cluster_oddball_jitter_global_all(),
+            plot_sorted_heatmaps_fix_all(),
+            plot_cluster_oddball_jitter_global_all(),
             #plot_cluster_oddball_jitter_local_all(),
             plot_latent_all(),
         ]
         print('Clearing memory usage')
         del list_labels
         del list_neural_trials
-        del list_significance
         gc.collect()
         return fig_all
 

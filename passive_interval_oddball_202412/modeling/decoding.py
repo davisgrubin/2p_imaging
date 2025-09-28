@@ -27,7 +27,7 @@ def fit_poly_line(x, y, order):
 
 # run validation for single trial decoding.
 def decoding_evaluation(x, y):
-    n_splits = 25
+    n_splits = 5
     test_size = 0.1
     results_model = []
     results_chance = []
@@ -86,7 +86,7 @@ def multi_sess_decoding_slide_win(
 
 # decoding time collapse and evaluate confusion matrix.
 def decoding_time_confusion(neu_x, neu_time, bin_times):
-    n_splits = 50
+    n_splits = 2
     test_size = 0.2
     bin_l_idx, bin_r_idx = get_frame_idx_from_time(neu_time, 0, 0, bin_times)
     bin_len = bin_r_idx - bin_l_idx
@@ -153,7 +153,7 @@ def decoding_time_confusion(neu_x, neu_time, bin_times):
 
 # decoding single time point from the rest.
 def decoding_time_single(neu_x, neu_time, bin_times):
-    n_splits = 50
+    n_splits = 2
     test_size = 0.2
     bin_l_idx, bin_r_idx = get_frame_idx_from_time(neu_time, 0, 0, bin_times)
     bin_len = bin_r_idx - bin_l_idx

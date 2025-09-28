@@ -238,20 +238,19 @@ def run(session_config_list, smooth, cate_list):
             plt.close(fig)
             return [filename, n_row, n_col, title]
         fig_all = [
-            #plot_cell_fraction(),
-            #plot_intervals(),
-            #plot_trial(),
-            #plot_cluster_all(),
+            plot_cell_fraction(),
+            plot_intervals(),
+            plot_trial(),
+            plot_cluster_all(),
             #plot_cluster_heatmap_all(),
-            #plot_cluster_adapt_all(),
-            #plot_sorted_heatmaps_all(),
-            #plot_latent_all(),
+            plot_cluster_adapt_all(),
+            plot_sorted_heatmaps_all(),
+            plot_latent_all(),
             plot_decode_all(),
             ]
         print('Clearing memory usage')
         del list_labels
         del list_neural_trials
-        del list_significance
         del plotter
         gc.collect()
         return fig_all

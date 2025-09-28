@@ -237,14 +237,13 @@ def run(session_config_list, smooth, cate_list):
             plot_cluster_stim_all(),
             plot_cluster_interval_bin_all(),
             #plot_cluster_heatmap_all(),
-            #plot_cross_sess_adapt(),
+            plot_cross_sess_adapt(),
             plot_cluster_local_all(),
             plot_latent_all(),
             ]
         print('Clearing memory usage')
         del list_labels
         del list_neural_trials
-        del list_significance
         del plotter
         gc.collect()
         return fig_all
