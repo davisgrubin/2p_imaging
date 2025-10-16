@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from sklearn.utils import shuffle
 from sklearn.svm import SVC
 from sklearn.svm import LinearSVC
@@ -15,6 +15,7 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import StratifiedKFold
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 from sklearn.metrics import precision_recall_fscore_support
 
 import pandas as pd
@@ -205,6 +206,7 @@ def binary_decoder_cv(
     downsample=True,
     class_weight="balanced",
     progress_desc=None,
+    pca_n_components=None,
 ):
     X = np.asarray(X)
     y = np.asarray(y).astype(int)
@@ -238,9 +240,12 @@ def binary_decoder_cv(
             rng = np.random.default_rng(random_state + fold_idx)
             X_train, y_train = _downsample_binary(X_train, y_train, rng)
 
-        model = make_pipeline(
-            LinearSVC(C=1.0, max_iter=5000, class_weight=class_weight),
-        )
+        steps = []
+        steps.append(StandardScaler(with_mean=True))
+        if pca_n_components is not None:
+            steps.append(PCA(n_components=pca_n_components))
+        steps.append(LinearSVC(C=1.0, max_iter=5000, class_weight=class_weight))
+        model = make_pipeline(*steps)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
@@ -256,9 +261,12 @@ def binary_decoder_cv(
         if shuffle_baseline:
             rng = np.random.default_rng(random_state + 1000 + fold_idx)
             y_train_perm = rng.permutation(y_train)
-            model_shuf = make_pipeline(
-                LinearSVC(C=1.0, max_iter=5000, class_weight=class_weight),
-            )
+            steps_shuf = []
+            steps_shuf.append(StandardScaler(with_mean=True))
+            if pca_n_components is not None:
+                steps_shuf.append(PCA(n_components=pca_n_components))
+            steps_shuf.append(LinearSVC(C=1.0, max_iter=5000, class_weight=class_weight))
+            model_shuf = make_pipeline(*steps_shuf)
             model_shuf.fit(X_train, y_train_perm)
             y_pred_shuf = model_shuf.predict(X_test)
             chances.append(float(np.mean(y_pred_shuf == y_test)))
@@ -314,6 +322,9 @@ def binary_timecourse_decoding(
     random_state=0,
     shuffle_baseline=False,
     downsample=True,
+    show_progress=False,
+    progress_label=None,
+    pca_n_components=None,
 ):
     trial_neu = np.asarray(trial_neu)
     neu_time = np.asarray(neu_time)
@@ -341,7 +352,11 @@ def binary_timecourse_decoding(
             continue
         neu_block = trial_neu[block_mask]
 
-        for left in bin_edges:
+        bin_iter = bin_edges
+        if show_progress:
+            desc = f"{progress_label}|blk{int(block)}" if progress_label else f"blk{int(block)}"
+            bin_iter = tqdm(bin_edges, desc=desc, leave=False)
+        for left in bin_iter:
             right = left + bin_width_ms
             l_idx, r_idx = get_frame_idx_from_time(neu_time, 0, left, right)
             r_idx = min(r_idx, neu_block.shape[-1])
@@ -363,6 +378,8 @@ def binary_timecourse_decoding(
                 random_state=random_state,
                 shuffle_baseline=shuffle_baseline,
                 downsample=downsample,
+                progress_desc=(f"{desc}|{int(left)}ms" if (show_progress and progress_label) else None),
+                pca_n_components=pca_n_components,
             )
             if metrics is None:
                 continue
@@ -400,6 +417,7 @@ def multiclass_decoder_cv(
     shuffle_baseline=False,
     class_weight="balanced",
     progress_desc=None,
+    pca_n_components=None,
 ):
     X = np.asarray(X)
     y = np.asarray(y)
@@ -428,10 +446,11 @@ def multiclass_decoder_cv(
         X_train, X_test = X[train_idx], X[test_idx]
         y_train, y_test = y[train_idx], y[test_idx]
 
-        model = make_pipeline(
-            StandardScaler(with_mean=True),
-            LinearSVC(C=1.0, max_iter=5000, class_weight=class_weight),
-        )
+        steps = [StandardScaler(with_mean=True)]
+        if pca_n_components is not None:
+            steps.append(PCA(n_components=pca_n_components))
+        steps.append(LinearSVC(C=1.0, max_iter=5000, class_weight=class_weight))
+        model = make_pipeline(*steps)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
@@ -447,10 +466,11 @@ def multiclass_decoder_cv(
         if shuffle_baseline:
             rng = np.random.default_rng(random_state + 5000 + fold_idx)
             y_perm = rng.permutation(y_train)
-            model_perm = make_pipeline(
-                StandardScaler(with_mean=True),
-                LinearSVC(C=1.0, max_iter=5000, class_weight=class_weight),
-            )
+            steps_p = [StandardScaler(with_mean=True)]
+            if pca_n_components is not None:
+                steps_p.append(PCA(n_components=pca_n_components))
+            steps_p.append(LinearSVC(C=1.0, max_iter=5000, class_weight=class_weight))
+            model_perm = make_pipeline(*steps_p)
             model_perm.fit(X_train, y_perm)
             y_perm_pred = model_perm.predict(X_test)
             chances.append(float(np.mean(y_perm_pred == y_test)))
@@ -506,6 +526,9 @@ def multiclass_timecourse_decoding(
     n_splits=20,
     random_state=0,
     shuffle_baseline=False,
+    show_progress=False,
+    progress_label=None,
+    pca_n_components=None,
 ):
     trial_neu = np.asarray(trial_neu)
     neu_time = np.asarray(neu_time)
@@ -533,7 +556,11 @@ def multiclass_timecourse_decoding(
             continue
         neu_block = trial_neu[block_mask]
 
-        for left in bin_edges:
+        bin_iter = bin_edges
+        if show_progress:
+            desc = f"{progress_label}|blk{int(block)}" if progress_label else f"blk{int(block)}"
+            bin_iter = tqdm(bin_edges, desc=desc, leave=False)
+        for left in bin_iter:
             right = left + bin_width_ms
             l_idx, r_idx = get_frame_idx_from_time(neu_time, 0, left, right)
             r_idx = min(r_idx, neu_block.shape[-1])
@@ -554,6 +581,8 @@ def multiclass_timecourse_decoding(
                 n_splits=n_splits,
                 random_state=random_state,
                 shuffle_baseline=shuffle_baseline,
+                progress_desc=(f"{desc}|{int(left)}ms" if (show_progress and progress_label) else None),
+                pca_n_components=pca_n_components,
             )
             if metrics is None:
                 continue
