@@ -204,6 +204,7 @@ def binary_decoder_cv(
     shuffle_baseline=False,
     downsample=True,
     class_weight="balanced",
+    progress_desc=None,
 ):
     X = np.asarray(X)
     y = np.asarray(y).astype(int)
@@ -226,7 +227,10 @@ def binary_decoder_cv(
     chances = []
     conf_total = np.zeros((2, 2), dtype=int)
 
-    for fold_idx, (train_idx, test_idx) in enumerate(skf.split(X, y)):
+    iterator = skf.split(X, y)
+    if progress_desc is not None:
+        iterator = tqdm(iterator, total=n_splits, desc=progress_desc, leave=False)
+    for fold_idx, (train_idx, test_idx) in enumerate(iterator):
         X_train, X_test = X[train_idx].copy(), X[test_idx]
         y_train, y_test = y[train_idx].copy(), y[test_idx]
 
@@ -395,6 +399,7 @@ def multiclass_decoder_cv(
     random_state=0,
     shuffle_baseline=False,
     class_weight="balanced",
+    progress_desc=None,
 ):
     X = np.asarray(X)
     y = np.asarray(y)
@@ -416,7 +421,10 @@ def multiclass_decoder_cv(
     chances = []
     conf_total = np.zeros((classes.size, classes.size), dtype=int)
 
-    for fold_idx, (train_idx, test_idx) in enumerate(skf.split(X, y)):
+    iterator = skf.split(X, y)
+    if progress_desc is not None:
+        iterator = tqdm(iterator, total=n_splits, desc=progress_desc, leave=False)
+    for fold_idx, (train_idx, test_idx) in enumerate(iterator):
         X_train, X_test = X[train_idx], X[test_idx]
         y_train, y_test = y[train_idx], y[test_idx]
 
