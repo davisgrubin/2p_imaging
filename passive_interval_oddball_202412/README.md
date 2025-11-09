@@ -637,3 +637,6 @@
 ## 2025.09.10
 - Fixed y label in plot_transition_trial.
 - Changed plot_cluster_standard_time_decode_confusion colorbar.
+
+## 2025.11.07
+- Added pupil processing.

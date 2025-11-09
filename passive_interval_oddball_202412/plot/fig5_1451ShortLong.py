@@ -621,6 +621,14 @@ class plotter_utils(utils_basic):
             win = 250
             trials_eval = 5
             # collect data.
+            [_, [neu_seq_0, _, stim_seq_0, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_stim_labels,
+                trial_param=[[2,3,4,5], [0], None, None, [0], [0]],
+                cate=cate, roi_id=None)
+            [_, [neu_seq_1, _, stim_seq_1, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_stim_labels,
+                trial_param=[[2,3,4,5], [1], None, None, [0], [0]],
+                cate=cate, roi_id=None)
             [_, [neu_trans_0to1, _, stim_seq_0to1, _], _,
              [n_trials, n_neurons]] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_stim_labels,
@@ -631,6 +639,15 @@ class plotter_utils(utils_basic):
                 self.alignment, self.list_labels, self.list_stim_labels,
                 trial_idx=[l[0] for l in self.list_block_start],
                 cate=cate, roi_id=None)
+            # compute baseline.
+            base_0 = [get_mean_sem_win(
+                neu_seq_0[cluster_id==ci,:],
+                self.alignment['neu_time'], 0, stim_seq_0[c_idx-1,1], stim_seq_0[c_idx,0], 'lower')
+                for ci in range(self.n_clusters)]
+            base_1 = [get_mean_sem_win(
+                neu_seq_1[cluster_id==ci,:],
+                self.alignment['neu_time'], 0, stim_seq_1[c_idx-1,1], stim_seq_1[c_idx,0], 'lower')
+                for ci in range(self.n_clusters)]
             # compute response within window.
             quant_0to1 = [[get_mean_sem_win(
                 neu_trans_0to1[cluster_id==ci,:],
@@ -643,10 +660,10 @@ class plotter_utils(utils_basic):
                 for si in np.arange(-trials_eval, trials_eval)]
                 for ci in range(self.n_clusters)]
             # collect results.
-            m_early_0 = [np.array([quant_1to0[ci][si+trials_eval][1] for si in range(trials_eval)]) for ci in range(self.n_clusters)]
-            m_early_1 = [np.array([quant_0to1[ci][si+trials_eval][1] for si in range(trials_eval)]) for ci in range(self.n_clusters)]
-            m_late_0 = [np.array([quant_0to1[ci][si][1] for si in range(trials_eval)]) for ci in range(self.n_clusters)]
-            m_late_1 = [np.array([quant_1to0[ci][si][1] for si in range(trials_eval)]) for ci in range(self.n_clusters)]
+            m_early_0 = [np.array([quant_1to0[ci][si+trials_eval][1] for si in range(trials_eval)]) - base_0[ci][1] for ci in range(self.n_clusters)]
+            m_early_1 = [np.array([quant_0to1[ci][si+trials_eval][1] for si in range(trials_eval)]) - base_1[ci][1] for ci in range(self.n_clusters)]
+            m_late_0 = [np.array([quant_0to1[ci][si][1] for si in range(trials_eval)]) - base_0[ci][1] for ci in range(self.n_clusters)]
+            m_late_1 = [np.array([quant_1to0[ci][si][1] for si in range(trials_eval)]) - base_1[ci][1] for ci in range(self.n_clusters)]
             s_early_0 = [np.array([quant_1to0[ci][si+trials_eval][2] for si in range(trials_eval)]) for ci in range(self.n_clusters)]
             s_early_1 = [np.array([quant_0to1[ci][si+trials_eval][2] for si in range(trials_eval)]) for ci in range(self.n_clusters)]
             s_late_0 = [np.array([quant_0to1[ci][si][2] for si in range(trials_eval)]) for ci in range(self.n_clusters)]

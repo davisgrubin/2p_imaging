@@ -209,8 +209,8 @@ def decoding_time_single(neu_x, neu_time, bin_times):
 
 # regression from neural activity to time.
 def regression_time_frac(neu_x, neu_time, bin_times, fracs):
-    n_splits = 50
-    n_sampling = 25
+    n_splits = 2
+    n_sampling = 2
     test_size = 0.3
     bin_l_idx, bin_r_idx = get_frame_idx_from_time(neu_time, 0, 0, bin_times)
     bin_len = bin_r_idx - bin_l_idx

@@ -934,9 +934,8 @@ class utils_basic:
         self.heatmap_sort_frac = 0.5
 
     @show_resource_usage
-    def run_glm(self,):
+    def run_glm(self, kernel_win=[-1500,1500]):
         # define kernel window.
-        kernel_win = [-1500,1500]
         l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, kernel_win[0], kernel_win[1])
         kernel_time = self.alignment['neu_time'][l_idx:r_idx]
         l_idx = np.searchsorted(self.alignment['neu_time'], 0) - l_idx
@@ -984,8 +983,8 @@ class utils_basic:
         idx_pre = (r2_pre > r2_thres) * (r2_pre > r2_post)
         idx_post = (r2_post > r2_thres) * (r2_post > r2_pre)
         # run clustering.
-        cluster_id_pre = clustering_neu_response_mode(trf_param_pre[idx_pre,3].reshape(-1,1), n_pre, 'kmeans')
-        cluster_id_post = clustering_neu_response_mode(trf_param_post[idx_post,3].reshape(-1,1), n_post, 'kmeans')
+        cluster_id_pre = clustering_neu_response_mode(trf_param_pre[idx_pre,3].reshape(-1,1), n_pre, 'hierachy')
+        cluster_id_post = clustering_neu_response_mode(trf_param_post[idx_post,3].reshape(-1,1), n_post, 'hierachy')
         # relabel based on temporal receptive field.
         sorted_pre = np.argsort([np.nanmean(trf_param_pre[idx_pre,3][cluster_id_pre==ci]) for ci in range(n_pre)])
         sorted_post = np.argsort([np.nanmean(trf_param_post[idx_post,3][cluster_id_post==ci]) for ci in range(n_post)])
@@ -1053,7 +1052,7 @@ class utils_basic:
         if len(q1) > len(q2):
             q1 = q1[np.random.choice(len(q1), size=len(q2), replace=False)]
         if len(q1) < len(q2):
-            q2 = q2[np.random.choice(len(q2), size=len(q1), replace=False)]          
+            q2 = q2[np.random.choice(len(q2), size=len(q1), replace=False)]
         # find bounds.
         upper = np.nanmax([q1, q2])
         lower = np.nanmin([q1, q2])

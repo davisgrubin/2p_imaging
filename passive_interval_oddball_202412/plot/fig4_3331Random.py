@@ -827,7 +827,6 @@ class plotter_utils(utils_basic):
         except: traceback.print_exc()
         
     def plot_latent_all(self, axs, cate=None):
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
         # collect data.
         [_, [neu_seq, stim_seq, camera_pupil, pre_isi, post_isi], _,
          [n_trials, n_neurons]] = get_neu_trial(

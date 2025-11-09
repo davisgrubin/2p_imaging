@@ -120,10 +120,18 @@ def fit_trf_model(neu_seq_l, neu_time_l, neu_seq_r, neu_time_r):
 
 '''
 
+nsl = torch.tensor([norm01(x) for x in neu_seq_l], dtype=torch.float32, device=device)
+nsr = torch.tensor([norm01(x) for x in neu_seq_r], dtype=torch.float32, device=device)
+ntl = torch.tensor(norm01(neu_time_l) - 1, dtype=torch.float32, device=device)
+ntr = torch.tensor(norm01(neu_time_r), dtype=torch.float32, device=device)
+
+
 axs[0].plot(ntl, trf_model_pre(ntl, 0, 1.5, -0.4, 0.15, 0.5))
 axs[8].plot(ntl, trf_model_pre(ntl, 0.2, 1.5, -0.1, 0.1, 0.5))
 axs[10].plot(ntl, trf_model_pre(ntl, 0.2, 1.5, -0.1, 0.1, 0.5))
 
+ntl = torch.tensor(norm01(neu_time_l) - 1, dtype=torch.float32, device=device)
+ntr = torch.tensor(norm01(neu_time_r), dtype=torch.float32, device=device)
 
 fig, ax = plt.subplots(1, 1, figsize=(3, 3))
 ax.scatter(ntr, nsr[7],s=3, color='black')
@@ -160,7 +168,32 @@ for i in range(5):
     axs[i].hist(trf_param_post[:,i], bins=100)
     
 i = (r2_pre>0.8)*(r2_post>0.8)
-fig, axs = plt.subplots(6, 8, figsize=(18, 12))
+fig, axs = plt.subplots(6, 8, figsize=(16, 12))
+axs = [x for xs in axs for x in xs]
+for ni in range(48):
+    axs[ni].scatter(ntl,nsl[i][ni],s=3, color='black')
+    axs[ni].plot(ntl,pred_pre[i][ni], color='mediumseagreen')
+    axs[ni].scatter(ntr,nsr[i][ni],s=3, color='black')
+    axs[ni].plot(ntr,pred_post[i][ni], color='coral')
+    axs[ni].axvline(0, color='black', lw=1, linestyle='-')
+    axs[ni].axis('off')
+    axs[ni].set_title(f'up:{r2_pre[i][ni]:.2f},dn:{r2_post[i][ni]:.2f}')
+
+i = (r2_pre<0.4)*(r2_post>0.8)
+fig, axs = plt.subplots(6, 8, figsize=(16, 12))
+axs = [x for xs in axs for x in xs]
+for ni in range(48):
+    axs[ni].scatter(ntl,nsl[i][ni],s=3, color='black')
+    axs[ni].plot(ntl,pred_pre[i][ni], color='mediumseagreen')
+    axs[ni].scatter(ntr,nsr[i][ni],s=3, color='black')
+    axs[ni].plot(ntr,pred_post[i][ni], color='coral')
+    axs[ni].axvline(0, color='black', lw=1, linestyle='-')
+    axs[ni].axis('off')
+    axs[ni].set_title(f'up:{r2_pre[i][ni]:.2f},dn:{r2_post[i][ni]:.2f}')
+    axs[ni].text('')
+
+i = (r2_pre>0.8)*(r2_post<0.4)
+fig, axs = plt.subplots(6, 8, figsize=(16, 12))
 axs = [x for xs in axs for x in xs]
 for ni in range(48):
     axs[ni].scatter(ntl,nsl[i][ni],s=3, color='black')
@@ -184,6 +217,55 @@ for ni in range(48):
     axs[ni].set_title(f'up:{r2_pre[i][ni]:.2f},dn:{r2_post[i][ni]:.2f}')
     
 
+
+
+i = (r2_pre>0.8)*(r2_post<0.4)
+fig, axs = plt.subplots(6, 8, figsize=(24, 18))
+axs = [x for xs in axs for x in xs]
+for ni in range(48):
+    axs[ni].scatter(ntl,nsl[i][ni],s=3, color='black')
+    axs[ni].plot(ntl,pred_pre[i][ni], color='mediumseagreen')
+    axs[ni].spines['right'].set_visible(False)
+    axs[ni].spines['top'].set_visible(False)
+    axs[ni].set_xlim([-1,1])
+    axs[ni].set_yticks([0,1])
+    axs[ni].set_xticks([-1,0])
+    add_legend(
+        axs[ni],
+        ['mediumseagreen']*6,
+        [rf'$R^2_-={r2_pre[i][ni]:.2f}$',
+         rf'$b_-={trf_param_pre[i][ni,0]:.2f}$',
+         rf'$a_-={trf_param_pre[i][ni,1]:.2f}$',
+         rf'$m_-={trf_param_pre[i][ni,2]:.2f}$',
+         rf'$r_-={trf_param_pre[i][ni,3]:.2f}$',
+         rf'$\tau_-={trf_param_pre[i][ni,4]:.2f}$'],
+        None, None, None, 'upper right')
+
+i = (r2_pre<0.4)*(r2_post>0.8)
+fig, axs = plt.subplots(6, 8, figsize=(24, 18))
+axs = [x for xs in axs for x in xs]
+for ni in range(48):
+    axs[ni].scatter(ntr-1,nsr[i][ni],s=3, color='black')
+    axs[ni].plot(ntr-1,pred_post[i][ni], color='coral')
+    axs[ni].spines['right'].set_visible(False)
+    axs[ni].spines['top'].set_visible(False)
+    axs[ni].set_xlim([-1,1])
+    axs[ni].set_yticks([0,1])
+    axs[ni].set_xticks([-1,0])
+    axs[ni].set_xticklabels([0,1])
+    add_legend(
+        axs[ni],
+        ['coral']*6,
+        [rf'$R^2_+={r2_post[i][ni]:.2f}$',
+         rf'$b_+={trf_param_post[i][ni,0]:.2f}$',
+         rf'$a_+={trf_param_post[i][ni,1]:.2f}$',
+         rf'$m_+={trf_param_post[i][ni,2]:.2f}$',
+         rf'$r_+={trf_param_post[i][ni,3]:.2f}$',
+         rf'$\tau_+={trf_param_post[i][ni,4]:.2f}$'],
+        None, None, None, 'upper right')
+    
+
+    
 fig, ax = plt.subplots(1, 1, figsize=(3, 3))
 ax.plot(ntr,nsr[12])
 ax.plot(ntr, trf_model_post(ntr, 0, 1.5, -0.5, 0.4, 1))

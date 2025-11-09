@@ -137,8 +137,15 @@ def run(ops):
     # stimulus sequence labeling.
     stim_labels = get_stim_labels(bpod_sess_data, vol_time, vol_stim_vis)
     # processing dlc results.
-    camera_time, camera_pupil = read_camera(ops)
-    camera_time = correct_time_img_center(camera_time)
+    camera_pupil = read_camera(ops)
+    _, camera_time = get_trigger_time(vol_time, vol_flir)
+    print(f'time_img:{len(time_img)}, camera_time:{len(camera_time)}, camera_pupil:{len(camera_pupil)}')
+    if len(camera_pupil) != len(camera_time):
+        print('length not match')
+        camera_pupil = np.array([np.nan], dtype='float32')
+        camera_time = np.array([np.nan], dtype='float32')
+    else:
+        print(f'offset: {sum(time_img-camera_time)}')
     camera_pupil = interp1d(camera_time, camera_pupil, bounds_error=False, fill_value=np.nan)(time_neuro)
     # save the final data.
     print('Saving trial data')

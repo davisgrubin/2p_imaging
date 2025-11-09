@@ -54,7 +54,7 @@ def run(session_config_list, cate_list):
     for i in range(len(list_ops)):
         print('Trializing {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
-        #Trialization.run(list_ops[i])
+        Trialization.run(list_ops[i])
 
     print('===============================================')
     print('======== plotting representative masks ========')
@@ -127,8 +127,18 @@ if __name__ == "__main__":
 
     else:
 
-        session_config_YH18VT = {
+        session_config_test = {
             'list_session_name' : {
+                'VTYH02_PPC_20250214_1451ShortLong' : 'short_long',
+                'VTYH02_PPC_20250213_1451ShortLong' : 'short_long',
+                'VTYH02_PPC_20250212_1451ShortLong' : 'short_long',
+                'VTYH02_PPC_20250211_1451ShortLong' : 'short_long',
+                'VTYH02_PPC_20250210_1451ShortLong' : 'short_long',
+                'VTYH02_PPC_20250208_1451ShortLong' : 'short_long',
+                'VTYH02_PPC_20250207_1451ShortLong' : 'short_long',
+                'VTYH02_PPC_20250206_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250526_3331Random' : 'random',
+                #'YH18VT_V1_20250526_3331Random' : 'random',
                 #'YH18VT_V1_20250526_3331Random' : 'random',
                 #'YH18VT_V1_20250527_3331Random' : 'random',
                 #'YH18VT_V1_20250528_3331Random' : 'random',
@@ -146,9 +156,9 @@ if __name__ == "__main__":
                 #'YH18VT_V1_20250410_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250415_1451ShortLong' : 'short_long',
                 #'YH18VT_V1_20250416_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250417_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250418_1451ShortLong' : 'short_long',
-                'YH18VT_V1_20250421_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250417_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250418_1451ShortLong' : 'short_long',
+                #'YH18VT_V1_20250421_1451ShortLong' : 'short_long',
                 #'YH18VT_V1_20250422_1451ShortLong' : 'short_long',
                 #'YH18VT_V1_20250423_1451ShortLong' : 'short_long',
                 #'YH18VT_V1_20250424_1451ShortLong' : 'short_long',
@@ -160,31 +170,41 @@ if __name__ == "__main__":
                 #'YH18VT_V1_20250502_1451ShortLong' : 'short_long',
                 #'YH18VT_V1_20250503_1451ShortLong' : 'short_long',
                 #'YH18VT_V1_20250505_1451ShortLong' : 'short_long',
+                #'YH17VT_V1_20250623_3331RandomExtended' : 'extended_random',
+                #'YH17VT_V1_20250624_3331RandomExtended' : 'extended_random',
+                #'YH17VT_V1_20250626_3331RandomExtended' : 'extended_random',
+                #'YH17VT_V1_20250627_3331RandomExtended' : 'extended_random',
+                #'YH17VT_V1_20250630_3331RandomExtended' : 'extended_random',
                 #'YH18VT_V1_20250623_3331RandomExtended' : 'extended_random',
                 #'YH18VT_V1_20250624_3331RandomExtended' : 'extended_random',
                 #'YH18VT_V1_20250625_3331RandomExtended' : 'extended_random',
                 #'YH18VT_V1_20250626_3331RandomExtended' : 'extended_random',
                 #'YH18VT_V1_20250627_3331RandomExtended' : 'extended_random',
+                #'YH19VT_V1_20250623_3331RandomExtended' : 'extended_random',
+                #'YH19VT_V1_20250625_3331RandomExtended' : 'extended_random',
+                #'YH19VT_V1_20250626_3331RandomExtended' : 'extended_random',
+                #'YH19VT_V1_20250627_3331RandomExtended' : 'extended_random',
+                #'YH19VT_V1_20250628_3331RandomExtended' : 'extended_random',
                 #'testYH17VT_V1_20250921_1451ShortLong' : 'short_long',
                 #'testYH19VT_20250824_1451ShortLong_NoCell' : 'short_long',
                 #'testYH19VT_20250824_1451ShortLong_NoLightDeep' : 'short_long',
                 #'testYH19VT_20250824_1451ShortLong_NoMouse' : 'short_long',
                 },
-            'session_folder' : 'YH18VT',
+            'session_folder' : 'test',
             'sig_tag' : 'all',
             'force_label' : None,
             }
         session_config_list_test = {
             'list_config': [
-                session_config_YH18VT,
+                session_config_test,
                 ],
             'label_names' : {
                 '-1':'Exc',
                 '1':'Inh_VIP',
                 '2':'Inh_SST',
                 },
-            'subject_name' : 'YH18VT',
-            'output_filename' : 'test_YH18VT_V1_passive'
+            'subject_name' : 'test',
+            'output_filename' : 'test_passive'
             }
         
         '''
@@ -208,7 +228,7 @@ if __name__ == "__main__":
         norm_mode='none'
         jitter_trial_mode='global'
         scaled=True
-       
+        
         cluster_cmap = plt.cm.hsv
         standard = 1
         oddball = 1
@@ -217,5 +237,9 @@ if __name__ == "__main__":
         temp_folder = 'temp_'+session_config_list['subject_name']
         if not os.path.exists(os.path.join('results', 'temp_'+session_config_list['subject_name'])):
             os.makedirs(os.path.join('results', 'temp_'+session_config_list['subject_name']))
+            
+        camera_time = neural_trials['camera_time']
+        camera_pupil = neural_trials['camera_pupil']
+        plt.plot(camera_time, camera_pupil)
 
         '''

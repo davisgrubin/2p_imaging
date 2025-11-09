@@ -67,20 +67,20 @@ def read_dff(ops):
     return dff
 
 # read camera dlc results.
-def read_camera(ops, z_score=True):
+def read_camera(ops, norm=True):
+    window_length = 9
+    polyorder = 2
     try:
         h5_file_name = [f for f in os.listdir(ops['save_path0']) if 'camera' in f][0]
         mm_path, file_path = get_memmap_path(ops, h5_file_name)
         with h5py.File(file_path, 'r') as f:
-            camera_time  = np.array(f['camera_dlc']['camera_time'], dtype='float32')*1000
-            camera_time -= camera_time[0]
             camera_pupil = np.array(f['camera_dlc']['pupil'], dtype='float32')
-            if z_score:
-                camera_pupil = (camera_pupil - np.nanmean(camera_pupil)) / (1e-10 + np.nanstd(camera_pupil))
+            camera_pupil = savgol_filter(camera_pupil, window_length=window_length, polyorder=polyorder)
+            if norm:
+                camera_pupil = (camera_pupil - np.nanmin(camera_pupil)) / (np.nanmax(camera_pupil) - np.nanmin(camera_pupil) + 1e-5)
     except:
-        camera_time  = np.array([np.nan], dtype='float32')
         camera_pupil = np.array([np.nan], dtype='float32')
-    return [camera_time, camera_pupil]
+    return camera_pupil
 
 # read masks.
 def read_masks(ops):

@@ -23,7 +23,7 @@ from plot.fig3_intervals import plot_random_isi_distribution
 from plot.fig3_intervals import plot_stim_type
 from plot.fig3_intervals import plot_stim_label
 from plot.fig3_intervals import plot_trial_legend
-from plot.fig4_3331Random import plotter_main
+from plot.fig7_3331RandomExtended import plotter_main
 
 def run(session_config_list, smooth, cate_list):
     size_scale = 3
@@ -147,12 +147,31 @@ def run(session_config_list, smooth, cate_list):
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
             plt.close(fig)
             return [filename, n_row, n_col, title]
+        def plot_latent_all():
+            title = 'all cluster latent dynamics on binned stimlus interval'
+            print('-----------------------------------------------')
+            print(title)
+            filename = '3331RandomExtended_latent_all'
+            cate_gap = 3
+            n_row = cate_gap*len(plotter.cate_list)
+            n_col = 20
+            fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
+            gs = GridSpec(n_row, n_col, figure=fig)
+            axs_all = []
+            for s in cate_gap*np.arange(len(plotter.cate_list)):
+                a = [[plt.subplot(gs[s+0:s+2, i:i+2]) for i in 2*np.arange(10)]]
+                axs_all.append(a)
+            plotter.latent_all(axs_all)
+            fig.set_size_inches(n_col*size_scale, n_row*size_scale)
+            fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
+            plt.close(fig)
+            return [filename, n_row, n_col, title]
         fig_all = [
-            plot_cell_fraction(),
             plot_intervals(),
             plot_trial(),
             plot_cluster_stim_all(),
             plot_cluster_interval_bin_all(),
+            plot_latent_all(),
             ]
         print('Clearing memory usage')
         del list_labels
