@@ -161,7 +161,7 @@ session_config_YH14SC = {
         },
     'session_folder' : 'YH14SC',
     'sig_tag' : 'all',
-    'force_label' : 2,
+    'force_label' : 1,
     }
 
 #%% YH16SC
@@ -203,7 +203,7 @@ session_config_YH16SC = {
         },
     'session_folder' : 'YH16SC',
     'sig_tag' : 'all',
-    'force_label' : 2,
+    'force_label' : 1,
     }
 
 #%% YH17VT
@@ -385,7 +385,7 @@ session_config_YH20SC = {
         },
     'session_folder' : 'YH20SC',
     'sig_tag' : 'all',
-    'force_label' : 2,
+    'force_label' : 1,
     }
 
 #%% YH21SC
@@ -424,7 +424,7 @@ session_config_YH21SC = {
         },
     'session_folder' : 'YH21SC',
     'sig_tag' : 'all',
-    'force_label' : 2,
+    'force_label' : 1,
     }
 
 #%% PPC list configs
@@ -436,8 +436,8 @@ session_config_list_YH01VT = {
         ],
     'label_names' : {
         '-1':'Exc',
-        '1':'Inh_VIP',
-        '2':'Inh_SST',
+        '0':'Inh_VIP',
+        '1':'Inh_SST',
         },
     'subject_name' : 'YH01VT',
     'output_filename' : 'YH01VT_PPC_passive'
@@ -450,8 +450,8 @@ session_config_list_YH02VT = {
         ],
     'label_names' : {
         '-1':'Exc',
-        '1':'Inh_VIP',
-        '2':'Inh_SST',
+        '0':'Inh_VIP',
+        '1':'Inh_SST',
         },
     'subject_name' : 'YH02VT',
     'output_filename' : 'YH02VT_PPC_passive'
@@ -464,8 +464,8 @@ session_config_list_YH03VT = {
         ],
     'label_names' : {
         '-1':'Exc',
-        '1':'Inh_VIP',
-        '2':'Inh_SST',
+        '0':'Inh_VIP',
+        '1':'Inh_SST',
         },
     'subject_name' : 'YH03VT',
     'output_filename' : 'YH03VT_PPC_passive'
@@ -478,8 +478,8 @@ session_config_list_YH14SC = {
         ],
     'label_names' : {
         '-1':'Exc',
-        '1':'Inh_VIP',
-        '2':'Inh_SST',
+        '0':'Inh_VIP',
+        '1':'Inh_SST',
         },
     'subject_name' : 'YH14SC',
     'output_filename' : 'YH14SC_PPC_passive'
@@ -492,8 +492,8 @@ session_config_list_YH16SC = {
         ],
     'label_names' : {
         '-1':'Exc',
-        '1':'Inh_VIP',
-        '2':'Inh_SST',
+        '0':'Inh_VIP',
+        '1':'Inh_SST',
         },
     'subject_name' : 'YH16SC',
     'output_filename' : 'YH16SC_PPC_passive'
@@ -508,8 +508,8 @@ session_config_list_YH17VT = {
         ],
     'label_names' : {
         '-1':'Exc',
-        '1':'Inh_VIP',
-        '2':'Inh_SST',
+        '0':'Inh_VIP',
+        '1':'Inh_SST',
         },
     'subject_name' : 'YH17VT',
     'output_filename' : 'YH17VT_V1_passive'
@@ -522,8 +522,8 @@ session_config_list_YH18VT = {
         ],
     'label_names' : {
         '-1':'Exc',
-        '1':'Inh_VIP',
-        '2':'Inh_SST',
+        '0':'Inh_VIP',
+        '1':'Inh_SST',
         },
     'subject_name' : 'YH18VT',
     'output_filename' : 'YH18VT_V1_passive'
@@ -536,8 +536,8 @@ session_config_list_YH19VT = {
         ],
     'label_names' : {
         '-1':'Exc',
-        '1':'Inh_VIP',
-        '2':'Inh_SST',
+        '0':'Inh_VIP',
+        '1':'Inh_SST',
         },
     'subject_name' : 'YH19VT',
     'output_filename' : 'YH19VT_V1_passive'
@@ -550,8 +550,8 @@ session_config_list_YH20SC = {
         ],
     'label_names' : {
         '-1':'Exc',
-        '1':'Inh_VIP',
-        '2':'Inh_SST',
+        '0':'Inh_VIP',
+        '1':'Inh_SST',
         },
     'subject_name' : 'YH20SC',
     'output_filename' : 'YH20SC_V1_passive'
@@ -564,8 +564,8 @@ session_config_list_YH21SC = {
         ],
     'label_names' : {
         '-1':'Exc',
-        '1':'Inh_VIP',
-        '2':'Inh_SST',
+        '0':'Inh_VIP',
+        '1':'Inh_SST',
         },
     'subject_name' : 'YH21SC',
     'output_filename' : 'YH21SC_V1_passive'
@@ -584,8 +584,8 @@ session_config_list_V1 = {
         ],
     'label_names' : {
         '-1':'Exc',
-        '1':'Inh_VIP',
-        '2':'Inh_SST',
+        '0':'Inh_VIP',
+        '1':'Inh_SST',
         },
     'subject_name' : 'V1_all',
     'output_filename' : 'all_V1_passive'
@@ -602,8 +602,8 @@ session_config_list_PPC = {
         ],
     'label_names' : {
         '-1':'Exc',
-        '1':'Inh_VIP',
-        '2':'Inh_SST',
+        '0':'Inh_VIP',
+        '1':'Inh_SST',
         },
     'subject_name' : 'PPC_all',
     'output_filename' : 'all_PPC_passive'

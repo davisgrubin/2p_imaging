@@ -4,11 +4,15 @@ import time
 import functools
 import tracemalloc
 import numpy as np
+import pandas as pd
 import rastermap as rm
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.ticker as mtick
 from datetime import datetime
+# typing helpers
+from typing import Tuple
+
 from scipy.stats import mannwhitneyu
 from scipy.stats import levene
 from scipy.spatial.distance import pdist
@@ -899,24 +903,35 @@ def add_legend(ax, colors, labels, n_trials, n_neurons, n_sessions, loc, dim=2):
 
 # add heatmap colorbar.
 def add_heatmap_colorbar(ax, cmap, norm, label, yticklabels=None):
-    if ax != None:
+    if ax is not None:
+        # Hide the axis if needed
         hide_all_axis(ax)
-        cax = ax.inset_axes([0.3, 0.1, 0.2, 0.8], transform=ax.transAxes)
-        if norm == None:
+        
+        # Create an inset axis for the colorbar
+        cax = ax.inset_axes([1.05, 0.1, 0.05, 0.8], transform=ax.transAxes)
+        
+        # Set default normalization if not provided
+        if norm is None:
             norm = mcolors.Normalize(vmin=0, vmax=1)
+        
+        # Create the colorbar
         cbar = ax.figure.colorbar(
-            plt.cm.ScalarMappable(
-                cmap=cmap,
-                norm=norm),
-            cax=cax)
+            plt.cm.ScalarMappable(cmap=cmap, norm=norm),
+            cax=cax
+        )
+        
+        # Customize the colorbar appearance
         cbar.outline.set_linewidth(0.25)
         cbar.ax.set_ylabel(label, rotation=90, labelpad=10)
         cbar.ax.tick_params(axis='y')
         cbar.ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
         cbar.ax.yaxis.set_major_locator(
-            mtick.FixedLocator([norm.vmin+0.2*(norm.vmax-norm.vmin),
-                                norm.vmax-0.2*(norm.vmax-norm.vmin)]))
-        if yticklabels != None:
+            mtick.FixedLocator([norm.vmin + 0.2 * (norm.vmax - norm.vmin),
+                                norm.vmax - 0.2 * (norm.vmax - norm.vmin)])
+        )
+        
+        # Set custom y-tick labels if provided
+        if yticklabels is not None:
             cbar.ax.set_yticklabels(yticklabels)
 
 #%% basic plotting utils class
@@ -1788,5 +1803,246 @@ class utils_basic:
         if ax_cb != None:
             norm = mcolors.Normalize(vmin=0.45, vmax=vmax if vmax==None else vmax)
             add_heatmap_colorbar(ax_cb, cmap, norm, 'decoding accuracy')
-            
 
+
+def _prepare_time_axis(time_vector_ms: np.ndarray, window_ms: tuple[float, float]) -> tuple[np.ndarray, np.ndarray]:
+    """Return mask and cropped time axis for the requested window."""
+    time_vector_ms = np.asarray(time_vector_ms)
+    mask = (time_vector_ms >= window_ms[0]) & (time_vector_ms <= window_ms[1])
+    if not mask.any():
+        raise ValueError(
+            f"Window {window_ms} ms contains no samples. Available range: {time_vector_ms.min():.1f}–{time_vector_ms.max():.1f} ms."
+        )
+    return mask, time_vector_ms[mask]
+
+
+def plot_top_orientation_neurons(summary_df: pd.DataFrame,
+                                 Y_trials: np.ndarray,
+                                 trial_df: pd.DataFrame,
+                                 time_vector_ms: np.ndarray,
+                                 orientation_labels: list[str],
+                                 top_n: int = 3,
+                                 window_ms: tuple[float, float] = (-1000.0, 1000.0)) -> None:
+    """Plot the mean peri-stimulus traces for the most orientation-tuned neurons."""
+    if summary_df.empty:
+        raise ValueError('summary_df is empty; run the parameter extraction cell first.')
+    if Y_trials is None:
+        raise ValueError('Y_trials is None; ensure the loader produced trial-wise responses.')
+
+    mask, time_axis = _prepare_time_axis(time_vector_ms, window_ms)
+    top_units = summary_df.sort_values('orientation_strength', ascending=False).head(top_n)
+
+    for _, row in top_units.iterrows():
+        neuron_idx = int(row['cell'])
+        fig, ax = plt.subplots(figsize=(6.5, 4))
+        for ori_idx, label in enumerate(orientation_labels, start=1):
+            trials_sel = trial_df.index[trial_df['theta_idx'] == ori_idx]
+            if len(trials_sel) == 0:
+                continue
+            traces = Y_trials[trials_sel][:, mask, neuron_idx]
+            trace_mean = np.nanmean(traces, axis=0)
+            ax.plot(time_axis, trace_mean, label=label)
+        ax.axvline(0, color='k', linestyle='--', linewidth=1)
+        ax.set_title(f'Orientation example neuron {neuron_idx}')
+        ax.set_xlabel('Time relative to onset (ms)')
+        ax.set_ylabel('Response (ΔF/F)')
+        ax.legend(loc='upper right', fontsize=8)
+        plt.tight_layout()
+        plt.show()
+
+
+def plot_top_transition_neurons(summary_df: pd.DataFrame,
+                                 Y_trials: np.ndarray,
+                                 trial_df: pd.DataFrame,
+                                 time_vector_ms: np.ndarray,
+                                 top_n: int = 3,
+                                 window_ms: tuple[float, float] = (-1000.0, 1000.0)) -> None:
+    """Plot mean traces for neurons that prefer orientation changes vs repeats."""
+    if summary_df.empty:
+        raise ValueError('summary_df is empty; run the parameter extraction cell first.')
+    if Y_trials is None:
+        raise ValueError('Y_trials is None; ensure the loader produced trial-wise responses.')
+
+    mask, time_axis = _prepare_time_axis(time_vector_ms, window_ms)
+    top_units = summary_df.sort_values('change_any_strength', ascending=False).head(top_n)
+
+    repeat_idx = trial_df.index[trial_df['is_transition'] == False]
+    change_idx = trial_df.index[trial_df['is_transition'] == True]
+
+    for _, row in top_units.iterrows():
+        neuron_idx = int(row['cell'])
+        fig, ax = plt.subplots(figsize=(6.5, 4))
+        if len(repeat_idx):
+            repeat_traces = Y_trials[repeat_idx][:, mask, neuron_idx]
+            ax.plot(time_axis, np.nanmean(repeat_traces, axis=0), label='repeat', color='tab:blue')
+        if len(change_idx):
+            change_traces = Y_trials[change_idx][:, mask, neuron_idx]
+            ax.plot(time_axis, np.nanmean(change_traces, axis=0), label='transition', color='tab:orange')
+        ax.axvline(0, color='k', linestyle='--', linewidth=1)
+        ax.set_title(f'Change example neuron {neuron_idx}')
+        ax.set_xlabel('Time relative to onset (ms)')
+        ax.set_ylabel('Response (ΔF/F)')
+        ax.legend(loc='upper right')
+        plt.tight_layout()
+        plt.show()
+
+
+
+
+def plot_top_change_specific_neurons(summary_df: pd.DataFrame,
+                                     Y_trials: np.ndarray,
+                                     trial_df: pd.DataFrame,
+                                     time_vector_ms: np.ndarray,
+                                     top_n: int = 3,
+                                     window_ms: tuple[float, float] = (-1000.0, 1000.0),
+                                     include_other_pairs: bool = True,
+                                     plot_average: bool = False) -> None:
+    """Plot mean traces for neurons that prefer a specific orientation transition.
+
+    Parameters
+    ----------
+    include_other_pairs : bool
+        Overlay traces for all other orientation-change pairs (faint grey lines).
+    plot_average : bool
+        If True, also overlay the average trace across all change trials.
+    """
+    if summary_df.empty:
+        raise ValueError('summary_df is empty; run the parameter extraction cell first.')
+    if 'top_change_pair_strength' not in summary_df.columns:
+        raise ValueError('summary_df must contain "top_change_pair_strength" and "top_change_pair" columns.')
+    if Y_trials is None:
+        raise ValueError('Y_trials is None; ensure the loader produced trial-wise responses.')
+
+    mask, time_axis = _prepare_time_axis(time_vector_ms, window_ms)
+    top_units = (summary_df.sort_values('top_change_pair_strength', ascending=False)
+                             .head(top_n))
+
+    change_pairs_all = trial_df['pair_label'].astype(str)
+    transition_mask = change_pairs_all.str.contains('->')
+    all_transition_idx = trial_df.index[transition_mask]
+
+    for _, row in top_units.iterrows():
+        pair_label = row.get('top_change_pair')
+        strength = float(row.get('top_change_pair_strength', 0.0))
+        if not pair_label or pair_label == 'N/A' or strength <= 0:
+            continue
+        trials_sel = trial_df.index[trial_df['pair_label'] == pair_label]
+        if len(trials_sel) == 0:
+            continue
+
+        neuron_idx = int(row['cell'])
+        traces = Y_trials[trials_sel][:, mask, neuron_idx]
+        trace_mean = np.nanmean(traces, axis=0)
+
+        fig, ax = plt.subplots(figsize=(6.5, 4))
+
+        if include_other_pairs:
+            other_pairs = sorted({p for p in change_pairs_all.unique() if p != pair_label and '->' in p})
+            added_label = False
+            for other in other_pairs:
+                idx_sel = trial_df.index[trial_df['pair_label'] == other]
+                if len(idx_sel) == 0:
+                    continue
+                other_trace = np.nanmean(Y_trials[idx_sel][:, mask, neuron_idx], axis=0)
+                label = 'other transitions' if not added_label else None
+                ax.plot(time_axis, other_trace, color='lightgrey', alpha=0.6, linewidth=1.0, label=label)
+                added_label = True
+
+        ax.plot(time_axis, trace_mean, label=pair_label, color='tab:purple', linewidth=2)
+
+        if plot_average and len(all_transition_idx) > 0:
+            avg_trace = np.nanmean(Y_trials[all_transition_idx][:, mask, neuron_idx], axis=0)
+            ax.plot(time_axis, avg_trace, color='black', linestyle='--', linewidth=1.5, label='all transitions')
+
+        ax.axvline(0, color='k', linestyle='--', linewidth=1)
+        ax.set_title(f'Change-specific neuron {neuron_idx} ({pair_label})')
+        ax.set_xlabel('Time relative to onset (ms)')
+        ax.set_ylabel('Response (ΔF/F)')
+        ax.legend(loc='upper right')
+        plt.tight_layout()
+        plt.show()
+cat_order = ['orientation-pref', 'change-pref', 'change-specific', 'change-from', 'change-to', 'mixed']
+cat_colors = {
+    'orientation-pref': '#d62728',
+    'change-pref': '#1f77b4',
+    'change-specific': '#2ca02c',
+    'change-from': '#9467bd',
+    'change-to': '#8c564b',
+    'mixed': '#7f7f7f',
+}
+
+def plot_transition_rastermaps(classification_df: pd.DataFrame,
+                               Y_trials: np.ndarray,
+                               trial_df: pd.DataFrame,
+                               time_vector_ms: np.ndarray,
+                               orientation_code_lookup: dict,
+                               orientation_labels: list[str],
+                               change_label: str,
+                               top_k: int = 50,
+                               window_ms: tuple[float, float] = (-1000.0, 1000.0),
+                               cmap: str = 'magma') -> None:
+    """Plot a neuron-by-time rastermap for a specific change pair, sorted by model category."""
+
+    if classification_df.empty:
+        raise ValueError('classification_df is empty; run the classification cell first.')
+    if Y_trials is None:
+        raise ValueError('Y_trials is None; ensure trial-wise responses are available.')
+
+    mask, time_axis = _prepare_time_axis(time_vector_ms, window_ms)
+
+    trials_sel = trial_df.index[trial_df['pair_label'] == change_label]
+    if len(trials_sel) == 0:
+        raise ValueError(f'No trials found for change_label="{change_label}". Available: {sorted(trial_df["pair_label"].unique())}')
+
+    # Average across selected trials
+    data = np.nanmean(Y_trials[trials_sel][:, mask, :], axis=0).T  # neurons × time
+
+    cat_order = ['orientation-pref', 'change-pref', 'change-specific', 'change-from', 'change-to', 'mixed']
+    cat_colors = {
+        'orientation-pref': '#d62728',
+        'change-pref': '#1f77b4',
+        'change-specific': '#2ca02c',
+        'change-from': '#9467bd',
+        'change-to': '#8c564b',
+        'mixed': '#7f7f7f',
+    }
+
+    info = classification_df[['cell', 'response_class']].copy()
+    info['response_class'] = info['response_class'].astype(str)
+    info.loc[~info['response_class'].isin(cat_colors), 'response_class'] = 'mixed'
+    info['sort_key'] = info['response_class'].map({cls: idx for idx, cls in enumerate(cat_order)})
+    info.sort_values(['sort_key', 'cell'], inplace=True)
+
+    if top_k is not None:
+        info = info.head(top_k)
+
+    neurons = info['cell'].astype(int).to_numpy()
+    classes = info['response_class'].to_list()
+
+    data_sel = data[neurons]
+    fig, (ax, ax_class) = plt.subplots(1, 2, figsize=(7.0, 5.0), gridspec_kw={'width_ratios': [20, 1]}, sharey=True)
+
+    im = ax.imshow(data_sel, aspect='auto', cmap=cmap,
+                   extent=[time_axis[0], time_axis[-1], 0, len(neurons)],
+                   origin='lower')
+    ax.axvline(0, color='white', linestyle='--', linewidth=1)
+    ax.set_xlabel('Time relative to onset (ms)')
+    ax.set_ylabel('Neuron (sorted by class)')
+    ax.set_title(f'Raster: {change_label} (n_trials={len(trials_sel)})')
+
+    # category color bar
+    color_rgba = np.array([mcolors.to_rgba(cat_colors.get(cls, '#7f7f7f')) for cls in classes])
+    ax_class.imshow(color_rgba[:, None, :], aspect='auto', origin='lower')
+    ax_class.set_xticks([])
+    ax_class.set_yticks([])
+    ax_class.set_title('Class', fontsize=10)
+
+    handles = [plt.Line2D([0], [0], color=cat_colors[c], linewidth=6) for c in cat_order]
+    labels = cat_order
+    ax.legend(handles, labels, title='Response class', bbox_to_anchor=(1.02, 1), loc='upper left')
+
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label('ΔF/F')
+
+    plt.tight_layout()
+    plt.show()

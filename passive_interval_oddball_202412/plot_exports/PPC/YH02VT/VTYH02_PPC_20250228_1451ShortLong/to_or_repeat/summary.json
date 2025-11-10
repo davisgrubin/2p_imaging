@@ -1,0 +1,28 @@
+{
+  "orientations": [
+    {
+      "orientation_idx": 1,
+      "orientation_deg": 0.0,
+      "accuracy_mean": 0.4971014492753623,
+      "chance_mean": 0.5608695652173914
+    },
+    {
+      "orientation_idx": 2,
+      "orientation_deg": 45.0,
+      "accuracy_mean": 0.47882352941176465,
+      "chance_mean": 0.46705882352941175
+    },
+    {
+      "orientation_idx": 3,
+      "orientation_deg": 90.0,
+      "accuracy_mean": 0.5095108695652173,
+      "chance_mean": 0.4565217391304348
+    },
+    {
+      "orientation_idx": 4,
+      "orientation_deg": 135.0,
+      "accuracy_mean": 0.5150501672240803,
+      "chance_mean": 0.48829431438127097
+    }
+  ]
+}

@@ -198,6 +198,29 @@
 - Now temporal files are separeted into subjects.
 - Now all individual plot xlim is applied before plotting.
 - Added a factor in apply_colormap to remap data distribution.
+
+## 2025.04.30
+- Added Dash interactive decoding viewer for decoder timecourse exploration.
+
+---
+
+## Dash interactive decoding viewer
+
+Run an interactive dashboard to explore decoder accuracy summaries from the exported CSVs produced by `generate_session_plots.py`.
+
+1. Install the required packages (Dash, Plotly, Pandas are needed in addition to NumPy):
+   ```bash
+   python -m pip install dash plotly pandas numpy
+   ```
+2. Launch the viewer (the default export directory is `plot_exports`):
+   ```bash
+   python dash_interactive_decoding_viewer.py --data-root plot_exports
+   ```
+3. Open the provided URL in your browser to:
+   - Switch between region-, subject-, session-, or neuron-type summaries.
+   - Filter by region, subject, session, neuron subset, and block type (short vs. long).
+   - Toggle automatic versus manual y-axis ranges for close inspection of accuracy traces.
+   - Inspect supporting counts for each aggregation level directly below the plot.
 - Added plot_cluster_neu_fraction_in_cluster.
 - Now pack_webpage_main can be assigned pages more flexibly with lists.
 
