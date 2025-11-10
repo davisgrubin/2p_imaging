@@ -1,3 +1,5 @@
 *.png
 *.pdf
 *.csv
+!passive_interval_oddball_202412/dash_app/data/*.csv
+__pycache__/

@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: dash-interactive-decoding-viewer
+    env: python
+    plan: free
+    region: oregon
+    branch: dash-interactive-decoding-viewer
+    rootDir: passive_interval_oddball_202412/dash_app
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:server
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.10"
