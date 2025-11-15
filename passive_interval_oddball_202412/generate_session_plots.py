@@ -312,7 +312,9 @@ def _to_builtin(
 
 
 def compute_counts(
-    meta: pd.DataFrame, total_neurons_available: int, sampled_neurons: int
+    meta: pd.DataFrame,
+    total_neurons_available: int,
+    sampled_neurons: int,
 ) -> Dict[str, Union[int, float]]:
     block_counts = meta["block_type"].value_counts().to_dict()
     counts: Dict[str, Union[int, float]] = {
@@ -328,11 +330,9 @@ def compute_counts(
     return counts
 
 
-def determine_neuron_limit(
+def determine_bootstrap_targets(
     labels: np.ndarray,
     subsets: List[str],
-    explicit_limit: Optional[int],
-    balance_subsets: bool,
 ) -> Dict[str, Optional[int]]:
     available_counts: Dict[str, int] = {}
     for name in subsets:
@@ -345,32 +345,27 @@ def determine_neuron_limit(
         available_counts[name] = int(mask.sum())
 
     non_all_counts = [
-        count for name, count in available_counts.items() if name != "all"
+        count for name, count in available_counts.items() if name != "all" and count > 0
     ]
-    min_non_all = min(non_all_counts) if non_all_counts else None
-    global_min = min(available_counts.values()) if available_counts else None
+    target_non_all = max(non_all_counts) if non_all_counts else None
 
-    limits: Dict[str, Optional[int]] = {}
-    for name, count in available_counts.items():
-        limit: Optional[int] = None
-        if explicit_limit is not None:
-            limit = max(1, min(explicit_limit, count))
-        elif balance_subsets:
-            base = None
-            if name != "all" and min_non_all is not None:
-                base = min_non_all
-            elif global_min is not None:
-                base = global_min
-            if base is not None:
-                limit = max(1, min(base, count))
-        limits[name] = limit
-    return limits
+    targets: Dict[str, Optional[int]] = {}
+    for name in subsets:
+        count = available_counts.get(name, 0)
+        if count == 0:
+            targets[name] = None
+            continue
+        if name == "all" or target_non_all is None:
+            targets[name] = count
+        else:
+            targets[name] = target_non_all
+    return targets
 
 
 def subset_dataset_by_neurons(
     dataset: Dict,
     subset_name: str,
-    neuron_limit: Optional[int],
+    target_neurons: Optional[int],
     rng: np.random.Generator,
 ) -> Optional[Dict]:
     labels = dataset.get("cell_labels")
@@ -383,13 +378,20 @@ def subset_dataset_by_neurons(
         else np.isin(labels, subset_values)
     )
     available = np.where(mask)[0]
-    if available.size == 0:
+    available_count = int(available.size)
+    if available_count == 0:
         return None
-    if neuron_limit is not None and neuron_limit < available.size:
-        selected = rng.choice(available, size=neuron_limit, replace=False)
+
+    if target_neurons is None or target_neurons <= available_count:
+        selected = np.sort(available)
+        bootstrap_multiplier = 1.0
     else:
-        selected = available
-    selected = np.sort(selected)
+        sampled = rng.choice(available, size=target_neurons, replace=True)
+        selected = np.sort(sampled)
+        bootstrap_multiplier = (
+            float(target_neurons) / float(available_count) if available_count > 0 else 1.0
+        )
+
     new_dataset = {
         "meta": dataset["meta"],
         "X_isi": dataset["X_isi"][:, selected],
@@ -400,11 +402,12 @@ def subset_dataset_by_neurons(
         "subject": dataset["subject"],
         "session_name": dataset["session_name"],
     }
-    counts = compute_counts(dataset["meta"], int(mask.sum()), int(selected.size))
+    counts = compute_counts(dataset["meta"], available_count, int(selected.size))
     counts["subset_neuron_limit"] = (
-        neuron_limit if neuron_limit is not None else int(selected.size)
+        target_neurons if target_neurons is not None else int(selected.size)
     )
-    counts["subset_available_neurons"] = int(mask.sum())
+    counts["subset_available_neurons"] = available_count
+    counts["subset_bootstrap_multiplier"] = bootstrap_multiplier
     new_dataset["counts"] = counts
     new_dataset["subset_name"] = subset_name
     return new_dataset
@@ -1228,11 +1231,9 @@ def generate_plots_for_session(
     data_root: Path,
     output_root: Path,
     subsets: List[str],
-    subsample_neurons: Optional[int],
-    balance_subsets: bool,
     plots_only: bool,
     output_format: str,
-    subsample_seed: int,
+    bootstrap_seed: int,
 ) -> None:
     output_root = output_root.expanduser()
     if plots_only:
@@ -1243,12 +1244,10 @@ def generate_plots_for_session(
 
     dataset = load_session_dataset(subject, session_name, data_root)
     print(f"Loaded dataset: {subject}/{session_name} ({dataset['region']})")
-    rng = np.random.default_rng(subsample_seed)
-    neuron_limits = determine_neuron_limit(
+    rng = np.random.default_rng(bootstrap_seed)
+    bootstrap_targets = determine_bootstrap_targets(
         dataset["cell_labels"],
         subsets,
-        subsample_neurons,
-        balance_subsets,
     )
 
     whole_rows: List[Dict] = []
@@ -1259,7 +1258,7 @@ def generate_plots_for_session(
         subset_dataset = subset_dataset_by_neurons(
             dataset,
             subset,
-            neuron_limits.get(subset),
+            bootstrap_targets.get(subset),
             rng,
         )
         if subset_dataset is None:
@@ -1350,16 +1349,10 @@ def parse_args() -> argparse.Namespace:
         help="Neuron subsets to decode separately (default: all exc vip sst).",
     )
     parser.add_argument(
-        "--subsample-neurons",
-        type=int,
-        default=None,
-        help="Subsample each neuron subset to this many neurons (default: auto min across subsets).",
-    )
-    parser.add_argument(
-        "--subsample-seed",
+        "--bootstrap-seed",
         type=int,
         default=RANDOM_STATE,
-        help="Random seed used for neuron subsampling (default: 0).",
+        help="Random seed used for neuron bootstrapping (default: 0).",
     )
     parser.add_argument(
         "--plots-only",
@@ -1383,10 +1376,9 @@ def main() -> None:
         data_root=args.data_root,
         output_root=args.output_root,
         subsets=args.cell_subsets,
-        subsample_neurons=args.subsample_neurons,
         plots_only=args.plots_only,
         output_format=args.output_format,
-        subsample_seed=args.subsample_seed,
+        bootstrap_seed=args.bootstrap_seed,
     )
 
 

@@ -81,12 +81,10 @@ def run_pipeline(
     sessions: Iterable[str],
     dest_endpoint: str | None,
     cell_subsets: List[str],
-    subsample_neurons: Optional[int],
-    subsample_seed: int,
+    bootstrap_seed: int,
     output_format: str,
     reuse_existing: bool,
     keep_session_data: bool,
-    balance_subsets: bool,
     extra_args: List[str],
 ) -> None:
     cmd = [sys.executable, str(pipeline_path), "--subjects", subject, "--sessions", *sessions]
@@ -94,14 +92,9 @@ def run_pipeline(
         cmd.extend(["--dest-endpoint", dest_endpoint])
     if cell_subsets:
         cmd.extend(["--decoder-cell-subsets", *cell_subsets])
-    if subsample_neurons is not None:
-        cmd.extend(["--decoder-subsample-neurons", str(subsample_neurons)])
-    if subsample_seed is not None:
-        cmd.extend(["--decoder-subsample-seed", str(subsample_seed)])
+    cmd.extend(["--decoder-bootstrap-seed", str(bootstrap_seed)])
     if output_format:
         cmd.extend(["--decoder-output-format", output_format])
-    if balance_subsets:
-        cmd.append("--decoder-balance-subsets")
     if reuse_existing:
         cmd.append("--reuse-existing-sessions")
     if keep_session_data:
@@ -124,16 +117,10 @@ def parse_args() -> argparse.Namespace:
         help="Neuron subsets to decode during retry (default: all exc vip sst).",
     )
     parser.add_argument(
-        "--subsample-neurons",
-        type=int,
-        default=None,
-        help="Optional neuron subsample cap passed to the pipeline.",
-    )
-    parser.add_argument(
-        "--subsample-seed",
+        "--bootstrap-seed",
         type=int,
         default=0,
-        help="Random seed for neuron subsampling (default: 0).",
+        help="Random seed for neuron bootstrapping (default: 0).",
     )
     parser.add_argument(
         "--output-format",
@@ -155,11 +142,6 @@ def parse_args() -> argparse.Namespace:
         "--overwrite-plots",
         action="store_true",
         help="Force rerunning retries even if exports already exist.",
-    )
-    parser.add_argument(
-        "--balance-subsets",
-        action="store_true",
-        help="Request decoder balancing of neuron subset sizes during retry.",
     )
     parser.add_argument(
         "--pipeline-args",
@@ -195,12 +177,10 @@ def main() -> None:
             sessions,
             args.dest_endpoint,
             args.cell_subsets,
-            args.subsample_neurons,
-            args.subsample_seed,
+            args.bootstrap_seed,
             args.output_format,
             args.reuse_existing_sessions,
             args.keep_session_data,
-            args.balance_subsets,
             extra_args,
         )
     print("Retry attempts completed.")

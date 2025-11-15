@@ -75,12 +75,10 @@ class PipelineConfig:
     max_workers: int
     session_filter: Optional[Set[str]] = None
     cell_subsets: List[str] = field(default_factory=lambda: ["all", "exc", "vip", "sst"])
-    subsample_neurons: Optional[int] = None
-    subsample_seed: int = 0
+    bootstrap_seed: int = 0
     output_format: str = "pdf"
     keep_session_data: bool = False
     reuse_existing_sessions: bool = False
-    balance_subsets: bool = False
 
     def command_env(self) -> Dict[str, str]:
         env = {
@@ -259,11 +257,9 @@ def generate_plots(subject: str, session: str, config: PipelineConfig, logger: l
             data_root=config.local_root,
             output_root=config.output_root,
             subsets=config.cell_subsets,
-            subsample_neurons=config.subsample_neurons,
-            balance_subsets=config.balance_subsets,
             plots_only=False,
             output_format=config.output_format,
-            subsample_seed=config.subsample_seed,
+            bootstrap_seed=config.bootstrap_seed,
         )
     logger.info("Finished plotting for %s/%s", subject, session)
 
@@ -405,27 +401,16 @@ def parse_args() -> argparse.Namespace:
         help="Neuron subsets to decode (default: all exc vip sst).",
     )
     parser.add_argument(
-        "--decoder-subsample-neurons",
-        type=int,
-        default=None,
-        help="Subsample each subset to this many neurons (default: auto min across subsets).",
-    )
-    parser.add_argument(
-        "--decoder-subsample-seed",
+        "--decoder-bootstrap-seed",
         type=int,
         default=0,
-        help="Random seed for neuron subsampling (default: 0).",
+        help="Random seed for neuron bootstrapping (default: 0).",
     )
     parser.add_argument(
         "--decoder-output-format",
         choices=["pdf", "png"],
         default="pdf",
         help="Figure format for decoder plots (default: pdf).",
-    )
-    parser.add_argument(
-        "--decoder-balance-subsets",
-        action="store_true",
-        help="Subsample all neuron subsets to the same size (minimum across subsets).",
     )
     parser.add_argument(
         "--reuse-existing-sessions",
@@ -461,12 +446,10 @@ def main() -> None:
         max_workers=max(1, args.max_workers),
         session_filter=sessions_filter,
         cell_subsets=args.decoder_cell_subsets,
-        subsample_neurons=args.decoder_subsample_neurons,
-        subsample_seed=args.decoder_subsample_seed,
+        bootstrap_seed=args.decoder_bootstrap_seed,
         output_format=args.decoder_output_format,
         keep_session_data=args.keep_session_data,
         reuse_existing_sessions=args.reuse_existing_sessions,
-        balance_subsets=args.decoder_balance_subsets,
     )
 
     jobs = discover_shortlong_sessions(config, logger, args.subjects, sessions_filter)
