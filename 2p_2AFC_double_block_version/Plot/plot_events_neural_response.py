@@ -293,13 +293,16 @@ def main(neural_trials_list, labels_list, save_path=None):
     gs = gridspec.GridSpec(52, 6, wspace=0.4, hspace=0.4)
     
     # First stimulus onset
-    l_frames, r_frames = 90, 90
+    l_frames, r_frames = 90, 120
     neu_seq, neu_time, trial_type, block_type, isi, decision, labels, outcomes = pool_session_data(
         neural_trials_list, labels_list, 'stim_seq', l_frames, r_frames, indices=0)
     
     short_trials = trial_type == 0
     long_trials = trial_type == 1
     
+    # short_trials = decision == 0  #(left)
+    # long_trials = decision == 1   #(right)
+
     metrics_short = calculate_metrics(neu_seq, short_trials, labels)
     metrics_long = calculate_metrics(neu_seq, long_trials, labels)
     

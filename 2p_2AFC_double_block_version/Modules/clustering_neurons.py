@@ -14,6 +14,7 @@ import os
 from matplotlib import cm
 import warnings
 warnings.filterwarnings('ignore')
+import matplotlib.gridspec as gridspec
 
 class NeuralActivityClustering:
     def __init__(self, neural_data, random_state=42):
@@ -324,9 +325,185 @@ class NeuralActivityClustering:
             fig_path = os.path.join(figures_dir, 'clustering_results.pdf')
             plt.savefig(fig_path, dpi=300, bbox_inches='tight')
         plt.close()
+    
+    # def plot_cluster_activity_by_conditions(self, neu_seq, neu_time, trial_type, block_type, outcome, figsize=(20, 10), save_path=None):
+    #     """
+    #     Plot average neural activity for each cluster under specific trial conditions using gridspec.
+        
+    #     Parameters:
+    #     neu_seq: np.ndarray, shape (n_trials, n_neurons, time), neural activity data
+    #     neu_time: np.ndarray, time points for the x-axis
+    #     trial_type: np.ndarray, shape (n_trials,), 0 for short trials, 1 for long trials
+    #     block_type: np.ndarray, shape (n_trials,), 1 for short block, 2 for long block
+    #     outcome: np.ndarray, shape (n_trials,), 'Reward' or 'Punish'
+    #     figsize: tuple, figure size (width, height)
+    #     save_path: str, path to save the figure (optional)
+    #     """
+    #     import matplotlib.gridspec as gridspec
+        
+    #     n_clusters = len(np.unique(self.cluster_labels))
+        
+    #     # Define the 8 trial conditions
+    #     conditions = [
+    #         ('Rewarded Short Trials (Short Block)', (outcome == 'reward') & (trial_type == 0) & (block_type == 1)),
+    #         ('Rewarded Short Trials (Long Block)', (outcome == 'reward') & (trial_type == 0) & (block_type == 2)),
+    #         ('Rewarded Long Trials (Short Block)', (outcome == 'reward') & (trial_type == 1) & (block_type == 1)),
+    #         ('Rewarded Long Trials (Long Block)', (outcome == 'reward') & (trial_type == 1) & (block_type == 2)),
+    #         ('Punished Short Trials (Short Block)', (outcome == 'punish') & (trial_type == 0) & (block_type == 1)),
+    #         ('Punished Short Trials (Long Block)', (outcome == 'punish') & (trial_type == 0) & (block_type == 2)),
+    #         ('Punished Long Trials (Short Block)', (outcome == 'punish') & (trial_type == 1) & (block_type == 1)),
+    #         ('Punished Long Trials (Long Block)', (outcome == 'punish') & (trial_type == 1) & (block_type == 2))
+    #     ]
+        
+    #     # Create figure with 2x4 grid
+    #     fig = plt.figure(figsize=figsize)
+    #     gs = gridspec.GridSpec(2, 4, figure=fig)
+        
+    #     # Plot each condition
+    #     for idx, (title, condition) in enumerate(conditions):
+    #         ax = fig.add_subplot(gs[idx // 4, idx % 4])
+            
+    #         # Plot average activity for each cluster
+    #         for cluster_id in range(n_clusters):
+    #             cluster_neurons = self.cluster_labels == cluster_id
+    #             # Select trials matching the condition
+    #             selected_trials = neu_seq[condition]
+    #             if selected_trials.shape[0] > 0:  # Check if there are trials for this condition
+    #                 # Compute mean and SEM for neurons in this cluster
+    #                 mean_activity = np.nanmean(selected_trials[:, cluster_neurons], axis=(0, 1))
+    #                 sem_activity = stats.sem(selected_trials[:, cluster_neurons].reshape(-1, selected_trials.shape[2]), axis=0, nan_policy='omit')
+                    
+    #                 # Plot mean activity with SEM shading
+    #                 ax.plot(neu_time, mean_activity, label=f'Cluster {cluster_id}', linewidth=2, color=plt.cm.tab10(cluster_id))
+    #                 ax.fill_between(neu_time, mean_activity - sem_activity, mean_activity + sem_activity, 
+    #                             alpha=0.3, color=plt.cm.tab10(cluster_id))
+    #                 ax.axvline(0, color='r', linestyle='--', linewidth=1)
+            
+    #         ax.set_xlabel('Time (from first stim onset)')
+    #         ax.set_ylabel('Neural Activity')
+    #         ax.set_title(title, fontsize=10)
+    #         ax.legend(fontsize=8)
+    #         ax.spines['top'].set_visible(False)
+    #         ax.spines['right'].set_visible(False)
+        
+    #     plt.tight_layout()
+        
+    #     if save_path is not None:
+    #         figures_dir = os.path.join(save_path, 'Figures')
+    #         os.makedirs(figures_dir, exist_ok=True)
+    #         fig_path = os.path.join(figures_dir, 'cluster_activity_by_conditions.pdf')
+    #         plt.savefig(fig_path, dpi=300, bbox_inches='tight')
+    #     plt.close()
 
+    def plot_cluster_activity_by_conditions(self, neu_seq, neu_time, trial_type, block_type, outcome, figsize=(20, 15), save_path=None):
+        """
+        Plot average neural activity and heatmaps for each cluster under specific trial conditions using gridspec.
+        
+        Parameters:
+        neu_seq: np.ndarray, shape (n_trials, n_neurons, time), neural activity data
+        neu_time: np.ndarray, time points for the x-axis
+        trial_type: np.ndarray, shape (n_trials,), 0 for short trials, 1 for long trials
+        block_type: np.ndarray, shape (n_trials,), 1 for short block, 2 for long block
+        outcome: np.ndarray, shape (n_trials,), 'Reward' or 'Punish'
+        figsize: tuple, figure size (width, height)
+        save_path: str, path to save the figure (optional)
+        """
 
-def main(neural_data, neu_time, save_path=None):
+        def apply_colormap(data, cmap):
+            """Normalize data and apply colormap."""
+            if len(data) > 0:
+                vmin, vmax = data.min(), data.max()
+                normalized = (data - vmin) / (vmax - vmin + 1e-10)
+                return cmap(normalized)
+            return np.array([])
+        
+        n_clusters = len(np.unique(self.cluster_labels))
+        n_neurons = neu_seq.shape[1]
+        
+        # Define the 8 trial conditions
+        conditions = [
+            ('Rewarded Short Trials (Short Block)', (outcome == 'reward') & (trial_type == 0) & (block_type == 1)),
+            ('Rewarded Short Trials (Long Block)', (outcome == 'reward') & (trial_type == 0) & (block_type == 2)),
+            ('Rewarded Long Trials (Short Block)', (outcome == 'reward') & (trial_type == 1) & (block_type == 1)),
+            ('Rewarded Long Trials (Long Block)', (outcome == 'reward') & (trial_type == 1) & (block_type == 2)),
+            ('Punished Short Trials (Short Block)', (outcome == 'punish') & (trial_type == 0) & (block_type == 1)),
+            ('Punished Short Trials (Long Block)', (outcome == 'punish') & (trial_type == 0) & (block_type == 2)),
+            ('Punished Long Trials (Short Block)', (outcome == 'punish') & (trial_type == 1) & (block_type == 1)),
+            ('Punished Long Trials (Long Block)', (outcome == 'punish') & (trial_type == 1) & (block_type == 2))
+        ]
+        
+        # Create figure with 4x4 grid (2 rows for line plots, 2 rows for heatmaps)
+        fig = plt.figure(figsize=figsize)
+        gs = gridspec.GridSpec(4, 4, figure=fig, height_ratios=[1, 1, 1, 1])
+        
+        # Compute cluster boundaries for heatmaps
+        cluster_counts = np.bincount(self.cluster_labels)
+        cluster_boundaries = np.cumsum(cluster_counts)[:-1]
+        
+        # Sort neurons by cluster
+        sorted_idx = np.argsort(self.cluster_labels)
+        
+        # Plot each condition
+        for idx, (title, condition) in enumerate(conditions):
+            # Line plot (top 2 rows)
+            ax_line = fig.add_subplot(gs[idx // 4, idx % 4])
+            
+            # Plot average activity for each cluster
+            for cluster_id in range(n_clusters):
+                cluster_neurons = self.cluster_labels == cluster_id
+                # Select trials matching the condition
+                selected_trials = neu_seq[condition]
+                if selected_trials.shape[0] > 0:  # Check if there are trials for this condition
+                    # Compute mean and SEM for neurons in this cluster
+                    mean_activity = np.nanmean(selected_trials[:, cluster_neurons], axis=(0, 1))
+                    sem_activity = stats.sem(selected_trials[:, cluster_neurons].reshape(-1, selected_trials.shape[2]), axis=0, nan_policy='omit')
+                    
+                    # Plot mean activity with SEM shading
+                    ax_line.plot(neu_time, mean_activity, label=f'Cluster {cluster_id}', linewidth=2, color=plt.cm.tab10(cluster_id))
+                    ax_line.fill_between(neu_time, mean_activity - sem_activity, mean_activity + sem_activity, 
+                                    alpha=0.3, color=plt.cm.tab10(cluster_id))
+                    ax_line.axvline(0, color='r', linestyle='--', linewidth=1)
+            
+            ax_line.set_xlabel('Time (from first stim onset)')
+            ax_line.set_ylabel('Neural Activity')
+            ax_line.set_title(title, fontsize=10)
+            ax_line.legend(fontsize=8)
+            ax_line.spines['top'].set_visible(False)
+            ax_line.spines['right'].set_visible(False)
+            
+            # Heatmap (bottom 2 rows)
+            ax_heatmap = fig.add_subplot(gs[(idx // 4) + 2, idx % 4])
+            selected_trials = neu_seq[condition]
+            if selected_trials.shape[0] > 0:
+                # Average across trials for the heatmap
+                mean_trial_data = np.nanmean(selected_trials, axis=0)
+                # Sort neurons by cluster
+                sorted_data = mean_trial_data[sorted_idx]
+                cmap = cm.get_cmap('inferno')
+                heatmap_rgb = np.array([apply_colormap(row, cmap) for row in sorted_data])
+                im = ax_heatmap.imshow(heatmap_rgb, interpolation='nearest', aspect='auto',
+                                    extent=[neu_time[0], neu_time[-1], n_neurons, 0])
+                ax_heatmap.set_xlabel('Time')
+                ax_heatmap.set_ylabel('Neuron (sorted by cluster)')
+                ax_heatmap.set_title(f'{title} Heatmap', fontsize=10)
+                
+                # Add cluster boundaries
+                for boundary in cluster_boundaries:
+                    ax_heatmap.axhline(y=boundary - 0.5, color='white', linewidth=2)
+                
+                # Add colorbar
+                plt.colorbar(im, ax=ax_heatmap, fraction=0.046, pad=0.04)
+        
+        plt.tight_layout()
+        
+        if save_path is not None:
+            figures_dir = os.path.join(save_path, 'Figures')
+            os.makedirs(figures_dir, exist_ok=True)
+            fig_path = os.path.join(figures_dir, 'cluster_activity_by_conditions_with_heatmaps.pdf')
+            plt.savefig(fig_path, dpi=300, bbox_inches='tight')
+        plt.close()
+
+def main(neural_data, neu_time, neu_seq1, neu_time1, trial_type1, block_type1, outcome1, save_path=None):
     
     # Initialize and run clustering
     clustering = NeuralActivityClustering(neural_data)
@@ -339,11 +516,16 @@ def main(neural_data, neu_time, save_path=None):
     
     # Fit final model
     cluster_labels = clustering.fit_final_model()
+    clustering_labels = clustering.cluster_labels
+    print(f"Final clustering labels: {np.unique(clustering_labels)}")
     
     # Plot results
     clustering.plot_cv_results(save_path=save_path)
     n_neurons = neural_data.shape[0]
     clustering.plot_clustering_results(neu_time, n_neurons, save_path=save_path)
+
+    clustering.plot_cluster_activity_by_conditions(neu_seq1, neu_time1, trial_type1, block_type1, outcome1, figsize=(20, 10), save_path=save_path)
+    return clustering_labels
 
 def pool_session_data(neural_trials_list, labels_list, state, l_frames, r_frames, indices):
     """
@@ -445,20 +627,29 @@ def get_avg_neural_activity(neu_seq, trial_type, block_type):
     """
     # Select long trials (trial_type == 1) of short block (block_type == 1)
     # Note: block_type must be passed as an argument
-    long_trials = (trial_type == 1) & (block_type == 1)
-    avg_neuron = np.nanmean(neu_seq[long_trials], axis=0)  # Shape: (n_neurons, time)
+    # long_trials = (trial_type == 1) & (block_type == 1)
+    # avg_neuron = np.nanmean(neu_seq[long_trials], axis=0)  # Shape: (n_neurons, time)
+    avg_neuron = np.nanmean(neu_seq, axis=0)  # Shape: (n_neurons, time)
     return avg_neuron
     
-def clustering_GMM(neural_trials, labels, save_path = None, pooling = False):
+def clustering_GMM(neural_trials, labels_list, save_path = None, pooling = False):
     
     # get the framse for the smallest time interval among the long trials
-    l_frames = 0
-    _ , r_frames = find_min_long_trial_isi(neural_trials)
+    # l_frames = 0
+    # _ , r_frames = find_min_long_trial_isi(neural_trials)
+    l_frames, r_frames = 60, 120  # use 3s (90 frames) for clustering
+    # for plotting
+    l_frames1, r_frames1 = 60, 120
+    
     if pooling:
-        neu_seq, neu_time, trial_type, block_type, isi, decision, labels, outcome = pool_session_data(neural_trials, labels, 'stim_seq', l_frames, r_frames, indices=0)
+        neu_seq, neu_time, trial_type, block_type, isi, decision, labels, outcome = pool_session_data(neural_trials, labels_list, 'stim_seq', l_frames, r_frames, indices=0)
+        neu_seq1, neu_time1, trial_type1, block_type1, isi, decision, labels, outcome1 = pool_session_data(neural_trials, labels_list, 'stim_seq', l_frames1, r_frames1, indices=0)
     else:
         neu_seq, neu_time, stim_seq, stim_value, stim_time, led_value, trial_type, block_type, isi, decision, outcome = get_perception_response(neural_trials, 'stim_seq', l_frames, r_frames, indices=0)
+        neu_seq1, neu_time1, stim_seq, stim_value, stim_time, led_value, trial_type1, block_type1, isi, decision, outcome1= get_perception_response(neural_trials, 'stim_seq', l_frames1, r_frames1, indices=0)
 
     # Average neural activity from first stim onset to second stim onset for each neuron
     neural_data = get_avg_neural_activity(neu_seq, trial_type, block_type)
-    main(neural_data,neu_time, save_path = save_path)
+    cluster_labels = main(neural_data,neu_time, neu_seq1, neu_time1, trial_type1, block_type1, outcome1, save_path = save_path)
+    print(f"Clustering labels: {np.unique(cluster_labels)}")
+    return cluster_labels
