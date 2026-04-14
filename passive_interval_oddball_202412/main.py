@@ -54,7 +54,7 @@ def run(session_config_list, cate_list):
     for i in range(len(list_ops)):
         print('Trializing {}'.format(
             list(session_config_list['list_session_name'].keys())[i]))
-        Trialization.run(list_ops[i])
+        #Trialization.run(list_ops[i])
 
     print('===============================================')
     print('======== plotting representative masks ========')
@@ -65,8 +65,8 @@ def run(session_config_list, cate_list):
     print('===============================================')
     print('========= plotting 3331Random results =========')
     print('===============================================')
-    #fn2 = visualization2_3331Random.run(session_config_list, smooth, cate_list)
-    fn2 = []
+    fn2 = visualization2_3331Random.run(session_config_list, smooth, cate_list)
+    #fn2 = []
 
     print('===============================================')
     print('======= plotting 1451ShortLong results ========')
@@ -79,7 +79,7 @@ def run(session_config_list, cate_list):
     print('===============================================')
     #fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
     fn4 = []
-    
+        
     print('===============================================')
     print('===== plotting 3331RandomExtended results =====')
     print('===============================================')
@@ -108,7 +108,7 @@ def run(session_config_list, cate_list):
 
 
 if __name__ == "__main__":
-    COMMANDLINE_MODE = 0
+    COMMANDLINE_MODE = 1
     cate_list = [[-1,1,2]]
     from session_configs import all_config_list
     
@@ -129,21 +129,19 @@ if __name__ == "__main__":
 
         session_config_test = {
             'list_session_name' : {
-                'VTYH02_PPC_20250214_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250213_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250212_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250211_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250210_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250208_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250207_1451ShortLong' : 'short_long',
-                'VTYH02_PPC_20250206_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250526_3331Random' : 'random',
-                #'YH18VT_V1_20250526_3331Random' : 'random',
-                #'YH18VT_V1_20250526_3331Random' : 'random',
-                #'YH18VT_V1_20250527_3331Random' : 'random',
-                #'YH18VT_V1_20250528_3331Random' : 'random',
-                #'YH18VT_V1_20250529_3331Random' : 'random',
-                #'YH18VT_V1_20250530_3331Random' : 'random',
+                #'VTYH02_PPC_20250214_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250213_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250212_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250211_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250210_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250208_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250207_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250206_1451ShortLong' : 'short_long',     
+                'YH18VT_V1_20250526_3331Random' : 'random',
+                'YH18VT_V1_20250527_3331Random' : 'random',
+                'YH18VT_V1_20250528_3331Random' : 'random',
+                'YH18VT_V1_20250529_3331Random' : 'random',
+                'YH18VT_V1_20250530_3331Random' : 'random',
                 #'YH18VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250331_4131FixJitterOdd' : 'fix_jitter_odd',
@@ -154,22 +152,12 @@ if __name__ == "__main__":
                 #'YH18VT_V1_20250408_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250409_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250410_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250415_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250416_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250417_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250418_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250421_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250422_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250423_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250424_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250425_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250428_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250429_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250430_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250501_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250502_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250503_1451ShortLong' : 'short_long',
-                #'YH18VT_V1_20250505_1451ShortLong' : 'short_long',
+                #'VTYH02_PPC_20250118_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'VTYH02_PPC_20250127_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'VTYH02_PPC_20250123_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'VTYH02_PPC_20250122_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'VTYH02_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'VTYH02_PPC_20250120_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH17VT_V1_20250623_3331RandomExtended' : 'extended_random',
                 #'YH17VT_V1_20250624_3331RandomExtended' : 'extended_random',
                 #'YH17VT_V1_20250626_3331RandomExtended' : 'extended_random',
@@ -185,18 +173,32 @@ if __name__ == "__main__":
                 #'YH19VT_V1_20250626_3331RandomExtended' : 'extended_random',
                 #'YH19VT_V1_20250627_3331RandomExtended' : 'extended_random',
                 #'YH19VT_V1_20250628_3331RandomExtended' : 'extended_random',
-                #'testYH17VT_V1_20250921_1451ShortLong' : 'short_long',
-                #'testYH19VT_20250824_1451ShortLong_NoCell' : 'short_long',
-                #'testYH19VT_20250824_1451ShortLong_NoLightDeep' : 'short_long',
-                #'testYH19VT_20250824_1451ShortLong_NoMouse' : 'short_long',
                 },
             'session_folder' : 'test',
             'sig_tag' : 'all',
             'force_label' : None,
             }
+        session_config_test2 = {
+            'list_session_name' : {
+                #'YH14SC_PPC_20250421_1451ShortLong' : 'short_long',
+                #'YH14SC_PPC_20250422_1451ShortLong' : 'short_long',
+                #'YH14SC_PPC_20250423_1451ShortLong' : 'short_long',
+                #'YH14SC_PPC_20250424_1451ShortLong' : 'short_long',
+                #'YH14SC_PPC_20250425_1451ShortLong' : 'short_long',  
+                'YH14SC_PPC_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH14SC_PPC_20250327_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH14SC_PPC_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH14SC_PPC_20250401_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH14SC_PPC_20250402_4131FixJitterOdd' : 'fix_jitter_odd',
+                },
+            'session_folder' : 'test',
+            'sig_tag' : 'all',
+            'force_label' : 2,
+            }
         session_config_list_test = {
             'list_config': [
                 session_config_test,
+                #session_config_test2,
                 ],
             'label_names' : {
                 '-1':'Exc',

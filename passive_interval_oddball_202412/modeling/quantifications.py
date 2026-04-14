@@ -9,62 +9,90 @@ from torch import nn
 from modeling.utils import norm01
 
 # model.
-def trf_model(t, b, a, m, r, s, ramp_sign=1):
+def trf_model(t, b, a, m, r, s, ramp_sign):
     t_eff = ramp_sign * t.unsqueeze(0)
-    term_factor = a.unsqueeze(1) / 2
-    term_exp = torch.exp((-2*m.unsqueeze(1) + r.unsqueeze(1)**2) / (2*s.unsqueeze(1)) - t_eff/s.unsqueeze(1))
-    term_erfc = torch.erfc((-1*m.unsqueeze(1) + (r.unsqueeze(1)**2)/s.unsqueeze(1) - t_eff) /
-                           (torch.sqrt(torch.tensor(2.0, device=t.device)) * r.unsqueeze(1)))
-    return b.unsqueeze(1) + term_factor * term_exp * term_erfc
+    r_col = r.unsqueeze(1)
+    s_col = s.unsqueeze(1)
+    m_col = m.unsqueeze(1)
+    a_col = a.unsqueeze(1)
+    b_col = b.unsqueeze(1)
+    term_factor = a_col / 2
+    term_exp = torch.exp((2 * m_col + r_col**2) / (2 * s_col) - t_eff / s_col)
+    term_erfc = torch.erfc(
+        (m_col + r_col**2 / s_col - t_eff) /
+        (torch.sqrt(torch.tensor(2.0, device=t.device)) * r_col)
+    )
+    return b_col + term_factor * term_exp * term_erfc
+
 def trf_model_pre(t, b, a, m, r, s):
-    return trf_model(t, b, a, m, r, s, ramp_sign=1)
-def trf_model_post(t, b, a, m, r, s):
     return trf_model(t, b, a, m, r, s, ramp_sign=-1)
+
+def trf_model_post(t, b, a, m, r, s):
+    return trf_model(t, b, a, m, r, s, ramp_sign=1)
+
+# bounded reparameterization:
+# latent z in (-inf, inf) -> param p in [lo, hi]
+# z = 0 maps to midpoint of [lo, hi]
+def latent_to_bounded(z, bounds_lo, bounds_hi):
+    span = bounds_hi - bounds_lo
+    p = bounds_lo + span * torch.sigmoid(z)
+    # handle fixed parameters where lo == hi
+    fixed = span == 0
+    if fixed.any():
+        p = torch.where(fixed.unsqueeze(0), bounds_lo.unsqueeze(0), p)
+    return p
 
 # loss function.
 class LossFunction(nn.Module):
     def __init__(self, l2_weights=None):
         super().__init__()
-        self.mse = nn.MSELoss(reduction="none")
+        self.loss = nn.HuberLoss(reduction="none", delta=0.05)
         self.l2_weights = nn.Parameter(
-            torch.tensor(l2_weights if l2_weights is not None else [0,0,0,0,0],
-                         dtype=torch.float32), requires_grad=False)
-    def forward(self, pred, target, params):
-        mse_per_neuron = self.mse(pred, target).mean(dim=1)
+            torch.tensor(
+                l2_weights if l2_weights is not None else [0, 0, 0, 0, 0],
+                dtype=torch.float32
+            ),
+            requires_grad=False
+        )
+
+    def forward(self, pred, target, latent_params):
+        mse_per_neuron = self.loss(pred, target).mean(dim=1)
         loss_mse = mse_per_neuron.mean()
-        l2_loss = torch.sum(self.l2_weights * torch.mean(params**2, dim=0))
+        l2_loss = torch.sum(self.l2_weights * torch.mean(latent_params**2, dim=0))
         return loss_mse + l2_loss, mse_per_neuron
 
 # optimization.
 def optimize_params(
         x, y, model_fn, n_neurons,
-        max_iter, lr, l2_weights, n_inits, device):
+        bounds, max_iter, lr, l2_weights, n_inits, device):
+    bounds_lo, bounds_hi = bounds
     best_params = torch.zeros((n_neurons, 5), device=device)
     best_loss = torch.full((n_neurons,), np.inf, device=device)
-    bounds_lo = torch.tensor([-1, 0, 0, 0.01, 0], dtype=torch.float32, device=device)
-    bounds_hi = torch.tensor([ 1, 5.0, 0.5, 1.0, 5.0], dtype=torch.float32, device=device)
-    criterion = LossFunction(l2_weights)
-    # random init.
+    criterion = LossFunction(l2_weights).to(device)
+
+    # random init in latent space, centered near 0
     for _ in tqdm(range(n_inits)):
-        init = torch.rand((n_neurons, 5), device=device)
-        params = (bounds_lo + (bounds_hi - bounds_lo) * init).requires_grad_(True)
-        optimizer = torch.optim.Adam([params], lr=lr)
+        latent_params = (0.1 * torch.randn((n_neurons, 5), device=device)).requires_grad_(True)
+        optimizer = torch.optim.Adam([latent_params], lr=lr)
+
         # optimize step.
         for _ in range(max_iter):
             optimizer.zero_grad()
+            params = latent_to_bounded(latent_params, bounds_lo, bounds_hi)
             pred = model_fn(x, *params.T)
-            loss, _ = criterion(pred, y, params)
+            loss, _ = criterion(pred, y, latent_params)
             loss.backward()
             optimizer.step()
-            with torch.no_grad():
-                params.data = torch.max(torch.min(params.data, bounds_hi), bounds_lo)
+
         # pick best results.
         with torch.no_grad():
+            params = latent_to_bounded(latent_params, bounds_lo, bounds_hi)
             pred = model_fn(x, *params.T)
             mse = ((pred - y) ** 2).mean(dim=1)
             improved = mse < best_loss
             best_loss[improved] = mse[improved]
             best_params[improved] = params[improved]
+
     return best_params.detach()
 
 # preprocessing.
@@ -96,194 +124,32 @@ def fit_trf_model(neu_seq_l, neu_time_l, neu_seq_r, neu_time_r):
     max_iter = 520
     n_inits = 5
     lr = 1e-2
-    l2_weights = 1e-10
+    l2_weights = 1e-4
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # normalization.
     nsl, ntl, nsr, ntr = preprocess_data(neu_seq_l, neu_time_l, neu_seq_r, neu_time_r, device)
     # fit models.
     print("Fitting pre ramp model")
+    bounds = [
+        torch.tensor([-1, 1, -0.5, 1e-2, 1e-3], dtype=torch.float32, device=device),
+        torch.tensor([ 1, 1, 0,    1.0, 1.5], dtype=torch.float32, device=device)]
     params_pre = optimize_params(
         ntl, nsl, trf_model_pre, nsl.shape[0],
-        max_iter=max_iter, lr=lr, l2_weights=l2_weights, n_inits=n_inits, device=device)
+        bounds=bounds, max_iter=max_iter, lr=lr,
+        l2_weights=l2_weights, n_inits=n_inits, device=device)
     pred_pre, r2_pre = reproduce_and_score(ntl, nsl, trf_model_pre, params_pre)
     trf_param_pre, pred_pre, r2_pre = convert_results(params_pre, pred_pre, r2_pre)
     print("Fitting post ramp model")
+    bounds = [
+        torch.tensor([-1, 1, 0,    1e-2, 1e-3], dtype=torch.float32, device=device),
+        torch.tensor([ 1, 1, 0.02, 0.1,  1], dtype=torch.float32, device=device)]
     params_post = optimize_params(
         ntr, nsr, trf_model_post, nsr.shape[0],
-        max_iter=max_iter, lr=lr, l2_weights=l2_weights, n_inits=n_inits, device=device)
+        bounds=bounds, max_iter=max_iter, lr=lr,
+        l2_weights=l2_weights, n_inits=n_inits, device=device)
     # evaluate.
     pred_post, r2_post = reproduce_and_score(ntr, nsr, trf_model_post, params_post)
     # convert to numpy.
     trf_param_post, pred_post, r2_post = convert_results(params_post, pred_post, r2_post)
     return [trf_param_pre, pred_pre, r2_pre,
             trf_param_post, pred_post, r2_post]
-
-'''
-
-nsl = torch.tensor([norm01(x) for x in neu_seq_l], dtype=torch.float32, device=device)
-nsr = torch.tensor([norm01(x) for x in neu_seq_r], dtype=torch.float32, device=device)
-ntl = torch.tensor(norm01(neu_time_l) - 1, dtype=torch.float32, device=device)
-ntr = torch.tensor(norm01(neu_time_r), dtype=torch.float32, device=device)
-
-
-axs[0].plot(ntl, trf_model_pre(ntl, 0, 1.5, -0.4, 0.15, 0.5))
-axs[8].plot(ntl, trf_model_pre(ntl, 0.2, 1.5, -0.1, 0.1, 0.5))
-axs[10].plot(ntl, trf_model_pre(ntl, 0.2, 1.5, -0.1, 0.1, 0.5))
-
-ntl = torch.tensor(norm01(neu_time_l) - 1, dtype=torch.float32, device=device)
-ntr = torch.tensor(norm01(neu_time_r), dtype=torch.float32, device=device)
-
-fig, ax = plt.subplots(1, 1, figsize=(3, 3))
-ax.scatter(ntr, nsr[7],s=3, color='black')
-ax.plot(ntr, trf_model_post(ntr,
-                          torch.tensor([-0.3]),
-                          torch.tensor([5.6]),
-                          torch.tensor([0.7]),
-                          torch.tensor([0.3]),
-                          torch.tensor([0.3])).reshape(-1))
-
-fig, axs = plt.subplots(6, 8, figsize=(12, 8))
-axs = [x for xs in axs for x in xs]
-for ni in range(48):
-    axs[ni].plot(ntl,nsl[ni])
-    axs[ni].plot(ntl,pred_pre[ni])
-    axs[ni].axis('off')
-    axs[ni].set_title(f'{r2_pre[ni]:.2f}')
-fig, axs = plt.subplots(6, 8, figsize=(12, 8))
-axs = [x for xs in axs for x in xs]
-for ni in range(48):
-    axs[ni].plot(ntr,nsr[ni])
-    axs[ni].plot(ntr,pred_post[ni])
-    axs[ni].axis('off')
-    axs[ni].set_title(f'{r2_post[ni]:.2f}')
-
-fig, ax = plt.subplots(1, 1, figsize=(3, 3))
-ax.scatter(r2_pre, r2_post)
-
-fig, axs = plt.subplots(5, 1, figsize=(5, 10))
-for i in range(5):
-    axs[i].hist(trf_param_pre[:,i], bins=100)
-fig, axs = plt.subplots(5, 1, figsize=(5, 10))
-for i in range(5):
-    axs[i].hist(trf_param_post[:,i], bins=100)
-    
-i = (r2_pre>0.8)*(r2_post>0.8)
-fig, axs = plt.subplots(6, 8, figsize=(16, 12))
-axs = [x for xs in axs for x in xs]
-for ni in range(48):
-    axs[ni].scatter(ntl,nsl[i][ni],s=3, color='black')
-    axs[ni].plot(ntl,pred_pre[i][ni], color='mediumseagreen')
-    axs[ni].scatter(ntr,nsr[i][ni],s=3, color='black')
-    axs[ni].plot(ntr,pred_post[i][ni], color='coral')
-    axs[ni].axvline(0, color='black', lw=1, linestyle='-')
-    axs[ni].axis('off')
-    axs[ni].set_title(f'up:{r2_pre[i][ni]:.2f},dn:{r2_post[i][ni]:.2f}')
-
-i = (r2_pre<0.4)*(r2_post>0.8)
-fig, axs = plt.subplots(6, 8, figsize=(16, 12))
-axs = [x for xs in axs for x in xs]
-for ni in range(48):
-    axs[ni].scatter(ntl,nsl[i][ni],s=3, color='black')
-    axs[ni].plot(ntl,pred_pre[i][ni], color='mediumseagreen')
-    axs[ni].scatter(ntr,nsr[i][ni],s=3, color='black')
-    axs[ni].plot(ntr,pred_post[i][ni], color='coral')
-    axs[ni].axvline(0, color='black', lw=1, linestyle='-')
-    axs[ni].axis('off')
-    axs[ni].set_title(f'up:{r2_pre[i][ni]:.2f},dn:{r2_post[i][ni]:.2f}')
-    axs[ni].text('')
-
-i = (r2_pre>0.8)*(r2_post<0.4)
-fig, axs = plt.subplots(6, 8, figsize=(16, 12))
-axs = [x for xs in axs for x in xs]
-for ni in range(48):
-    axs[ni].scatter(ntl,nsl[i][ni],s=3, color='black')
-    axs[ni].plot(ntl,pred_pre[i][ni], color='mediumseagreen')
-    axs[ni].scatter(ntr,nsr[i][ni],s=3, color='black')
-    axs[ni].plot(ntr,pred_post[i][ni], color='coral')
-    axs[ni].axvline(0, color='black', lw=1, linestyle='-')
-    axs[ni].axis('off')
-    axs[ni].set_title(f'up:{r2_pre[i][ni]:.2f},dn:{r2_post[i][ni]:.2f}')
-
-i = (r2_pre<0.4)*(r2_post<0.4)
-fig, axs = plt.subplots(6, 8, figsize=(18, 12))
-axs = [x for xs in axs for x in xs]
-for ni in range(48):
-    axs[ni].scatter(ntl,nsl[i][ni],s=3, color='black')
-    axs[ni].plot(ntl,pred_pre[i][ni], color='mediumseagreen')
-    axs[ni].scatter(ntr,nsr[i][ni],s=3, color='black')
-    axs[ni].plot(ntr,pred_post[i][ni], color='coral')
-    axs[ni].axvline(0, color='black', lw=1, linestyle='-')
-    axs[ni].axis('off')
-    axs[ni].set_title(f'up:{r2_pre[i][ni]:.2f},dn:{r2_post[i][ni]:.2f}')
-    
-
-
-
-i = (r2_pre>0.8)*(r2_post<0.4)
-fig, axs = plt.subplots(6, 8, figsize=(24, 18))
-axs = [x for xs in axs for x in xs]
-for ni in range(48):
-    axs[ni].scatter(ntl,nsl[i][ni],s=3, color='black')
-    axs[ni].plot(ntl,pred_pre[i][ni], color='mediumseagreen')
-    axs[ni].spines['right'].set_visible(False)
-    axs[ni].spines['top'].set_visible(False)
-    axs[ni].set_xlim([-1,1])
-    axs[ni].set_yticks([0,1])
-    axs[ni].set_xticks([-1,0])
-    add_legend(
-        axs[ni],
-        ['mediumseagreen']*6,
-        [rf'$R^2_-={r2_pre[i][ni]:.2f}$',
-         rf'$b_-={trf_param_pre[i][ni,0]:.2f}$',
-         rf'$a_-={trf_param_pre[i][ni,1]:.2f}$',
-         rf'$m_-={trf_param_pre[i][ni,2]:.2f}$',
-         rf'$r_-={trf_param_pre[i][ni,3]:.2f}$',
-         rf'$\tau_-={trf_param_pre[i][ni,4]:.2f}$'],
-        None, None, None, 'upper right')
-
-i = (r2_pre<0.4)*(r2_post>0.8)
-fig, axs = plt.subplots(6, 8, figsize=(24, 18))
-axs = [x for xs in axs for x in xs]
-for ni in range(48):
-    axs[ni].scatter(ntr-1,nsr[i][ni],s=3, color='black')
-    axs[ni].plot(ntr-1,pred_post[i][ni], color='coral')
-    axs[ni].spines['right'].set_visible(False)
-    axs[ni].spines['top'].set_visible(False)
-    axs[ni].set_xlim([-1,1])
-    axs[ni].set_yticks([0,1])
-    axs[ni].set_xticks([-1,0])
-    axs[ni].set_xticklabels([0,1])
-    add_legend(
-        axs[ni],
-        ['coral']*6,
-        [rf'$R^2_+={r2_post[i][ni]:.2f}$',
-         rf'$b_+={trf_param_post[i][ni,0]:.2f}$',
-         rf'$a_+={trf_param_post[i][ni,1]:.2f}$',
-         rf'$m_+={trf_param_post[i][ni,2]:.2f}$',
-         rf'$r_+={trf_param_post[i][ni,3]:.2f}$',
-         rf'$\tau_+={trf_param_post[i][ni,4]:.2f}$'],
-        None, None, None, 'upper right')
-    
-
-    
-fig, ax = plt.subplots(1, 1, figsize=(3, 3))
-ax.plot(ntr,nsr[12])
-ax.plot(ntr, trf_model_post(ntr, 0, 1.5, -0.5, 0.4, 1))
-
-fig, ax = plt.subplots(1, 1, figsize=(3, 3))
-ax.hist(r2_all_pre,bins=100)
-
-thres = 0.251314
-fig, ax = plt.subplots(1, 1, figsize=(3, 3))
-ax.axis('off')
-ax_hm = ax.inset_axes([0, 0, 0.5, 1], transform=ax.transAxes)
-ax_cb = ax.inset_axes([0.6, 0, 0.1, 1], transform=ax.transAxes)
-plot_heatmap_neuron(ax_hm, ax_cb, nsl[r2_all_pre>thres], ntl, nsl[r2_all_pre>thres], norm_mode='minmax')
-
-fig, ax = plt.subplots(1, 1, figsize=(3, 3))
-ax.axis('off')
-ax_hm = ax.inset_axes([0, 0, 0.5, 1], transform=ax.transAxes)
-ax_cb = ax.inset_axes([0.6, 0, 0.1, 1], transform=ax.transAxes)
-plot_heatmap_neuron(ax_hm, ax_cb, nsr[r2_all_post>thres], ntr, nsr[r2_all_post>thres], norm_mode='minmax')
-'''
-            

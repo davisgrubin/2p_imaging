@@ -4,7 +4,6 @@ import gc
 import os
 import copy
 import h5py
-import shutil
 import numpy as np
 import scipy.io as sio
 from tqdm import tqdm

@@ -7,15 +7,23 @@ from sklearn.svm import SVC
 from sklearn.svm import LinearSVC
 from sklearn.svm import SVR
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import confusion_matrix
 from sklearn.metrics import r2_score
-from sklearn.metrics import accuracy_score
 from sklearn.metrics import mean_absolute_percentage_error
 from sklearn.model_selection import StratifiedShuffleSplit
+from scipy.stats import linregress
 
 from modeling.utils import norm01
 from modeling.utils import get_frame_idx_from_time
 from modeling.utils import get_mean_sem
+
+# fit a linear regression and report goodness.
+def fit_linear_regression(x, y):
+    idx = ~np.isnan(y)
+    model = linregress(x[idx], y[idx])
+    y_pred = model.intercept + model.slope * x
+    r2 = model.rvalue**2
+    p = model.pvalue
+    return y_pred, r2, p
 
 # fit a line and report goodness.
 def fit_poly_line(x, y, order):

@@ -3,10 +3,11 @@
 import numpy as np
 from tqdm import tqdm
 from scipy.interpolate import interp1d
-from sklearn.metrics import explained_variance_score
-
 from sklearn.decomposition import PCA
-from scipy.linalg import orthogonal_procrustes
+from sklearn.cross_decomposition import CCA
+
+from modeling.utils import norm_gauss
+
 
 #%% generalized linear model
 
@@ -97,4 +98,33 @@ def get_glm_cate(glm, list_labels, cate):
     kernel_all = glm['kernel_all'][idx,:]
     return kernel_all
 
-    
+ 
+#%% shared dynamics
+
+# compute correlation.
+def get_corr_cols(A, B):
+    return np.array([np.corrcoef(A[:, i], B[:, i])[0, 1] for i in range(A.shape[1])])
+
+# compute cca correlation.
+def cca_corr(x1, x2, n_pca, n_cca):
+    x1 = norm_gauss(x1).T
+    x2 = norm_gauss(x2).T
+    p1 = PCA(n_components=min(n_pca, *x1.shape)).fit_transform(x1)
+    p2 = PCA(n_components=min(n_pca, *x2.shape)).fit_transform(x2)
+    k = min(n_cca, p1.shape[1], p2.shape[1])
+    z1, z2 = CCA(n_components=k).fit_transform(p1, p2)
+    c = np.full(n_cca, np.nan)
+    c[:k] = get_corr_cols(z1, z2)
+    return c
+
+# compute cca pairwise.
+def get_pairwise_cca_corr(xs, n_pca, n_cca):
+    n = len(xs)
+    corr = np.full((n, n, n_cca), np.nan)
+    for i in range(n):
+        for j in range(i, n):
+            c = cca_corr(xs[i], xs[j], n_pca, n_cca)
+            corr[i, j] = c
+            corr[j, i] = c
+    return corr
+

@@ -1,48 +1,26 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import rastermap as rm
-from sklearn.cluster import KMeans
-from sklearn.cluster import AgglomerativeClustering
-from tslearn.clustering import KShape
-from tslearn.preprocessing import TimeSeriesScalerMeanVariance
- 
-from modeling.utils import norm01
+from scipy.cluster.hierarchy import linkage
+from scipy.cluster.hierarchy import cut_tree
+
 from modeling.utils import get_mean_sem
 
 # clustering neural response.
-def clustering_neu_response_mode(x_in, n_clusters, method='kmeans'):
+def clustering_neu_response_mode(x_in, n_clusters):
+    cuts = [2, 4, 8]
     print('Running clustering')
-    if method == 'kshape':
-        # feature normalization.
-        x_in = TimeSeriesScalerMeanVariance().fit_transform(x_in)
-        # run clustering model.
-        model = KShape(
-            n_clusters=n_clusters,
-            n_init=1,
-            verbose=True)
-        cluster_id = model.fit_predict(x_in)
-    if method == 'kmeans':
-        model = KMeans(init="k-means++", n_clusters=n_clusters, n_init=25)
-        cluster_id = model.fit_predict(x_in)
-    if method == 'hierachy':
-        model = AgglomerativeClustering(n_clusters)
-        cluster_id = model.fit_predict(x_in)
-    return cluster_id
+    z = linkage(x_in, method='ward')
+    cluster_id_layers = cut_tree(z, n_clusters=cuts)
+    cluster_id = cut_tree(z, n_clusters=[n_clusters]).ravel()
+    return cluster_id, cluster_id_layers
 
 # organize cluster labels based on stimulus evoked magnitude.
-def remap_cluster_id(kernel_all, n_clusters, cluster_id):
-    # get response within cluster.
-    glm_mean, _ = get_mean_sem_cluster(kernel_all, n_clusters, cluster_id)
-    # normalization.
-    glm_mean = np.apply_along_axis(norm01, 1, glm_mean)
-    # fit model.
-    model = rm.Rastermap(n_clusters=2, locality=1)
-    model.fit(glm_mean)
-    # sort labels.
-    mapping = {val: i for i, val in enumerate(model.isort)}
-    cluster_id = np.vectorize(mapping.get)(cluster_id)
-    return cluster_id
+def remap_cluster_id(cluster_id, n_clusters, metric):
+    sorted_id = np.argsort([np.nanmean(metric[cluster_id==ci]) for ci in range(n_clusters)])
+    map_id = {val: i for i, val in enumerate(sorted_id)}
+    cluster_id_map = np.vectorize(map_id.get)(cluster_id)
+    return cluster_id_map
 
 # retrieve cluster id for category.
 def get_cluster_cate(cluster_id_all, list_labels, cate):
@@ -52,7 +30,7 @@ def get_cluster_cate(cluster_id_all, list_labels, cate):
     neu_labels = np.concatenate([
         list_labels[i][np.in1d(list_labels[i],cate)]
         for i in range(len(list_labels))])
-    return cluster_id, neu_labels
+    return idx, cluster_id, neu_labels
 
 # compute mean and sem for clusters.
 def get_mean_sem_cluster(neu, n_clusters, cluster_id):

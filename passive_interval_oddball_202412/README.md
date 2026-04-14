@@ -640,3 +640,38 @@
 
 ## 2025.11.07
 - Added pupil processing.
+
+## 2025.11.20
+- Added plot_ramp_type_fraction.
+- Added pupil traces.
+
+## 2026.03.25
+- Rewritten bounds in fit_trf_model.
+- Fixed trf_model.
+- Improved regularization for model.
+- Adjusted r2_gap.
+- Now get_cluster_cate also returns idx.
+
+## 2026.04.01
+- Now clustering_neu_response_mode only has hierachy clustering.
+- Separated run_trf_model.
+- Rewritten remap_cluster_id.
+- Added plot_oddball_jitter_layers.
+- Now get_stat_test handles nan.
+- Rewritten plot_cluster_pred_mod_index_compare.
+- Added get_modulation_index_neu_seq.
+- Rewritten plot_pred_mod_index_box.
+- Added plot_oddball_jitter_early.
+
+## 2026.04.03
+- Added CCA based shared dynamics analysis.
+- Added plot_cate_interaction.
+- Fixed run_clustering sorting.
+- Fixed get_mean_sem_win percentage.
+- Added fit_linear_regression.
+- Added linear regression in plot_trial_quant.
+- Added plot_day1_epoch_2cate.
+
+## 2026.04.10
+- Now plot_heatmap_neuron plots y axis scale bar.
+- Now plot_interval_bin use empty fill for binned stim.

@@ -52,12 +52,13 @@ class plotter_utils(utils_basic):
         self.glm = self.run_glm([-5000,5000])
         self.n_pre = 2
         self.n_post = 1
-        self.cluster_id = self.run_clustering(self.n_pre, self.n_post)
+        self.trf_model = self.run_trf_model()
+        self.cluster_id, _, _ = self.run_clustering(self.n_pre, self.n_post)
     
     def plot_neuron_fraction(self, ax):
         try:
             colors = ['cornflowerblue', 'violet', 'mediumseagreen']
-            cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, [-1,1,2])
+            _, cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, [-1,1,2])
             exc = np.sum(neu_labels==-1)
             vip = np.sum(neu_labels==1)
             sst = np.sum(neu_labels==2)
@@ -96,7 +97,7 @@ class plotter_utils(utils_basic):
 
     def plot_cluster_stim_all(self, axs, cate=None):
         color0 = 'dimgrey'
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
+        _, cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
         # collect data.
         [_, [neu_seq, _, stim_seq, _], _, _] = get_neu_trial(
             self.alignment, self.list_labels, self.list_stim_labels,
@@ -193,7 +194,7 @@ class plotter_utils(utils_basic):
     def plot_cluster_interval_bin_all(self, axs, cate=None):
         color0 = 'dimgrey'
         colors = get_cmap_color(self.bin_num, cmap=self.random_bin_cmap)
-        cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
+        _, cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
         split_idx = get_split_idx(self.list_labels, cate)
         day_cluster_id = np.split(cluster_id, split_idx)
         # collect data.
