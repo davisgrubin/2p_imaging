@@ -1057,7 +1057,7 @@ class utils_basic:
         ax.fill_between(t, m - s, m + s, color=c, alpha=0.25, edgecolor='none')
         ax.set_xlim([np.min(t), np.max(t)])
     
-    def plot_density(ax, data, xlim, color):
+    def plot_density(self, ax, data, xlim, color):
         x = np.linspace(np.min(xlim), np.max(xlim), 100)
         d = gaussian_kde(data[~np.isnan(data)], bw_method=0.05)(x)
         ax.plot(x, d, color=color)
@@ -1076,8 +1076,6 @@ class utils_basic:
         v = rescale(v, u, l)
         ax.plot(st, v, color=c, lw=0.5, linestyle=':')
     
-    
-        
     def plot_dist(self, ax, data, c, cumulative):
         bins = 25
         # raw counts
@@ -1421,10 +1419,16 @@ class utils_basic:
         if not stim_seq is None:
             for si in range(stim_seq.shape[0]):
                 if stim_seq[si,0] >= xlim[0] and stim_seq[si,1] <= xlim[1]:
-                    ax.fill_between(
-                        stim_seq[si,:],
-                        0, nm.shape[0],
-                        color=c_stim[si], edgecolor='none', alpha=0.25, step='mid')
+                    if c_stim[si][:5] != 'empty':
+                        ax.fill_between(
+                            stim_seq[si,:],
+                            0, nm.shape[0],
+                            color=c_stim[si], edgecolor='none', alpha=0.25, step='mid')
+                    else:
+                        ax.fill_between(
+                            stim_seq[si,:],
+                            0, nm.shape[0],
+                            color='none', edgecolor=c_stim[si][5:], alpha=0.25, step='mid')
         # plot cluster average.
         n_clusters = neu_mean.shape[0]
         for ci in range(n_clusters):
@@ -1595,14 +1599,14 @@ class utils_basic:
             else:
                 q1 = quant_1[1][0]
                 q2 = quant_2[1][0]
-            # plot empirical distribution.
-            d1 = self.plot_dist(axs[ci], q1, c_neu[0], cumulative)
-            d2 = self.plot_dist(axs[ci], q2, c_neu[1], cumulative)
             # find bounds.
             xu = np.nanmax(np.concatenate([q1, q2]))
             xl = np.nanmin(np.concatenate([q1, q2]))
-            yu = np.nanmax(np.concatenate([d1, d2]))
-            xlim = [xl - 0.1*(xu-xl), xu - 0.4*(xu-xl)]
+            yu = 1
+            xlim = [xl - 0.1*(xu-xl), xu - 0.6*(xu-xl)]
+            # plot empirical distribution.
+            self.plot_density(axs[ci], q1, xlim, c_neu[0])
+            self.plot_density(axs[ci], q2, xlim, c_neu[1])
             # plot statistics test.
             r = get_stat_test(q1, q2, 'mean')[1]
             axs[ci].text(
@@ -1620,7 +1624,7 @@ class utils_basic:
             axs[ci].tick_params(axis='x')
             axs[ci].tick_params(axis='y', tick1On=False)
             axs[ci].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
-            axs[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
+            axs[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
             axs[ci].spines['left'].set_visible(False)
             axs[ci].spines['right'].set_visible(False)
             axs[ci].spines['top'].set_visible(False) 

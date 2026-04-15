@@ -675,3 +675,8 @@
 ## 2026.04.10
 - Now plot_heatmap_neuron plots y axis scale bar.
 - Now plot_interval_bin use empty fill for binned stim.
+- Added fit line and stat test in plot_dist_cluster_fraction.
+- Now plot_cluster_mean_sem applies empty box.
+- Fixed plot_cluster_win_mag_dist_compare.
+- Removed plot_oddball_time_decode.
+- Fixed plot_oddball_jitter.

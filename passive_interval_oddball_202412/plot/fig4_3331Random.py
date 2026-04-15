@@ -9,6 +9,7 @@ from modules.Alignment import run_get_stim_response
 from modeling.clustering import get_mean_sem_cluster
 from modeling.clustering import get_bin_mean_sem_cluster
 from modeling.clustering import get_cluster_cate
+from modeling.decoding import fit_linear_regression
 from modeling.decoding import fit_poly_line
 from modeling.generative import get_glm_cate
 from utils import show_resource_usage
@@ -497,7 +498,6 @@ class plotter_utils(utils_basic):
         color0 = 'dimgrey'
         color1 = 'cornflowerblue'
         color_day = get_cmap_color(n_day, cmap=self.cross_day_cmap)
-        epoch_len = 10
         _, cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
         split_idx = get_split_idx(self.list_labels, cate)
         day_cluster_id = np.split(cluster_id, split_idx)
@@ -532,6 +532,9 @@ class plotter_utils(utils_basic):
                         axs[ci].bar(
                             di, fraction[di,ci],
                             bottom=0, edgecolor='white', width=bar_width, color=color0)
+                    #y_pred, _, p = fit_linear_regression(np.arange(n_day), fraction[:,ci])
+                    #axs[ci].plot(np.arange(n_day), y_pred, color='black', lw=1)
+                    #axs[ci].text(0, np.nanmax(fraction[:,ci])*1.1, rf'$p={p:.3f}$', color=color0, size=7)
             # adjust layouts.
             for ci in range(self.n_clusters):
                 axs[ci].tick_params(tick1On=False)
@@ -550,7 +553,7 @@ class plotter_utils(utils_basic):
             ax.set_ylabel('Fraction of neurons')
             hide_all_axis(ax)
         @show_resource_usage
-        def plot_cross_epoch(ax, scaled):
+        def plot_cross_epoch(ax, scaled, epoch_len):
             xlim = [-1000, 1500]
             # collect data.
             [_, [neu_seq_0, _, _, _], _, _] = get_neu_trial(
@@ -605,6 +608,7 @@ class plotter_utils(utils_basic):
                 # adjust layouts.
                 axs[di].set_title(f'Day {di+1}')
             axs[0].set_xlabel('Time from stim \n onset (ms)')
+            ax.set_title(f'Epoch length {epoch_len} trials')
             hide_all_axis(ax)
         @show_resource_usage
         def plot_cross_day(ax, scaled):
@@ -642,10 +646,9 @@ class plotter_utils(utils_basic):
                     self.alignment['neu_time'], norm_params,
                     None, None, [color_day[di]]*self.n_clusters, xlim)
             # adjust layouts.
-            axs[0].set_xlabel('Time from stim \n onset (ms)')
-            hide_all_axis(ax)
+            ax.set_xlabel('Time from stim \n onset (ms)')
         @show_resource_usage
-        def plot_day1_epoch_2cate(ax, scaled):
+        def plot_day1_epoch_2cate(ax, scaled, epoch_len):
             xlim = [-1000, 1500]
             # collect data.
             [_, [neu_seq_0, _, _, _], _, _] = get_neu_trial(
@@ -703,6 +706,7 @@ class plotter_utils(utils_basic):
                 # adjust layouts.
                 axs[di].set_title(f'day {di+1}')
             axs[0].set_xlabel('Time from stim \n onset (ms)')
+            ax.set_title(f'Epoch length {epoch_len} trials')
             hide_all_axis(ax)
         @show_resource_usage
         def plot_legend(ax):
@@ -713,19 +717,23 @@ class plotter_utils(utils_basic):
         # plot all.
         try: plot_dist_cluster_fraction(axs[0])
         except: traceback.print_exc()
-        try: plot_cross_epoch(axs[1], False)
+        try: plot_cross_epoch(axs[1], False, 10)
         except: traceback.print_exc()
-        try: plot_cross_epoch(axs[2], True)
+        try: plot_cross_epoch(axs[2], False, 50)
         except: traceback.print_exc()
-        try: plot_cross_day(axs[3], False)
+        try: plot_cross_epoch(axs[3], False, 100)
         except: traceback.print_exc()
-        try: plot_cross_day(axs[4], True)
+        try: plot_cross_day(axs[4], False)
         except: traceback.print_exc()
-        try: plot_day1_epoch_2cate(axs[5], False)
+        try: plot_cross_day(axs[5], True)
         except: traceback.print_exc()
-        try: plot_day1_epoch_2cate(axs[6], True)
+        try: plot_day1_epoch_2cate(axs[6], False, 10)
         except: traceback.print_exc()
-        try: plot_legend(axs[7])
+        try: plot_day1_epoch_2cate(axs[7], False, 50)
+        except: traceback.print_exc()
+        try: plot_day1_epoch_2cate(axs[8], False, 100)
+        except: traceback.print_exc()
+        try: plot_legend(axs[9])
         except: traceback.print_exc()
     
     def plot_cluster_local_all(self, axs, cate):

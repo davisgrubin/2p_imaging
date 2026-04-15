@@ -122,7 +122,7 @@ def run(session_config_list, smooth, cate_list):
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+2, i]) for i in range(10)]
+                a = [plt.subplot(gs[s:s+2, i]) for i in range(8)]
                 axs_all.append(a)
             plotter.cluster_stim_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -174,9 +174,9 @@ def run(session_config_list, smooth, cate_list):
             print('-----------------------------------------------')
             print(title)
             filename = '3331Random_cross_sess_adapt'
-            cate_gap = 4
+            cate_gap = 6
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 10
+            n_col = 11
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout=layout)
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
@@ -184,11 +184,13 @@ def run(session_config_list, smooth, cate_list):
                 a = [plt.subplot(gs[s:s+2, 0])]
                 a+= [plt.subplot(gs[s:s+2, 1:4])]
                 a+= [plt.subplot(gs[s:s+2, 4:7])]
-                a+= [plt.subplot(gs[s:s+2, 7])]
-                a+= [plt.subplot(gs[s:s+2, 8])]
-                a+= [plt.subplot(gs[s+2:s+3, 0:3])]
-                a+= [plt.subplot(gs[s+3:s+4, 0:3])]
-                a+= [plt.subplot(gs[s:s+2, 9])]
+                a+= [plt.subplot(gs[s:s+2, 7:10])]
+                a+= [plt.subplot(gs[s+2:s+4, 0])]
+                a+= [plt.subplot(gs[s+2:s+4, 1])]
+                a+= [plt.subplot(gs[s+2:s+3, 2:5])]
+                a+= [plt.subplot(gs[s+3:s+4, 2:5])]
+                a+= [plt.subplot(gs[s+4:s+5, 2:5])]
+                a+= [plt.subplot(gs[s+2:s+4, 5])]
                 axs_all.append(a)
             plotter.cross_sess_adapt(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
