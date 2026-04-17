@@ -5,7 +5,6 @@ import numpy as np
 import matplotlib.ticker as mtick
 from sklearn.decomposition import PCA
 from sklearn.metrics.pairwise import cosine_similarity
-from scipy.signal import savgol_filter
 
 from modules.Alignment import run_get_stim_response
 from modeling.clustering import get_mean_sem_cluster
@@ -15,8 +14,6 @@ from modeling.decoding import decoding_time_confusion
 from modeling.decoding import decoding_time_single
 from modeling.decoding import regression_time_frac
 from modeling.generative import get_glm_cate
-from modeling.generative import get_pairwise_cca_corr
-from modeling.quantifications import fit_trf_model
 
 from utils import norm01
 from utils import show_resource_usage
@@ -30,7 +27,6 @@ from utils import get_split_idx
 from utils import get_expect_interval
 from utils import get_block_1st_idx
 from utils import get_block_transition_idx
-from utils import exclude_odd_stim
 from utils import get_temporal_scaling_data
 from utils import get_cmap_color
 from utils import hide_all_axis
@@ -94,22 +90,6 @@ class plotter_utils(utils_basic):
                 wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
             ax.set_title('fraction of {} neuron labels'.format(len(neu_labels)))
         except: traceback.print_exc()
-    
-    def plot_ramp_fraction(self, ax):
-        try:
-            colors = ['tomato', 'mediumblue']
-            _, cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, [-1,1,2])
-            pre = np.sum(np.isin(cluster_id, np.arange(0, self.n_pre)))
-            post = np.sum(np.isin(cluster_id, np.arange(self.n_pre, self.n_pre+self.n_post)))
-            ax.pie(
-                [pre, post],
-                labels=['{} Ramp-up'.format(pre),
-                        '{} Ramp-down'.format(post)],
-                colors=colors,
-                autopct='%1.1f%%',
-                wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
-            ax.set_title('fraction of {} neuron labels'.format(len(neu_labels)))
-        except: traceback.print_exc()
         
     def plot_isi_seting(self, ax):
         ax.vlines(1000, 0, 1, color='dodgerblue')
@@ -136,33 +116,7 @@ class plotter_utils(utils_basic):
         ax.scatter(np.arange(trial_win[0], trial_win[1]-1), isi, c=colors, s=5)
         # adjust layouts.
         adjust_layout_isi_example_epoch(ax, trial_win, self.bin_win)
-    
-    def plot_ramp_type_fraction(self, axs):
-        #fig, axs = plt.subplots(1, 2, figsize=(6, 3))
-        colors = ['salmon', 'cornflowerblue']
-        vis_up = (2430 + 699) / (2430 + 699 + 2742 + 1773 + 250)
-        vis_dn = (2742 + 1773 + 250) / (2430 + 699 + 2742 + 1773 + 250)
-        ppc_up = (952 + 320) / (952 + 320 + 1613 + 1367 + 140)
-        ppc_dn = (1613 + 1367 + 140) / (952 + 320 + 1613 + 1367 + 140)
-        # ramp up.
-        up = np.array([vis_up, ppc_up]) / (vis_up + ppc_up)
-        axs[0].pie(
-            up,
-            labels=['VIS', 'PPC'],
-            colors=colors,
-            autopct='%1.1f%%',
-            wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
-        axs[0].set_title('fraction of ramp-up neurons')
-        # ramp down.
-        dn = np.array([vis_dn, ppc_dn]) / (vis_dn + ppc_dn)
-        axs[1].pie(
-            dn,
-            labels=['VIS', 'PPC'],
-            colors=colors,
-            autopct='%1.1f%%',
-            wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
-        axs[1].set_title('fraction of ramp-down neurons')
-        
+      
     def plot_cluster_all(self, axs, cate):
         color0 = 'dimgrey'
         color1 = 'dodgerblue'
@@ -364,6 +318,60 @@ class plotter_utils(utils_basic):
             lbl= ['short', 'long']
             add_legend(ax, cs, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
             ax.axis('off')
+        def plot_ramp_fraction(ax):
+            try:
+                colors = ['lightpink', 'aquamarine']
+                pre = np.sum(np.isin(cluster_id, np.arange(0, self.n_pre)))
+                post = np.sum(np.isin(cluster_id, np.arange(self.n_pre, self.n_pre+self.n_post)))
+                ax.pie(
+                    [pre, post],
+                    labels=['{} Ramp-up'.format(pre),
+                            '{} Ramp-down'.format(post)],
+                    colors=colors,
+                    autopct='%1.1f%%',
+                    wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+                ax.set_title('fraction of {} neuron labels'.format(len(neu_labels)))
+            except: traceback.print_exc()
+        def plot_ramp_cate_fraction(axs):
+            colors = ['skyblue', 'peachpuff', 'palegreen']
+            nl_pre = neu_labels[np.isin(cluster_id, np.arange(0, self.n_pre))]
+            nl_post = neu_labels[np.isin(cluster_id, np.arange(self.n_pre, self.n_pre+self.n_post))]
+            # ramp up.
+            axs[0].pie(
+                [np.nansum(nl_pre==ci)/len(nl_pre) for ci in cate],
+                labels=['Exc', 'VIP', 'SST'],
+                colors=colors,
+                autopct='%1.1f%%',
+                wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+            axs[0].set_title('Stim inhibited')
+            # ramp down.
+            axs[1].pie(
+                [np.nansum(nl_post==ci)/len(nl_post) for ci in cate],
+                labels=['Exc', 'VIP', 'SST'],
+                colors=colors,
+                autopct='%1.1f%%',
+                wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+            axs[1].set_title('Stim activated')
+        def plot_explained_variance_standard(ax):
+            colors1 = get_cmap_color(self.n_pre, base_color=['coral', 'crimson', 'maroon'])
+            colors2 = get_cmap_color(self.n_post, base_color=['mediumseagreen', 'cyan', 'royalblue'])
+            colors = colors1 + colors2 + [color0]
+            # get data within range.
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, stim_seq_1[c_idx+1, 0])
+            # define layouts.
+            ax.axis('off')
+            ax = ax.inset_axes([0.2, 0.2, 0.7, 0.7], transform=ax.transAxes)
+            # plot results for each class.
+            for ci in range(self.n_clusters):
+                if np.sum(cluster_id==ci) > 0:
+                    neu_x = neu_seq_1[cluster_id==ci,l_idx:r_idx]
+                    evr = PCA().fit(neu_x.T).explained_variance_ratio_
+                    ax.plot(np.cumsum(evr), color=colors[ci])
+            # adjust layouts.
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            ax.set_xlabel('Dimensions')
+            ax.set_ylabel('Cumulative explained \n variance')
         try: plot_glm_kernel(axs[0])
         except: traceback.print_exc()
         try: plot_neu_fraction(axs[1])
@@ -394,7 +402,13 @@ class plotter_utils(utils_basic):
         except: traceback.print_exc()
         try: plot_standard_scale(axs[14], True)
         except: traceback.print_exc()
-    
+        try: plot_ramp_fraction(axs[15])
+        except: traceback.print_exc()
+        try: plot_ramp_cate_fraction([axs[16], axs[17]])
+        except: traceback.print_exc()
+        try: plot_explained_variance_standard(axs[18])
+        except: traceback.print_exc()  
+
     def plot_cluster_heatmap_all(self, axs, cate):
         kernel_all = get_glm_cate(self.glm, self.list_labels, cate)
         _, cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
@@ -754,7 +768,7 @@ class plotter_utils(utils_basic):
                         axs_12[ci].axvline(0, color='red', lw=1, linestyle='--')
                         y_pred, _, p = fit_linear_regression(trial_id[ci], np.concatenate(mag_1to0_post[ci]))
                         axs_12[ci].plot(trial_id[ci], y_pred, color=color0, lw=1)
-                        axs_12[ci].text(0.5, upper, f'p={p:.3f}', color=color0)
+                        axs_12[ci].text(0.5, upper, f'p={p:.3f}', color=color0, size=8)
                     # early long.
                     for ti in np.arange(trials_eval):
                         axs_02[ci].errorbar(
@@ -765,7 +779,7 @@ class plotter_utils(utils_basic):
                         axs_02[ci].axvline(0, color='red', lw=1, linestyle='--')
                         y_pred, _, p = fit_linear_regression(trial_id[ci], np.concatenate(mag_0to1_post[ci]))
                         axs_02[ci].plot(trial_id[ci], y_pred, color=color0, lw=1)
-                        axs_02[ci].text(0.5, lower, f'p={p:.3f}', color=color0)
+                        axs_02[ci].text(0.5, lower, f'p={p:.3f}', color=color0, size=8)
                     # late short.
                     for ti in np.arange(trials_eval):
                         for axi in [axs_01[ci], axs_13[ci]]:
@@ -776,7 +790,7 @@ class plotter_utils(utils_basic):
                                 markeredgecolor='white', markeredgewidth=0.1)
                         y_pred, _, p = fit_linear_regression(trial_id[ci], np.concatenate(mag_0to1_pre[ci]))
                         axs_13[ci].plot(trial_id[ci]-trials_eval, y_pred, color=color0, lw=1)
-                        axs_13[ci].text(0.5-trials_eval, upper, f'p={p:.3f}', color=color0)
+                        axs_13[ci].text(0.5-trials_eval, upper, f'p={p:.3f}', color=color0, size=8)
                     # late long.
                     for ti in np.arange(trials_eval):
                         for axi in [axs_03[ci], axs_11[ci]]:
@@ -787,7 +801,7 @@ class plotter_utils(utils_basic):
                                 markeredgecolor='white', markeredgewidth=0.1)
                         y_pred, _, p = fit_linear_regression(trial_id[ci], np.concatenate(mag_1to0_pre[ci]))
                         axs_03[ci].plot(trial_id[ci]-trials_eval, y_pred, color=color0, lw=1)
-                        axs_03[ci].text(0.5-trials_eval, lower, f'p={p:.3f}', color=color0)
+                        axs_03[ci].text(0.5-trials_eval, lower, f'p={p:.3f}', color=color0, size=8)
                     # adjust layouts.
                     axs_01[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
                     axs_01[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
@@ -1139,6 +1153,7 @@ class plotter_utils(utils_basic):
             for xl in xlines:
                 if xl>neu_time[0] and xl<neu_time[-1]:
                     axs_hm[ai].axvline(xl, color='black', lw=1, linestyle='--')
+                    
     def plot_latent_all(self, axs, cate):
         color0 = 'dimgrey'
         base_color1 = ['dodgerblue', 'darkviolet']
@@ -1235,8 +1250,6 @@ class plotter_utils(utils_basic):
     
     def plot_decode_all(self, axs, standard, cate):
         color0 = 'dimgrey'
-        color1 = 'mediumseagreen'
-        color2 = 'coral'
         colors1 = get_cmap_color(self.n_pre, base_color=['coral', 'crimson', 'maroon'])
         colors2 = get_cmap_color(self.n_post, base_color=['mediumseagreen', 'cyan', 'royalblue'])
         colors = colors1 + colors2 + [color0]
@@ -1247,16 +1260,13 @@ class plotter_utils(utils_basic):
             trial_param=[[2,3,4,5], [standard], None, None, [0], [0]],
             cate=cate, roi_id=None)
         c_idx = stim_seq.shape[0]//2
-        # get data within range.
-        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, stim_seq[c_idx-1,1], 0)
-        neu_time_l = self.alignment['neu_time'][l_idx:r_idx]
-        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, stim_seq[c_idx+1,0])
-        neu_time_r = self.alignment['neu_time'][l_idx:r_idx]
         # fit response model.
-        trf_param_pre = self.trf_model['trf_param_pre'][idx, :]
-        pred_pre = self.trf_model['pred_pre'][idx, :]
+        trf_param_pre  = self.trf_model['trf_param_pre'][idx, :]
+        pred_pre       = self.trf_model['pred_pre'][idx, :]
+        neu_time_l     = self.trf_model['neu_time_l']
         trf_param_post = self.trf_model['trf_param_post'][idx, :]
-        pred_post = self.trf_model['pred_post'][idx, :]
+        pred_post      = self.trf_model['pred_post'][idx, :]
+        neu_time_r     = self.trf_model['neu_time_r']
         @show_resource_usage
         def plot_cluster_standard(ax, scaled):
             # get data within range.
@@ -1279,7 +1289,7 @@ class plotter_utils(utils_basic):
                 stim_seq[c_idx,:].reshape(1,2), [color0], [color0]*self.n_clusters, xlim)
             # adjust layouts.
             ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
-            ax.set_xlabel('Time from stim onset (ms)')
+            ax.set_xlabel('Time from stim \n onset (ms)')
             ax.set_xlim(xlim)
         @show_resource_usage
         def plot_cluster_standard_pred(ax):
@@ -1317,7 +1327,7 @@ class plotter_utils(utils_basic):
                 '0.5',
                 va='center', ha='right', rotation=90, color='#2C2C2C')
             axb.set_ylim([0,1])
-            axb.set_xlabel('Time from stim onset (ms)')
+            axb.set_xlabel('Time from stim \n onset (ms)')
             for ci in range(self.n_clusters):
                 axs[ci].spines['left'].set_visible(False)
                 axs[ci].spines['right'].set_visible(False)
@@ -1328,13 +1338,12 @@ class plotter_utils(utils_basic):
                 axs[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=1))
                 axs[ci].set_ylim([0,1])
                 axs[ci].set_yticks([])
-            axs[self.n_clusters-1].set_ylabel('model response (a.u.)')
+            axs[self.n_clusters-1].set_ylabel('Model response (a.u.)')
             hide_all_axis(axb)
         @show_resource_usage
         def plot_cluster_standard_time_decode_confusion(ax1, ax2):
             bin_times = 50
-            subsampling_neuron = 125
-            subsampling_times = 2
+            d_latent = 50
             tlim = [0, 2500]
             # collect data.
             [_, [neu_seq, stim_seq, _], _, _] = get_neu_trial(
@@ -1360,18 +1369,17 @@ class plotter_utils(utils_basic):
             for ci in range(self.n_clusters):
                 if np.sum(cluster_id==ci) > 0:
                     nx = neu_x[:,cluster_id==ci,:].copy()
-                    results = []
-                    # subsampling neurons.
-                    for si in range(subsampling_times):
-                        x = nx[:,np.random.choice(nx.shape[1], np.min([subsampling_neuron, nx.shape[1]]), replace=False),:]
-                        # run decoding.
-                        results.append(decoding_time_confusion(x, neu_time, bin_times))
-                    # combine results.
-                    a_model = [np.nanmean(results[si][1], axis=0) for si in range(subsampling_times)]
-                    a_shuffle = [np.nanmean(results[si][2], axis=0) for si in range(subsampling_times)]
-                    acc_model_ci.append(np.nanmean(np.stack(a_model, axis=0), axis=0))
-                    acc_shuffle_ci.append(np.nanmean(np.stack(a_shuffle, axis=0), axis=0))
-                    t_ci.append(results[0][0])
+                    # PCA across neurons.
+                    x_flat = nx.transpose(0, 2, 1).reshape(-1, nx.shape[1])
+                    model = PCA(n_components=np.min([d_latent, nx.shape[1]]))
+                    x_flat = model.fit_transform(x_flat)
+                    x = x_flat.reshape(nx.shape[0], nx.shape[2], -1).transpose(0, 2, 1)
+                    # run decoding.
+                    result = decoding_time_confusion(x, neu_time, bin_times)
+                    # keep output aggregation the same shape convention as before.
+                    acc_model_ci.append(np.nanmean(result[1], axis=0))
+                    acc_shuffle_ci.append(np.nanmean(result[2], axis=0))
+                    t_ci.append(result[0])
                 else:
                     acc_model_ci.append(np.array([np.nan]))
                     acc_shuffle_ci.append(np.array([np.nan]))
@@ -1416,25 +1424,26 @@ class plotter_utils(utils_basic):
                 axs_hm[ci].set_ylim(tlim)
                 if ci != self.n_clusters-1:
                     axs_hm[ci].set_xticklabels([])
-            axs_hm[self.n_clusters-1].tick_params(axis='x', labelrotation=90)
-            axs_hm[self.n_clusters-1].set_xlabel('Time from stim onset (ms)')
+            axs_hm[self.n_clusters-1].tick_params(axis='x')
+            axs_hm[self.n_clusters-1].set_xlabel('Time from stim \n onset (ms)')
+            ax1.set_title('Time bin pairwise decoding')
             ax1.set_ylabel('Time from stim onset (ms)')
+            ax2.set_title('Decoding accuracy summary')
             ax2.spines['right'].set_visible(False)
             ax2.spines['top'].set_visible(False)
             ax2.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
             ax2.xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
             ax2.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
-            ax2.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
-            ax2.set_xlabel('Time from stim onset (ms)')
-            ax2.set_ylabel('decoding accuracy \n averaged for each time')
+            ax2.yaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
+            ax2.set_xlabel('Time from stim \n onset (ms)')
+            ax2.set_ylabel('Decoding accuracy \n (mean across all time bins)')
             ax2.set_xlim(tlim)
             ax2.set_ylim([0.45,1])
             hide_all_axis(ax1)
         @show_resource_usage
         def plot_cluster_standard_time_decode_single(ax1, ax2):
             bin_times = 50
-            subsampling_neuron = 125
-            subsampling_times = 25
+            d_latent = 50
             tlim = [0, 2500]
             # collect data.
             [_, [neu_seq, stim_seq, _], _, _] = get_neu_trial(
@@ -1460,18 +1469,19 @@ class plotter_utils(utils_basic):
             for ci in range(self.n_clusters):
                 if np.sum(cluster_id==ci) > 0:
                     nx = neu_x[:,cluster_id==ci,:].copy()
-                    results = []
-                    # subsampling neurons.
-                    for si in range(subsampling_times):
-                        x = nx[:,np.random.choice(nx.shape[1], np.min([subsampling_neuron, nx.shape[1]]), replace=False),:]
-                        # run decoding.
-                        results.append(decoding_time_single(x, neu_time, bin_times))
-                    # combine results.
-                    a_model = [np.nanmean(results[si][1], axis=0) for si in range(subsampling_times)]
-                    a_shuffle = [np.nanmean(results[si][2], axis=0) for si in range(subsampling_times)]
-                    acc_model_ci.append(np.stack(a_model, axis=0))
-                    acc_shuffle_ci.append(np.stack(a_shuffle, axis=0))
-                    t_ci.append(results[0][0])
+                    # PCA across neurons
+                    x_flat = nx.transpose(0, 2, 1).reshape(-1, nx.shape[1])
+                    model = PCA(n_components=np.min([d_latent, nx.shape[1]]))
+                    x_flat = model.fit_transform(x_flat)
+                    x = x_flat.reshape(nx.shape[0], nx.shape[2], -1).transpose(0, 2, 1)
+                    # run decoding.
+                    result = decoding_time_single(x, neu_time, bin_times)
+                    # keep output shape compatible with original downstream code.
+                    a_model = np.nanmean(result[1], axis=0)
+                    a_shuffle = np.nanmean(result[2], axis=0)
+                    acc_model_ci.append(a_model.reshape(1, -1))
+                    acc_shuffle_ci.append(a_shuffle.reshape(1, -1))
+                    t_ci.append(result[0])
                 else:
                     acc_model_ci.append(np.array([np.nan]))
                     acc_shuffle_ci.append(np.array([np.nan]))
@@ -1507,52 +1517,28 @@ class plotter_utils(utils_basic):
                     axs_ln[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
                     axs_ln[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
                     axs_ln[ci].set_xlim(tlim)
-                    axs_ln[ci].set_ylim([0.45,0.95])
+                    axs_ln[ci].set_ylim([0.50,1.00])
                     if ci != self.n_clusters-1:
                         axs_ln[ci].set_xticklabels([])
             axs_ln[self.n_clusters-1].tick_params(axis='x')
             axs_ln[self.n_clusters-1].set_xlabel('Time from stim onset (ms)')
-            axs_ln[self.n_clusters-1].set_ylabel('single time decoding accuracy')
+            axs_ln[self.n_clusters-1].set_ylabel('Decoding accuracy')
+            ax1.set_title('Single time vs rest decoding')
             ax2.spines['right'].set_visible(False)
             ax2.spines['top'].set_visible(False)
             ax2.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
             ax2.xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
             ax2.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
-            ax2.yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+            ax2.yaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
             ax2.set_xlabel('Time from stim onset (ms)')
-            ax2.set_ylabel('single time decoding accuracy')
+            ax2.set_ylabel('Decoding accuracy')
             ax2.set_xlim(tlim)
             ax2.set_ylim([0.45,0.95])
             hide_all_axis(ax1)
         @show_resource_usage
-        def plot_cluster_standard_params_box(ax, param_idx):
-            param_lbl = [
-                r'$b$ (baseline)',
-                r'$a$ (amplitude)',
-                r'$m$ (latency)',
-                r'$r$ (width)',
-                r'$\tau$ (ramping speed)']
-            # get parameters.
-            q_pre = trf_param_pre[:,param_idx].reshape(-1,1)
-            q_post = trf_param_post[:,param_idx].reshape(-1,1)
-            # get results within cluster.
-            q_pre_mean, q_pre_sem = get_mean_sem_cluster(q_pre, self.n_clusters, cluster_id)
-            q_post_mean, q_post_sem = get_mean_sem_cluster(q_post, self.n_clusters, cluster_id)
-            q_mean = np.concatenate([q_pre_mean[:self.n_pre], q_post_mean[self.n_pre:]]).reshape(-1)
-            q_sem = np.concatenate([q_pre_sem[:self.n_pre], q_post_sem[self.n_pre:]]).reshape(-1)
-            # define layouts.
-            ax.axis('off')
-            ax = ax.inset_axes([0, 0, 0.6, 0.95], transform=ax.transAxes)
-            # plot results.
-            self.plot_cluster_box(ax, cluster_id, q_mean, q_sem, colors)
-            # adjust layouts.
-            ax.set_xlabel(param_lbl[param_idx])
-            ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
-            ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
-        @show_resource_usage
         def plot_standard_time_decode_all(ax, target):
             bin_times = 50
-            subsampling_neuron = 520
+            d_latent = 50
             tlim = [0, 2500]
             # collect data.
             [_, [neu_seq, stim_seq, _], _, _] = get_neu_trial(
@@ -1576,13 +1562,16 @@ class plotter_utils(utils_basic):
                 neu_x = neu_seq[:,np.isin(cluster_id, [ci for ci in range(self.n_pre)]),l_idx:r_idx]
             if target == 'down':
                 neu_x = neu_seq[:,np.isin(cluster_id, [ci+self.n_pre for ci in range(self.n_post)]),l_idx:r_idx]
-            # subsampling neurons.
-            neu_x = neu_x[:,np.random.choice(neu_x.shape[1], subsampling_neuron, replace=False),:]
+            # PCA across neurons -> d_latent.
+            n_trial, n_neuron, n_time = neu_x.shape
+            x_flat = neu_x.transpose(0, 2, 1).reshape(-1, n_neuron)
+            pca = PCA(n_components=np.min([d_latent, n_neuron]))
+            x_flat = pca.fit_transform(x_flat)
+            neu_x = x_flat.reshape(n_trial, n_time, -1).transpose(0, 2, 1)
             # get decoding matrix.
             neu_time, acc_model, _ = decoding_time_confusion(neu_x, neu_time, bin_times)
             acc_model = np.nanmean(acc_model, axis=0)
             # define layouts.
-            ax.axis('off')
             ax_ln = ax.inset_axes([0, 0.9, 0.8, 0.1], transform=ax.transAxes)
             ax_hm = ax.inset_axes([0, 0, 0.8, 0.8], transform=ax.transAxes)
             ax_cb = ax.inset_axes([0.9, 0, 0.1, 0.8], transform=ax.transAxes)
@@ -1610,56 +1599,9 @@ class plotter_utils(utils_basic):
             ax_hm.xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
             ax_hm.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
             ax_hm.set_ylabel('Time from stim onset (ms)')
+            ax.set_title(f'Decoding time for {target} neurons')
             hide_all_axis(ax)
             hide_all_axis(ax_cb)
-        def plot_standard_time_regress_drop_neu_all(ax):
-            frac_step = 0.1
-            max_frac = 0.5
-            bin_times = 50
-            tlim = [0, 2500]
-            # collect data.
-            [_, [neu_seq, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_stim_labels,
-                trial_param=[[2,3,4,5], [standard], None, None, [0], [0]],
-                sub_sampling=True,
-                cate=cate, roi_id=None)
-            c_idx = stim_seq.shape[0]//2
-            # get data within range.
-            bin_l_idx, bin_r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, bin_times)
-            bin_len = bin_r_idx - bin_l_idx
-            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, tlim[0], tlim[1])
-            t_range = self.alignment['neu_time'][l_idx:r_idx]
-            t_range = t_range[:(len(t_range)//bin_len)*bin_len]
-            t_range = np.nanmin(t_range.reshape(-1, bin_len), axis=1)
-            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, stim_seq[c_idx+1, 0])
-            neu_time = self.alignment['neu_time'][l_idx:r_idx]
-            # select neurons.
-            neu_x  = neu_seq[:,:,l_idx:r_idx]
-            neu_pre = neu_seq[:,np.isin(cluster_id, [ci for ci in range(self.n_pre)]),l_idx:r_idx]
-            neu_post = neu_seq[:,np.isin(cluster_id, [ci+self.n_pre for ci in range(self.n_post)]),l_idx:r_idx]
-            # fit model.
-            fracs = np.arange(0,max_frac,frac_step)+frac_step
-            r2_all = regression_time_frac(neu_x,  neu_time, bin_times, fracs)
-            r2_pre  = regression_time_frac(neu_pre, neu_time, bin_times, fracs)
-            r2_post  = regression_time_frac(neu_post, neu_time, bin_times, fracs)
-            # plot results.
-            m_all, s_all = get_mean_sem(r2_all)
-            m_pre,  s_pre  = get_mean_sem(r2_pre)
-            m_post,  s_post  = get_mean_sem(r2_post)
-            self.plot_mean_sem(ax, fracs, m_all, s_all, color0, None)
-            self.plot_mean_sem(ax, fracs, m_pre,  s_pre,  color1, None)
-            self.plot_mean_sem(ax, fracs, m_post,  s_post,  color2, None)
-            # adjust layouts.
-            adjust_layout_neu(ax)
-            ax.set_xlim([0,max_frac])
-            ax.set_ylim([0,1])
-            ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
-            ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
-            ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
-            ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
-            ax.set_xlabel('fraction of neurons')
-            ax.set_ylabel('decoding accuracy')
-            add_legend(ax, [color0, color1, color2], ['all', 'ramp-up', 'ramp-down'], None, None, None, 'upper left')
         @show_resource_usage
         def plot_standard_ramp_params_all(ax, param_idx, method):
             param_lbl = [
@@ -1682,15 +1624,12 @@ class plotter_utils(utils_basic):
             if method == 'hist':
                 # define layouts.
                 ax.axis('off')
-                ax = ax.inset_axes([0, 0, 0.6, 0.6], transform=ax.transAxes)
+                ax = ax.inset_axes([0.1, 0.1, 0.6, 0.6], transform=ax.transAxes)
                 # plot results for each class.
                 for ci in range(self.n_clusters):
                     if np.sum(cluster_id==ci) > 0:
                         # plot distribution.
-                        q = q_all[ci]
-                        if param_idx == 2:
-                            q = -q_all[ci]
-                        self.plot_dist(ax, q, colors[ci], True)
+                        self.plot_dist(ax, q_all[ci], colors[ci], True)
                 # adjust layouts.
                 ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
                 ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
@@ -1699,21 +1638,16 @@ class plotter_utils(utils_basic):
                 ax.spines['right'].set_visible(False)
                 ax.spines['top'].set_visible(False) 
                 ax.set_xlabel(param_lbl[param_idx])
-                ax.set_ylabel('cummulative fraction')
-            if method == 'violin':
+                ax.set_ylabel('Cummulative fraction \n of neurons')
+            if method == 'density':
                 # define layouts.
                 ax.axis('off')
-                ax1 = ax.inset_axes([0, 0, 0.8, 0.6], transform=ax.transAxes)
+                ax1 = ax.inset_axes([0.1, 0.1, 0.8, 0.6], transform=ax.transAxes)
                 # plot results for each class.
                 for ci in range(self.n_clusters):
                     if np.sum(cluster_id==ci) > 0:
                         # plot distribution.
-                        q = q_all[ci]
-                        if param_idx == 2:
-                            q = -q_all[ci]
-                        if param_idx == 4:
-                            q = 1/q_all[ci]
-                        self.plot_half_violin(ax1, q, ci, colors[ci], 'right')
+                        self.plot_density(ax1, q_all[ci], [np.nanmin(q_all[ci]), np.nanmax(q_all[ci])], colors[ci], bw_method=0.2)
                 # adjust layouts.
                 ax1.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
                 ax1.xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
@@ -1721,76 +1655,44 @@ class plotter_utils(utils_basic):
                 ax1.yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
                 ax1.spines['right'].set_visible(False)
                 ax1.spines['top'].set_visible(False)
-                ax1.set_xticks(np.arange(self.n_clusters))
-                ax1.set_xticklabels(np.arange(self.n_clusters))
-                ax1.set_xlim([-0.5, self.n_clusters])
-                ax1.set_xlabel('cluster #')
-                ax1.set_ylabel(param_lbl[param_idx])
-        def plot_explained_variance_standard(ax):
-            # get data within range.
-            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, stim_seq[c_idx+1, 0])
-            # define layouts.
-            ax.axis('off')
-            ax = ax.inset_axes([0, 0, 0.6, 0.6], transform=ax.transAxes)
-            # plot results for each class.
-            for ci in range(self.n_clusters):
-                if np.sum(cluster_id==ci) > 0:
-                    neu_x = neu_seq[cluster_id==ci,l_idx:r_idx]
-                    evr = PCA().fit(neu_x.T).explained_variance_ratio_
-                    ax.plot(np.cumsum(evr), color=colors[ci])
-            # adjust layouts.
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
-            ax.set_xlabel('Dimensions')
-            ax.set_ylabel('Cumulative explained variance')
+                ax1.set_xlabel(param_lbl[param_idx])
+                ax1.set_ylabel('Density')
         # plot all.
-        try: plot_cluster_standard(axs[0][0], False)
+        try: plot_cluster_standard(axs[0], False)
         except: traceback.print_exc()
-        try: plot_cluster_standard(axs[0][1], True)
+        try: plot_cluster_standard(axs[1], True)
         except: traceback.print_exc()
-        try: plot_cluster_standard_pred(axs[0][2])
+        try: plot_cluster_standard_pred(axs[2])
         except: traceback.print_exc()
-        try: plot_cluster_standard_time_decode_confusion(axs[0][3], axs[2][3])
+        try: plot_cluster_standard_time_decode_confusion(axs[3], axs[4])
         except: traceback.print_exc()
-        #try: plot_cluster_standard_time_decode_single(axs[0][4], axs[1][9])
-        #except: traceback.print_exc()
-        try: plot_cluster_standard_params_box(axs[0][6], 0)
+        try: plot_cluster_standard_time_decode_single(axs[5], axs[6])
         except: traceback.print_exc()
-        try: plot_cluster_standard_params_box(axs[0][7], 1)
+        try: plot_standard_time_decode_all(axs[7], 'all')
         except: traceback.print_exc()
-        try: plot_cluster_standard_params_box(axs[0][8], 2)
+        try: plot_standard_time_decode_all(axs[8], 'up')
         except: traceback.print_exc()
-        try: plot_cluster_standard_params_box(axs[0][9], 3)
+        try: plot_standard_time_decode_all(axs[9], 'down')
         except: traceback.print_exc()
-        try: plot_cluster_standard_params_box(axs[0][10], 4)
+        try: plot_standard_ramp_params_all(axs[10], 0, 'hist')
         except: traceback.print_exc()
-        #try: plot_standard_time_decode_all(axs[1][0], 'all')
-        #except: traceback.print_exc()
-        #try: plot_standard_time_decode_all(axs[1][1], 'up')
-        #except: traceback.print_exc()
-        #try: plot_standard_time_decode_all(axs[1][2], 'down')
-        #except: traceback.print_exc()
-        #try: plot_standard_time_regress_drop_neu_all(axs[1][3])
-        #except: traceback.print_exc()
-        try: plot_standard_ramp_params_all(axs[1][4], 0, 'hist')
+        try: plot_standard_ramp_params_all(axs[11], 1, 'hist')
         except: traceback.print_exc()
-        try: plot_standard_ramp_params_all(axs[1][5], 1, 'hist')
+        try: plot_standard_ramp_params_all(axs[12], 2, 'hist')
         except: traceback.print_exc()
-        try: plot_standard_ramp_params_all(axs[1][6], 2, 'hist')
+        try: plot_standard_ramp_params_all(axs[13], 3, 'hist')
         except: traceback.print_exc()
-        try: plot_standard_ramp_params_all(axs[1][7], 3, 'hist')
+        try: plot_standard_ramp_params_all(axs[14], 4, 'hist')
         except: traceback.print_exc()
-        try: plot_standard_ramp_params_all(axs[1][8], 4, 'hist')
+        try: plot_standard_ramp_params_all(axs[10], 0, 'density')
         except: traceback.print_exc()
-        try: plot_standard_ramp_params_all(axs[2][4], 0, 'violin')
+        try: plot_standard_ramp_params_all(axs[11], 1, 'density')
         except: traceback.print_exc()
-        try: plot_standard_ramp_params_all(axs[2][5], 1, 'violin')
+        try: plot_standard_ramp_params_all(axs[12], 2, 'density')
         except: traceback.print_exc()
-        try: plot_standard_ramp_params_all(axs[2][6], 2, 'violin')
+        try: plot_standard_ramp_params_all(axs[13], 3, 'density')
         except: traceback.print_exc()
-        try: plot_standard_ramp_params_all(axs[2][7], 3, 'violin')
-        except: traceback.print_exc()
-        try: plot_standard_ramp_params_all(axs[2][8], 4, 'violin')
+        try: plot_standard_ramp_params_all(axs[14], 4, 'density')
         except: traceback.print_exc()
     
     def plot_pupil(self, axs):
@@ -1992,7 +1894,7 @@ class plotter_main(plotter_utils):
                 print(f'plotting results for {label_name}')
 
                 #self.plot_decode_all(axs[0], 0, cate=cate)
-                self.plot_decode_all(axs[1], 1, cate=cate)              
+                self.plot_decode_all(axs, 1, cate=cate)              
 
             except: traceback.print_exc()
 

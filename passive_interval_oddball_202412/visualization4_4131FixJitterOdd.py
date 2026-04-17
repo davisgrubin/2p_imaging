@@ -260,8 +260,8 @@ def run(session_config_list, smooth, cate_list):
             #plot_cluster_oddball_fix_heatmap_all(),
             #plot_sorted_heatmaps_fix_all(),
             plot_cluster_oddball_jitter_global_all(),
-            plot_cluster_oddball_jitter_local_all(),
-            plot_latent_all(),
+            #plot_cluster_oddball_jitter_local_all(),
+            #plot_latent_all(),
             #plot_pupil_all(),
         ]
         print('Clearing memory usage')

@@ -65,20 +65,20 @@ def run(session_config_list, cate_list):
     print('===============================================')
     print('========= plotting 3331Random results =========')
     print('===============================================')
-    fn2 = visualization2_3331Random.run(session_config_list, smooth, cate_list)
-    #fn2 = []
+    #fn2 = visualization2_3331Random.run(session_config_list, smooth, cate_list)
+    fn2 = []
 
     print('===============================================')
     print('======= plotting 1451ShortLong results ========')
     print('===============================================')
-    #fn3 = visualization3_1451ShortLong.run(session_config_list, smooth, cate_list)
-    fn3 = []
+    fn3 = visualization3_1451ShortLong.run(session_config_list, smooth, cate_list)
+    #fn3 = []
 
     print('===============================================')
     print('====== plotting 4131FixJitterOdd results ======')
     print('===============================================')
-    fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
-    #fn4 = []
+    #fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
+    fn4 = []
         
     print('===============================================')
     print('===== plotting 3331RandomExtended results =====')
@@ -108,7 +108,7 @@ def run(session_config_list, cate_list):
 
 
 if __name__ == "__main__":
-    COMMANDLINE_MODE = 0
+    COMMANDLINE_MODE = 1
     cate_list = [[-1,1,2]]
     from session_configs import all_config_list
     
@@ -198,7 +198,7 @@ if __name__ == "__main__":
         session_config_list_test = {
             'list_config': [
                 session_config_test,
-                #session_config_test2,
+                session_config_test2,
                 ],
             'label_names' : {
                 '-1':'Exc',

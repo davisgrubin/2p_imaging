@@ -793,11 +793,11 @@ class plotter_utils(utils_basic):
                       axs2[1].inset_axes([0.8, 0, 0.1, 1], transform=axs2[1].transAxes)]
             # get response within cluster.
             for axi, n_clusters, cluster_id in zip(axs0+axs1, nc_pre+nc_post, cid_pre+cid_post):
-                neu_fix_mean, neu_fix_sem = get_mean_sem_cluster(neu_seq_fix, self.n_clusters, cluster_id)
-                neu_jitter_mean, neu_jitter_sem = get_mean_sem_cluster(neu_seq_jitter, self.n_clusters, cluster_id)
+                neu_fix_mean, neu_fix_sem = get_mean_sem_cluster(neu_seq_fix, n_clusters, cluster_id)
+                neu_jitter_mean, neu_jitter_sem = get_mean_sem_cluster(neu_seq_jitter, n_clusters, cluster_id)
                 norm_params = [get_norm01_params(
                     np.concatenate([neu_fix_mean[ci,:], neu_jitter_mean[ci,:]]))
-                    for ci in range(self.n_clusters)]
+                    for ci in range(n_clusters)]
                 # plot results.
                 if oddball == 0:
                     axi.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
@@ -808,11 +808,11 @@ class plotter_utils(utils_basic):
                     axi, neu_fix_mean, neu_fix_sem,
                     self.alignment['neu_time'], norm_params,
                     stim_seq,
-                    [color0]*stim_seq.shape[0], [color1]*self.n_clusters, xlim)
+                    [color0]*stim_seq.shape[0], [color1]*n_clusters, xlim)
                 self.plot_cluster_mean_sem(
                     axi, neu_jitter_mean, neu_jitter_sem,
                     self.alignment['neu_time'], norm_params,
-                    None, None, [color2]*self.n_clusters, xlim)
+                    None, None, [color2]*n_clusters, xlim)
             # plot heatmaps.
             self.plot_heatmap_neuron(
                 axs_hm[0], axs_cb[0], neu_seq_fix_pre, neu_time, neu_seq_fix_pre,
@@ -841,16 +841,16 @@ class plotter_utils(utils_basic):
         except: traceback.print_exc()
         try: plot_win_mag_dist_var(axs[2], 0, 2, False)
         except: traceback.print_exc()
-        #try: plot_block_win_decode(axs[3], 0)
-        #except: traceback.print_exc()
+        try: plot_block_win_decode(axs[3], 0)
+        except: traceback.print_exc()
         try: plot_oddball_jitter(axs[4], 1)
         except: traceback.print_exc()
         try: plot_win_mag_scatter(axs[5], 1, 2)
         except: traceback.print_exc()
         try: plot_win_mag_dist_var(axs[6], 1, 2, False)
         except: traceback.print_exc()
-        #try: plot_block_win_decode(axs[7], 1)
-        #except: traceback.print_exc()
+        try: plot_block_win_decode(axs[7], 1)
+        except: traceback.print_exc()
         try: plot_neu_fraction(axs[8])
         except: traceback.print_exc()
         try: plot_cate_fraction(axs[9])

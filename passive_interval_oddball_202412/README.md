@@ -680,3 +680,10 @@
 - Fixed plot_cluster_win_mag_dist_compare.
 - Removed plot_oddball_time_decode.
 - Fixed plot_oddball_jitter.
+- Added neu_time to run_trf_model.
+
+## 2026.04.15
+- Removed plot_cluster_standard_params_box.
+- Added PCA to plot_cluster_standard_time_decode_confusion.
+- Added PCA to plot_cluster_standard_time_decode_single.
+- Now plot_standard_ramp_params_all can plot density.

@@ -998,9 +998,11 @@ class utils_basic:
             'trf_param_pre': trf_param_pre,
             'pred_pre': pred_pre,
             'r2_pre': r2_pre,
+            'neu_time_l': neu_time_l,
             'trf_param_post': trf_param_post,
             'pred_post': pred_post,
-            'r2_post': r2_post}
+            'r2_post': r2_post,
+            'neu_time_r': neu_time_r}
         return trf_model
     
     def run_clustering(self, n_pre, n_post):
@@ -1057,9 +1059,9 @@ class utils_basic:
         ax.fill_between(t, m - s, m + s, color=c, alpha=0.25, edgecolor='none')
         ax.set_xlim([np.min(t), np.max(t)])
     
-    def plot_density(self, ax, data, xlim, color):
+    def plot_density(self, ax, data, xlim, color, bw_method=0.05):
         x = np.linspace(np.min(xlim), np.max(xlim), 100)
-        d = gaussian_kde(data[~np.isnan(data)], bw_method=0.05)(x)
+        d = gaussian_kde(data[~np.isnan(data)], bw_method=bw_method)(x)
         ax.plot(x, d, color=color)
     
     def plot_half_violin(self, ax, data, x, color, side):
@@ -1814,6 +1816,6 @@ class utils_basic:
         # add colorbar.
         if ax_cb != None:
             norm = mcolors.Normalize(vmin=0.45, vmax=vmax if vmax==None else vmax)
-            add_heatmap_colorbar(ax_cb, cmap, norm, 'decoding accuracy')
+            add_heatmap_colorbar(ax_cb, cmap, norm, 'Decoding accuracy')
             
 
