@@ -176,12 +176,12 @@ def run(session_config_list, smooth, cate_list):
             filename = '4131FixJitterOdd_cluster_oddball_jitter_global_all'
             cate_gap = 8
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 12
+            n_col = 15
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout=layout)
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+2, i]) for i in range(11)]
+                a = [plt.subplot(gs[s:s+2, i]) for i in range(13)]
                 a+= [plt.subplot(gs[s+2:s+4, i:i+2]) for i in [0,2,4]]
                 a+= [plt.subplot(gs[s+2, 6]), plt.subplot(gs[s+3, 6])]
                 a+= [plt.subplot(gs[s+2:s+5, 7:12])]
@@ -256,12 +256,12 @@ def run(session_config_list, smooth, cate_list):
             #plot_cell_fraction(),
             #plot_intervals(),
             plot_trial(),
-            #plot_cluster_oddball_fix_all(),
+            plot_cluster_oddball_fix_all(),
             #plot_cluster_oddball_fix_heatmap_all(),
             #plot_sorted_heatmaps_fix_all(),
             plot_cluster_oddball_jitter_global_all(),
-            #plot_cluster_oddball_jitter_local_all(),
-            #plot_latent_all(),
+            plot_cluster_oddball_jitter_local_all(),
+            plot_latent_all(),
             #plot_pupil_all(),
         ]
         print('Clearing memory usage')

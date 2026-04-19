@@ -687,3 +687,10 @@
 - Added PCA to plot_cluster_standard_time_decode_confusion.
 - Added PCA to plot_cluster_standard_time_decode_single.
 - Now plot_standard_ramp_params_all can plot density.
+
+## 2026.04.17
+- Changed plot_block_win_decode_all xlim.
+- Now get_mean_sem_win can specify pct.
+- Fixed plot_ramp_cate_fraction.
+- Fixed plot_ramp_fraction labels.
+- Now get_stat_test can specify methods.

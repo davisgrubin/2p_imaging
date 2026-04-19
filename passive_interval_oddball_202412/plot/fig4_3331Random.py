@@ -9,7 +9,6 @@ from modules.Alignment import run_get_stim_response
 from modeling.clustering import get_mean_sem_cluster
 from modeling.clustering import get_bin_mean_sem_cluster
 from modeling.clustering import get_cluster_cate
-from modeling.decoding import fit_linear_regression
 from modeling.decoding import fit_poly_line
 from modeling.generative import get_glm_cate
 from utils import show_resource_usage
@@ -167,7 +166,7 @@ class plotter_utils(utils_basic):
         @show_resource_usage
         def plot_stim_heatmap(ax, norm_mode):
             # collect data.
-            xlim = [stim_seq[c_idx,0]-500, stim_seq[c_idx,1]+500]
+            xlim = [-1000, 1500]
             l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
             neu_ci = [neu_seq[cluster_id==ci,l_idx:r_idx] for ci in range(self.n_clusters)]

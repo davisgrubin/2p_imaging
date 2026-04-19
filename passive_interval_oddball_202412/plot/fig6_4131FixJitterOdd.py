@@ -11,7 +11,6 @@ from modeling.clustering import get_bin_mean_sem_cluster
 from modeling.clustering import get_cluster_cate
 from modeling.decoding import multi_sess_decoding_slide_win
 from modeling.decoding import fit_poly_line
-from modeling.decoding import decoding_time_confusion
 from modeling.generative import get_glm_cate
 from modeling.generative import get_pairwise_cca_corr
 from utils import show_resource_usage
@@ -24,13 +23,11 @@ from utils import get_frame_idx_from_time
 from utils import get_modulation_index_neu_seq
 from utils import get_isi_bin_neu
 from utils import get_expect_interval
-from utils import get_stat_test
 from utils import get_split_idx
 from utils import get_block_1st_idx
 from utils import get_cmap_color
 from utils import hide_all_axis
 from utils import get_random_rotate_mat_3d
-from utils import adjust_layout_neu
 from utils import adjust_layout_isi_example_epoch
 from utils import adjust_layout_3d_latent
 from utils import adjust_layout_pupil
@@ -419,7 +416,66 @@ class plotter_utils(utils_basic):
                 win_eval, [color1, color2], 0, cumulative)
             # adjust layouts.
             hide_all_axis(ax)
-            ax.set_ylabel(f'Response comparison in the {win_lbl[wi]} window')
+            ax.set_ylabel('Response comparison')
+        @show_resource_usage
+        def plot_win_mag_quant_stat(ax, oddball):
+            average_axis = 0
+            offset = [0, 0.1]
+            # collect data.
+            neu_seq_fix, neu_seq_jitter = self.get_neu_seq_trial_fix_jitter(jitter_trial_mode, oddball, cate, isi_win)
+            [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_stim_labels,
+                trial_idx=[l[oddball] for l in self.list_odd_idx],
+                trial_param=[None, None, [0], None, [0], [0]],
+                cate=cate, roi_id=None)
+            c_idx = stim_seq.shape[0]//2
+            # define evaluation windows.
+            if oddball == 0:
+                win_eval = [[-2500, 0],
+                            [stim_seq[c_idx+1,0],stim_seq[c_idx+1,0]+250],
+                            [stim_seq[c_idx+1,0]+300,stim_seq[c_idx+1,0]+550],
+                            [stim_seq[c_idx+1,0]+600,stim_seq[c_idx+1,0]+850]]
+            if oddball == 1:
+                win_eval = [[-2500, 0],
+                            [stim_seq[c_idx,1]+self.expect, stim_seq[c_idx,1]+self.expect+300],
+                            [stim_seq[c_idx+1,0]-300,stim_seq[c_idx+1,0]],
+                            [stim_seq[c_idx+1,1]-100,stim_seq[c_idx+1,1]+300]]
+            # define layout.
+            ax.axis('off')
+            ax0 = ax.inset_axes([0, 0.97, 1, 0.03], transform=ax.transAxes)
+            ax1 = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            ax_box = [ax1.inset_axes([0.3, ci/self.n_clusters, 0.5, 0.65/self.n_clusters], transform=ax1.transAxes)
+                      for ci in range(self.n_clusters)]
+            axs_stat_m = [ax1.inset_axes([0.3, (0.8+ci)/self.n_clusters, 0.5, 0.1/self.n_clusters], transform=ax1.transAxes)
+                   for ci in range(self.n_clusters)]
+            ax_box.reverse()
+            axs_stat_m.reverse()
+            # plot evaluation window.
+            if oddball == 0:
+                ax0.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+            if oddball == 1:
+                ax0.axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
+                ax0.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+            for i in range(stim_seq.shape[0]):
+                ax0.fill_between(
+                    stim_seq[i,:], 0, 1,
+                    color=color0, edgecolor='none', alpha=0.25, step='mid')
+            self.plot_win_mag_quant_win_eval(ax0, win_eval, color0, xlim)
+            # plot errorbar.
+            self.plot_cluster_win_mag_quant(
+                ax_box, day_cluster_id, neu_seq_fix, self.alignment['neu_time'],
+                win_eval, color1, 0, offset[0], average_axis)
+            self.plot_cluster_win_mag_quant(
+                ax_box, day_cluster_id, neu_seq_jitter, self.alignment['neu_time'],
+                win_eval, color2, 0, offset[1], average_axis)
+            # plot statistics test.
+            self.plot_cluster_win_mag_quant_stat(
+                axs_stat_m, day_cluster_id, neu_seq_fix, neu_seq_jitter, self.alignment['neu_time'],
+                win_eval, 0, average_axis, 'ttest_ind')
+            # adjust layouts.
+            hide_all_axis(ax1)
+            ax0.set_xticks([])
+            ax1.set_ylabel('Evoked magnitude')
         @show_resource_usage
         def plot_block_win_decode(ax, oddball):
             win_sample = 200
@@ -486,7 +542,7 @@ class plotter_utils(utils_basic):
                         results_all[ci][0], decode_model_mean[ci], decode_model_sem[ci],
                         color_model, None)
                     # adjust layouts.
-                    axs[ci].set_xlim([-500,3000])
+                    axs[ci].set_xlim(xlim)
                     axs[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
             for ci in range(self.n_clusters):           
                 axs[ci].spines['right'].set_visible(False)
@@ -561,8 +617,8 @@ class plotter_utils(utils_basic):
             neu_seq_1 = np.concatenate([np.nanmean(neu[:n_trials,:,:], axis=0) for neu in neu_seq_jitter], axis=0)
             cluster_id_up = cluster_id.copy()
             cluster_id_dn = cluster_id.copy()
-            cluster_id_up[mod1<1-mod_tol] = -1
-            cluster_id_dn[mod1>mod_tol-1] = -1
+            cluster_id_up[(mod1<1-mod_tol)|(mod2<1-mod_tol)] = -1
+            cluster_id_dn[(mod1>mod_tol-1)|(mod2>mod_tol-1)] = -1
             neu_0_mean_up, neu_0_sem_up = get_mean_sem_cluster(neu_seq_0, self.n_clusters, cluster_id_up)
             neu_0_mean_dn, neu_0_sem_dn = get_mean_sem_cluster(neu_seq_0, self.n_clusters, cluster_id_dn)
             neu_1_mean_up, neu_1_sem_up = get_mean_sem_cluster(neu_seq_1, self.n_clusters, cluster_id_up)
@@ -652,7 +708,7 @@ class plotter_utils(utils_basic):
                 win_decode, win_sample)
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 0.8, 0.95], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 0.8, 0.6], transform=ax.transAxes)
             # plot results.
             upper = 0.9
             lower = 0.3
@@ -672,7 +728,7 @@ class plotter_utils(utils_basic):
             self.plot_mean_sem(ax, acc_time, acc_chance_mean, acc_chance_sem, color0, None)
             self.plot_mean_sem(ax, acc_time, acc_model_mean, acc_model_sem, color_model, None)
             # adjust layouts.
-            ax.set_xlim([-500,3500])
+            ax.set_xlim(xlim)
             ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])        
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
@@ -837,41 +893,45 @@ class plotter_utils(utils_basic):
         # plot all.
         try: plot_oddball_jitter(axs[0], 0)
         except: traceback.print_exc()
-        try: plot_win_mag_scatter(axs[1], 0, 2)
+        try: plot_win_mag_quant_stat(axs[1], 0)
         except: traceback.print_exc()
-        try: plot_win_mag_dist_var(axs[2], 0, 2, False)
+        try: plot_win_mag_scatter(axs[2], 0, 2)
         except: traceback.print_exc()
-        try: plot_block_win_decode(axs[3], 0)
+        try: plot_win_mag_dist_var(axs[3], 0, 2, False)
         except: traceback.print_exc()
-        try: plot_oddball_jitter(axs[4], 1)
+        try: plot_block_win_decode(axs[4], 0)
         except: traceback.print_exc()
-        try: plot_win_mag_scatter(axs[5], 1, 2)
+        try: plot_oddball_jitter(axs[5], 1)
         except: traceback.print_exc()
-        try: plot_win_mag_dist_var(axs[6], 1, 2, False)
+        try: plot_win_mag_quant_stat(axs[6], 1)
         except: traceback.print_exc()
-        try: plot_block_win_decode(axs[7], 1)
+        try: plot_win_mag_scatter(axs[7], 1, 2)
         except: traceback.print_exc()
-        try: plot_neu_fraction(axs[8])
+        try: plot_win_mag_dist_var(axs[8], 1, 2, False)
         except: traceback.print_exc()
-        try: plot_cate_fraction(axs[9])
+        try: plot_block_win_decode(axs[9], 1)
         except: traceback.print_exc()
-        try: plot_legend(axs[10])
+        try: plot_neu_fraction(axs[10])
         except: traceback.print_exc()
-        try: plot_pred_mod_index_box(axs[11], 0, 'pos')
+        try: plot_cate_fraction(axs[11])
         except: traceback.print_exc()
-        try: plot_pred_mod_index_box(axs[12], 1, 'pos')
+        try: plot_legend(axs[12])
         except: traceback.print_exc()
-        try: plot_pred_mod_index_box(axs[13], 1, 'neg')
+        try: plot_pred_mod_index_box(axs[13], 0, 'pos')
         except: traceback.print_exc()
-        try: plot_block_win_decode_all(axs[14], 0)
+        try: plot_pred_mod_index_box(axs[14], 1, 'pos')
         except: traceback.print_exc()
-        try: plot_block_win_decode_all(axs[15], 1)
+        try: plot_pred_mod_index_box(axs[15], 1, 'neg')
         except: traceback.print_exc()
-        try: plot_oddball_jitter_layers(axs[16])
+        try: plot_block_win_decode_all(axs[16], 0)
         except: traceback.print_exc()
-        try: plot_cate_interaction(axs[17], 0)
+        try: plot_block_win_decode_all(axs[17], 1)
         except: traceback.print_exc()
-        try: plot_cate_interaction(axs[18], 1)
+        try: plot_oddball_jitter_layers(axs[18])
+        except: traceback.print_exc()
+        try: plot_cate_interaction(axs[19], 0)
+        except: traceback.print_exc()
+        try: plot_cate_interaction(axs[20], 1)
         except: traceback.print_exc()
 
     def plot_cluster_oddball_jitter_local_all(self, axs, jitter_trial_mode, cate):
@@ -985,10 +1045,10 @@ class plotter_utils(utils_basic):
             # plot statistics test.
             self.plot_cluster_win_mag_quant_stat(
                 axs_stat_m, day_cluster_id, bin_neu_seq_trial[0], bin_neu_seq_trial[-1], self.alignment['neu_time'],
-                win_eval, 0, average_axis, 'mean')
+                win_eval, 0, average_axis, 'ttest_ind')
             self.plot_cluster_win_mag_quant_stat(
                 axs_stat_v, day_cluster_id, bin_neu_seq_trial[0], bin_neu_seq_trial[-1], self.alignment['neu_time'],
-                win_eval, 0, average_axis, 'var')
+                win_eval, 0, average_axis, 'levene')
             # adjust layouts.
             hide_all_axis(ax1)
             ax0.set_xticks([])

@@ -12,6 +12,7 @@ import matplotlib.transforms as mtransforms
 from datetime import datetime
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.decomposition import PCA
+from scipy.stats import ttest_ind
 from scipy.stats import mannwhitneyu
 from scipy.stats import levene
 from scipy.stats import gaussian_kde
@@ -74,8 +75,7 @@ def get_bin_idx(data, bin_win, bin_num):
     return bins, bin_center, bin_idx
 
 # compute mean and sem for average dF/F within given time window.
-def get_mean_sem_win(neu_seq, neu_time, c_time, l_time, r_time, mode):
-    pct = 25
+def get_mean_sem_win(neu_seq, neu_time, c_time, l_time, r_time, mode, pct=25):
     l_idx, r_idx = get_frame_idx_from_time(
         neu_time, c_time, l_time, r_time)
     neu_win = neu_seq[:, l_idx:r_idx].copy()
@@ -629,17 +629,21 @@ def get_temporal_scaling_trial_multi_sess(neu_seq, stim_seq, neu_time, target_is
     return scale_neu_seq
 
 # run statistics test and get significance level.
-def get_stat_test(data_1, data_2, stat_test):
+def get_stat_test(data_1, data_2, method):
     p_thres = np.array([5e-2, 5e-4, 5e-6])
-    if stat_test == 'mean':
+    if method == 'ttest_ind':
+        _, p = ttest_ind(data_1[~np.isnan(data_1)], data_2[~np.isnan(data_2)], equal_var=False)
+    # distributions are the same between groups.
+    if method == 'mannwhitneyu':
         _, p = mannwhitneyu(data_1[~np.isnan(data_1)], data_2[~np.isnan(data_2)])
-    if stat_test == 'var':
+    # all group variances are equal.
+    if method == 'levene':
         _, p = levene(data_1[~np.isnan(data_1)], data_2[~np.isnan(data_2)])
     r = np.sum(p < p_thres)
     return p, r
 
 # statistics test for response in evaluation windows.
-def get_win_mag_quant_stat_test(neu_seq_1, neu_seq_2, neu_time, c_time, win_eval, stat_test):
+def get_win_mag_quant_stat_test(neu_seq_1, neu_seq_2, neu_time, c_time, win_eval, method):
     baseline_correction = False
     mode = ['lower', 'mean', 'mean', 'mean']
     # get window data.
@@ -659,8 +663,8 @@ def get_win_mag_quant_stat_test(neu_seq_1, neu_seq_2, neu_time, c_time, win_eval
         neu_1 = [neu_1[i][0] for i in [1,2,3]]
         neu_2 = [neu_2[i][0] for i in [1,2,3]]
     # run statistics test.
-    p = np.array([get_stat_test(n1, n2, stat_test)[0] for n1, n2 in zip(neu_1, neu_2)])
-    r = np.array([get_stat_test(n1, n2, stat_test)[1] for n1, n2 in zip(neu_1, neu_2)])
+    p = np.array([get_stat_test(n1, n2, method)[0] for n1, n2 in zip(neu_1, neu_2)])
+    r = np.array([get_stat_test(n1, n2, method)[1] for n1, n2 in zip(neu_1, neu_2)])
     return p, r
 
 # compute correlation between rows.
@@ -1006,7 +1010,7 @@ class utils_basic:
         return trf_model
     
     def run_clustering(self, n_pre, n_post):
-        r2_thres = 0.4
+        r2_thres = 0.5
         r2_gap = 0.2
         # collect data.
         trf_param_pre = self.trf_model['trf_param_pre']
@@ -1114,8 +1118,8 @@ class utils_basic:
             np.nanmean(q1), np.nanmean(q2),
             color='black', marker='x', s=10)
         # plot statistics test.
-        r_m = get_stat_test(q1, q2, 'mean')[1]
-        r_v = get_stat_test(q1, q2, 'var')[1]
+        r_m = get_stat_test(q1, q2, 'ttest_ind')[1]
+        r_v = get_stat_test(q1, q2, 'levene')[1]
         ax.text(
             upper-0.05*(upper-lower), upper-0.4*(upper-lower), self.stat_sym[r_m],
             ha='center', va='center')
@@ -1610,7 +1614,7 @@ class utils_basic:
             self.plot_density(axs[ci], q1, xlim, c_neu[0])
             self.plot_density(axs[ci], q2, xlim, c_neu[1])
             # plot statistics test.
-            r = get_stat_test(q1, q2, 'mean')[1]
+            r = get_stat_test(q1, q2, 'ttest_ind')[1]
             axs[ci].text(
                 xl-0.05*(xu-xl), yu*(1-len_scale-0.2), self.stat_sym[r],
                 ha='center', va='center')
@@ -1647,7 +1651,7 @@ class utils_basic:
             axs[ci].axvline(m1, color=color1, lw=1, linestyle='--')
             axs[ci].axvline(m2, color=color2, lw=1, linestyle='--')
             # plot statistics test.
-            r_m = get_stat_test(mi1, mi2, 'mean')[1]
+            r_m = get_stat_test(mi1, mi2, 'mannwhitneyu')[1]
             axs[ci].text(0.8, 1, self.stat_sym[r_m], ha='center', va='center')
             # adjust layouts.
             axs[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))

@@ -259,8 +259,8 @@ def run(session_config_list, smooth, cate_list):
             plot_cluster_interval_bin_all(),
             #plot_cluster_heatmap_all(),
             plot_cross_sess_adapt(),
-            #plot_cluster_local_all(),
-            #plot_latent_all(),
+            plot_cluster_local_all(),
+            plot_latent_all(),
             #plot_pupil_all(),
             ]
         print('Clearing memory usage')
