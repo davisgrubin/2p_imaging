@@ -88,8 +88,8 @@ def multi_sess_decoding_slide_win(
     acc_model = np.concatenate(acc_model, axis=1)
     acc_chance = np.concatenate(acc_chance, axis=1)
     acc_time = neu_time[np.array(acc_time)]
-    acc_model_mean, acc_model_sem = get_mean_sem(acc_model)
-    acc_chance_mean, acc_chance_sem = get_mean_sem(acc_chance)
+    acc_model_mean, acc_model_sem = get_mean_sem(acc_model, method_m='mean', method_s='standard error')
+    acc_chance_mean, acc_chance_sem = get_mean_sem(acc_chance, method_m='mean', method_s='standard error')
     return acc_time, acc_model_mean, acc_model_sem, acc_chance_mean, acc_chance_sem
 
 # decoding time collapse and evaluate confusion matrix.
@@ -261,8 +261,3 @@ def regression_time_frac(neu_x, neu_time, bin_times, fracs):
     r2_all = np.nanmean(r2_all, axis=2)
     return r2_all
 
-
-
-
-
-        

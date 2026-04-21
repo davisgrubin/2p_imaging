@@ -694,3 +694,17 @@
 - Fixed plot_ramp_cate_fraction.
 - Fixed plot_ramp_fraction labels.
 - Now get_stat_test can specify methods.
+
+## 2026.04.19
+- Fixed plot_cluster_standard_time_decode_single y axis.
+- Fixed plot_cluster_standard_time_decode_confusion spacing.
+- Changed plot_cluster_standard_time_decode_confusion linestyle.
+- Fixed plot_latent_all.
+- Now get_mean_sem can specify uncertainty computing method.
+- Changed n_pre to 1 in random.
+- Changed all plot_cluster_neu_fraction_in_cluster layouts.
+- Changed plot_interval_bin layouts.
+- Changed plot_dist_cluster_fraction layouts.
+
+## 2026.04.21
+- Fixed plot_block_win_decode layouts.

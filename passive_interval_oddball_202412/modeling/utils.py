@@ -2,6 +2,7 @@
 
 import numpy as np
 from scipy.signal import savgol_filter
+from scipy.stats import t
 
 # normalization into [0,1].
 def norm01(data):
@@ -17,13 +18,23 @@ def get_norm01_params(data):
     b = - np.nanmin(data) / (np.nanmax(data) - np.nanmin(data))
     return a,b
 
-# compute mean and sem for 3d array data
-def get_mean_sem(data, zero_start=False):
-    m = np.nanmean(data.reshape(-1, data.shape[-1]), axis=0)
+# compute mean and uncertainty.
+def get_mean_sem(data, method_m='mean', method_s='confidence interval', zero_start=False):
+    if method_m == 'mean':
+        m = np.nanmean(data.reshape(-1, data.shape[-1]), axis=0)
+    if method_m == 'median':
+        m = np.nanmedian(data.reshape(-1, data.shape[-1]), axis=0)
     m = m-m[0] if zero_start else m
     std = np.nanstd(data.reshape(-1, data.shape[-1]), axis=0)
     count = np.nansum(~np.isnan(data.reshape(-1, data.shape[-1])), axis=0)
-    s = std / np.sqrt(count)
+    if method_s == 'confidence interval':
+        s = t.ppf(0.975, count - 1) * std / np.sqrt(count)
+    if method_s == 'prediction interval':
+        s = t.ppf(0.975, count - 1) * std * np.sqrt(1 + 1 / count)
+    if method_s == 'standard error':
+        s = std / np.sqrt(count)
+    if method_s == 'standard deviation':
+        s = std
     return m, s
 
 # compute mean and sem for average df/f within given time window.

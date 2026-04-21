@@ -263,10 +263,16 @@ class plotter_utils(utils_basic):
             axs[self.n_clusters-1].set_xticklabels(['standard', 'short oddball', 'long oddball'])
         @show_resource_usage
         def plot_neu_fraction(ax):
+            # define layouts.
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 0.70, 0.95], transform=ax.transAxes)
             # plot results.
             self.plot_cluster_neu_fraction_in_cluster(ax, cluster_id, color0)
         @show_resource_usage
         def plot_cate_fraction(ax):
+            # define layouts.
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 0.70, 0.95], transform=ax.transAxes)
             # plot results.
             self.plot_cluster_cate_fraction_in_cluster(ax, cluster_id, neu_labels, self.label_names, color0)
         @show_resource_usage
@@ -276,8 +282,8 @@ class plotter_utils(utils_basic):
                 self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[-1], None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
-            cs = [color0, color1, color2, 'gold']
-            lbl = ['standard', 'short oddball', 'long oddball', 'unexpected event']
+            cs = [color0, color1, color2, 'gold', 'red', 'red']
+            lbl = ['Standard', 'Short deviant', 'Long deviant', 'Omission', 'Early stim', 'Late stim']
             add_legend(ax, cs, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
             ax.axis('off')
         # plot all.
@@ -511,7 +517,7 @@ class plotter_utils(utils_basic):
             # define layouts.
             ax.axis('off')
             ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
-            axs = [ax.inset_axes([0.2, ci/self.n_clusters, 0.5, 0.8/self.n_clusters], transform=ax.transAxes)
+            axs = [ax.inset_axes([0, ci/self.n_clusters, 0.8, 0.9/self.n_clusters], transform=ax.transAxes)
                       for ci in range(self.n_clusters)]
             axs.reverse()
             # plot results for each class.
@@ -548,23 +554,26 @@ class plotter_utils(utils_basic):
                 axs[ci].spines['right'].set_visible(False)
                 axs[ci].spines['top'].set_visible(False)
                 axs[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
-                axs[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+                axs[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
                 axs[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
                 if ci != self.n_clusters-1:
                     axs[ci].set_xticks([])
             axs[self.n_clusters-1].set_xlabel('Time before deviant (ms)')
-            ax.set_ylabel('Decoding accuracy \n (fixed vs jittered)')
+            axs[self.n_clusters-1].set_ylabel('Decoding accuracy \n (fixed vs jittered)')
             hide_all_axis(ax)
         @show_resource_usage
         def plot_neu_fraction(ax):
+            # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 0.70, 0.95], transform=ax.transAxes)
             # plot results.
             self.plot_cluster_neu_fraction_in_cluster(ax, cluster_id, color0)
         @show_resource_usage
         def plot_cate_fraction(ax):
+            # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 0.70, 0.95], transform=ax.transAxes)
+            # plot results.
             self.plot_cluster_cate_fraction_in_cluster(ax, cluster_id, neu_labels, self.label_names, color0)
         @show_resource_usage
         def plot_legend(ax):
@@ -572,8 +581,8 @@ class plotter_utils(utils_basic):
                 self.alignment, self.list_labels, self.list_stim_labels,
                 trial_param=[[-1], None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
-            cs = [color1, color2, 'gold', color0, color_model]
-            lbl = ['fix', 'jitter', 'unexpected event', 'shuffle','model']
+            cs = [color1, color2, 'gold', 'red', 'red', color0, color_model]
+            lbl = ['Fix', 'Jitter', 'Omission', 'Early stim', 'Late stim', 'Shuffle','Model']
             add_legend(ax, cs, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
             ax.axis('off')
         @show_resource_usage
@@ -1303,14 +1312,17 @@ class plotter_utils(utils_basic):
             add_legend(ax, [color0, color_model], ['shuffle','model'], None, None, None, 'upper right')
         @show_resource_usage
         def plot_neu_fraction(ax):
+            # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 0.70, 0.95], transform=ax.transAxes)
             # plot results.
             self.plot_cluster_neu_fraction_in_cluster(ax, cluster_id, color0)
         @show_resource_usage
         def plot_cate_fraction(ax):
+            # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 0.70, 0.95], transform=ax.transAxes)
+            # plot results.
             self.plot_cluster_cate_fraction_in_cluster(ax, cluster_id, neu_labels, self.label_names, color0)
         @show_resource_usage
         def plot_legend(ax):
@@ -1319,7 +1331,7 @@ class plotter_utils(utils_basic):
                 trial_param=[[-1], None, [0], None, [0], [0]],
                 cate=cate, roi_id=None)
             cs = [color1, color2, 'gold']
-            lbl = ['short preceding ISI', 'long preceding ISI', 'unexpected event']
+            lbl = ['Short preceding ISI', 'Long preceding ISI', 'unexpected event']
             add_legend(ax, cs, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
             ax.axis('off')
         # plot all.

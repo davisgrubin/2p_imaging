@@ -40,7 +40,8 @@ def get_mean_sem_cluster(neu, n_clusters, cluster_id):
         idx = np.where(cluster_id==ci)[0]
         if len(idx) > 0:
             neu_mean[ci,:], neu_sem[ci,:] = get_mean_sem(
-                neu[np.where(cluster_id==ci)[0], :].reshape(-1,neu.shape[1]))
+                neu[np.where(cluster_id==ci)[0], :].reshape(-1,neu.shape[1]),
+                method_m='mean', method_s='confidence interval')
     return neu_mean, neu_sem
 
 # compute mean and sem for bined data for clusters.

@@ -79,7 +79,7 @@ def run(session_config_list, cate_list):
     print('===============================================')
     fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
     #fn4 = []
-        
+
     print('===============================================')
     print('===== plotting 3331RandomExtended results =====')
     print('===============================================')
@@ -109,12 +109,12 @@ def run(session_config_list, cate_list):
 
 if __name__ == "__main__":
     COMMANDLINE_MODE = 1
-    cate_list = [[-1,1,2]]
+    cate_list = [[-1],[1],[2],[-1,1,2]]
     from session_configs import all_config_list
     
     if COMMANDLINE_MODE:
         parser = argparse.ArgumentParser(description='Experiments can go shit but Yicong will love you forever!')
-        parser.add_argument('--config_list', required=True, type=str, help='Whether run denoising.')
+        parser.add_argument('--config_list', required=True, type=str, help='Target subjects.')
         args = parser.parse_args()
         for subject, session_config_list in zip(
                 ['YH01VT', 'YH02VT', 'YH03VT', 'YH14SC', 'YH16SC',
@@ -129,19 +129,19 @@ if __name__ == "__main__":
 
         session_config_test = {
             'list_session_name' : {
-                #'VTYH02_PPC_20250214_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250213_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250212_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250211_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250210_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250208_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250207_1451ShortLong' : 'short_long',
-                #'VTYH02_PPC_20250206_1451ShortLong' : 'short_long',     
-                'YH18VT_V1_20250526_3331Random' : 'random',
-                'YH18VT_V1_20250527_3331Random' : 'random',
-                'YH18VT_V1_20250528_3331Random' : 'random',
-                'YH18VT_V1_20250529_3331Random' : 'random',
-                'YH18VT_V1_20250530_3331Random' : 'random',
+                'VTYH02_PPC_20250214_1451ShortLong' : 'short_long',
+                'VTYH02_PPC_20250213_1451ShortLong' : 'short_long',
+                'VTYH02_PPC_20250212_1451ShortLong' : 'short_long',
+                'VTYH02_PPC_20250211_1451ShortLong' : 'short_long',
+                'VTYH02_PPC_20250210_1451ShortLong' : 'short_long',
+                'VTYH02_PPC_20250208_1451ShortLong' : 'short_long',
+                'VTYH02_PPC_20250207_1451ShortLong' : 'short_long',
+                'VTYH02_PPC_20250206_1451ShortLong' : 'short_long',     
+                #'YH18VT_V1_20250526_3331Random' : 'random',
+                #'YH18VT_V1_20250527_3331Random' : 'random',
+                #'YH18VT_V1_20250528_3331Random' : 'random',
+                #'YH18VT_V1_20250529_3331Random' : 'random',
+                #'YH18VT_V1_20250530_3331Random' : 'random',
                 #'YH18VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250331_4131FixJitterOdd' : 'fix_jitter_odd',
@@ -180,11 +180,16 @@ if __name__ == "__main__":
             }
         session_config_test2 = {
             'list_session_name' : {
-                #'YH14SC_PPC_20250421_1451ShortLong' : 'short_long',
-                #'YH14SC_PPC_20250422_1451ShortLong' : 'short_long',
-                #'YH14SC_PPC_20250423_1451ShortLong' : 'short_long',
-                #'YH14SC_PPC_20250424_1451ShortLong' : 'short_long',
-                #'YH14SC_PPC_20250425_1451ShortLong' : 'short_long',  
+                #'YH17VT_V1_20250526_3331Random' : 'random',
+                #'YH17VT_V1_20250527_3331Random' : 'random',
+                #'YH17VT_V1_20250528_3331Random' : 'random',
+                #'YH17VT_V1_20250529_3331Random' : 'random',
+                #'YH17VT_V1_20250530_3331Random' : 'random',
+                'YH14SC_PPC_20250421_1451ShortLong' : 'short_long',
+                'YH14SC_PPC_20250422_1451ShortLong' : 'short_long',
+                'YH14SC_PPC_20250423_1451ShortLong' : 'short_long',
+                'YH14SC_PPC_20250424_1451ShortLong' : 'short_long',
+                'YH14SC_PPC_20250425_1451ShortLong' : 'short_long',  
                 #'YH14SC_PPC_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH14SC_PPC_20250327_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH14SC_PPC_20250328_4131FixJitterOdd' : 'fix_jitter_odd',

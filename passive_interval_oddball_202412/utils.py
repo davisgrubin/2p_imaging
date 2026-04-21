@@ -11,11 +11,11 @@ import matplotlib.ticker as mtick
 import matplotlib.transforms as mtransforms
 from datetime import datetime
 from sklearn.cluster import AgglomerativeClustering
-from sklearn.decomposition import PCA
 from scipy.stats import ttest_ind
 from scipy.stats import mannwhitneyu
 from scipy.stats import levene
 from scipy.stats import gaussian_kde
+from scipy.stats import t
 from scipy.spatial.distance import pdist
 from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
@@ -95,14 +95,23 @@ def get_mean_sem_win(neu_seq, neu_time, c_time, l_time, r_time, mode, pct=25):
     neu_sem = std / np.sqrt(count)
     return neu, neu_mean, neu_sem
 
-# compute mean and sem for 3d array data.
-def get_mean_sem(data, win_baseline=None):
-    # compute mean.
-    m = np.nanmean(data.reshape(-1, data.shape[-1]), axis=0)
-    # compute sem.
+# compute mean and uncertainty.
+def get_mean_sem(data, method_m='mean', method_s='standard error', zero_start=False):
+    if method_m == 'mean':
+        m = np.nanmean(data.reshape(-1, data.shape[-1]), axis=0)
+    if method_m == 'median':
+        m = np.nanmedian(data.reshape(-1, data.shape[-1]), axis=0)
+    m = m-m[0] if zero_start else m
     std = np.nanstd(data.reshape(-1, data.shape[-1]), axis=0)
     count = np.nansum(~np.isnan(data.reshape(-1, data.shape[-1])), axis=0)
-    s = std / np.sqrt(count)
+    if method_s == 'confidence interval':
+        s = t.ppf(0.975, count - 1) * std / np.sqrt(count)
+    if method_s == 'prediction interval':
+        s = t.ppf(0.975, count - 1) * std * np.sqrt(1 + 1 / count)
+    if method_s == 'standard error':
+        s = std / np.sqrt(count)
+    if method_s == 'standard deviation':
+        s = std
     return m, s
 
 # compute peak time within evaluation window.
@@ -987,6 +996,7 @@ class utils_basic:
             }
         return glm
     
+    @show_resource_usage
     def run_trf_model(self,):
         # get data within range.
         z_idx = get_frame_idx_from_time(self.glm['kernel_time'], 0, 0, 0)[0]
@@ -1010,7 +1020,7 @@ class utils_basic:
         return trf_model
     
     def run_clustering(self, n_pre, n_post):
-        r2_thres = 0.5
+        r2_thres = 0.4
         r2_gap = 0.2
         # collect data.
         trf_param_pre = self.trf_model['trf_param_pre']
@@ -1673,6 +1683,7 @@ class utils_basic:
                 interpolation='nearest', aspect='auto')
             # adjust layouts.
             adjust_layout_heatmap(axs_hm[ci])
+            axs_hm[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
             add_heatmap_colorbar(axs_cb[ci], cmap, norm, r'$\Delta F/F$')
         
     def plot_cluster_heatmap(self, ax, neu_seq, neu_time, cluster_id, norm_mode):

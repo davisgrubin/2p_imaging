@@ -11,4 +11,6 @@
 
 cd /storage/project/r-fnajafi3-0/yhuang887/Projects/passive_interval_oddball_202412
 source activate suite2p
-python main.py --config_list 'YH01VT, YH02VT, YH03VT, YH14SC, YH16SC, YH17VT, YH18VT, YH19VT, YH20SC, YH21SC, PPC, V1'
+python main.py \
+--config_list 'YH01VT, YH02VT, YH03VT, YH14SC, YH16SC, YH17VT, YH18VT, YH19VT, YH20SC, YH21SC, PPC, V1' \
+

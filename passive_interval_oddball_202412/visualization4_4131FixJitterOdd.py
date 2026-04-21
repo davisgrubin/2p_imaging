@@ -255,8 +255,8 @@ def run(session_config_list, smooth, cate_list):
         fig_all = [
             #plot_cell_fraction(),
             #plot_intervals(),
-            plot_trial(),
-            plot_cluster_oddball_fix_all(),
+            #plot_trial(),
+            #plot_cluster_oddball_fix_all(),
             #plot_cluster_oddball_fix_heatmap_all(),
             #plot_sorted_heatmaps_fix_all(),
             plot_cluster_oddball_jitter_global_all(),

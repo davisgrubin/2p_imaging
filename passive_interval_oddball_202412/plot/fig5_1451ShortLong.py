@@ -298,13 +298,15 @@ class plotter_utils(utils_basic):
         def plot_neu_fraction(ax):
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 0.70, 0.95], transform=ax.transAxes)
+            # plot results.
             self.plot_cluster_neu_fraction_in_cluster(ax, cluster_id, color0)
         @show_resource_usage
         def plot_fraction(ax):
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 0.70, 0.95], transform=ax.transAxes)
+            # plot results.
             self.plot_cluster_cate_fraction_in_cluster(ax, cluster_id, neu_labels, self.label_names, color0)
         @show_resource_usage
         def plot_legend(ax):
@@ -660,6 +662,7 @@ class plotter_utils(utils_basic):
                         axi.spines['right'].set_visible(False)
                         axi.spines['top'].set_visible(False)
                         axi.set_ylabel(r'$\Delta F/F$ (z-scored)')
+                        axi.xaxis.set_major_locator(mtick.MaxNLocator(nbins=5))
                         axi.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
                         axi.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
                         axi.set_xlim(xlim)
@@ -761,8 +764,10 @@ class plotter_utils(utils_basic):
             for ci in range(self.n_clusters):
                 if np.sum(cluster_id==ci) > 0:
                     # find bounds.
-                    upper = np.nanmax(np.concatenate([m_early_0[ci], m_early_1[ci], m_late_0[ci], m_late_1[ci]]))
-                    lower = np.nanmin(np.concatenate([m_early_0[ci], m_early_1[ci], m_late_0[ci], m_late_1[ci]]))
+                    upper = np.nanmax(np.concatenate([m_early_0[ci], m_early_1[ci], m_late_0[ci], m_late_1[ci]])) + \
+                        np.nanmean(np.concatenate([s_early_0[ci], s_early_1[ci], s_late_0[ci], s_late_1[ci]]))
+                    lower = np.nanmin(np.concatenate([m_early_0[ci], m_early_1[ci], m_late_0[ci], m_late_1[ci]])) - \
+                        np.nanmean(np.concatenate([s_early_0[ci], s_early_1[ci], s_late_0[ci], s_late_1[ci]]))
                     # early short.
                     for ti in np.arange(trials_eval):
                         axs_12[ci].errorbar(
@@ -773,7 +778,7 @@ class plotter_utils(utils_basic):
                         axs_12[ci].axvline(0, color='red', lw=1, linestyle='--')
                         y_pred, _, p = fit_linear_regression(trial_id[ci], np.concatenate(mag_1to0_post[ci]))
                         axs_12[ci].plot(trial_id[ci], y_pred, color=color0, lw=1)
-                        axs_12[ci].text(0.5, upper, f'p={p:.3f}', color=color0, size=8)
+                        axs_12[ci].text(0.5, upper, f'p={p:.3f}', color=color0, size=7)
                     # early long.
                     for ti in np.arange(trials_eval):
                         axs_02[ci].errorbar(
@@ -784,7 +789,7 @@ class plotter_utils(utils_basic):
                         axs_02[ci].axvline(0, color='red', lw=1, linestyle='--')
                         y_pred, _, p = fit_linear_regression(trial_id[ci], np.concatenate(mag_0to1_post[ci]))
                         axs_02[ci].plot(trial_id[ci], y_pred, color=color0, lw=1)
-                        axs_02[ci].text(0.5, lower, f'p={p:.3f}', color=color0, size=8)
+                        axs_02[ci].text(0.5, lower, f'p={p:.3f}', color=color0, size=7)
                     # late short.
                     for ti in np.arange(trials_eval):
                         for axi in [axs_01[ci], axs_13[ci]]:
@@ -795,7 +800,7 @@ class plotter_utils(utils_basic):
                                 markeredgecolor='white', markeredgewidth=0.1)
                         y_pred, _, p = fit_linear_regression(trial_id[ci], np.concatenate(mag_0to1_pre[ci]))
                         axs_13[ci].plot(trial_id[ci]-trials_eval, y_pred, color=color0, lw=1)
-                        axs_13[ci].text(0.5-trials_eval, upper, f'p={p:.3f}', color=color0, size=8)
+                        axs_13[ci].text(0.5-trials_eval, upper, f'p={p:.3f}', color=color0, size=7)
                     # late long.
                     for ti in np.arange(trials_eval):
                         for axi in [axs_03[ci], axs_11[ci]]:
@@ -806,9 +811,9 @@ class plotter_utils(utils_basic):
                                 markeredgecolor='white', markeredgewidth=0.1)
                         y_pred, _, p = fit_linear_regression(trial_id[ci], np.concatenate(mag_1to0_pre[ci]))
                         axs_03[ci].plot(trial_id[ci]-trials_eval, y_pred, color=color0, lw=1)
-                        axs_03[ci].text(0.5-trials_eval, lower, f'p={p:.3f}', color=color0, size=8)
+                        axs_03[ci].text(0.5-trials_eval, lower, f'p={p:.3f}', color=color0, size=7)
                     # adjust layouts.
-                    axs_01[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
+                    axs_01[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
                     axs_01[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
                     axs_11[ci].set_yticks([])
                     for axi in [axs_02, axs_12, axs_03, axs_13]:
@@ -1236,8 +1241,8 @@ class plotter_utils(utils_basic):
                 ax10.scatter(neu_time_0[-1], neu_mean_0[-1], color='black', marker='o', lw=1)
                 ax11.scatter(neu_time_1[-1], neu_mean_1[-1], color='black', marker='o', lw=1)
                 # plot 3d dynamics.
-                self.plot_3d_latent_dynamics(ax0, np.matmul(rm,neu_z_0), stim_seq, neu_time_0, c_stim, cmap=cmap_0)
-                self.plot_3d_latent_dynamics(ax0, np.matmul(rm,neu_z_1), stim_seq, neu_time_1, c_stim, cmap=cmap_1)
+                self.plot_3d_latent_dynamics(ax0, np.matmul(rm,neu_z_0), stim_seq, neu_time_0, c_stim=c_stim, cmap=cmap_0)
+                self.plot_3d_latent_dynamics(ax0, np.matmul(rm,neu_z_1), stim_seq, neu_time_1, c_stim=c_stim, cmap=cmap_1)
                 # adjust layouts.
                 for axi in [ax10, ax11]:
                     hide_all_axis(axi)
@@ -1400,7 +1405,7 @@ class plotter_utils(utils_basic):
             ax2 = ax2.inset_axes([0, 0, 1, 0.8], transform=ax2.transAxes)
             axs_hm = [ax1.inset_axes([0.2, ci/self.n_clusters, 0.6, 0.8/self.n_clusters], transform=ax1.transAxes)
                       for ci in range(self.n_clusters)]
-            axs_cb = [ax1.inset_axes([0.7, ci/self.n_clusters, 0.1, 0.8/self.n_clusters], transform=ax1.transAxes)
+            axs_cb = [ax1.inset_axes([0.8, ci/self.n_clusters, 0.1, 0.8/self.n_clusters], transform=ax1.transAxes)
                       for ci in range(self.n_clusters)]
             axs_hm.reverse()
             axs_cb.reverse()
@@ -1418,7 +1423,7 @@ class plotter_utils(utils_basic):
                     ax2.plot(t_range, a_model, color=colors[ci])
             a_shuffle = np.full(len(t_range), np.nan)
             a_shuffle[:len(neu_time)] = acc_shuffle
-            ax2.plot(t_range, a_shuffle, color=color0, linestyle='--')
+            ax2.plot(t_range, a_shuffle, color=color0)
             # adjust layouts.
             for ci in range(self.n_clusters):
                 axs_hm[ci].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
@@ -1443,7 +1448,7 @@ class plotter_utils(utils_basic):
             ax2.set_xlabel('Time from stim \n onset (ms)')
             ax2.set_ylabel('Decoding accuracy \n (mean across all time bins)')
             ax2.set_xlim(tlim)
-            ax2.set_ylim([0.45,1])
+            ax2.set_ylim([0.45,1.10])
             hide_all_axis(ax1)
         @show_resource_usage
         def plot_cluster_standard_time_decode_single(ax1, ax2):
@@ -1522,7 +1527,7 @@ class plotter_utils(utils_basic):
                     axs_ln[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
                     axs_ln[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
                     axs_ln[ci].set_xlim(tlim)
-                    axs_ln[ci].set_ylim([0.50,1.00])
+                    axs_ln[ci].set_ylim([0.55,1.10])
                     if ci != self.n_clusters-1:
                         axs_ln[ci].set_xticklabels([])
             axs_ln[self.n_clusters-1].tick_params(axis='x')
@@ -1898,8 +1903,7 @@ class plotter_main(plotter_utils):
                 label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
                 print(f'plotting results for {label_name}')
 
-                #self.plot_decode_all(axs[0], 0, cate=cate)
-                self.plot_decode_all(axs, 1, cate=cate)              
+                self.plot_decode_all(axs, 1, cate=cate)
 
             except: traceback.print_exc()
 
