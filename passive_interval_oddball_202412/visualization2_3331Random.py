@@ -27,7 +27,7 @@ from plot.fig4_3331Random import plotter_main
 
 def run(session_config_list, smooth, cate_list):
     size_scale = 3
-    layout = 'tight'
+    layout = 'constrained'
     target_sess = 'random'
     idx_target_sess = np.array(list(session_config_list['list_session_name'].values())) == target_sess
     print('Found {} {} sessions'.format(np.sum(idx_target_sess), target_sess))

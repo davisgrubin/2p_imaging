@@ -65,8 +65,8 @@ def run(session_config_list, cate_list):
     print('===============================================')
     print('========= plotting 3331Random results =========')
     print('===============================================')
-    fn2 = visualization2_3331Random.run(session_config_list, smooth, cate_list)
-    #fn2 = []
+    #fn2 = visualization2_3331Random.run(session_config_list, smooth, cate_list)
+    fn2 = []
 
     print('===============================================')
     print('======= plotting 1451ShortLong results ========')
@@ -77,8 +77,8 @@ def run(session_config_list, cate_list):
     print('===============================================')
     print('====== plotting 4131FixJitterOdd results ======')
     print('===============================================')
-    fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
-    #fn4 = []
+    #fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
+    fn4 = []
 
     print('===============================================')
     print('===== plotting 3331RandomExtended results =====')

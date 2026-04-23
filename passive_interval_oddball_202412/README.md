@@ -711,3 +711,7 @@
 - Fixed plot_block_win_decode ylim.
 - Fixed plot_cluster_standard_time_decode_single layouts.
 - Rewritten plot_trial_quant.
+- Adjusted plot_cluster_standard layouts.
+- Adjusted plot_standard_ramp_params_all layouts.
+- Adjusted plot_cluster_standard_pred layouts.
+- Adjusted plot_cluster_standard_time_decode_confusion layouts.

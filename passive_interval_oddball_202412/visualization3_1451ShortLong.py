@@ -26,7 +26,7 @@ from plot.fig5_1451ShortLong import plotter_main
 
 def run(session_config_list, smooth, cate_list):
     size_scale = 3
-    layout = 'tight'
+    layout = 'compressed'
     target_sess = 'short_long'
     idx_target_sess = np.array(list(session_config_list['list_session_name'].values())) == target_sess
     print('Found {} {} sessions'.format(np.sum(idx_target_sess), target_sess))
@@ -116,15 +116,15 @@ def run(session_config_list, smooth, cate_list):
             filename = '1451ShortLong_cluster_all'
             cate_gap = 7
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 10
+            n_col = 8
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout=layout)
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
                 a = [plt.subplot(gs[s:s+2, i]) for i in [0,1,2,3]]
-                a+= [plt.subplot(gs[s:s+2, i:i+2]) for i in [4,6,8]]
-                a+= [plt.subplot(gs[s+2:s+4, i]) for i in [0,1,2,3,4,5,6,7]]
-                a+= [plt.subplot(gs[s+4, i]) for i in [0,1,2,3]]
+                a+= [plt.subplot(gs[s+2:s+4, i:i+2]) for i in [0,2,4]]
+                a+= [plt.subplot(gs[s+4:s+6, i]) for i in [0,1,2,3,4,5,6,7]]
+                a+= [plt.subplot(gs[s+6, i]) for i in [0,1,2,3]]
                 axs_all.append(a)
             plotter.cluster_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -258,13 +258,13 @@ def run(session_config_list, smooth, cate_list):
         fig_all = [
             #plot_cell_fraction(),
             #plot_intervals(),
-            plot_trial(),
+            #plot_trial(),
             plot_cluster_all(),
             #plot_cluster_heatmap_all(),
             plot_cluster_adapt_all(),
             #plot_sorted_heatmaps_all(),
-            plot_latent_all(),
-            #plot_decode_all(),
+            #plot_latent_all(),
+            plot_decode_all(),
             #plot_pupil_all(),
             ]
         print('Clearing memory usage')

@@ -410,7 +410,7 @@ class plotter_utils(utils_basic):
         try: plot_ramp_cate_fraction([axs[16], axs[17]])
         except: traceback.print_exc()
         try: plot_explained_variance_standard(axs[18])
-        except: traceback.print_exc()  
+        except: traceback.print_exc()
 
     def plot_cluster_heatmap_all(self, axs, cate):
         kernel_all = get_glm_cate(self.glm, self.list_labels, cate)
@@ -662,7 +662,7 @@ class plotter_utils(utils_basic):
                         axi.spines['right'].set_visible(False)
                         axi.spines['top'].set_visible(False)
                         axi.set_ylabel(r'$\Delta F/F$ (z-scored)')
-                        axi.xaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
+                        axi.xaxis.set_major_locator(mtick.MaxNLocator(nbins=5))
                         axi.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
                         axi.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
                         axi.set_xlim(xlim)
@@ -1247,9 +1247,9 @@ class plotter_utils(utils_basic):
         @show_resource_usage
         def plot_cluster_standard(ax, scaled):
             # get data within range.
-            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, 0, stim_seq[c_idx+1, 0])
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, stim_seq[c_idx-1, 1], stim_seq[c_idx+1, 0])
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
-            xlim = [neu_time[0]-200, neu_time[-1]]
+            xlim = [neu_time[0], neu_time[-1]]
             # get response within cluster.
             neu_mean, neu_sem = get_mean_sem_cluster(neu_seq[:,l_idx:r_idx], self.n_clusters, cluster_id)
             if scaled:
@@ -1265,7 +1265,7 @@ class plotter_utils(utils_basic):
                 neu_time, norm_params,
                 stim_seq[c_idx,:].reshape(1,2), [color0], [color0]*self.n_clusters, xlim)
             # adjust layouts.
-            ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+            ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
             ax.set_xlabel('Time from stim \n onset (ms)')
             ax.set_xlim(xlim)
         @show_resource_usage
@@ -1310,7 +1310,7 @@ class plotter_utils(utils_basic):
                 axs[ci].spines['right'].set_visible(False)
                 axs[ci].spines['top'].set_visible(False)
                 axs[ci].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
-                axs[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+                axs[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
                 axs[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
                 axs[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=1))
                 axs[ci].set_ylim([0,1])
@@ -1409,13 +1409,13 @@ class plotter_utils(utils_basic):
             ax2.spines['right'].set_visible(False)
             ax2.spines['top'].set_visible(False)
             ax2.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
-            ax2.xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
+            ax2.xaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
             ax2.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
-            ax2.yaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
+            ax2.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
             ax2.set_xlabel('Time from stim \n onset (ms)')
             ax2.set_ylabel('Decoding accuracy \n (mean across all time bins)')
             ax2.set_xlim(tlim)
-            ax2.set_ylim([0.5,1.05])
+            ax2.set_ylim([0.4,1.05])
             hide_all_axis(ax1)
         @show_resource_usage
         def plot_cluster_standard_time_decode_single(ax1, ax2):
@@ -1611,7 +1611,7 @@ class plotter_utils(utils_basic):
                 ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
                 ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
                 ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
-                ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+                ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
                 ax.spines['right'].set_visible(False)
                 ax.spines['top'].set_visible(False) 
                 ax.set_xlabel(param_lbl[param_idx])
