@@ -84,10 +84,10 @@ def get_mean_sem_win(neu_seq, neu_time, c_time, l_time, r_time, mode, pct=25):
         neu = np.nanmean(neu_win, axis=1)
     # values lower than percentile in the window.
     if mode == 'lower':
-        neu = np.array([np.nanmean(ns[ns < np.percentile(ns, pct)]) for ns in neu_win])
+        neu = np.array([np.nanmean(neu_win[ni][neu_win[ni] <= np.nanpercentile(neu_win[ni], pct)]) for ni in range(neu_win.shape[0])])
     # values higher than percentile in the window.
     if mode == 'higher':
-        neu = np.array([np.nanmean(ns[ns > np.percentile(ns, pct)]) for ns in neu_win])
+        neu = np.array([np.nanmean(neu_win[ni][neu_win[ni] >= np.nanpercentile(neu_win[ni], 100-pct)]) for ni in range(neu_win.shape[0])])
     # compute mean and sem.
     neu_mean = np.nanmean(neu)
     std = np.nanstd(neu)

@@ -539,7 +539,7 @@ class plotter_utils(utils_basic):
                 trial_idx=list_trans_1to0,
                 mean_sem=False,
                 cate=cate, roi_id=None)
-            # reshape into [n_transition*n_trials*n_neurons*n_times]
+            # reshape into [n_transition*n_trials*n_neurons*n_times].
             neu_trans_0to1 = [neu.reshape([-1, 2*trials_around, neu.shape[1], neu.shape[2]]) for neu in neu_trans_0to1]
             neu_trans_1to0 = [neu.reshape([-1, 2*trials_around, neu.shape[1], neu.shape[2]]) for neu in neu_trans_1to0]
             n_transition = np.array([nt.shape[0] for nt in neu_trans_0to1])
@@ -551,7 +551,7 @@ class plotter_utils(utils_basic):
             # get less trials around transition.
             neu_trans_0to1 = [nt[:, trials_around-trials_eval:trials_around+trials_eval, :, :] for nt in neu_trans_0to1]
             neu_trans_1to0 = [nt[:, trials_around-trials_eval:trials_around+trials_eval, :, :] for nt in neu_trans_1to0]
-            # get average across transition [n_trials*n_neurons*n_times]
+            # get average across transition [n_trials*n_neurons*n_times].
             neu_trans_0to1 = np.concatenate(neu_trans_0to1, axis=2)
             neu_trans_1to0 = np.concatenate(neu_trans_1to0, axis=2)
             neu_0to1 = np.nanmean(neu_trans_0to1, axis=0)
@@ -662,7 +662,7 @@ class plotter_utils(utils_basic):
                         axi.spines['right'].set_visible(False)
                         axi.spines['top'].set_visible(False)
                         axi.set_ylabel(r'$\Delta F/F$ (z-scored)')
-                        axi.xaxis.set_major_locator(mtick.MaxNLocator(nbins=5))
+                        axi.xaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
                         axi.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
                         axi.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
                         axi.set_xlim(xlim)
@@ -681,64 +681,40 @@ class plotter_utils(utils_basic):
             hide_all_axis(ax1)
         @show_resource_usage
         def plot_trial_quant(ax):
+            baseline_correction = True
             win = [-500,500]
-            pct = 15
-            trials_eval = 5
+            pct = 25
+            trials_fit = 40
             # collect data.
-            [_, [neu_seq_0, _, stim_seq_0, _], _, _] = get_neu_trial(
+            [_, [neu_trans_0to1_trials, _, _, _, _], _, _] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_stim_labels,
-                trial_param=[[2,3,4,5], [0], None, None, [0], [0]],
+                trial_param=[None, None, None, None, [0], [0]],
+                trial_idx=list_trans_0to1,
+                mean_sem=False,
                 cate=cate, roi_id=None)
-            [_, [neu_seq_1, _, stim_seq_1, _], _, _] = get_neu_trial(
+            [_, [neu_trans_1to0_trials, _, _, _, _], _, _] = get_neu_trial(
                 self.alignment, self.list_labels, self.list_stim_labels,
-                trial_param=[[2,3,4,5], [1], None, None, [0], [0]],
+                trial_param=[None, None, None, None, [0], [0]],
+                trial_idx=list_trans_1to0,
+                mean_sem=False,
                 cate=cate, roi_id=None)
-            [_, [neu_trans_0to1, _, stim_seq_0to1, _], _,
-             [n_trials, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_stim_labels,
-                trial_idx=[l[1] for l in self.list_block_start],
-                cate=cate, roi_id=None)
-            [_, [neu_trans_1to0, _, stim_seq_1to0, _], _,
-             [n_trials, n_neurons]] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_stim_labels,
-                trial_idx=[l[0] for l in self.list_block_start],
-                cate=cate, roi_id=None)
-            # compute baseline.
-            base_0to1 = [[get_mean_sem_win(
-                neu_trans_0to1[cluster_id==ci,:],
-                self.alignment['neu_time'], 0, stim_seq_0to1[c_idx+si,0]+win[0], stim_seq_0to1[c_idx+si,1]+win[1], 'lower', pct)
-                for si in np.arange(-trials_eval, trials_eval)]
-                for ci in range(self.n_clusters)]
-            base_1to0 = [[get_mean_sem_win(
-                neu_trans_1to0[cluster_id==ci,:],
-                self.alignment['neu_time'], 0, stim_seq_1to0[c_idx+si,0]+win[0], stim_seq_1to0[c_idx+si,1]+win[1], 'lower', pct)
-                for si in np.arange(-trials_eval, trials_eval)]
-                for ci in range(self.n_clusters)]
-            # compute response within window.
-            quant_0to1 = [[get_mean_sem_win(
-                neu_trans_0to1[cluster_id==ci,:],
-                self.alignment['neu_time'], 0, stim_seq_0to1[c_idx+si,0]+win[0], stim_seq_0to1[c_idx+si,1]+win[1], 'higher', pct)
-                for si in np.arange(-trials_eval, trials_eval)]
-                for ci in range(self.n_clusters)]
-            quant_1to0 = [[get_mean_sem_win(
-                neu_trans_1to0[cluster_id==ci,:],
-                self.alignment['neu_time'], 0, stim_seq_1to0[c_idx+si,0]+win[0], stim_seq_1to0[c_idx+si,1]+win[1], 'higher', pct)
-                for si in np.arange(-trials_eval, trials_eval)]
-                for ci in range(self.n_clusters)]
-            # collect mean sem results.
-            m_early_0 = [np.array([quant_1to0[ci][si+trials_eval][1] - base_1to0[ci][si+trials_eval][1] for si in range(trials_eval)]) for ci in range(self.n_clusters)]
-            m_early_1 = [np.array([quant_0to1[ci][si+trials_eval][1] - base_0to1[ci][si+trials_eval][1] for si in range(trials_eval)]) for ci in range(self.n_clusters)]
-            m_late_0 = [np.array([quant_0to1[ci][si][1] - base_0to1[ci][si][1] for si in range(trials_eval)]) for ci in range(self.n_clusters)]
-            m_late_1 = [np.array([quant_1to0[ci][si][1] - base_1to0[ci][si][1] for si in range(trials_eval)]) for ci in range(self.n_clusters)]
-            s_early_0 = [np.array([quant_1to0[ci][si+trials_eval][2] for si in range(trials_eval)]) for ci in range(self.n_clusters)]
-            s_early_1 = [np.array([quant_0to1[ci][si+trials_eval][2] for si in range(trials_eval)]) for ci in range(self.n_clusters)]
-            s_late_0 = [np.array([quant_0to1[ci][si][2] for si in range(trials_eval)]) for ci in range(self.n_clusters)]
-            s_late_1 = [np.array([quant_1to0[ci][si][2] for si in range(trials_eval)]) for ci in range(self.n_clusters)]
-            mag_0to1_pre  = [[q[0] - b[0] for q,b in zip(quant_0to1[ci][:trials_eval], base_0to1[ci][:trials_eval])] for ci in range(self.n_clusters)]
-            mag_0to1_post = [[q[0] - b[0] for q,b in zip(quant_0to1[ci][trials_eval:], base_0to1[ci][trials_eval:])] for ci in range(self.n_clusters)]
-            mag_1to0_pre  = [[q[0] - b[0] for q,b in zip(quant_1to0[ci][:trials_eval], base_1to0[ci][:trials_eval])] for ci in range(self.n_clusters)]
-            mag_1to0_post = [[q[0] - b[0] for q,b in zip(quant_1to0[ci][trials_eval:], base_1to0[ci][trials_eval:])] for ci in range(self.n_clusters)]
-            trial_id = [np.repeat(np.arange(trials_eval), mag_0to1_pre[ci][0].shape[0]) for ci in range(self.n_clusters)]
+            # reshape into [n_transition*n_trials*n_neurons*n_times].
+            neu_trans_0to1_trials = [neu.reshape([-1, 2*trials_around, neu.shape[1], neu.shape[2]]) for neu in neu_trans_0to1_trials]
+            neu_trans_1to0_trials = [neu.reshape([-1, 2*trials_around, neu.shape[1], neu.shape[2]]) for neu in neu_trans_1to0_trials]
+            n_transition = np.array([nt.shape[0] for nt in neu_trans_0to1_trials])
+            if np.max(n_transition) != np.min(n_transition):
+                neu_trans_0to1_trials = [nt[:np.min(n_transition),:,:,:] for nt in neu_trans_0to1_trials]
+            n_transition = np.array([nt.shape[0] for nt in neu_trans_1to0_trials])
+            if np.max(n_transition) != np.min(n_transition):
+                neu_trans_1to0_trials = [nt[:np.min(n_transition),:,:,:] for nt in neu_trans_1to0_trials]
+            # get less trials around transition.
+            neu_trans_0to1_trials = [nt[:, trials_around-trials_fit:trials_around+trials_fit, :, :] for nt in neu_trans_0to1_trials]
+            neu_trans_1to0_trials = [nt[:, trials_around-trials_fit:trials_around+trials_fit, :, :] for nt in neu_trans_1to0_trials]
+            # get average across transition [n_trials*n_neurons*n_times].
+            neu_trans_0to1_trials = np.concatenate(neu_trans_0to1_trials, axis=2)
+            neu_trans_1to0_trials = np.concatenate(neu_trans_1to0_trials, axis=2)
+            neu_0to1 = np.nanmean(neu_trans_0to1_trials, axis=0)
+            neu_1to0 = np.nanmean(neu_trans_1to0_trials, axis=0)
             # define layouts.
             ax0 = ax.inset_axes([0.1, 0, 0.4, 0.95], transform=ax.transAxes)
             ax1 = ax.inset_axes([0.6, 0, 0.4, 0.95], transform=ax.transAxes)
@@ -763,55 +739,46 @@ class plotter_utils(utils_basic):
             # plot results for each class.
             for ci in range(self.n_clusters):
                 if np.sum(cluster_id==ci) > 0:
+                    nc_0to1 = np.nanmean(neu_0to1[:,cluster_id==ci,:],axis=1)
+                    nc_1to0 = np.nanmean(neu_1to0[:,cluster_id==ci,:],axis=1)
+                    # compute baseline.
+                    base_0to1 = get_mean_sem_win(nc_0to1, self.alignment['neu_time'], 0, win[0], win[1], 'lower', pct)[0]
+                    base_1to0 = get_mean_sem_win(nc_1to0, self.alignment['neu_time'], 0, win[0], win[1], 'lower', pct)[0]
+                    # compute response within window.
+                    quant_0to1 = get_mean_sem_win(nc_0to1, self.alignment['neu_time'], 0, win[0], win[1], 'higher', pct)[0]
+                    quant_1to0 = get_mean_sem_win(nc_1to0, self.alignment['neu_time'], 0, win[0], win[1], 'higher', pct)[0]
+                    # compute response magnitude.
+                    if baseline_correction:
+                        m_0to1 = quant_0to1 - base_0to1
+                        m_1to0 = quant_1to0 - base_1to0
+                    else:
+                        m_0to1 = quant_0to1
+                        m_1to0 = quant_1to0
                     # find bounds.
-                    upper = np.nanmax(np.concatenate([m_early_0[ci], m_early_1[ci], m_late_0[ci], m_late_1[ci]])) + \
-                        np.nanmean(np.concatenate([s_early_0[ci], s_early_1[ci], s_late_0[ci], s_late_1[ci]]))
-                    lower = np.nanmin(np.concatenate([m_early_0[ci], m_early_1[ci], m_late_0[ci], m_late_1[ci]])) - \
-                        np.nanmean(np.concatenate([s_early_0[ci], s_early_1[ci], s_late_0[ci], s_late_1[ci]]))
+                    upper = np.nanmax(np.concatenate([m_0to1, m_1to0]))
+                    lower = np.nanmin(np.concatenate([m_0to1, m_1to0]))
                     # early short.
-                    for ti in np.arange(trials_eval):
-                        axs_12[ci].errorbar(
-                            ti, m_early_0[ci][ti], s_early_0[ci][ti], None,
-                            color=color1,
-                            capsize=2, marker='o', linestyle='none',
-                            markeredgecolor='white', markeredgewidth=0.1)
-                        axs_12[ci].axvline(0, color='red', lw=1, linestyle='--')
-                        y_pred, _, p = fit_linear_regression(trial_id[ci], np.concatenate(mag_1to0_post[ci]))
-                        axs_12[ci].plot(trial_id[ci], y_pred, color=color0, lw=1)
-                        axs_12[ci].text(0.5, upper, f'p={p:.3f}', color=color0, size=7)
+                    axs_12[ci].axvline(0, color='red', lw=1, linestyle='--')
+                    axs_12[ci].scatter(np.arange(trials_fit), m_1to0[trials_fit:], color=color1, s=1)
                     # early long.
-                    for ti in np.arange(trials_eval):
-                        axs_02[ci].errorbar(
-                            ti, m_early_1[ci][ti], s_early_1[ci][ti], None,
-                            color=color2,
-                            capsize=2, marker='o', linestyle='none',
-                            markeredgecolor='white', markeredgewidth=0.1)
-                        axs_02[ci].axvline(0, color='red', lw=1, linestyle='--')
-                        y_pred, _, p = fit_linear_regression(trial_id[ci], np.concatenate(mag_0to1_post[ci]))
-                        axs_02[ci].plot(trial_id[ci], y_pred, color=color0, lw=1)
-                        axs_02[ci].text(0.5, lower, f'p={p:.3f}', color=color0, size=7)
+                    axs_02[ci].axvline(0, color='red', lw=1, linestyle='--')
+                    axs_02[ci].scatter(np.arange(trials_fit), m_0to1[trials_fit:], color=color2, s=1)
                     # late short.
-                    for ti in np.arange(trials_eval):
-                        for axi in [axs_01[ci], axs_13[ci]]:
-                            axi.errorbar(
-                                ti-trials_eval, m_late_0[ci][ti], s_late_0[ci][ti], None,
-                                color=color1 if ti < trials_eval else color2,
-                                capsize=2, marker='o', linestyle='none',
-                                markeredgecolor='white', markeredgewidth=0.1)
-                        y_pred, _, p = fit_linear_regression(trial_id[ci], np.concatenate(mag_0to1_pre[ci]))
-                        axs_13[ci].plot(trial_id[ci]-trials_eval, y_pred, color=color0, lw=1)
-                        axs_13[ci].text(0.5-trials_eval, upper, f'p={p:.3f}', color=color0, size=7)
+                    for axi in [axs_01[ci], axs_13[ci]]:
+                        axi.scatter(np.arange(trials_fit)-trials_fit, m_0to1[:trials_fit], color=color1, s=1)
                     # late long.
-                    for ti in np.arange(trials_eval):
-                        for axi in [axs_03[ci], axs_11[ci]]:
-                            axi.errorbar(
-                                ti-trials_eval, m_late_1[ci][ti], s_late_1[ci][ti], None,
-                                color=color2,
-                                capsize=2, marker='o', linestyle='none',
-                                markeredgecolor='white', markeredgewidth=0.1)
-                        y_pred, _, p = fit_linear_regression(trial_id[ci], np.concatenate(mag_1to0_pre[ci]))
-                        axs_03[ci].plot(trial_id[ci]-trials_eval, y_pred, color=color0, lw=1)
-                        axs_03[ci].text(0.5-trials_eval, lower, f'p={p:.3f}', color=color0, size=7)
+                    for axi in [axs_03[ci], axs_11[ci]]:
+                        axi.scatter(np.arange(trials_fit)-trials_fit, m_1to0[:trials_fit], color=color2, s=1)
+                    # fit line for short.
+                    y_pred, _, p = fit_linear_regression(np.arange(2*trials_fit), np.concatenate([m_1to0[trials_fit:], m_0to1[:trials_fit]]))
+                    axs_12[ci].plot(np.arange(trials_fit), y_pred[trials_fit:], color=color0, lw=1)
+                    axs_13[ci].plot(np.arange(trials_fit)-trials_fit, y_pred[:trials_fit], color=color0, lw=1)
+                    axs_12[ci].text(5, upper + 0.1*(upper-lower), f'p={p:.3f}', color=color0, size=9)
+                    # fit line for long.
+                    y_pred, _, p = fit_linear_regression(np.arange(2*trials_fit), np.concatenate([m_0to1[trials_fit:], m_1to0[:trials_fit]]))
+                    axs_02[ci].plot(np.arange(trials_fit), y_pred[trials_fit:], color=color0, lw=1)
+                    axs_03[ci].plot(np.arange(trials_fit)-trials_fit, y_pred[trials_fit:], color=color0, lw=1)
+                    axs_02[ci].text(5, lower - 0.1*(upper-lower), f'p={p:.3f}', color=color0, size=9)
                     # adjust layouts.
                     axs_01[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
                     axs_01[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
@@ -823,25 +790,25 @@ class plotter_utils(utils_basic):
                         axi[ci].set_xticks([])
                         axi[ci].spines['right'].set_visible(False)
                         axi[ci].spines['top'].set_visible(False) 
-                        axi[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+                        axi[ci].set_ylim([lower - 0.3*(upper-lower), upper + 0.3*(upper-lower)])
                     for axi in [axs_01, axs_11, axs_03, axs_13]:
-                        axi[ci].set_xlim(-trials_eval-1, 0)
+                        axi[ci].set_xlim(-trials_fit-1, 0)
                     for axi in [axs_02, axs_12]:
-                        axi[ci].set_xlim(-1, trials_eval)
+                        axi[ci].set_xlim(-1, trials_fit)
                 for axi in [axs_01, axs_11, axs_03, axs_13]:
                     axi[self.n_clusters-1].tick_params(axis='x', labelrotation=90)
-                    axi[self.n_clusters-1].set_xticks(np.arange(-trials_eval-1, 0, 2)+1)
-                    axi[self.n_clusters-1].set_xticklabels(np.arange(-trials_eval-1, 0, 2)+1)
+                    axi[self.n_clusters-1].set_xticks(np.arange(-trials_fit-1, 0, 20))
+                    axi[self.n_clusters-1].set_xticklabels(np.arange(-trials_fit-1, 0, 20))
                 for axi in [axs_02, axs_12]:
                     axi[self.n_clusters-1].tick_params(axis='x', labelrotation=90)
-                    axi[self.n_clusters-1].set_xticks(np.arange(0, trials_eval, 2))
-                    axi[self.n_clusters-1].set_xticklabels(np.arange(0, trials_eval, 2))
-                    axi[self.n_clusters-1].set_xlabel('early')
+                    axi[self.n_clusters-1].set_xticks(np.arange(0, trials_fit, 20))
+                    axi[self.n_clusters-1].set_xticklabels(np.arange(0, trials_fit, 20))
+                    axi[self.n_clusters-1].set_xlabel('Early')
                 for axi in [axs_01, axs_11]:
-                    axi[self.n_clusters-1].set_xlabel('pre')
+                    axi[self.n_clusters-1].set_xlabel('Pre')
                 for axi in [axs_03, axs_13]:
-                    axi[self.n_clusters-1].set_xlabel('late')
-            ax.set_ylabel(f'Response magnitude at \n [0,{win}] ms since stim onset')
+                    axi[self.n_clusters-1].set_xlabel('Late')
+            ax.set_ylabel(f'Evoked response magnitude \n at {win} ms related stim onset')
             ax0.set_title('S\u2192L adaptation')
             ax1.set_title('L\u2192S adaptation')
             hide_all_axis(ax)
@@ -1448,7 +1415,7 @@ class plotter_utils(utils_basic):
             ax2.set_xlabel('Time from stim \n onset (ms)')
             ax2.set_ylabel('Decoding accuracy \n (mean across all time bins)')
             ax2.set_xlim(tlim)
-            ax2.set_ylim([0.45,1.10])
+            ax2.set_ylim([0.5,1.05])
             hide_all_axis(ax1)
         @show_resource_usage
         def plot_cluster_standard_time_decode_single(ax1, ax2):
@@ -1523,11 +1490,11 @@ class plotter_utils(utils_basic):
                     axs_ln[ci].spines['right'].set_visible(False)
                     axs_ln[ci].spines['top'].set_visible(False)
                     axs_ln[ci].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
-                    axs_ln[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+                    axs_ln[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
                     axs_ln[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
                     axs_ln[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
                     axs_ln[ci].set_xlim(tlim)
-                    axs_ln[ci].set_ylim([0.55,1.10])
+                    axs_ln[ci].set_ylim([0.5,1.05])
                     if ci != self.n_clusters-1:
                         axs_ln[ci].set_xticklabels([])
             axs_ln[self.n_clusters-1].tick_params(axis='x')
@@ -1537,13 +1504,13 @@ class plotter_utils(utils_basic):
             ax2.spines['right'].set_visible(False)
             ax2.spines['top'].set_visible(False)
             ax2.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
-            ax2.xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+            ax2.xaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
             ax2.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
-            ax2.yaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
+            ax2.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
             ax2.set_xlabel('Time from stim onset (ms)')
             ax2.set_ylabel('Decoding accuracy')
             ax2.set_xlim(tlim)
-            ax2.set_ylim([0.45,0.95])
+            ax2.set_ylim([0.5,1.05])
             hide_all_axis(ax1)
         @show_resource_usage
         def plot_standard_time_decode_all(ax, target):

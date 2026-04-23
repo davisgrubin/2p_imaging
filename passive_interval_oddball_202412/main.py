@@ -108,8 +108,8 @@ def run(session_config_list, cate_list):
 
 
 if __name__ == "__main__":
-    COMMANDLINE_MODE = 1
-    cate_list = [[-1],[1],[2],[-1,1,2]]
+    COMMANDLINE_MODE = 0
+    cate_list = [[-1,1,2]]
     from session_configs import all_config_list
     
     if COMMANDLINE_MODE:

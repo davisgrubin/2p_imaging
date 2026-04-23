@@ -708,3 +708,6 @@
 
 ## 2026.04.21
 - Fixed plot_block_win_decode layouts.
+- Fixed plot_block_win_decode ylim.
+- Fixed plot_cluster_standard_time_decode_single layouts.
+- Rewritten plot_trial_quant.

@@ -536,7 +536,7 @@ class plotter_utils(utils_basic):
                     for si in [0,1]:
                         axs[ci].fill_between(
                             stim_seq[c_idx+si,:],
-                            lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+                            0, 1,
                             color=color0, edgecolor='none', alpha=0.25, step='mid')
                     # plot decoding results.
                     self.plot_mean_sem(
@@ -556,6 +556,7 @@ class plotter_utils(utils_basic):
                 axs[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
                 axs[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
                 axs[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+                axs[ci].set_ylim([0.4, 0.9])
                 if ci != self.n_clusters-1:
                     axs[ci].set_xticks([])
             axs[self.n_clusters-1].set_xlabel('Time before deviant (ms)')
@@ -718,9 +719,6 @@ class plotter_utils(utils_basic):
             # define layouts.
             ax.axis('off')
             ax = ax.inset_axes([0, 0, 0.8, 0.6], transform=ax.transAxes)
-            # plot results.
-            upper = 0.9
-            lower = 0.3
             # plot stimulus.
             c_idx = stim_seq.shape[0]//2
             if oddball == 0:
@@ -731,14 +729,14 @@ class plotter_utils(utils_basic):
             for si in [0,1]:
                 ax.fill_between(
                     stim_seq[c_idx+si,:],
-                    lower - 0.1*(upper-lower), upper + 0.1*(upper-lower),
+                    0, 1,
                     color=color0, edgecolor='none', alpha=0.25, step='mid')
             # plot decoding results.
             self.plot_mean_sem(ax, acc_time, acc_chance_mean, acc_chance_sem, color0, None)
             self.plot_mean_sem(ax, acc_time, acc_model_mean, acc_model_sem, color_model, None)
             # adjust layouts.
             ax.set_xlim(xlim)
-            ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])        
+            ax.set_ylim([0.4, 0.9])
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
             ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
