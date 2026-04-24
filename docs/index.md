@@ -39,11 +39,27 @@ The following sections are present as placeholders only:
 
 This docs site is configured for MkDocs using the Read the Docs theme.
 
+For local preview, the site is configured to serve from the root path `/`, which works better for SSH tunneling and remote development.
+
+For GitHub Pages deployment, the workflow injects the production site URL so the published docs still build under `/2p_imaging/`.
+
 To preview locally from the repository root:
 
 ```bash
 python -m pip install mkdocs
 mkdocs serve
+```
+
+If you are previewing through an SSH tunnel from a remote server, you can use:
+
+```bash
+mkdocs serve -a 127.0.0.1:8001
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8001/
 ```
 
 To build the static site:
