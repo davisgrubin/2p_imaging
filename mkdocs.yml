@@ -1,0 +1,18 @@
+site_name: 2p_imaging
+site_description: Documentation for the Najafi Lab 2p imaging analysis repository
+site_url: https://najafi-laboratory.github.io/2p_imaging/
+repo_url: https://github.com/najafi-laboratory/2p_imaging
+repo_name: najafi-laboratory/2p_imaging
+
+theme:
+  name: readthedocs
+
+nav:
+  - Home: index.md
+  - Preprocessing: preprocessing.md
+  - Postprocessing: postprocessing.md
+  - Passive: passive.md
+  - 2AFC: twoafc.md
+  - Closed Loop: closed-loop.md
+  - Joystick: joystick.md
+  - EBC: ebc.md
