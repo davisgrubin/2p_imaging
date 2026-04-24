@@ -7,6 +7,11 @@ repo_name: najafi-laboratory/2p_imaging
 theme:
   name: readthedocs
 
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+
 nav:
   - Home: index.md
   - Preprocessing: preprocessing.md
