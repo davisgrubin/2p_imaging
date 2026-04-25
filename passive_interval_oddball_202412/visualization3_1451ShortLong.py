@@ -26,7 +26,7 @@ from plot.fig5_1451ShortLong import plotter_main
 
 def run(session_config_list, smooth, cate_list):
     size_scale = 3
-    layout = 'compressed'
+    layout = 'tight'
     target_sess = 'short_long'
     idx_target_sess = np.array(list(session_config_list['list_session_name'].values())) == target_sess
     print('Found {} {} sessions'.format(np.sum(idx_target_sess), target_sess))

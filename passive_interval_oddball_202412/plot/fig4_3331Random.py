@@ -9,6 +9,7 @@ from modules.Alignment import run_get_stim_response
 from modeling.clustering import get_mean_sem_cluster
 from modeling.clustering import get_bin_mean_sem_cluster
 from modeling.clustering import get_cluster_cate
+from modeling.decoding import fit_linear_regression
 from modeling.decoding import fit_poly_line
 from modeling.generative import get_glm_cate
 from utils import show_resource_usage
@@ -81,6 +82,10 @@ class plotter_utils(utils_basic):
         except: traceback.print_exc()
 
     def plot_isi_seting(self, ax):
+        # define layouts.
+        ax.axis('off')
+        ax = ax.inset_axes([0, 0, 0.6, 0.6], transform=ax.transAxes)
+        # plot settings.
         gap = 25
         ax.hlines(0.5, 500+gap, 2500-gap, color='black')
         ax.vlines([500+gap, 2500-gap], 0, 0.5, color='black')
@@ -92,9 +97,14 @@ class plotter_utils(utils_basic):
         ax.set_xticks([500,1500,2500])
         ax.set_yticks([])
         ax.set_xticklabels([500,1500,2500])
+        ax.set_xlabel('ISI (s)')
+        ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
         
     def plot_isi_example_epoch(self, ax):
         trial_win = [1000,1500]
+        # define layouts.
+        ax.axis('off')
+        ax = ax.inset_axes([0, 0, 1, 0.6], transform=ax.transAxes)
         # get isi and trial labels.
         stim_labels = self.list_neural_trials[0]['stim_labels'][trial_win[0]:trial_win[1],:]
         isi = stim_labels[1:,0] - stim_labels[:-1,1]
@@ -102,6 +112,7 @@ class plotter_utils(utils_basic):
         ax.scatter(np.arange(trial_win[0], trial_win[1]-1), isi, c='black', s=5)
         # adjust layouts.
         adjust_layout_isi_example_epoch(ax, trial_win, self.bin_win)
+        ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
     
     def plot_ramp_type_fraction(self, axs):
         #fig, axs = plt.subplots(1, 2, figsize=(6, 3))
@@ -162,7 +173,7 @@ class plotter_utils(utils_basic):
                 self.alignment['neu_time'], norm_params,
                 stim_seq[c_idx,:].reshape(1,2), [color0], [color0]*self.n_clusters, xlim)
             # adjust layouts.
-            ax.set_xlabel('Time from stim \n onset (ms)')
+            ax.set_xlabel('Time from stim \n onset (s)')
         @show_resource_usage
         def plot_stim_heatmap(ax, norm_mode):
             # collect data.
@@ -270,11 +281,11 @@ class plotter_utils(utils_basic):
             # adjust layouts.
             for ci in range(self.n_clusters):
                 axs_hm[ci].set_xlim(xlim)
-                axs_hm[ci].set_yticklabels((((np.arange(2)+0.5)/2)*2000+500)[::-1].astype('int32'))
+                axs_hm[ci].set_yticklabels((((np.arange(2)+0.5)/2)*2000+500)[::-1].astype('int32')/1000)
                 if ci != self.n_clusters-1:
                     axs_hm[ci].set_xticklabels([])
             axs_hm[self.n_clusters-1].set_xlabel('Time from stim \n onset (ms)')
-            ax.set_ylabel('Interval (ms)')
+            ax.set_ylabel('Interval (s)')
             ax.set_title(f'sorted with {norm_mode}')
             hide_all_axis(ax)
         @show_resource_usage
@@ -312,7 +323,7 @@ class plotter_utils(utils_basic):
                     self.alignment['neu_time'], norm_params,
                     None, None, [colors[bi]]*self.n_clusters, xlim)
             # adjust layouts.
-            ax.set_xlabel('Time from stim \n onset (ms)')
+            ax.set_xlabel('Time from stim \n onset (s)')
         @show_resource_usage
         def plot_interval_scaling(ax):
             gap = 2
@@ -407,7 +418,7 @@ class plotter_utils(utils_basic):
         def plot_legend(ax):
             [bins, _, _, _, _, _, _, _] = get_isi_bin_neu(
                 neu_seq, stim_seq, camera_pupil, pre_isi, self.bin_win, self.bin_num)
-            lbl = ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(self.bin_num)]
+            lbl = [f'[{bins[i]/1000:.3f},{bins[i+1]/1000:.3f}] s' for i in range(self.bin_num)]
             cs = colors
             add_legend(ax, cs, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
             ax.axis('off')
@@ -521,8 +532,8 @@ class plotter_utils(utils_basic):
                     fraction[di,ci] = nc / nt
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 0.7, 0.60], transform=ax.transAxes)
-            axs = [ax.inset_axes([0.2, ci/self.n_clusters, 0.5, 0.60/self.n_clusters], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.60], transform=ax.transAxes)
+            axs = [ax.inset_axes([0.2, ci/self.n_clusters, 0.4, 0.90/self.n_clusters], transform=ax.transAxes)
                       for ci in range(self.n_clusters)]
             axs.reverse()
             # plot results for each class.
@@ -532,9 +543,9 @@ class plotter_utils(utils_basic):
                         axs[ci].bar(
                             di, fraction[di,ci],
                             bottom=0, edgecolor='white', width=bar_width, color=color0)
-                    #y_pred, _, p = fit_linear_regression(np.arange(n_day), fraction[:,ci])
-                    #axs[ci].plot(np.arange(n_day), y_pred, color='black', lw=1)
-                    #axs[ci].text(0, np.nanmax(fraction[:,ci])*1.1, rf'$p={p:.3f}$', color=color0, size=7)
+                    y_pred, _, p = fit_linear_regression(np.arange(n_day), fraction[:,ci])
+                    axs[ci].plot(np.arange(n_day), y_pred, color='black', lw=1)
+                    axs[ci].text(0, np.nanmax(fraction[:,ci])*1.1, rf'$p={p:.3f}$', color=color0, size=7)
             # adjust layouts.
             for ci in range(self.n_clusters):
                 axs[ci].tick_params(tick1On=False)
@@ -574,9 +585,8 @@ class plotter_utils(utils_basic):
             con_day_neu_seq_1 = [np.concatenate(day_neu_seq_1[di::n_day],axis=0) for di in range(n_day)]
             con_day_cluster_id = [np.concatenate(day_cluster_id[di::n_day]) for di in range(n_day)]
             # define layouts.
-            ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.60], transform=ax.transAxes)
-            axs = [ax.inset_axes([di/n_day, 0, 0.8/n_day, 1], transform=ax.transAxes) for di in range(n_day)]
+            ax0 = ax.inset_axes([0, 0, 1, 0.60], transform=ax.transAxes)
+            axs = [ax0.inset_axes([di/n_day, 0, 0.8/n_day, 1], transform=ax0.transAxes) for di in range(n_day)]
             # plot results for each day.
             for di in range(n_day):
                 # get response within cluster.
@@ -607,9 +617,10 @@ class plotter_utils(utils_basic):
                     None, None, [color1]*self.n_clusters, xlim, False)
                 # adjust layouts.
                 axs[di].set_title(f'Day {di+1}')
-            axs[0].set_xlabel('Time from stim \n onset (ms)')
+            axs[0].set_xlabel('Time from stim \n onset (s)')
             ax.set_title(f'Epoch length {epoch_len} trials')
             hide_all_axis(ax)
+            hide_all_axis(ax0)
         @show_resource_usage
         def plot_cross_day(ax, scaled):
             xlim = [-1000, 1500]
@@ -646,7 +657,7 @@ class plotter_utils(utils_basic):
                     self.alignment['neu_time'], norm_params,
                     None, None, [color_day[di]]*self.n_clusters, xlim)
             # adjust layouts.
-            ax.set_xlabel('Time from stim \n onset (ms)')
+            ax.set_xlabel('Time from stim \n onset (s)')
         @show_resource_usage
         def plot_day_epoch_2cate(ax, scaled, epoch_len):
             xlim = [-1000, 1500]
@@ -705,13 +716,12 @@ class plotter_utils(utils_basic):
                     None, None, [color1]*2, xlim, False)
                 # adjust layouts.
                 axs[di].set_title(f'day {di+1}')
-            axs[0].set_xlabel('Time from stim \n onset (ms)')
+            axs[0].set_xlabel('Time from stim \n onset (s)')
             ax.set_title(f'Epoch length {epoch_len} trials')
             hide_all_axis(ax)
         @show_resource_usage
         def plot_day1_epoch_2cate_heatmap(ax, scaled, epoch_len):
             epoch_len = 25
-            max_epoch = 60
             xlim = [-1000, 1500]
             # collect data.
             [_, [neu_seq, _, _, _, _], _, _] = get_neu_trial(
@@ -719,7 +729,7 @@ class plotter_utils(utils_basic):
                 trial_param=[[2,3,4,5], None, None, None, [1], [0]],
                 cate=cate, roi_id=None,
                 mean_sem=False)
-            epoch_neu_seq = np.concatenate([ns[:epoch_len*max_epoch,:,:] for ns in neu_seq[::n_day]],axis=1)
+            epoch_neu_seq = np.concatenate([ns for ns in neu_seq[::n_day]],axis=1)
             cluster_id_binary = cluster_id.copy()
             cluster_id_binary[np.isin(cluster_id, np.arange(0, self.n_pre))] = 0
             cluster_id_binary[np.isin(cluster_id, np.arange(self.n_pre, self.n_pre+self.n_post))] = 1
@@ -729,15 +739,15 @@ class plotter_utils(utils_basic):
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
             epoch_neu_seq = epoch_neu_seq[:,:,l_idx:r_idx]
             # get epoch average.
-            epoch_neu_seq = np.nanmean(epoch_neu_seq.reshape(max_epoch, epoch_len, len(con_cluster_id_binary), -1), axis=1)
+            epoch_neu_seq = np.lib.stride_tricks.sliding_window_view(epoch_neu_seq, window_shape=epoch_len, axis=0)
+            epoch_neu_seq = np.nanmean(epoch_neu_seq, axis=-1)
             epoch_neu_seq_pre  = epoch_neu_seq[:, con_cluster_id_binary==0,:]
             epoch_neu_seq_post = epoch_neu_seq[:, con_cluster_id_binary==1,:]
             # define layouts.
-            #fig, ax = plt.subplots(1, 1, figsize=(6, 6))
             ax.axis('off')
             ax = ax.inset_axes([0, 0, 1, 0.60], transform=ax.transAxes)
-            axs_hm = [ax.inset_axes([0., ci/2, 0.3, 0.9/2], transform=ax.transAxes) for ci in range(2)]
-            axs_cb = [ax.inset_axes([0.35, ci/2, 0.05, 0.9/2], transform=ax.transAxes) for ci in range(2)]
+            axs_hm = [ax.inset_axes([0.2, ci/2, 0.3, 0.6/2], transform=ax.transAxes) for ci in range(2)]
+            axs_cb = [ax.inset_axes([0.6, ci/2, 0.1, 0.6/2], transform=ax.transAxes) for ci in range(2)]
             axs_hm.reverse()
             axs_cb.reverse()
             # plot heatmaps.
@@ -748,7 +758,11 @@ class plotter_utils(utils_basic):
                 axs_hm[1], axs_cb[1],np.nanmean(epoch_neu_seq_post,axis=1), neu_time,
                 norm_mode='none', neu_seq_share=None)
             # adjust layouts.
+            axs_hm[0].set_title('Stim inhibited')
+            axs_hm[1].set_title('Stim activated')
             ax.set_title(f'Epoch length {epoch_len} trials')
+            ax.set_xlabel('Time from stim \n onset (s)')
+            ax.set_ylabel('Trials')
             hide_all_axis(ax)
         @show_resource_usage
         def plot_legend(ax):
@@ -1012,7 +1026,7 @@ class plotter_utils(utils_basic):
             ax2 = axs[-1].inset_axes([0, 0, 0.5, 1], transform=axs[-1].transAxes)
             ax3 = axs[-1].inset_axes([0.5, 0, 0.1, 0.6], transform=axs[-1].transAxes)
             # add colorbar.
-            add_legend(ax2, colors, ['[{},{}] ms'.format(int(bins[i]),int(bins[i+1])) for i in range(bin_num)], None, None, None, 'upper left')
+            add_legend(ax2, colors, [f'[{bins[i]/1000:.3f},{bins[i+1]/1000:.3f}] s' for i in range(bin_num)], None, None, None, 'upper left')
             t_cmap, _ = get_cmap_color(len(neu_time), base_color=['lemonchiffon', 'black'], return_cmap=True)
             add_heatmap_colorbar(ax3, t_cmap, None, 'interval progress since stim onset')
             hide_all_axis(axs[-1])

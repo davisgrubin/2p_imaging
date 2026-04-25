@@ -91,6 +91,10 @@ class plotter_utils(utils_basic):
         except: traceback.print_exc()
         
     def plot_isi_seting(self, ax):
+        # define layouts.
+        ax.axis('off')
+        ax = ax.inset_axes([0, 0, 0.6, 0.6], transform=ax.transAxes)
+        # plot settings.
         ax.vlines(1000, 0, 1, color='dodgerblue')
         ax.vlines(2000, 0, 1, color='springgreen')
         ax.spines['left'].set_visible(False)
@@ -101,6 +105,8 @@ class plotter_utils(utils_basic):
         ax.set_xticks([1000,2000])
         ax.set_yticks([])
         ax.set_xticklabels([1000,2000])
+        ax.set_xlabel('ISI (s)')
+        ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
 
     def plot_isi_example_epoch(self, ax):
         trial_win = [1000,1500]
@@ -109,12 +115,16 @@ class plotter_utils(utils_basic):
         isi = stim_labels[1:,0] - stim_labels[:-1,1]
         img_seq_label  = stim_labels[:-1,2]
         standard_types = stim_labels[:-1,3]
+        # define layouts.
+        ax.axis('off')
+        ax = ax.inset_axes([0, 0, 1, 0.6], transform=ax.transAxes)
         # plot trials.
         colors = np.array(['dodgerblue', 'springgreen', 'black'], dtype=object)
         colors = colors[np.where(img_seq_label == -1, 2, standard_types)]
         ax.scatter(np.arange(trial_win[0], trial_win[1]-1), isi, c=colors, s=5)
         # adjust layouts.
         adjust_layout_isi_example_epoch(ax, trial_win, self.bin_win)
+        ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
       
     def plot_cluster_all(self, axs, cate):
         color0 = 'dimgrey'
@@ -179,12 +189,14 @@ class plotter_utils(utils_basic):
                 # adjust layouts.
                 axs_hm_0[ci].tick_params(axis='y', labelrotation=0)
                 axs_hm_1[ci].tick_params(axis='y', labelrotation=0)
+                axs_hm_0[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+                axs_hm_1[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
                 axs_hm_0[ci].set_ylabel(None)
                 axs_hm_1[ci].set_ylabel(None)
                 if ci != self.n_clusters-1:
                     axs_hm_0[ci].set_xticks([])
                     axs_hm_1[ci].set_xticks([])
-            ax.set_xlabel('Time from stim onset (ms)')
+            ax.set_xlabel('Time from stim onset (s)')
             ax.set_ylabel('neuron id')
             hide_all_axis(ax)
             hide_all_axis(ax0)
@@ -293,7 +305,7 @@ class plotter_utils(utils_basic):
                 neu_time, norm_params,
                 None, None, [color2]*self.n_clusters, [neu_time[0], neu_time[-1]])
             # adjust layouts.
-            ax.set_xlabel('Time from stim onset (ms)')
+            ax.set_xlabel('Time from stim onset (s)')
         @show_resource_usage
         def plot_neu_fraction(ax):
             # define layouts.
@@ -451,7 +463,7 @@ class plotter_utils(utils_basic):
             # plot results.
             self.plot_heatmap_neuron(ax_hm, ax_cb, kernel_all, self.glm['kernel_time'], kernel_all, norm_mode='minmax')
             # adjust layouts.
-            ax.set_xlabel('Time from stim onset (ms)')
+            ax.set_xlabel('Time from stim onset (s)')
             ax.axvline(stim_seq[c_idx,0], color='black', lw=1, linestyle='--')
         @show_resource_usage
         def plot_standard(ax, standard, group):
@@ -483,7 +495,7 @@ class plotter_utils(utils_basic):
                     if xl>neu_time[0] and xl<neu_time[-1]:
                         ax_hm.axvline(xl, color='black', lw=1, linestyle='--')
             # adjust layouts.
-            ax_hm.set_xlabel('Time from stim onset (ms)')
+            ax_hm.set_xlabel('Time from stim onset (s)')
             hide_all_axis(ax)
         # plot all.
         try: plot_cluster_features(axs[0])
@@ -591,9 +603,10 @@ class plotter_utils(utils_basic):
                 axs_hm[ci].set_yticklabels(['L\u2192S', 'S\u2192L'])
                 axs_hm[ci].set_xlim(xlim)
                 axs_hm[ci].set_ylim([0, 4*trials_eval+gap_margin])
+                axs_hm[ci].xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
                 if ci != self.n_clusters-1:
                     axs_hm[ci].set_xticklabels([])
-            axs_hm[self.n_clusters-1].set_xlabel('Time from stim onset (ms)')
+            axs_hm[self.n_clusters-1].set_xlabel('Time from stim onset (s)')
             ax.set_title(f'sorted with {norm_mode}')
             hide_all_axis(ax)
             hide_all_axis(ax0)
@@ -662,6 +675,7 @@ class plotter_utils(utils_basic):
                         axi.spines['right'].set_visible(False)
                         axi.spines['top'].set_visible(False)
                         axi.set_ylabel(r'$\Delta F/F$ (z-scored)')
+                        axi.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
                         axi.xaxis.set_major_locator(mtick.MaxNLocator(nbins=5))
                         axi.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
                         axi.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
@@ -672,7 +686,7 @@ class plotter_utils(utils_basic):
                         axs0[ci].set_xticklabels([])
                         axs1[ci].set_xticklabels([])
                     axs1[ci].set_yticklabels([])
-            ax.set_xlabel('Time from block transition (ms)')
+            ax.set_xlabel('Time from block transition (s)')
             ax.set_ylabel(r'$\Delta F/F$ (z-scored)')
             ax0.set_title('S\u2192L adaptation')
             ax1.set_title('L\u2192S adaptation')
@@ -681,9 +695,9 @@ class plotter_utils(utils_basic):
             hide_all_axis(ax1)
         @show_resource_usage
         def plot_trial_quant(ax):
-            baseline_correction = True
+            baseline_correction = False
             win = [-500,500]
-            pct = 25
+            pct = 30
             trials_fit = 40
             # collect data.
             [_, [neu_trans_0to1_trials, _, _, _, _], _, _] = get_neu_trial(
@@ -909,13 +923,15 @@ class plotter_utils(utils_basic):
                     axs1[ci].set_xlim(xlim)
                     axs0[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
                     axs1[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+                    axs0[ci].xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
+                    axs1[ci].xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
                     axs0[ci].set_ylabel(None)
                     axs1[ci].set_ylabel(None)
                     if ci != self.n_clusters-1:
                         axs0[ci].set_xticklabels([])
                         axs1[ci].set_xticklabels([])
                     axs1[ci].set_yticklabels([])
-            ax.set_xlabel('Time from stim onset (ms)')
+            ax.set_xlabel('Time from stim onset (s)')
             ax.set_ylabel(r'$\Delta F/F$ (z-scored)')
             ax0.set_title('L\u2192S')
             ax1.set_title('S\u2192L')
@@ -1119,7 +1135,7 @@ class plotter_utils(utils_basic):
                 axs_hm[ai], axs_cb[ai], neu_x[ai], neu_time, neu_x[0],
                 norm_mode=norm_mode,
                 neu_seq_share=neu_x)
-            axs_hm[ai].set_xlabel('Time from stim onset (ms)')
+            axs_hm[ai].set_xlabel('Time from stim onset (s)')
             hide_all_axis(axs[ai])
         # add stimulus line.
         c_idx = stim_x[0].shape[0]//2
@@ -1249,7 +1265,7 @@ class plotter_utils(utils_basic):
             # get data within range.
             l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, stim_seq[c_idx-1, 1], stim_seq[c_idx+1, 0])
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
-            xlim = [neu_time[0], neu_time[-1]]
+            xlim = [-2500, 2500]
             # get response within cluster.
             neu_mean, neu_sem = get_mean_sem_cluster(neu_seq[:,l_idx:r_idx], self.n_clusters, cluster_id)
             if scaled:
@@ -1266,7 +1282,7 @@ class plotter_utils(utils_basic):
                 stim_seq[c_idx,:].reshape(1,2), [color0], [color0]*self.n_clusters, xlim)
             # adjust layouts.
             ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
-            ax.set_xlabel('Time from stim \n onset (ms)')
+            ax.set_xlabel('Time from stim \n onset (s)')
             ax.set_xlim(xlim)
         @show_resource_usage
         def plot_cluster_standard_pred(ax):
@@ -1304,12 +1320,12 @@ class plotter_utils(utils_basic):
                 '0.5',
                 va='center', ha='right', rotation=90, color='#2C2C2C')
             axb.set_ylim([0,1])
-            axb.set_xlabel('Time from stim \n onset (ms)')
+            axb.set_xlabel('Time from stim \n onset (s)')
             for ci in range(self.n_clusters):
                 axs[ci].spines['left'].set_visible(False)
                 axs[ci].spines['right'].set_visible(False)
                 axs[ci].spines['top'].set_visible(False)
-                axs[ci].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
+                axs[ci].xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
                 axs[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
                 axs[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
                 axs[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=1))
@@ -1369,7 +1385,7 @@ class plotter_utils(utils_basic):
             ax1.axis('off')
             ax2.axis('off')
             ax1 = ax1.inset_axes([0, 0, 1, 0.95], transform=ax1.transAxes)
-            ax2 = ax2.inset_axes([0, 0, 1, 0.8], transform=ax2.transAxes)
+            ax2 = ax2.inset_axes([0, 0.2, 1, 0.6], transform=ax2.transAxes)
             axs_hm = [ax1.inset_axes([0.2, ci/self.n_clusters, 0.6, 0.8/self.n_clusters], transform=ax1.transAxes)
                       for ci in range(self.n_clusters)]
             axs_cb = [ax1.inset_axes([0.8, ci/self.n_clusters, 0.1, 0.8/self.n_clusters], transform=ax1.transAxes)
@@ -1393,26 +1409,26 @@ class plotter_utils(utils_basic):
             ax2.plot(t_range, a_shuffle, color=color0)
             # adjust layouts.
             for ci in range(self.n_clusters):
-                axs_hm[ci].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
-                axs_hm[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
-                axs_hm[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
-                axs_hm[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+                axs_hm[ci].xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
+                axs_hm[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
+                axs_hm[ci].yaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
+                axs_hm[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
                 axs_hm[ci].set_xlim(tlim)
                 axs_hm[ci].set_ylim(tlim)
                 if ci != self.n_clusters-1:
                     axs_hm[ci].set_xticklabels([])
             axs_hm[self.n_clusters-1].tick_params(axis='x')
-            axs_hm[self.n_clusters-1].set_xlabel('Time from stim \n onset (ms)')
+            axs_hm[self.n_clusters-1].set_xlabel('Time from stim \n onset (s)')
             ax1.set_title('Time bin pairwise decoding')
-            ax1.set_ylabel('Time from stim onset (ms)')
+            ax1.set_ylabel('Time from stim onset (s)')
             ax2.set_title('Decoding accuracy summary')
             ax2.spines['right'].set_visible(False)
             ax2.spines['top'].set_visible(False)
-            ax2.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
+            ax2.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
             ax2.xaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
             ax2.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
             ax2.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
-            ax2.set_xlabel('Time from stim \n onset (ms)')
+            ax2.set_xlabel('Time from stim onset (ms)')
             ax2.set_ylabel('Decoding accuracy \n (mean across all time bins)')
             ax2.set_xlim(tlim)
             ax2.set_ylim([0.4,1.05])
@@ -1473,7 +1489,7 @@ class plotter_utils(utils_basic):
             ax1.axis('off')
             ax2.axis('off')
             ax1 = ax1.inset_axes([0, 0, 1, 0.95], transform=ax1.transAxes)
-            ax2 = ax2.inset_axes([0, 0, 1, 0.6], transform=ax2.transAxes)
+            ax2 = ax2.inset_axes([0, 0.2, 1, 0.6], transform=ax2.transAxes)
             axs_ln = [ax1.inset_axes([0.2, ci/self.n_clusters, 0.6, 0.8/self.n_clusters], transform=ax1.transAxes)
                       for ci in range(self.n_clusters)]
             axs_ln.reverse()
@@ -1489,7 +1505,7 @@ class plotter_utils(utils_basic):
                     # adjust layouts.
                     axs_ln[ci].spines['right'].set_visible(False)
                     axs_ln[ci].spines['top'].set_visible(False)
-                    axs_ln[ci].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
+                    axs_ln[ci].xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
                     axs_ln[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
                     axs_ln[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
                     axs_ln[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
@@ -1498,16 +1514,16 @@ class plotter_utils(utils_basic):
                     if ci != self.n_clusters-1:
                         axs_ln[ci].set_xticklabels([])
             axs_ln[self.n_clusters-1].tick_params(axis='x')
-            axs_ln[self.n_clusters-1].set_xlabel('Time from stim onset (ms)')
+            axs_ln[self.n_clusters-1].set_xlabel('Time from stim onset (s)')
             axs_ln[self.n_clusters-1].set_ylabel('Decoding accuracy')
             ax1.set_title('Single time vs rest decoding')
             ax2.spines['right'].set_visible(False)
             ax2.spines['top'].set_visible(False)
-            ax2.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
+            ax2.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
             ax2.xaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
             ax2.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
             ax2.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
-            ax2.set_xlabel('Time from stim onset (ms)')
+            ax2.set_xlabel('Time from stim onset (s)')
             ax2.set_ylabel('Decoding accuracy')
             ax2.set_xlim(tlim)
             ax2.set_ylim([0.5,1.05])
@@ -1571,11 +1587,12 @@ class plotter_utils(utils_basic):
             # plot decoding matrix.
             self.plot_time_decode_confusion_matrix(ax_hm, t_range_mat, t_range, ax_cb)
             # adjust layouts.
-            ax_hm.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
-            ax_hm.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
-            ax_hm.xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
-            ax_hm.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
-            ax_hm.set_ylabel('Time from stim onset (ms)')
+            ax_hm.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
+            ax_hm.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
+            ax_hm.xaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
+            ax_hm.yaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
+            ax_hm.set_xlabel('Time from stim onset (s)')
+            ax_hm.set_ylabel('Time from stim onset (s)')
             ax.set_title(f'Decoding time for {target} neurons')
             hide_all_axis(ax)
             hide_all_axis(ax_cb)
@@ -1584,7 +1601,7 @@ class plotter_utils(utils_basic):
             param_lbl = [
                 r'$b$ (baseline)',
                 r'$a$ (amplitude)',
-                r'$-m$ (latency)',
+                r'$m$ (latency)',
                 r'$r$ (temporal width)',
                 r'$\tau$ (ramping time constant)']
             # get parameters.

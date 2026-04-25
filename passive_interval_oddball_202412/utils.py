@@ -841,14 +841,17 @@ def adjust_layout_isi_example_epoch(ax, trial_win, bin_win):
     ax.tick_params(tick1On=False)
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    ax.set_xlabel('trial #')
-    ax.set_ylabel('interval (ms)')
+    ax.spines['bottom'].set_visible(False)
+    ax.hlines(bin_win[0], trial_win[0], trial_win[0]+100, color='black')
+    ax.text(trial_win[0]+50, bin_win[0]-50, '100 trials', ha='center', va='top', color='black')
+    ax.set_ylabel('interval (s)')
     ax.set_xlim(trial_win)
     ax.set_ylim(bin_win)
+    ax.set_xticks([])
     ax.set_yticks(500*np.arange((bin_win[0]+50)/500, (bin_win[1]-50)/500+1).astype('int32'))
     ax.set_yticklabels(
         500*np.arange((bin_win[0]+50)/500, (bin_win[1]-50)/500+1).astype('int32'))
-
+    
 # adjust layout for grand average neural traces.
 def adjust_layout_neu(ax):
     ax.spines['right'].set_visible(False)
@@ -856,6 +859,7 @@ def adjust_layout_neu(ax):
     ax.set_ylabel(r'$\Delta F/F$ (z-scored)')
     ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
     ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=1))
+    ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
 
 # adjust layout for grand average neural traces for clustering.
 def adjust_layout_cluster_neu(ax, n_clusters, xlim):
@@ -866,7 +870,7 @@ def adjust_layout_cluster_neu(ax, n_clusters, xlim):
     ax.set_xlim(xlim)
     ax.set_xticks([0])
     ax.set_yticks([])
-    ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
+    ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
     ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
 
 # adjust layout for scatter comparison.
@@ -884,6 +888,7 @@ def adjust_layout_scatter(ax, upper, lower):
 def adjust_layout_heatmap(ax):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
+    ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
 
 # adjust layout for 2d latent dynamics.
 def adjust_layout_2d_latent(ax):
@@ -1163,7 +1168,7 @@ class utils_basic:
         ax_lbl.set_yticks([(1-2*gap)+gap+self.n_clusters-ci-1.5 for ci in range(self.n_clusters)])
         ax_lbl.set_yticklabels(np.arange(self.n_clusters))
         ax_lbl.set_ylabel('Cluster ID')
-        ax_glm.set_xlabel('Time from stim \n onset (ms)')
+        ax_glm.set_xlabel('Time from stim \n onset (s)')
         
     def plot_heatmap_neuron(
             self, ax_hm, ax_cb, neu_seq, neu_time, neu_seq_sort,

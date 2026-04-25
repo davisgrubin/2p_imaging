@@ -715,3 +715,12 @@
 - Adjusted plot_standard_ramp_params_all layouts.
 - Adjusted plot_cluster_standard_pred layouts.
 - Adjusted plot_cluster_standard_time_decode_confusion layouts.
+
+## 2026.04.24
+- Fixed adjust_layout_isi_example_epoch.
+- Adjusted plot_isi_seting layouts.
+- Adjusted plot_isi_example_epoch layouts.
+- Now all fig5_1451ShortLong function units use second.
+- Now all fig6_4131FixJitterOdd function units use second.
+- Now all fig4_3331Random function units use second.
+- Added plot_day1_epoch_2cate_heatmap.
