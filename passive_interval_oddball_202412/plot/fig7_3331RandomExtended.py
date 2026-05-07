@@ -73,7 +73,31 @@ class plotter_utils(utils_basic):
                 wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
             ax.set_title('fraction of {} neuron labels'.format(len(neu_labels)))
         except: traceback.print_exc()
-
+    
+    def plot_ramp_type_cell_fraction_table(self, ax):
+        try:
+            cate = [-1,1,2]
+            neu_labels = np.concatenate(self.list_labels)
+            rows = [('Ramp-up', (self.cluster_id<self.n_pre)&(self.cluster_id>=0)),
+                    ('Ramp-down', self.cluster_id>=self.n_pre),
+                    ('Excluded', self.cluster_id==-1)]
+            cell_text = [[np.sum(mask & (neu_labels == c)) for c in cate] for _, mask in rows]
+            ax.axis('off')
+            tab = ax.table(
+                cellText=cell_text,
+                rowLabels=[r[0] for r in rows],
+                colLabels=[f'{self.label_names[str(c)]}' for c in cate],
+                loc='center',
+                cellLoc='center',
+                rowLoc='center')
+            tab.scale(0.8, 2)
+            for (i, j), cell in tab.get_celld().items():
+                cell.set_linewidth(0)
+                if i == 0:
+                    cell.visible_edges = 'B'
+                    cell.set_linewidth(1)
+        except: traceback.print_exc()
+        
     def plot_isi_seting(self, ax):
         # define layouts.
         ax.axis('off')
