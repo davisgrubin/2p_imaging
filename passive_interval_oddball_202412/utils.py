@@ -16,11 +16,17 @@ from scipy.stats import mannwhitneyu
 from scipy.stats import levene
 from scipy.stats import gaussian_kde
 from scipy.stats import t
+from scipy.stats import cramervonmises_2samp
+from scipy.stats import ks_2samp
+from scipy.stats import anderson_ksamp
+from scipy.stats import wilcoxon
+from scipy.stats import permutation_test
 from scipy.spatial.distance import pdist
 from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
 from scipy.cluster.hierarchy import dendrogram
 
+from modeling.decoding import auc_test
 from modeling.clustering import get_mean_sem_cluster
 from modeling.clustering import clustering_neu_response_mode
 from modeling.clustering import remap_cluster_id
@@ -333,10 +339,10 @@ def get_block_transition_idx(stim_labels, trials_around):
     trans_0to1 = np.zeros((len(valid_0to1), n_trials), dtype=bool)
     trans_1to0 = np.zeros((len(valid_1to0), n_trials), dtype=bool)
     # mark the indices corresponding to the window:
-    for i, t in enumerate(valid_0to1):
-        trans_0to1[i, t-trials_around:t+trials_around] = True
-    for i, t in enumerate(valid_1to0):
-        trans_1to0[i, t-trials_around:t+trials_around] = True
+    for i, ti in enumerate(valid_0to1):
+        trans_0to1[i, ti-trials_around:ti+trials_around] = True
+    for i, ti in enumerate(valid_1to0):
+        trans_1to0[i, ti-trials_around:ti+trials_around] = True
     return trans_0to1, trans_1to0
 
 # get index for pre/post short/long oddball.
@@ -445,8 +451,8 @@ def get_isi_bin_neu(
 # compute synchrnization across time.
 def get_neu_sync(neu, win_width):
     sync = []
-    for t in range(win_width, neu.shape[1]):
-        window_data = neu[:, t-win_width:t]
+    for ti in range(win_width, neu.shape[1]):
+        window_data = neu[:, ti-win_width:ti]
         # normalization.
         norms = np.linalg.norm(window_data, axis=1, keepdims=True)
         normalized_data = window_data / (norms + 1e-10)
@@ -640,14 +646,38 @@ def get_temporal_scaling_trial_multi_sess(neu_seq, stim_seq, neu_time, target_is
 # run statistics test and get significance level.
 def get_stat_test(data_1, data_2, method):
     p_thres = np.array([5e-2, 5e-4, 5e-6])
+    # same mean.
     if method == 'ttest_ind':
         _, p = ttest_ind(data_1[~np.isnan(data_1)], data_2[~np.isnan(data_2)], equal_var=False)
-    # distributions are the same between groups.
+    # medians are the same between groups.
     if method == 'mannwhitneyu':
         _, p = mannwhitneyu(data_1[~np.isnan(data_1)], data_2[~np.isnan(data_2)])
     # all group variances are equal.
     if method == 'levene':
         _, p = levene(data_1[~np.isnan(data_1)], data_2[~np.isnan(data_2)])
+    # pair.
+    if method == 'wilcoxon':
+        _, p = wilcoxon(data_1[~np.isnan(data_1)], data_2[~np.isnan(data_2)], alternative="two-sided")
+    # full-distribution test based on CDF differences.
+    if method == 'cramervonmises_2samp':
+        p = cramervonmises_2samp(data_1[~np.isnan(data_1)], data_2[~np.isnan(data_2)]).pvalue
+    # same overall distribution.
+    if method == 'ks_2samp':
+        _, p = ks_2samp(data_1[~np.isnan(data_1)], data_2[~np.isnan(data_2)], alternative='two-sided', method='auto')
+    # same distribution especially in the tails.
+    if method == 'anderson_ksamp':
+        p = anderson_ksamp([data_1[~np.isnan(data_1)], data_2[~np.isnan(data_2)]]).pvalue
+    # whether the mean paired change is larger than expected.
+    if method == 'permution':
+        d = data_1 - data_2
+        p = permutation_test(
+            (d[~np.isnan(d)],),
+            statistic=lambda x: np.mean(x),
+            permutation_type='samples',
+            n_resamples=252,
+            alternative='two-sided'
+            ).pvalue
+    # get significance level.
     r = np.sum(p < p_thres)
     return p, r
 
@@ -836,6 +866,21 @@ def get_random_rotate_mat_3d():
         [2*(x*z-y*w),   2*(y*z+x*w),   1-2*(x*x+y*y)]])
     return rm
 
+# adjust ticks.
+def add_ax_ticks(ax, axis, nbins):
+    if axis == 'x':
+        ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=nbins))
+        ax.xaxis.set_major_formatter(mtick.FuncFormatter(
+            lambda x, pos: '' if (pos-abs(ax.get_xticks()).argmin())%2 else f'{x/1000:.1f}'))
+        ax.xaxis.set_minor_locator(mtick.AutoMinorLocator(2))
+        ax.tick_params(axis='x', which='minor', labelbottom=False)
+    if axis == 'y':
+        ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=nbins))
+        ax.yaxis.set_major_formatter(mtick.FuncFormatter(
+            lambda y, pos: '' if (pos-abs(ax.get_yticks()).argmin())%2 else f'{y/1000:.1f}'))
+        ax.yaxis.set_minor_locator(mtick.AutoMinorLocator(2))
+        ax.tick_params(axis='y', which='minor', labelbottom=False)
+
 # adjust layout for isi example epoch.
 def adjust_layout_isi_example_epoch(ax, trial_win, bin_win):
     ax.tick_params(tick1On=False)
@@ -857,9 +902,9 @@ def adjust_layout_neu(ax):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.set_ylabel(r'$\Delta F/F$ (z-scored)')
+    add_ax_ticks(ax, 'x', 8)
     ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
     ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=1))
-    ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
 
 # adjust layout for grand average neural traces for clustering.
 def adjust_layout_cluster_neu(ax, n_clusters, xlim):
@@ -868,10 +913,8 @@ def adjust_layout_cluster_neu(ax, n_clusters, xlim):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
     ax.set_xlim(xlim)
-    ax.set_xticks([0])
     ax.set_yticks([])
-    ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
-    ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
+    add_ax_ticks(ax, 'x', 8)
 
 # adjust layout for scatter comparison.
 def adjust_layout_scatter(ax, upper, lower):
@@ -888,7 +931,7 @@ def adjust_layout_scatter(ax, upper, lower):
 def adjust_layout_heatmap(ax):
     ax.spines['right'].set_visible(False)
     ax.spines['top'].set_visible(False)
-    ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
+    add_ax_ticks(ax, 'x', 8)
 
 # adjust layout for 2d latent dynamics.
 def adjust_layout_2d_latent(ax):
@@ -955,7 +998,10 @@ def add_heatmap_colorbar(ax, cmap, norm, label, yticklabels=None):
             cax=cax)
         cbar.outline.set_linewidth(0.05)
         cbar.ax.set_ylabel(label, rotation=90, labelpad=10)
-        cbar.ax.tick_params(axis='y')
+        cbar.ax.tick_params(axis='y', labelsize=7, labelrotation=90)
+        for ticklabel in cbar.ax.get_yticklabels():
+            ticklabel.set_ha('left')
+            ticklabel.set_va('center')
         cbar.ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
         cbar.ax.yaxis.set_major_locator(
             mtick.FixedLocator([norm.vmin+0.2*(norm.vmax-norm.vmin),
@@ -1097,10 +1143,13 @@ class utils_basic:
         v = rescale(v, u, l)
         ax.plot(st, v, color=c, lw=0.5, linestyle=':')
     
-    def plot_dist(self, ax, data, c, cumulative):
+    def plot_dist(self, ax, data, c, cumulative, xlim=None):
         bins = 25
+        # set range.
+        if xlim is None:
+            xlim = [np.nanmin(data), np.nanmax(data)]
         # raw counts
-        counts, bin_edges = np.histogram(data, bins=bins)
+        counts, bin_edges = np.histogram(data[~np.isnan(data)], bins=bins, range=xlim)
         # fraction of samples in each bin.
         total = counts.sum()
         fractions = counts / total  
@@ -1109,8 +1158,11 @@ class utils_basic:
         # cumulative.
         if cumulative:
             fractions = np.cumsum(fractions)
+            bin_centers = np.concatenate(([xlim[0]], bin_centers, [xlim[1]]))
+            fractions = np.concatenate(([0], fractions, [1]))
         # plot line.
         ax.plot(bin_centers, fractions, color=c)
+        return fractions
     
     def plot_scatter(self, ax, q1, q2, c):
         # subsampling if lengths differ.
@@ -1371,7 +1423,7 @@ class utils_basic:
         ax.set_yticks([])
         ax.set_xlim([0,np.nanmax(fraction)])
         ax.set_ylim([-0.2, self.n_clusters+0.1])
-        ax.set_xlabel('fraction of neurons')
+        ax.set_xlabel('Fraction of neurons')
 
     def plot_cluster_cate_fraction_in_cluster(self, ax, cluster_id, neu_labels, label_names, color=None):
         bar_width = 0.5
@@ -1417,7 +1469,7 @@ class utils_basic:
         axs[self.n_clusters-1].tick_params(axis='x', labelrotation=90)
         axs[self.n_clusters-1].set_xticks([0,1,2])
         axs[self.n_clusters-1].set_xticklabels([v for v in label_names.values()])
-        axs[self.n_clusters-1].set_xlabel('fraction of cell-type')
+        axs[self.n_clusters-1].set_xlabel('Fraction of cell types')
 
     def plot_cluster_mean_sem(
             self, ax, neu_mean, neu_sem, neu_time,
@@ -1652,28 +1704,58 @@ class utils_basic:
             axs[ci].set_yticks([])
             axs[ci].set_xlim(xlim)
             axs[ci].set_ylim([0, yu*1.1])
-    
-    def plot_cluster_pred_mod_index_compare(self, axs, cluster_id, mod1, mod2, color1, color2):
+
+    def plot_cluster_pred_mod_index_compare(self, axs, cluster_id, mod1, mod2, color0, color1, color2):
         # plot results for each class.
         for ci in range(self.n_clusters):
             mi1 = mod1[cluster_id==ci]
             mi2 = mod2[cluster_id==ci]
             m1, s1 = get_mean_sem(mi1.reshape(-1,1))
             m2, s2 = get_mean_sem(mi2.reshape(-1,1))
-            # plot errorbar.
-            self.plot_density(axs[ci], mi1, [-1,1], color1)
-            self.plot_density(axs[ci], mi2, [-1,1], color2)
+            # plot distribution.
+            f1 = self.plot_dist(axs[ci], mi1, color1, False)
+            f2 = self.plot_dist(axs[ci], mi2, color2, False)
             axs[ci].axvline(m1, color=color1, lw=1, linestyle='--')
             axs[ci].axvline(m2, color=color2, lw=1, linestyle='--')
+            # find bounds.
+            yu = np.nanmax([f1, f2])
+            yl = np.nanmin([f1, f2])
             # plot statistics test.
-            r_m = get_stat_test(mi1, mi2, 'mannwhitneyu')[1]
-            axs[ci].text(0.8, 1, self.stat_sym[r_m], ha='center', va='center')
+            auc, p = auc_test(mi1, mi2)
+            r_m = np.sum(p < np.array([5e-2, 5e-4, 5e-6]))
+            axs[ci].text(0.8, yl+1*(yu-yl), f'AUC:{auc:.2f}', ha='center', va='center', color=color0, size=9)
+            axs[ci].text(0.8, yl+0.8*(yu-yl), self.stat_sym[r_m], ha='center', va='center')
             # adjust layouts.
             axs[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
             axs[ci].spines['right'].set_visible(False)
             axs[ci].spines['top'].set_visible(False) 
             axs[ci].set_xlim([-1,1])
-                
+            axs[ci].set_ylim([yl, yu + 0.2*(yu-yl)])
+            axs[self.n_clusters-1].set_xlabel('Modulation Index')
+    
+    def plot_pred_mod_index_dist(self, ax, mi1, mi2, color0, color1, color2):
+        m1, s1 = get_mean_sem(mi1.reshape(-1,1))
+        m2, s2 = get_mean_sem(mi2.reshape(-1,1))
+        # plot distribution.
+        f1 = self.plot_dist(ax, mi1, color1, False)
+        f2 = self.plot_dist(ax, mi2, color2, False)
+        ax.axvline(m1, color=color1, lw=1, linestyle='--')
+        ax.axvline(m2, color=color2, lw=1, linestyle='--')
+        # find bounds.
+        yu = np.nanmax([f1, f2])
+        yl = np.nanmin([f1, f2])
+        # plot statistics test.
+        auc, p = auc_test(mi1, mi2)
+        r_m = np.sum(p < np.array([5e-2, 5e-4, 5e-6]))
+        ax.text(0.8, yl+1*(yu-yl), f'AUC:{auc:.2f}', ha='center', va='center', color=color0, size=9)
+        ax.text(0.8, yl+0.8*(yu-yl), self.stat_sym[r_m], ha='center', va='center')
+        # adjust layouts.
+        ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False) 
+        ax.set_xlim([-1,1])
+        ax.set_ylim([yl, yu + 0.2*(yu-yl)])
+
     def plot_cluster_heatmap_trial(
             self, axs_hm, axs_cb,
             neu_x, neu_time, norm_mode,
@@ -1688,9 +1770,8 @@ class utils_basic:
                 interpolation='nearest', aspect='auto')
             # adjust layouts.
             adjust_layout_heatmap(axs_hm[ci])
-            axs_hm[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
             add_heatmap_colorbar(axs_cb[ci], cmap, norm, r'$\Delta F/F$')
-        
+
     def plot_cluster_heatmap(self, ax, neu_seq, neu_time, cluster_id, norm_mode):
         gap = 5
         win_conv = 5
@@ -1836,6 +1917,6 @@ class utils_basic:
         # add colorbar.
         if ax_cb != None:
             norm = mcolors.Normalize(vmin=0.45, vmax=vmax if vmax==None else vmax)
-            add_heatmap_colorbar(ax_cb, cmap, norm, 'Decoding accuracy')
+            add_heatmap_colorbar(ax_cb, cmap, norm, None)
             
 

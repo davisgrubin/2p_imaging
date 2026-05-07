@@ -19,7 +19,7 @@ def get_norm01_params(data):
     return a,b
 
 # compute mean and uncertainty.
-def get_mean_sem(data, method_m='mean', method_s='confidence interval', zero_start=False):
+def get_mean_sem(data, method_m='mean', method_s='standard error', zero_start=False):
     if method_m == 'mean':
         m = np.nanmean(data.reshape(-1, data.shape[-1]), axis=0)
     if method_m == 'median':

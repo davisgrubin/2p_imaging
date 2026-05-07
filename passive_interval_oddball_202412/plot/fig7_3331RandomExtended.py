@@ -2,6 +2,7 @@
 
 import traceback
 import numpy as np
+import matplotlib.ticker as mtick
 from sklearn.decomposition import PCA
 
 from modules.Alignment import run_get_stim_response
@@ -50,7 +51,7 @@ class plotter_utils(utils_basic):
         self.bin_num = 10
         self.d_latent = 3
         self.glm = self.run_glm([-5000,5000])
-        self.n_pre = 2
+        self.n_pre = 1
         self.n_post = 1
         self.trf_model = self.run_trf_model()
         self.cluster_id, _, _ = self.run_clustering(self.n_pre, self.n_post)
@@ -74,6 +75,10 @@ class plotter_utils(utils_basic):
         except: traceback.print_exc()
 
     def plot_isi_seting(self, ax):
+        # define layouts.
+        ax.axis('off')
+        ax = ax.inset_axes([0, 0, 0.6, 0.6], transform=ax.transAxes)
+        # plot settings.
         for i in range(2500,7500,500):
             ax.vlines(500+i, 0, 0.5, color='black')
         ax.spines['left'].set_visible(False)
@@ -84,15 +89,21 @@ class plotter_utils(utils_basic):
         ax.set_xticks([3000,5000,7500])
         ax.set_yticks([])
         ax.set_xticklabels([3000,5000,7500])
+        ax.set_xlabel('ISI (s)')
+        ax.xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, pos: f'{x/1000:.1f}'))
         
     def plot_isi_example_epoch(self, ax):
         trial_win = [0,500]
+        # define layouts.
+        ax.axis('off')
+        ax = ax.inset_axes([0, 0, 1, 0.6], transform=ax.transAxes)
         # get isi and trial labels.
         stim_labels = self.list_neural_trials[2]['stim_labels'][trial_win[0]:trial_win[1],:]
         isi = stim_labels[1:,0] - stim_labels[:-1,1]
         # plot trials.
         ax.scatter(np.arange(trial_win[0], trial_win[1]-1), isi, c='black', s=5)
         # adjust layouts.
+        ax.yaxis.set_major_formatter(mtick.FuncFormatter(lambda y, pos: f'{y/1000:.1f}'))
         adjust_layout_isi_example_epoch(ax, trial_win, self.bin_win)
 
     def plot_cluster_stim_all(self, axs, cate=None):
@@ -107,6 +118,10 @@ class plotter_utils(utils_basic):
         @show_resource_usage
         def plot_glm_kernel(ax):
             kernel_all = get_glm_cate(self.glm, self.list_labels, cate)
+            # define layouts.
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 1, 0.4], transform=ax.transAxes)
+            # plot results.
             self.plot_glm_kernel(ax, kernel_all, cluster_id, color0, 0.6)
         @show_resource_usage
         def plot_stim(ax, scaled):
@@ -121,14 +136,14 @@ class plotter_utils(utils_basic):
                 norm_params = [get_norm01_params(neu_mean) for ci in range(self.n_clusters)]
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 0.5, 0.6], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 0.5, 0.4], transform=ax.transAxes)
             # plot results.
             self.plot_cluster_mean_sem(
                 ax, neu_mean, neu_sem,
                 self.alignment['neu_time'], norm_params,
                 stim_seq[c_idx,:].reshape(1,2), [color0], [color0]*self.n_clusters, xlim)
             # adjust layouts.
-            ax.set_xlabel('time since stim (ms)')
+            ax.set_xlabel('Time from stim \n onset (s)')
         @show_resource_usage
         def plot_stim_heatmap(ax, norm_mode):
             # collect data.
@@ -138,7 +153,7 @@ class plotter_utils(utils_basic):
             neu_ci = [neu_seq[cluster_id==ci,l_idx:r_idx] for ci in range(self.n_clusters)]
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.6], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.4], transform=ax.transAxes)
             axs_hm = [ax.inset_axes([0.2, ci/self.n_clusters, 0.3, 0.75/self.n_clusters], transform=ax.transAxes)
                       for ci in range(self.n_clusters)]
             axs_cb = [ax.inset_axes([0.6, ci/self.n_clusters, 0.1, 0.75/self.n_clusters], transform=ax.transAxes)
@@ -158,20 +173,20 @@ class plotter_utils(utils_basic):
                 if ci != self.n_clusters-1:
                     axs_hm[ci].set_xticks([])
                 hide_all_axis(axs_cb[ci])
-            axs_hm[self.n_clusters-1].set_xlabel('time since stim (ms)')
+            axs_hm[self.n_clusters-1].set_xlabel('Time from stim \n onset (s)')
             ax.set_ylabel('neuron id')
             hide_all_axis(ax)
         @show_resource_usage
         def plot_neu_fraction(ax):
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.6], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 0.7, 0.4], transform=ax.transAxes)
             self.plot_cluster_neu_fraction_in_cluster(ax, cluster_id, color0)
         @show_resource_usage
         def plot_fraction(ax):
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.6], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 0.7, 0.4], transform=ax.transAxes)
             self.plot_cluster_cate_fraction_in_cluster(ax, cluster_id, neu_labels, self.label_names, color0)
         # plot all.
         try: plot_glm_kernel(axs[0])
@@ -217,8 +232,8 @@ class plotter_utils(utils_basic):
                 for ci in range(self.n_clusters)]
             neu_ci = [nc[np.argsort(np.concatenate(post_isi)), l_idx:r_idx] for nc in neu_ci]
             # define layouts.
-            ax0 = ax.inset_axes([0.2, 0, 0.5, 0.6], transform=ax.transAxes)
-            ax1 = ax.inset_axes([0.7, 0, 0.1, 0.6], transform=ax.transAxes)
+            ax0 = ax.inset_axes([0.2, 0, 0.5, 0.4], transform=ax.transAxes)
+            ax1 = ax.inset_axes([0.7, 0, 0.1, 0.4], transform=ax.transAxes)
             axs_hm = [ax0.inset_axes([0, 0.05+ci/self.n_clusters, 1, 0.8/self.n_clusters], transform=ax0.transAxes)
                       for ci in range(self.n_clusters)]
             axs_cb = [ax1.inset_axes([0, 0.05+ci/self.n_clusters, 1, 0.8/self.n_clusters], transform=ax1.transAxes)
@@ -238,8 +253,8 @@ class plotter_utils(utils_basic):
                 axs_hm[ci].set_yticklabels((((np.arange(2)+0.5)/2)*2000+500)[::-1].astype('int32'))
                 if ci != self.n_clusters-1:
                     axs_hm[ci].set_xticklabels([])
-            axs_hm[self.n_clusters-1].set_xlabel('time since stim (ms)')
-            ax.set_ylabel('interval (ms)')
+            axs_hm[self.n_clusters-1].set_xlabel('Time from stim \n onset (s)')
+            ax.set_ylabel('interval (s)')
             ax.set_title(f'sorted with {norm_mode}')
             hide_all_axis(ax)
             hide_all_axis(ax0)
@@ -262,21 +277,24 @@ class plotter_utils(utils_basic):
             norm_params = [get_norm01_params(cluster_bin_neu_mean[:,i,:]) for i in range(self.n_clusters)]
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.6], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.4], transform=ax.transAxes)
             # plot results.
             ax.fill_between(
                 np.nanmean(bin_stim_seq, axis=0)[c_idx,:],
                 0, self.n_clusters,
                 color=color0, edgecolor='none', alpha=0.25, step='mid')
             for bi in range(self.bin_num):
-                ax.axvline(bin_stim_seq[bi, c_idx+isi_idx_offset, 0], color=colors[bi], lw=1, linestyle='--')
+                ax.fill_between(
+                    bin_stim_seq[bi, c_idx+isi_idx_offset, :],
+                    0, self.n_clusters,
+                    color='none', edgecolor=colors[bi], alpha=0.25, step='mid')
             for bi in range(self.bin_num):
                 self.plot_cluster_mean_sem(
                     ax, cluster_bin_neu_mean[bi,:,:], cluster_bin_neu_sem[bi,:,:],
                     self.alignment['neu_time'], norm_params,
                     None, None, [colors[bi]]*self.n_clusters, xlim)
             # adjust layouts.
-            ax.set_xlabel('time since stim (ms)')
+            ax.set_xlabel('Time from stim \n onset (s)')
         @show_resource_usage
         def plot_legend(ax):
             [bins, _, _, _, _, _, _, _] = get_isi_bin_neu(

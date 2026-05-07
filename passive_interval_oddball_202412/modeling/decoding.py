@@ -5,12 +5,15 @@ from tqdm import tqdm
 from sklearn.utils import shuffle
 from sklearn.svm import SVC
 from sklearn.svm import LinearSVC
-from sklearn.svm import SVR
+from sklearn.linear_model import RidgeCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import r2_score
+from sklearn.metrics import roc_auc_score
 from sklearn.metrics import mean_absolute_percentage_error
+from sklearn.model_selection import ShuffleSplit
 from sklearn.model_selection import StratifiedShuffleSplit
 from scipy.stats import linregress
+from scipy.stats import t
 
 from modeling.utils import norm01
 from modeling.utils import get_frame_idx_from_time
@@ -18,12 +21,18 @@ from modeling.utils import get_mean_sem
 
 # fit a linear regression and report goodness.
 def fit_linear_regression(x, y):
-    idx = ~np.isnan(y)
+    # filter values.
+    idx = ~np.isnan(x) & ~np.isnan(y)
+    # fit model.
     model = linregress(x[idx], y[idx])
+    # get results.
     y_pred = model.intercept + model.slope * x
     r2 = model.rvalue**2
     p = model.pvalue
-    return y_pred, r2, p
+    # get slope=1 stat test.
+    t_stat = (model.slope - 1) / model.stderr
+    p_slope_vs_1 = 2 * t.sf(np.abs(t_stat), df=np.sum(idx) - 2)
+    return y_pred, r2, p, p_slope_vs_1
 
 # fit a line and report goodness.
 def fit_poly_line(x, y, order):
@@ -33,10 +42,30 @@ def fit_poly_line(x, y, order):
     mape = mean_absolute_percentage_error(y[idx], y_pred[idx])
     return y_pred, mape
 
+# test if two distributions are separable.
+def auc_test(data1, data2):
+    n_perm = 1000
+    # combine values and assign labels.
+    x = np.concatenate([data1[~np.isnan(data1)], data2[~np.isnan(data2)]])
+    y = np.concatenate([np.zeros(len(data1[~np.isnan(data1)])), np.ones(len(data2[~np.isnan(data2)]))])
+    # use abs distance from 0.5 as two-sided statistic.
+    auc = roc_auc_score(y, x)
+    stat = np.abs(auc - 0.5)
+    # permutation p-value.
+    cnt = 0
+    for _ in range(n_perm):
+        yp = np.random.permutation(y)
+        if abs(roc_auc_score(yp, x) - 0.5) >= stat:
+            cnt += 1
+    # combine results.
+    auc = np.max([auc, 1 - auc])
+    p = (cnt + 1) / (n_perm + 1)
+    return auc, p
+        
 # run validation for single trial decoding.
 def decoding_evaluation(x, y):
-    n_splits = 5
-    test_size = 0.1
+    n_splits = 25
+    test_size = 0.2
     results_model = []
     results_chance = []
     sss = StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size)
@@ -88,8 +117,8 @@ def multi_sess_decoding_slide_win(
     acc_model = np.concatenate(acc_model, axis=1)
     acc_chance = np.concatenate(acc_chance, axis=1)
     acc_time = neu_time[np.array(acc_time)]
-    acc_model_mean, acc_model_sem = get_mean_sem(acc_model, method_m='mean', method_s='standard error')
-    acc_chance_mean, acc_chance_sem = get_mean_sem(acc_chance, method_m='mean', method_s='standard error')
+    acc_model_mean, acc_model_sem = get_mean_sem(acc_model, method_m='mean', method_s='confidence interval')
+    acc_chance_mean, acc_chance_sem = get_mean_sem(acc_chance, method_m='mean', method_s='confidence interval')
     return acc_time, acc_model_mean, acc_model_sem, acc_chance_mean, acc_chance_sem
 
 # decoding time collapse and evaluate confusion matrix.
@@ -215,49 +244,65 @@ def decoding_time_single(neu_x, neu_time, bin_times):
         acc_shuffle[ti,:] = a_shuffle
     return t, acc_model, acc_shuffle
 
-# regression from neural activity to time.
-def regression_time_frac(neu_x, neu_time, bin_times, fracs):
-    n_splits = 2
-    n_sampling = 2
-    test_size = 0.3
-    bin_l_idx, bin_r_idx = get_frame_idx_from_time(neu_time, 0, 0, bin_times)
-    bin_len = bin_r_idx - bin_l_idx
-    # trim remainder.
-    t = neu_time[:(neu_x.shape[2]//bin_len)*bin_len]
-    t = np.nanmin(t.reshape(-1, bin_len), axis=1)
-    x = neu_x[:,:,:(neu_x.shape[2]//bin_len)*bin_len]
-    x = np.nanmean(x.reshape(x.shape[0], x.shape[1], -1, bin_len), axis=3)
-    y = np.tile((np.arange(x.shape[2])+1)/x.shape[2], (x.shape[0], 1))
-    # normalize data.
-    for ni in range(x.shape[1]):
-        x[:,ni,:] = norm01(x[:,ni,:].reshape(-1)).reshape(x.shape[0],x.shape[2])
-    # create results wrt fraction of features.
-    r2_all = np.zeros([n_sampling, len(fracs), n_splits])
+# regression from one population to another.
+def regression_pop(neu_x, neu_y):
+    n_splits = 25
+    test_size = 0.2
+    alphas = np.logspace(-3, 3, 13)
     # run model.
-    x, y = shuffle(x, y)
-    print('Running decoding with fraction of features')
-    for si in tqdm(range(n_sampling), desc='sampling'):
-        for fi in tqdm(range(len(fracs)), desc='frac'):
-            # get fraction of features.
-            sub_idx = np.random.choice(x.shape[1], int(x.shape[1]*fracs[fi]), replace=False)
-            x_sub = x[:,sub_idx,:].copy()
-            # run cross validation.
-            sss = StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size)
-            for ti, (train_idx, test_idx) in enumerate(sss.split(x, y)):
-                # split sets.
-                x_train, x_test = x_sub[train_idx], x_sub[test_idx]
-                y_train, y_test = y[train_idx], y[test_idx]
-                # reshape data.
-                x_train = np.transpose(x_train, (0, 2, 1)).reshape(-1, x_train.shape[1])
-                y_train = y_train.reshape(-1)
-                # fit model.
-                model = SVR(kernel='rbf')
-                model.fit(x_train, y_train)
-                # test model.
-                y_pred = model.predict(np.transpose(x_test,(0, 2, 1)).reshape(-1, x_test.shape[1]))
-                y_pred = y_pred.reshape(y_test.shape)
-                r2_all[si,fi,ti] = np.nanmean([r2_score(y_test[ti,:], y_pred[ti,:]) for ti in range(y_test.shape[0])])
-    # average across folds.
-    r2_all = np.nanmean(r2_all, axis=2)
-    return r2_all
+    print('Running population regression')
+    neu_x, neu_y = shuffle(neu_x, neu_y)
+    ss = ShuffleSplit(n_splits=n_splits, test_size=test_size)
+    r2_model = np.zeros(n_splits)
+    for si, (train_idx, test_idx) in tqdm(enumerate(ss.split(neu_x)), desc='test'):
+        # split trials.
+        x_train, x_test = neu_x[train_idx], neu_x[test_idx]
+        y_train, y_test = neu_y[train_idx], neu_y[test_idx]
+        # reshape data: samples = trials * time, features = neurons.
+        x_train = np.transpose(x_train, [0,2,1]).reshape(-1, neu_x.shape[1])
+        x_test  = np.transpose(x_test,  [0,2,1]).reshape(-1, neu_x.shape[1])
+        y_train = np.transpose(y_train, [0,2,1]).reshape(-1, neu_y.shape[1])
+        y_test  = np.transpose(y_test,  [0,2,1]).reshape(-1, neu_y.shape[1])
+        # normalize using train statistics only.
+        xm = np.nanmean(x_train, axis=0, keepdims=True)
+        xs = np.nanstd(x_train, axis=0, keepdims=True) + 1e-8
+        ym = np.nanmean(y_train, axis=0, keepdims=True)
+        ys = np.nanstd(y_train, axis=0, keepdims=True) + 1e-8
+        x_train = (x_train - xm) / xs
+        x_test  = (x_test  - xm) / xs
+        y_train = (y_train - ym) / ys
+        y_test  = (y_test  - ym) / ys
+        # remove nan rows.
+        train_good = np.all(np.isfinite(x_train), axis=1) & np.all(np.isfinite(y_train), axis=1)
+        test_good  = np.all(np.isfinite(x_test),  axis=1) & np.all(np.isfinite(y_test),  axis=1)
+        x_train, y_train = x_train[train_good], y_train[train_good]
+        x_test,  y_test  = x_test[test_good],   y_test[test_good]
+        # normal model.
+        model = RidgeCV(alphas=alphas)
+        model.fit(x_train, y_train)
+        r2_model[si] = model.score(x_test, y_test)
+    return r2_model
+
+# run population regression across sessions.
+def multi_sess_regression_pop(list_neu_x, list_neu_y):
+    r2_model_xy   = []
+    r2_model_yx   = []
+    for neu_x, neu_y in zip(list_neu_x, list_neu_y):
+        # forward.
+        r2_m = regression_pop(neu_x, neu_y)
+        r2_model_xy.append(r2_m)
+        # backward.
+        r2_m = regression_pop(neu_y, neu_x)
+        r2_model_yx.append(r2_m)
+    # combine results.
+    r2_model_xy   = np.concatenate(r2_model_xy)
+    r2_model_yx   = np.concatenate(r2_model_yx)
+    return r2_model_xy, r2_model_yx
+
+# run population regression for two cell types.
+def cate_2_multi_sess_regression_pop(list_neu_seq, list_neu_labels, target_cate):
+    list_neu_x = [ns[:,np.isin(nl,[target_cate[0]]),:] for ns,nl in zip(list_neu_seq, list_neu_labels)]
+    list_neu_y = [ns[:,np.isin(nl,[target_cate[1]]),:] for ns,nl in zip(list_neu_seq, list_neu_labels)]
+    r2 = multi_sess_regression_pop(list_neu_x, list_neu_y)
+    return r2
 

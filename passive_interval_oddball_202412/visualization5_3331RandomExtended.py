@@ -11,7 +11,6 @@ from matplotlib.gridspec import GridSpec
 
 from modules.ReadResults import filter_session_config_list
 from modules.ReadResults import read_all
-from plot.misc import plot_significance
 from plot.fig3_intervals import plot_standard_type
 from plot.fig3_intervals import plot_fix_jitter_type
 from plot.fig3_intervals import plot_oddball_type
@@ -116,12 +115,12 @@ def run(session_config_list, smooth, cate_list):
             filename = '3331RandomExtended_cluster_stim_all'
             cate_gap = 3
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 10
+            n_col = 9
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout='tight')
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s:s+2, i]) for i in range(10)]
+                a = [plt.subplot(gs[s:s+2, i]) for i in range(8)]
                 axs_all.append(a)
             plotter.cluster_stim_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)

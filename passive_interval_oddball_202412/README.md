@@ -724,3 +724,45 @@
 - Now all fig6_4131FixJitterOdd function units use second.
 - Now all fig4_3331Random function units use second.
 - Added plot_day1_epoch_2cate_heatmap.
+
+## 2026.04.30
+- Added cramervonmises_2samp to get_stat_test.
+- Fixed fig7_3331RandomExtended.
+- Added plot_baseline_comp.
+- Now plot_dist also returns fractions.
+- Now fit_linear_regression reports slope significance too.
+- Fixed plot_dist nan.
+- Added auc_test.
+
+## 2026.05.04
+- Fixed fig6_4131FixJitterOdd xlabel.
+- Fixed plot_baseline_comp xlabel.
+- Adjusted plot_baseline_comp layouts.
+- Adjusted plot_cluster_pred_mod_index_compare layouts.
+- Adjusted plot_block_win_decode_all layouts.
+- Adjusted adjust_layout_cluster_neu layouts.
+- Adjusted adjust_layout_heatmap layouts.
+- Adjusted add_heatmap_colorbar layouts.
+- Adjusted plot_interval_bin layouts.
+- Adjusted plot_day1_epoch_2cate_heatmap layouts.
+- Adjusted plot_cluster_heatmap_trial layouts.
+- Adjusted adjust_layout_neu layouts.
+- Added add_ax_ticks.
+- Adjusted plot_cluster_standard_time_decode_confusion layouts.
+
+## 2026.05.06
+- Removed plot_cate_interaction.
+- Added plot_tansition_exclude to fig5_1451ShortLong.
+- Added plot_interval_bin_exclude to fig4_3331Random.
+- Added plot_oddball_jitter_exclude to fig6_4131FixJitterOdd.
+- Removed plot_interval_bin_latent.
+- Removed plot_day_epoch_2cate.
+- Removed all plot_cluster_heatmap_all.
+- Adjusted plot_tansition layouts.
+- Removed regression_time_frac.
+- Fixed auc_test nan.
+- Added plot_pred_mod_index_box_trial.
+- Adjusted plot_latent_all layouts.
+- Fixed plot_jitter_global_oddball.
+- Added multi_sess_regression_pop and regression_pop.
+- Added plot_ramp_type_cell_fraction.

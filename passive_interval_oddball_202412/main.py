@@ -59,8 +59,8 @@ def run(session_config_list, cate_list):
     print('===============================================')
     print('======== plotting representative masks ========')
     print('===============================================')
-    #fn1 = visualization1_FieldOfView.run(session_config_list, smooth, cate_list)
-    fn1 = []
+    fn1 = visualization1_FieldOfView.run(session_config_list, smooth, cate_list)
+    #fn1 = []
 
     print('===============================================')
     print('========= plotting 3331Random results =========')
@@ -83,8 +83,8 @@ def run(session_config_list, cate_list):
     print('===============================================')
     print('===== plotting 3331RandomExtended results =====')
     print('===============================================')
-    #fn5 = visualization5_3331RandomExtended.run(session_config_list, smooth, cate_list)
-    fn5 = []
+    fn5 = visualization5_3331RandomExtended.run(session_config_list, smooth, cate_list)
+    #fn5 = []
 
     print('===============================================')
     print('============ saving session report ============')
@@ -109,8 +109,8 @@ def run(session_config_list, cate_list):
 
 if __name__ == "__main__":
     COMMANDLINE_MODE = 1
-    #cate_list = [[-1,1,2]]
-    cate_list = [[-1], [1], [2], [-1,1,2]]
+    cate_list = [[-1,1,2]]
+    #cate_list = [[-1], [1], [2], [-1,1,2]]
     from session_configs import all_config_list
     
     if COMMANDLINE_MODE:
@@ -138,11 +138,11 @@ if __name__ == "__main__":
                 #'VTYH02_PPC_20250208_1451ShortLong' : 'short_long',
                 #'VTYH02_PPC_20250207_1451ShortLong' : 'short_long',
                 #'VTYH02_PPC_20250206_1451ShortLong' : 'short_long',     
-                'YH18VT_V1_20250526_3331Random' : 'random',
-                'YH18VT_V1_20250527_3331Random' : 'random',
-                'YH18VT_V1_20250528_3331Random' : 'random',
-                'YH18VT_V1_20250529_3331Random' : 'random',
-                'YH18VT_V1_20250530_3331Random' : 'random',
+                #'YH18VT_V1_20250526_3331Random' : 'random',
+                #'YH18VT_V1_20250527_3331Random' : 'random',
+                #'YH18VT_V1_20250528_3331Random' : 'random',
+                #'YH18VT_V1_20250529_3331Random' : 'random',
+                #'YH18VT_V1_20250530_3331Random' : 'random',
                 #'YH18VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250331_4131FixJitterOdd' : 'fix_jitter_odd',
@@ -153,12 +153,12 @@ if __name__ == "__main__":
                 #'YH18VT_V1_20250408_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250409_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH18VT_V1_20250410_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250118_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250127_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250123_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250122_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'VTYH02_PPC_20250120_4131FixJitterOdd' : 'fix_jitter_odd',
+                'VTYH02_PPC_20250118_4131FixJitterOdd' : 'fix_jitter_odd',
+                'VTYH02_PPC_20250127_4131FixJitterOdd' : 'fix_jitter_odd',
+                'VTYH02_PPC_20250123_4131FixJitterOdd' : 'fix_jitter_odd',
+                'VTYH02_PPC_20250122_4131FixJitterOdd' : 'fix_jitter_odd',
+                'VTYH02_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
+                'VTYH02_PPC_20250120_4131FixJitterOdd' : 'fix_jitter_odd',
                 #'YH17VT_V1_20250623_3331RandomExtended' : 'extended_random',
                 #'YH17VT_V1_20250624_3331RandomExtended' : 'extended_random',
                 #'YH17VT_V1_20250626_3331RandomExtended' : 'extended_random',
@@ -181,21 +181,21 @@ if __name__ == "__main__":
             }
         session_config_test2 = {
             'list_session_name' : {
-                'YH17VT_V1_20250526_3331Random' : 'random',
-                'YH17VT_V1_20250527_3331Random' : 'random',
-                'YH17VT_V1_20250528_3331Random' : 'random',
-                'YH17VT_V1_20250529_3331Random' : 'random',
-                'YH17VT_V1_20250530_3331Random' : 'random',
+                #'YH17VT_V1_20250526_3331Random' : 'random',
+                #'YH17VT_V1_20250527_3331Random' : 'random',
+                #'YH17VT_V1_20250528_3331Random' : 'random',
+                #'YH17VT_V1_20250529_3331Random' : 'random',
+                #'YH17VT_V1_20250530_3331Random' : 'random',
                 #'YH14SC_PPC_20250421_1451ShortLong' : 'short_long',
                 #'YH14SC_PPC_20250422_1451ShortLong' : 'short_long',
                 #'YH14SC_PPC_20250423_1451ShortLong' : 'short_long',
                 #'YH14SC_PPC_20250424_1451ShortLong' : 'short_long',
                 #'YH14SC_PPC_20250425_1451ShortLong' : 'short_long',  
-                #'YH14SC_PPC_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH14SC_PPC_20250327_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH14SC_PPC_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH14SC_PPC_20250401_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH14SC_PPC_20250402_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH14SC_PPC_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH14SC_PPC_20250327_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH14SC_PPC_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH14SC_PPC_20250401_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH14SC_PPC_20250402_4131FixJitterOdd' : 'fix_jitter_odd',
                 },
             'session_folder' : 'test',
             'sig_tag' : 'all',
@@ -208,8 +208,8 @@ if __name__ == "__main__":
                 ],
             'label_names' : {
                 '-1':'Exc',
-                '1':'Inh_VIP',
-                '2':'Inh_SST',
+                '1':'VIP',
+                '2':'SST',
                 },
             'subject_name' : 'test',
             'output_filename' : 'test_passive'

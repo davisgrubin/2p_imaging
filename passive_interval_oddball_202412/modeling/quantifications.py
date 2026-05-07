@@ -153,3 +153,58 @@ def fit_trf_model(neu_seq_l, neu_time_l, neu_seq_r, neu_time_r):
     trf_param_post, pred_post, r2_post = convert_results(params_post, pred_post, r2_post)
     return [trf_param_pre, pred_pre, r2_pre,
             trf_param_post, pred_post, r2_post]
+
+
+'''
+r2_thres = 0.4
+r2_gap = 0.2
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+nsl = torch.tensor([norm01(x) for x in neu_seq_l], dtype=torch.float32, device=device)
+nsr = torch.tensor([norm01(x) for x in neu_seq_r], dtype=torch.float32, device=device)
+ntl = torch.tensor(norm01(neu_time_l) - 1, dtype=torch.float32, device=device)
+ntr = torch.tensor(norm01(neu_time_r), dtype=torch.float32, device=device)
+
+i = (r2_pre > r2_thres) * (r2_pre > r2_post)
+fig, axs = plt.subplots(6, 8, figsize=(24, 18))
+axs = [x for xs in axs for x in xs]
+for ni in range(48):
+    axs[ni].scatter(ntl,nsl[i][ni],s=3, color='black')
+    axs[ni].plot(ntl,pred_pre[i][ni], color='mediumseagreen')
+    axs[ni].spines['right'].set_visible(False)
+    axs[ni].spines['top'].set_visible(False)
+    axs[ni].set_xlim([-1,1])
+    axs[ni].set_yticks([0,1])
+    axs[ni].set_xticks([-1,0])
+    add_legend(
+        axs[ni],
+        ['mediumseagreen']*6,
+        [rf'$R^2_-={r2_pre[i][ni]:.2f}$',
+         rf'$b_-={trf_param_pre[i][ni,0]:.2f}$',
+         rf'$m_-={trf_param_pre[i][ni,2]:.2f}$',
+         rf'$r_-={trf_param_pre[i][ni,3]:.2f}$',
+         rf'$\tau_-={trf_param_pre[i][ni,4]:.2f}$'],
+        None, None, None, 'upper right')
+
+i = (r2_post > r2_thres) * (r2_post > r2_pre)
+fig, axs = plt.subplots(6, 8, figsize=(24, 18))
+axs = [x for xs in axs for x in xs]
+for ni in range(48):
+    axs[ni].scatter(ntr-1,nsr[i][ni],s=3, color='black')
+    axs[ni].plot(ntr-1,pred_post[i][ni], color='coral')
+    axs[ni].spines['right'].set_visible(False)
+    axs[ni].spines['top'].set_visible(False)
+    axs[ni].set_xlim([-1,1])
+    axs[ni].set_yticks([0,1])
+    axs[ni].set_xticks([-1,0])
+    axs[ni].set_xticklabels([0,1])
+    add_legend(
+        axs[ni],
+        ['coral']*6,
+        [rf'$R^2_+={r2_post[i][ni]:.2f}$',
+         rf'$b_+={trf_param_post[i][ni,0]:.2f}$',
+         rf'$m_+={trf_param_post[i][ni,2]:.2f}$',
+         rf'$r_+={trf_param_post[i][ni,3]:.2f}$',
+         rf'$\tau_+={trf_param_post[i][ni,4]:.2f}$'],
+        None, None, None, 'upper right')
+'''
