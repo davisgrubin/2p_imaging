@@ -1705,34 +1705,6 @@ class utils_basic:
             axs[ci].set_xlim(xlim)
             axs[ci].set_ylim([0, yu*1.1])
 
-    def plot_cluster_pred_mod_index_compare(self, axs, cluster_id, mod1, mod2, color0, color1, color2):
-        # plot results for each class.
-        for ci in range(self.n_clusters):
-            mi1 = mod1[cluster_id==ci]
-            mi2 = mod2[cluster_id==ci]
-            m1, s1 = get_mean_sem(mi1.reshape(-1,1))
-            m2, s2 = get_mean_sem(mi2.reshape(-1,1))
-            # plot distribution.
-            f1 = self.plot_dist(axs[ci], mi1, color1, False)
-            f2 = self.plot_dist(axs[ci], mi2, color2, False)
-            axs[ci].axvline(m1, color=color1, lw=1, linestyle='--')
-            axs[ci].axvline(m2, color=color2, lw=1, linestyle='--')
-            # find bounds.
-            yu = np.nanmax([f1, f2])
-            yl = np.nanmin([f1, f2])
-            # plot statistics test.
-            auc, p = auc_test(mi1, mi2)
-            r_m = np.sum(p < np.array([5e-2, 5e-4, 5e-6]))
-            axs[ci].text(0.8, yl+1*(yu-yl), f'AUC:{auc:.2f}', ha='center', va='center', color=color0, size=9)
-            axs[ci].text(0.8, yl+0.8*(yu-yl), self.stat_sym[r_m], ha='center', va='center')
-            # adjust layouts.
-            axs[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
-            axs[ci].spines['right'].set_visible(False)
-            axs[ci].spines['top'].set_visible(False) 
-            axs[ci].set_xlim([-1,1])
-            axs[ci].set_ylim([yl, yu + 0.2*(yu-yl)])
-            axs[self.n_clusters-1].set_xlabel('Modulation Index')
-    
     def plot_pred_mod_index_dist(self, ax, mi1, mi2, color0, color1, color2):
         m1, s1 = get_mean_sem(mi1.reshape(-1,1))
         m2, s2 = get_mean_sem(mi2.reshape(-1,1))
@@ -1747,14 +1719,14 @@ class utils_basic:
         # plot statistics test.
         auc, p = auc_test(mi1, mi2)
         r_m = np.sum(p < np.array([5e-2, 5e-4, 5e-6]))
-        ax.text(0.8, yl+1*(yu-yl), f'AUC:{auc:.2f}', ha='center', va='center', color=color0, size=9)
-        ax.text(0.8, yl+0.8*(yu-yl), self.stat_sym[r_m], ha='center', va='center')
+        ax.text(0.8, yu+0.4*(yu-yl), f'AUC:{auc:.2f}', ha='center', va='center', color=color0, size=9)
+        ax.text(0.8, yu+0.2*(yu-yl), self.stat_sym[r_m], ha='center', va='center')
         # adjust layouts.
         ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False) 
         ax.set_xlim([-1,1])
-        ax.set_ylim([yl, yu + 0.2*(yu-yl)])
+        ax.set_ylim([yl, yu + 0.4*(yu-yl)])
 
     def plot_cluster_heatmap_trial(
             self, axs_hm, axs_cb,

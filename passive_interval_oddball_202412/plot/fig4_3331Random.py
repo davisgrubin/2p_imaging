@@ -724,6 +724,8 @@ class plotter_utils(utils_basic):
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
             neu_ci = [neu_seq[cluster_id==ci,:] for ci in range(self.n_clusters)]
             # define layouts.
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 1, 0.60], transform=ax.transAxes)
             axs_hm = [ax.inset_axes([0.1, ci/self.n_clusters, 0.5, 0.8/self.n_clusters], transform=ax.transAxes)
                       for ci in range(self.n_clusters)]
             axs_cb = [ax.inset_axes([0.7, ci/self.n_clusters, 0.1, 0.8/self.n_clusters], transform=ax.transAxes)
@@ -767,7 +769,7 @@ class plotter_utils(utils_basic):
             norm_params = [get_norm01_params(cluster_bin_neu_mean[:,i,:]) for i in range(self.n_clusters)]
             # define layouts.
             ax.axis('off')
-            ax = ax.inset_axes([0.1, 0, 1, 1], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.60], transform=ax.transAxes)
             # plot results.
             for si in range(stim_seq.shape[0]):
                 ax.fill_between(
@@ -775,15 +777,18 @@ class plotter_utils(utils_basic):
                     0, self.n_clusters,
                     color=color0, edgecolor='none', alpha=0.25, step='mid')
             for bi in range(self.bin_num):
-                ax.axvline(bin_stim_seq[bi, c_idx-1, 0], color=colors[bi], lw=1, linestyle='--')
+                ax.fill_between(
+                    bin_stim_seq[bi, c_idx-1, :],
+                    0, self.n_clusters,
+                    color='none', edgecolor=colors[bi], alpha=0.25, step='mid')
             for bi in range(self.bin_num):
                 self.plot_cluster_mean_sem(
                     ax, cluster_bin_neu_mean[bi,:,:], cluster_bin_neu_sem[bi,:,:],
                     self.alignment['neu_time'], norm_params,
-                    None, None, [colors[bi]]*self.n_clusters, xlim)
+                    None, None, [colors[bi]]*self.n_clusters, xlim,
+                    scale_bar=True if bi==0 else False)
             # adjust layouts.
             ax.set_xlabel('Time from stim \n onset (ms)')
-            hide_all_axis(ax)
         def plot_interval_scaling(ax):
             post_color = 'lightcoral'
             gap = 2
@@ -829,6 +834,8 @@ class plotter_utils(utils_basic):
             bin_win_pre  = [bwe - bwb for bwe, bwb in zip (bin_win_evoked_pre, bin_win_baseline)]
             bin_win_post = [bwe - bwb for bwe, bwb in zip (bin_win_evoked_post, bin_win_baseline)]
             # define layouts.
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 1, 0.60], transform=ax.transAxes)
             axs = [ax.inset_axes([0.1, ci/self.n_clusters, 0.4, 0.8/self.n_clusters], transform=ax.transAxes)
                       for ci in range(self.n_clusters)]
             axs.reverse()

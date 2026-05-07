@@ -207,4 +207,18 @@ for ni in range(48):
          rf'$r_+={trf_param_post[i][ni,3]:.2f}$',
          rf'$\tau_+={trf_param_post[i][ni,4]:.2f}$'],
         None, None, None, 'upper right')
+
+i = (r2_pre < r2_thres) * (r2_post < r2_thres)
+fig, axs = plt.subplots(6, 8, figsize=(24, 16))
+axs = [x for xs in axs for x in xs]
+for ni in range(48):
+    axs[ni].scatter(ntl,nsl[i][ni],s=3, color='black')
+    axs[ni].plot(ntl,pred_pre[i][ni], color='mediumseagreen')
+    axs[ni].scatter(ntr,nsr[i][ni],s=3, color='black')
+    axs[ni].plot(ntr,pred_post[i][ni], color='coral')
+    axs[ni].axvline(0, color='black', lw=1, linestyle='-')
+    axs[ni].axis('off')
+    axs[ni].set_title(rf'$R^2_-={r2_pre[i][ni]:.2f}, R^2_+={r2_post[i][ni]:.2f}$')
+
+
 '''

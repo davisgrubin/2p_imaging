@@ -153,7 +153,7 @@ def run(session_config_list, smooth, cate_list):
                 a+= [plt.subplot(gs[s:s+2, 11])]
                 a+= [plt.subplot(gs[s:s+2, 12])]
                 a+= [plt.subplot(gs[s+2, 0]), plt.subplot(gs[s+3, 0])]
-                a+= [plt.subplot(gs[s+2:s+4, 0:2])]
+                a+= [plt.subplot(gs[s+2:s+4, 1:3])]
                 axs_all.append(a)
             plotter.cluster_adapt_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -240,15 +240,15 @@ def run(session_config_list, smooth, cate_list):
             plt.close(fig)
             return [filename, n_row, n_col, title]
         fig_all = [
-            plot_cell_fraction(),
-            plot_intervals(),
-            plot_trial(),
+            #plot_cell_fraction(),
+            #plot_intervals(),
+            #plot_trial(),
             plot_cluster_all(),
-            plot_cluster_adapt_all(),
-            plot_sorted_heatmaps_all(),
-            plot_latent_all(),
+            #plot_cluster_adapt_all(),
+            #plot_sorted_heatmaps_all(),
+            #plot_latent_all(),
             plot_decode_all(),
-            plot_pupil_all(),
+            #plot_pupil_all(),
             ]
         print('Clearing memory usage')
         del list_labels

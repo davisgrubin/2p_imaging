@@ -766,3 +766,14 @@
 - Fixed plot_jitter_global_oddball.
 - Added multi_sess_regression_pop and regression_pop.
 - Added plot_ramp_type_cell_fraction.
+
+## 2026.05.07
+- Adjusted plot_cluster_standard_time_decode_confusion layouts.
+- Adjusted plot_block_win_decode layouts.
+- Adjusted plot_pred_mod_index_dist layouts.
+- Fixed plot_pred_mod_index_box.
+- Removed plot_cluster_pred_mod_index_compare.
+- Fixed plot_cluster_local_all layouts.
+- Adjusted plot_interaction_strength layouts.
+- Adjusted plot_standard_time_decode_all layouts.
+- Adjusted plot_explained_variance_standard layouts.

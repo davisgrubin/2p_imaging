@@ -216,6 +216,7 @@ class plotter_utils(utils_basic):
                     axs_hm_0[ci].set_xticks([])
                     axs_hm_1[ci].set_xticks([])
             axs_hm_0[self.n_clusters-1].set_xlabel('Time from stim onset (s)')
+            axs_hm_1[self.n_clusters-1].set_xlabel('Time from stim onset (s)')
             ax.set_ylabel('Neuron')
             hide_all_axis(ax)
             hide_all_axis(ax0)
@@ -387,6 +388,9 @@ class plotter_utils(utils_basic):
                 wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
             axs[1].set_title('Stim activated')
         def plot_explained_variance_standard(ax):
+            xlim = [0,80]
+            ylim = [0.5,1.0]
+            target_ev = 0.90
             colors1 = get_cmap_color(self.n_pre, base_color=['coral', 'crimson', 'maroon'])
             colors2 = get_cmap_color(self.n_post, base_color=['mediumseagreen', 'cyan', 'royalblue'])
             colors = colors1 + colors2 + [color0]
@@ -398,14 +402,30 @@ class plotter_utils(utils_basic):
             # plot results for each class.
             for ci in range(self.n_clusters):
                 if np.sum(cluster_id==ci) > 0:
+                    # run model.
                     neu_x = neu_seq_1[cluster_id==ci,l_idx:r_idx]
                     evr = PCA().fit(neu_x.T).explained_variance_ratio_
+                    # plot explained variance.
                     ax.plot(np.cumsum(evr), color=colors[ci])
+                    # plot target lines.
+                    n_dim = np.argmax(np.cumsum(evr) >= target_ev) + 1
+                    ax.axvline(n_dim, color=colors[ci], linestyle='--', linewidth=1)
+            ax.axhline(target_ev, color=color0, linestyle='--', linewidth=1)
+            ax.text(xlim[1], target_ev+0.03, f'{target_ev}', ha='right', va='center', color=color0)
             # adjust layouts.
+            ax.xaxis.set_major_locator(mtick.MaxNLocator(nbins=8))
+            ax.xaxis.set_major_formatter(mtick.FuncFormatter(
+                lambda x, pos: '' if (pos-abs(ax.get_xticks()).argmin())%2 else f'{(int(x))}'))
+            ax.xaxis.set_minor_locator(mtick.AutoMinorLocator(2))
+            ax.tick_params(axis='x', which='minor', labelbottom=False)
+            ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
             ax.set_xlabel('Dimensions')
             ax.set_ylabel('Cumulative explained \n variance')
+            ax.set_xlim(xlim)
+            ax.set_ylim(ylim)
+            add_legend(ax, colors, [f'cluster {ci+1}' for ci in range(self.n_clusters)], None, None, None, 'lower right')
         try: plot_glm_kernel(axs[0])
         except: traceback.print_exc()
         try: plot_neu_fraction(axs[1])
@@ -1233,6 +1253,8 @@ class plotter_utils(utils_basic):
         except: traceback.print_exc()
         try: plot_baseline_comp(axs[10], True)
         except: traceback.print_exc()
+        try: plot_tansition_exclude(axs[11])
+        except: traceback.print_exc()
     
     def plot_sorted_heatmaps_all(self, axs, norm_mode, cate):
         xlim = [-2000,3000]
@@ -1512,7 +1534,7 @@ class plotter_utils(utils_basic):
             ax1.axis('off')
             ax2.axis('off')
             ax1 = ax1.inset_axes([0, 0, 1, 0.95], transform=ax1.transAxes)
-            ax2 = ax2.inset_axes([0.2, 0, 0.8, 1], transform=ax2.transAxes)
+            ax2 = ax2.inset_axes([0.2, 0, 0.8, 0.8], transform=ax2.transAxes)
             axs_hm = [ax1.inset_axes([0.2, ci/self.n_clusters, 0.6, 0.8/self.n_clusters], transform=ax1.transAxes)
                       for ci in range(self.n_clusters)]
             axs_cb = [ax1.inset_axes([0.8, ci/self.n_clusters, 0.1, 0.8/self.n_clusters], transform=ax1.transAxes)
@@ -1544,8 +1566,8 @@ class plotter_utils(utils_basic):
                 if ci != self.n_clusters-1:
                     axs_hm[ci].set_xticklabels([])
             axs_hm[self.n_clusters-1].set_xlabel('Time from stim \n onset (s)')
-            axs_cb[self.n_clusters-1].set_ylabel('Decoding accuracy (cross validated) \n (mean across all time bins)')
-            axs_cb[self.n_clusters-1].yaxis.set_label_position("right")
+            axs_cb[2].set_ylabel('Decoding accuracy (cross validated) \n (mean across all time bins)')
+            axs_cb[2].yaxis.set_label_position("right")
             ax1.set_title('Time bin pairwise decoding')
             ax1.set_ylabel('Time from stim onset (s)')
             ax2.set_title('Decoding accuracy summary')
@@ -1776,9 +1798,8 @@ class plotter_utils(utils_basic):
                 ax1.set_ylabel('Density')
         @show_resource_usage
         def plot_legend(ax):
-
             cs = colors + ['color0']
-            lbl = [] + ['Shuffle']
+            lbl = [f'cluster {ci+1}' for ci in range(self.n_clusters)] + ['Shuffle']
             add_legend(ax, cs, lbl, None, None, None, 'upper right')
             ax.axis('off')
         # plot all.
