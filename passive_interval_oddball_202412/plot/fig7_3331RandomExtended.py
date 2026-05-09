@@ -316,7 +316,8 @@ class plotter_utils(utils_basic):
                 self.plot_cluster_mean_sem(
                     ax, cluster_bin_neu_mean[bi,:,:], cluster_bin_neu_sem[bi,:,:],
                     self.alignment['neu_time'], norm_params,
-                    None, None, [colors[bi]]*self.n_clusters, xlim)
+                    None, None, [colors[bi]]*self.n_clusters, xlim,
+                    scale_bar=True if bi==0 else False)
             # adjust layouts.
             ax.set_xlabel('Time from stim \n onset (s)')
         @show_resource_usage

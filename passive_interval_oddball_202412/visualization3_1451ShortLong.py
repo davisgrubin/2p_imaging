@@ -243,11 +243,11 @@ def run(session_config_list, smooth, cate_list):
             #plot_cell_fraction(),
             #plot_intervals(),
             #plot_trial(),
-            plot_cluster_all(),
-            #plot_cluster_adapt_all(),
+            #plot_cluster_all(),
+            plot_cluster_adapt_all(),
             #plot_sorted_heatmaps_all(),
             #plot_latent_all(),
-            plot_decode_all(),
+            #plot_decode_all(),
             #plot_pupil_all(),
             ]
         print('Clearing memory usage')

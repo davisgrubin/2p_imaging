@@ -204,7 +204,7 @@ def run(session_config_list, smooth, cate_list):
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s, 0:3])]
+                a = [plt.subplot(gs[s, i:i+3]) for i in [0,3,6]]
                 axs_all.append(a)
             plotter.cell_communication(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -218,17 +218,17 @@ def run(session_config_list, smooth, cate_list):
             filename = '4131FixJitterOdd_oddball_latent_all'
             cate_gap = 14
             n_row = cate_gap*len(plotter.cate_list)
-            n_col = 40
+            n_col = 20
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout=layout)
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [[plt.subplot(gs[s+0:s+2,   i:i+2]) for i in 2*np.arange(20)]]
-                a+= [[plt.subplot(gs[s+2:s+4,   i:i+2]) for i in 2*np.arange(20)]]
-                a+= [[plt.subplot(gs[s+4:s+6,   i:i+2]) for i in 2*np.arange(20)]]
-                a+= [[plt.subplot(gs[s+6:s+8,   i:i+2]) for i in 2*np.arange(20)]]
-                a+= [[plt.subplot(gs[s+6:s+10,  i:i+2]) for i in 2*np.arange(20)]]
-                a+= [[plt.subplot(gs[s+10:s+12, i:i+2]) for i in 2*np.arange(20)]]
+                a = [[plt.subplot(gs[s+0:s+2,   i:i+2]) for i in 2*np.arange(10)]]
+                a+= [[plt.subplot(gs[s+2:s+4,   i:i+2]) for i in 2*np.arange(10)]]
+                a+= [[plt.subplot(gs[s+4:s+6,   i:i+2]) for i in 2*np.arange(10)]]
+                a+= [[plt.subplot(gs[s+6:s+8,   i:i+2]) for i in 2*np.arange(10)]]
+                a+= [[plt.subplot(gs[s+8:s+10,  i:i+2]) for i in 2*np.arange(10)]]
+                a+= [[plt.subplot(gs[s+10:s+12, i:i+2]) for i in 2*np.arange(10)]]
                 axs_all.append(a)
             plotter.latent_all(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -253,16 +253,16 @@ def run(session_config_list, smooth, cate_list):
             plt.close(fig)
             return [filename, n_row, n_col, title]
         fig_all = [
-            plot_cell_fraction(),
-            plot_intervals(),
-            plot_trial(),
-            plot_cluster_oddball_fix_all(),
-            plot_sorted_heatmaps_fix_all(),
-            plot_cluster_oddball_jitter_global_all(),
-            plot_cluster_oddball_jitter_local_all(),
+            #plot_cell_fraction(),
+            #plot_intervals(),
+            #plot_trial(),
+            #plot_cluster_oddball_fix_all(),
+            #plot_sorted_heatmaps_fix_all(),
+            #plot_cluster_oddball_jitter_global_all(),
+            #plot_cluster_oddball_jitter_local_all(),
             plot_cell_communication(),
             plot_latent_all(),
-            plot_pupil_all(),
+            #plot_pupil_all(),
         ]
         print('Clearing memory usage')
         del list_labels

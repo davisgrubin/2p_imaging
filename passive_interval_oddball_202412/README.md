@@ -777,3 +777,11 @@
 - Adjusted plot_interaction_strength layouts.
 - Adjusted plot_standard_time_decode_all layouts.
 - Adjusted plot_explained_variance_standard layouts.
+
+## 2026.05.08
+- Now plot_cluster_mean_sem can specify y0 line.
+- Fixed all plot_cluster_mean_sem overlapping scalebar.
+- Fixed plot_pred_mod_index_box.
+- Now fit_linear_regression returns slope.
+- Adjusted plot_trial_quant layouts.
+- Fixed plot_latent_all layouts.

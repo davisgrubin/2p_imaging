@@ -7,13 +7,11 @@ from sklearn.svm import SVC
 from sklearn.svm import LinearSVC
 from sklearn.linear_model import RidgeCV
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import r2_score
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import mean_absolute_percentage_error
 from sklearn.model_selection import ShuffleSplit
 from sklearn.model_selection import StratifiedShuffleSplit
 from scipy.stats import linregress
-from scipy.stats import t
 
 from modeling.utils import norm01
 from modeling.utils import get_frame_idx_from_time
@@ -29,10 +27,7 @@ def fit_linear_regression(x, y):
     y_pred = model.intercept + model.slope * x
     r2 = model.rvalue**2
     p = model.pvalue
-    # get slope=1 stat test.
-    t_stat = (model.slope - 1) / model.stderr
-    p_slope_vs_1 = 2 * t.sf(np.abs(t_stat), df=np.sum(idx) - 2)
-    return y_pred, r2, p, p_slope_vs_1
+    return y_pred, r2, p, model.slope
 
 # fit a line and report goodness.
 def fit_poly_line(x, y, order):
@@ -64,7 +59,7 @@ def auc_test(data1, data2):
         
 # run validation for single trial decoding.
 def decoding_evaluation(x, y):
-    n_splits = 25
+    n_splits = 5
     test_size = 0.2
     results_model = []
     results_chance = []

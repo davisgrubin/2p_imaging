@@ -21,6 +21,7 @@ from scipy.stats import ks_2samp
 from scipy.stats import anderson_ksamp
 from scipy.stats import wilcoxon
 from scipy.stats import permutation_test
+from scipy.stats import rankdata
 from scipy.spatial.distance import pdist
 from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
@@ -706,14 +707,20 @@ def get_win_mag_quant_stat_test(neu_seq_1, neu_seq_2, neu_time, c_time, win_eval
     r = np.array([get_stat_test(n1, n2, method)[1] for n1, n2 in zip(neu_1, neu_2)])
     return p, r
 
-# compute correlation between rows.
-def get_row_corr(x, y):
-    xm = x
-    ym = y
-    num = np.sum(xm * ym, axis=1)
-    den = np.sqrt(np.sum(xm*xm, axis=1) * np.sum(ym*ym, axis=1))
-    c = num / den
-    return c
+# compute correlation through time between rows for all pairs.
+def pair_corr_subsample(list_data):
+    n_subample = 100
+    n_splits = 250
+    corr = np.full((len(list_data), len(list_data), n_splits, list_data[0].shape[1]), np.nan)
+    for s in range(n_splits):
+        idx = [np.random.choice(x.shape[0], n_subample, replace=False) for x in list_data]
+        rank = [rankdata(x[i], axis=0) for x, i in zip(list_data, idx)]
+        rank = [(r - r.mean(0)) / r.std(0) for r in rank]
+        for i,_ in enumerate(list_data):
+            for j,_ in enumerate(list_data):
+                c = (rank[i] * rank[j]).mean(0)
+                corr[i, j, s] = corr[j, i, s] = c
+    return corr
 
 # average across subsampling neurons.
 def sub_sampling_neuron(neu_seq):
@@ -1474,7 +1481,7 @@ class utils_basic:
     def plot_cluster_mean_sem(
             self, ax, neu_mean, neu_sem, neu_time,
             norm_params, stim_seq, c_stim, c_neu, xlim,
-            scale_bar=True
+            scale_bar=True, y0=False
             ):
         gap = 0.05
         l_nan_margin = 5
@@ -1507,7 +1514,8 @@ class utils_basic:
         for ci in range(n_clusters):
             a, b, c, d = norm_params[ci]
             # add y=0 line.
-            #ax.hlines(ci+b, xlim[0]*0.99, xlim[1]*0.99, linestyle=':', color='#2C2C2C', alpha=0.2)
+            if y0:
+                ax.hlines(ci+b, xlim[0]*0.99, xlim[1]*0.99, linestyle=':', color='#2C2C2C', alpha=0.2)
             # plot neural traces.
             self.plot_mean_sem(
                 ax, neu_time,

@@ -323,7 +323,8 @@ class plotter_utils(utils_basic):
             self.plot_cluster_mean_sem(
                 ax, neu_mean_1, neu_sem_1,
                 neu_time, norm_params,
-                None, None, [color2]*self.n_clusters, [neu_time[0], neu_time[-1]])
+                None, None, [color2]*self.n_clusters, [neu_time[0], neu_time[-1]],
+                scale_bar=False)
             # adjust layouts.
             ax.set_xlabel('Time from stim onset (s)')
         @show_resource_usage
@@ -418,7 +419,7 @@ class plotter_utils(utils_basic):
                 lambda x, pos: '' if (pos-abs(ax.get_xticks()).argmin())%2 else f'{(int(x))}'))
             ax.xaxis.set_minor_locator(mtick.AutoMinorLocator(2))
             ax.tick_params(axis='x', which='minor', labelbottom=False)
-            ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
+            ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=5))
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
             ax.set_xlabel('Dimensions')
@@ -819,15 +820,17 @@ class plotter_utils(utils_basic):
                     for axi in [axs_03[ci], axs_11[ci]]:
                         axi.scatter(np.arange(trials_fit)-trials_fit, m_1to0[:trials_fit], color=color2, s=1)
                     # fit line for short.
-                    y_pred, _, p, _ = fit_linear_regression(np.arange(2*trials_fit), np.concatenate([m_1to0[trials_fit:], m_0to1[:trials_fit]]))
+                    y_pred, _, p, s = fit_linear_regression(np.arange(2*trials_fit), np.concatenate([m_1to0[trials_fit:], m_0to1[:trials_fit]]))
                     axs_12[ci].plot(np.arange(trials_fit), y_pred[trials_fit:], color=color0, lw=1)
                     axs_13[ci].plot(np.arange(trials_fit)-trials_fit, y_pred[:trials_fit], color=color0, lw=1)
-                    axs_12[ci].text(5, upper + 0.1*(upper-lower), f'p={p:.3f}', color=color0, size=9)
+                    axs_12[ci].text(5, upper + 0.1*(upper-lower), self.stat_sym[np.sum(p<np.array([5e-2, 5e-4, 5e-6]))], color=color0, size=9)
+                    axs_12[ci].text(trials_fit, upper + 0.1*(upper-lower), '+' if s>0 else '-', color=color0, size=9)
                     # fit line for long.
-                    y_pred, _, p, _ = fit_linear_regression(np.arange(2*trials_fit), np.concatenate([m_0to1[trials_fit:], m_1to0[:trials_fit]]))
+                    y_pred, _, p, s = fit_linear_regression(np.arange(2*trials_fit), np.concatenate([m_0to1[trials_fit:], m_1to0[:trials_fit]]))
                     axs_02[ci].plot(np.arange(trials_fit), y_pred[trials_fit:], color=color0, lw=1)
                     axs_03[ci].plot(np.arange(trials_fit)-trials_fit, y_pred[trials_fit:], color=color0, lw=1)
-                    axs_02[ci].text(5, lower - 0.1*(upper-lower), f'p={p:.3f}', color=color0, size=9)
+                    axs_02[ci].text(5, lower - 0.1*(upper-lower), self.stat_sym[np.sum(p<np.array([5e-2, 5e-4, 5e-6]))], color=color0, size=9)
+                    axs_02[ci].text(trials_fit, lower - 0.1*(upper-lower), '+' if s>0 else '-', color=color0, size=9)
                     # adjust layouts.
                     axs_01[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
                     axs_01[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
