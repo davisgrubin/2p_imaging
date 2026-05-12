@@ -71,20 +71,20 @@ def run(session_config_list, cate_list):
     print('===============================================')
     print('======= plotting 1451ShortLong results ========')
     print('===============================================')
-    #fn3 = visualization3_1451ShortLong.run(session_config_list, smooth, cate_list)
-    fn3 = []
+    fn3 = visualization3_1451ShortLong.run(session_config_list, smooth, cate_list)
+    #fn3 = []
 
     print('===============================================')
     print('====== plotting 4131FixJitterOdd results ======')
     print('===============================================')
-    fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
-    #fn4 = []
+    #fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
+    fn4 = []
 
     print('===============================================')
     print('===== plotting 3331RandomExtended results =====')
     print('===============================================')
-    fn5 = visualization5_3331RandomExtended.run(session_config_list, smooth, cate_list)
-    #fn5 = []
+    #fn5 = visualization5_3331RandomExtended.run(session_config_list, smooth, cate_list)
+    fn5 = []
 
     print('===============================================')
     print('============ saving session report ============')

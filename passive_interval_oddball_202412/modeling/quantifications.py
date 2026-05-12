@@ -170,7 +170,7 @@ fig, axs = plt.subplots(6, 8, figsize=(24, 18))
 axs = [x for xs in axs for x in xs]
 for ni in range(48):
     axs[ni].scatter(ntl,nsl[i][ni],s=3, color='black')
-    axs[ni].plot(ntl,pred_pre[i][ni], color='mediumseagreen')
+    axs[ni].plot(ntl,pred_pre[i][ni], color='coral')
     axs[ni].spines['right'].set_visible(False)
     axs[ni].spines['top'].set_visible(False)
     axs[ni].set_xlim([-1,1])
@@ -178,7 +178,7 @@ for ni in range(48):
     axs[ni].set_xticks([-1,0])
     add_legend(
         axs[ni],
-        ['mediumseagreen']*6,
+        ['coral']*6,
         [rf'$R^2_-={r2_pre[i][ni]:.2f}$',
          rf'$b_-={trf_param_pre[i][ni,0]:.2f}$',
          rf'$m_-={trf_param_pre[i][ni,2]:.2f}$',
@@ -191,7 +191,7 @@ fig, axs = plt.subplots(6, 8, figsize=(24, 18))
 axs = [x for xs in axs for x in xs]
 for ni in range(48):
     axs[ni].scatter(ntr-1,nsr[i][ni],s=3, color='black')
-    axs[ni].plot(ntr-1,pred_post[i][ni], color='coral')
+    axs[ni].plot(ntr-1,pred_post[i][ni], color='mediumseagreen')
     axs[ni].spines['right'].set_visible(False)
     axs[ni].spines['top'].set_visible(False)
     axs[ni].set_xlim([-1,1])
@@ -200,7 +200,7 @@ for ni in range(48):
     axs[ni].set_xticklabels([0,1])
     add_legend(
         axs[ni],
-        ['coral']*6,
+        ['mediumseagreen']*6,
         [rf'$R^2_+={r2_post[i][ni]:.2f}$',
          rf'$b_+={trf_param_post[i][ni,0]:.2f}$',
          rf'$m_+={trf_param_post[i][ni,2]:.2f}$',
@@ -213,12 +213,12 @@ fig, axs = plt.subplots(6, 8, figsize=(24, 16))
 axs = [x for xs in axs for x in xs]
 for ni in range(48):
     axs[ni].scatter(ntl,nsl[i][ni],s=3, color='black')
-    axs[ni].plot(ntl,pred_pre[i][ni], color='mediumseagreen')
+    axs[ni].plot(ntl,pred_pre[i][ni], color='coral')
     axs[ni].scatter(ntr,nsr[i][ni],s=3, color='black')
-    axs[ni].plot(ntr,pred_post[i][ni], color='coral')
+    axs[ni].plot(ntr,pred_post[i][ni], color='mediumseagreen')
     axs[ni].axvline(0, color='black', lw=1, linestyle='-')
     axs[ni].axis('off')
-    axs[ni].set_title(rf'$R^2_-={r2_pre[i][ni]:.2f}, R^2_+={r2_post[i][ni]:.2f}$')
+    axs[ni].set_title(rf'$R^2_-={r2_pre[i][ni]:.2f},  R^2_+={r2_post[i][ni]:.2f}$')
 
 
 '''

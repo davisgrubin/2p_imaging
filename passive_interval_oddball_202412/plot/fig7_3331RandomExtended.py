@@ -76,13 +76,18 @@ class plotter_utils(utils_basic):
     
     def plot_ramp_type_cell_fraction_table(self, ax):
         try:
+            # collect data.
             cate = [-1,1,2]
             neu_labels = np.concatenate(self.list_labels)
+            # compute counts.
             rows = [('Ramp-up', (self.cluster_id<self.n_pre)&(self.cluster_id>=0)),
                     ('Ramp-down', self.cluster_id>=self.n_pre),
                     ('Excluded', self.cluster_id==-1)]
-            cell_text = [[np.sum(mask & (neu_labels == c)) for c in cate] for _, mask in rows]
-            ax.axis('off')
+            counts = np.array([[np.sum(mask & (neu_labels == c)) for c in cate] for _, mask in rows])
+            col_sums = counts.sum(axis=0)
+            cell_text = [[f'{counts[i, j]} ({counts[i, j]/col_sums[j]:.2f})'
+                          for j in range(len(cate))] for i in range(len(rows))]
+            # plot table.
             tab = ax.table(
                 cellText=cell_text,
                 rowLabels=[r[0] for r in rows],
@@ -90,12 +95,14 @@ class plotter_utils(utils_basic):
                 loc='center',
                 cellLoc='center',
                 rowLoc='center')
+            # adjust layouts.
             tab.scale(0.8, 2)
             for (i, j), cell in tab.get_celld().items():
                 cell.set_linewidth(0)
                 if i == 0:
                     cell.visible_edges = 'B'
                     cell.set_linewidth(1)
+            ax.axis('off')
         except: traceback.print_exc()
         
     def plot_isi_seting(self, ax):

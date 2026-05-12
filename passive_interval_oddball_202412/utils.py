@@ -386,27 +386,16 @@ def exclude_odd_stim(stim_labels):
 
 #%% detailed processing
 
-# compute modulation index.
-def get_modulation_index(v_pre, v_post):
-    m = (v_post - v_pre) / (np.abs(v_pre) + np.abs(v_post) + 1e-8)
-    return m
-
 # compute modulation index for neuron across trial.
-def get_modulation_index_neu_seq(
-        neu, neu_time,
-        c_time, win_eval, mode,
-        baseline_correction
-        ):
-    q = [get_mean_sem_win(
-        neu.reshape(-1, neu.shape[-1]),
-        neu_time, c_time, win_eval[i][0], win_eval[i][1], mode=mode[i])
-        for i in range(3)]
-    if baseline_correction:
-        q = [q[1][0] - q[0][1], q[2][0] - q[0][1]]
-    else:
-        q = [q[1][0], q[2][0]]
-    mod = get_modulation_index(q[1], q[0])
-    return mod
+def get_modulation_index_neu_seq(neu, neu_time, c_time, win_eval):
+    # get response values.
+    v_ref_l = get_mean_sem_win(neu.reshape(-1, neu.shape[-1]), neu_time, c_time, win_eval[0][0], win_eval[0][1], mode='lower', pct=10)[1]
+    v_ref_h = get_mean_sem_win(neu.reshape(-1, neu.shape[-1]), neu_time, c_time, win_eval[0][0], win_eval[0][1], mode='higher', pct=10)[1]
+    v_pre   = get_mean_sem_win(neu.reshape(-1, neu.shape[-1]), neu_time, c_time, win_eval[1][0], win_eval[1][1], mode='higher')[0]
+    v_post  = get_mean_sem_win(neu.reshape(-1, neu.shape[-1]), neu_time, c_time, win_eval[2][0], win_eval[2][1], mode='higher')[0]
+    # compute modulation index.
+    m = (v_post - v_pre) / (np.abs(v_ref_h - v_ref_l) + 1e-8)
+    return m
 
 # get isi based binning average neural response.
 def get_isi_bin_neu(
@@ -735,6 +724,12 @@ def sub_sampling_neuron(neu_seq):
         neu_seq_sub[qi,:] = np.nanmean(neu_seq[sub_idx,:], axis=0)
     return neu_seq_sub
 
+# score signal noise level based on autocorrelation for 2d data.
+def signal_noise_score(x, method_s='standard deviation'):
+    win = 25
+    estimate = np.apply_along_axis(savgol_filter, 1, x, window_length=win, polyorder=2)
+    _, score = get_mean_sem((x-estimate).T)
+    return score
 
 #%% plotting
 
@@ -1225,7 +1220,7 @@ class utils_basic:
         ax_lbl.set_ylim([-0.2, self.n_clusters+0.1])
         ax_lbl.set_xticks([])
         ax_lbl.set_yticks([(1-2*gap)+gap+self.n_clusters-ci-1.5 for ci in range(self.n_clusters)])
-        ax_lbl.set_yticklabels(np.arange(self.n_clusters))
+        ax_lbl.set_yticklabels(np.arange(self.n_clusters)+1)
         ax_lbl.set_ylabel('Cluster ID')
         ax_glm.set_xlabel('Time from stim \n onset (s)')
         
@@ -1728,7 +1723,7 @@ class utils_basic:
         auc, p = auc_test(mi1, mi2)
         r_m = np.sum(p < np.array([5e-2, 5e-4, 5e-6]))
         ax.text(0.8, yu+0.4*(yu-yl), f'AUC:{auc:.2f}', ha='center', va='center', color=color0, size=9)
-        ax.text(0.8, yu+0.2*(yu-yl), self.stat_sym[r_m], ha='center', va='center')
+        ax.text(0.8, yu+0.1*(yu-yl), self.stat_sym[r_m], ha='center', va='center')
         # adjust layouts.
         ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
         ax.spines['right'].set_visible(False)

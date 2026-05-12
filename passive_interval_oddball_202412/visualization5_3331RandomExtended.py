@@ -48,12 +48,12 @@ def run(session_config_list, smooth, cate_list):
             print(title)
             filename = '3331RandomExtended_fraction'
             n_row = 1
-            n_col = 2
+            n_col = 5
             fig = plt.figure(figsize=(n_col*size_scale, n_row*size_scale), layout=layout)
             gs = GridSpec(n_row, n_col, figure=fig)
             ax = plt.subplot(gs[0, 0])
             plotter.plot_neuron_fraction(ax)
-            ax = plt.subplot(gs[0, 1])
+            ax = plt.subplot(gs[0, 1:3])
             plotter.plot_ramp_type_cell_fraction_table(ax)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
             fig.savefig(os.path.join('results', 'temp_'+session_config_list['subject_name'], filename+'.svg'), dpi=300, format='svg')
@@ -169,11 +169,12 @@ def run(session_config_list, smooth, cate_list):
             plt.close(fig)
             return [filename, n_row, n_col, title]
         fig_all = [
-            plot_intervals(),
-            plot_trial(),
-            plot_cluster_stim_all(),
-            plot_cluster_interval_bin_all(),
-            plot_latent_all(),
+            plot_cell_fraction(),
+            #plot_intervals(),
+            #plot_trial(),
+            #plot_cluster_stim_all(),
+            #plot_cluster_interval_bin_all(),
+            #plot_latent_all(),
             ]
         print('Clearing memory usage')
         del list_labels

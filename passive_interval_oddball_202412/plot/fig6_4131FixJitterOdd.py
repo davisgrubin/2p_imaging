@@ -114,13 +114,18 @@ class plotter_utils(utils_basic):
     
     def plot_ramp_type_cell_fraction_table(self, ax):
         try:
+            # collect data.
             cate = [-1,1,2]
             neu_labels = np.concatenate(self.list_labels)
+            # compute counts.
             rows = [('Ramp-up', (self.cluster_id<self.n_pre)&(self.cluster_id>=0)),
                     ('Ramp-down', self.cluster_id>=self.n_pre),
                     ('Excluded', self.cluster_id==-1)]
-            cell_text = [[np.sum(mask & (neu_labels == c)) for c in cate] for _, mask in rows]
-            ax.axis('off')
+            counts = np.array([[np.sum(mask & (neu_labels == c)) for c in cate] for _, mask in rows])
+            col_sums = counts.sum(axis=0) + 1e-8
+            cell_text = [[f'{counts[i, j]} ({counts[i, j]/col_sums[j]:.2f})'
+                          for j in range(len(cate))] for i in range(len(rows))]
+            # plot table.
             tab = ax.table(
                 cellText=cell_text,
                 rowLabels=[r[0] for r in rows],
@@ -128,12 +133,14 @@ class plotter_utils(utils_basic):
                 loc='center',
                 cellLoc='center',
                 rowLoc='center')
+            # adjust layouts.
             tab.scale(0.8, 2)
             for (i, j), cell in tab.get_celld().items():
                 cell.set_linewidth(0)
                 if i == 0:
                     cell.visible_edges = 'B'
                     cell.set_linewidth(1)
+            ax.axis('off')
         except: traceback.print_exc()
         
     def plot_isi_seting(self, ax):
@@ -389,7 +396,7 @@ class plotter_utils(utils_basic):
                 ax, neu_jitter_mean, neu_jitter_sem,
                 self.alignment['neu_time'], norm_params,
                 None, None, [color2]*self.n_clusters, xlim,
-                scale_bar=False, y0=True)
+                scale_bar=False)
             # adjust layouts.
             ax.set_xlabel('Time from deviant (s)')
         @show_resource_usage
@@ -623,186 +630,6 @@ class plotter_utils(utils_basic):
             add_legend(ax, cs, lbl, n_trials, n_neurons, self.n_sess, 'upper right')
             ax.axis('off')
         @show_resource_usage
-        def plot_pred_mod_index_box(ax, oddball, pe):
-            mi_tol = 0.3
-            n_trials = 10
-            # collect data.
-            [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_stim_labels,
-                trial_idx=[l[oddball] for l in self.list_odd_idx],
-                trial_param=[None, None, [0], None, [0], [0]],
-                cate=cate, roi_id=None)
-            c_idx = stim_seq.shape[0]//2
-            neu_seq_fix, neu_seq_jitter = self.get_neu_seq_trial_fix_jitter(jitter_trial_mode, oddball, cate, isi_win)
-            neu_seq_0 = np.concatenate([np.nanmean(neu, axis=0) for neu in neu_seq_fix], axis=0)
-            neu_seq_1 = np.concatenate([np.nanmean(neu, axis=0) for neu in neu_seq_jitter], axis=0)
-            # define evaluation windows.
-            if pe == 'pos':
-                win_eval = [[-2500, 0],
-                            [stim_seq[c_idx,0], stim_seq[c_idx,0]+300],
-                            [stim_seq[c_idx+1,0], stim_seq[c_idx+1,0]+300]]
-                c_time_shift = False
-            if pe == 'neg':
-                win_eval = [[-2500, 0],
-                            [stim_seq[c_idx,1]+self.expect-300, stim_seq[c_idx,1]+self.expect],
-                            [stim_seq[c_idx,1]+self.expect, stim_seq[c_idx,1]+self.expect+300]]
-                c_time_shift = False
-            # compute index.
-            mode = ['lower', 'higher', 'higher']
-            mi1 = np.full(neu_seq_0.shape[0], np.nan)
-            mi2 = np.full(neu_seq_1.shape[0], np.nan)
-            for ni, _ in enumerate(mi1):
-                if cluster_id[ni] < self.n_pre:
-                    shift_c_time = -200*c_time_shift
-                else:
-                    shift_c_time = 200*c_time_shift
-                mi1[ni] = get_modulation_index_neu_seq(neu_seq_0[ni,:].reshape(1,-1), self.alignment['neu_time'], shift_c_time, win_eval, mode, False)
-                mi2[ni] = get_modulation_index_neu_seq(neu_seq_1[ni,:].reshape(1,-1), self.alignment['neu_time'], shift_c_time, win_eval, mode, False)
-            # get response within cluster.
-            neu_seq_0 = np.concatenate([np.nanmean(neu[:n_trials,:,:], axis=0) for neu in neu_seq_fix], axis=0)
-            neu_seq_1 = np.concatenate([np.nanmean(neu[:n_trials,:,:], axis=0) for neu in neu_seq_jitter], axis=0)
-            cluster_id_high = cluster_id.copy()
-            cluster_id_low  = cluster_id.copy()
-            cluster_id_high[(mi1 < mi_tol) | (mi2 < mi_tol)] = -1
-            cluster_id_low[(mi1 > -mi_tol) | (mi2 > -mi_tol)] = -1
-            neu_0_mean_high, neu_0_sem_high = get_mean_sem_cluster(neu_seq_0, self.n_clusters, cluster_id_high)
-            neu_0_mean_low,  neu_0_sem_low  = get_mean_sem_cluster(neu_seq_0, self.n_clusters, cluster_id_low)
-            neu_1_mean_high, neu_1_sem_high = get_mean_sem_cluster(neu_seq_1, self.n_clusters, cluster_id_high)
-            neu_1_mean_low,  neu_1_sem_low  = get_mean_sem_cluster(neu_seq_1, self.n_clusters, cluster_id_low)
-            norm_params = [get_norm01_params(
-                np.concatenate([neu_0_mean_high[ci,:], neu_0_mean_low[ci,:], neu_1_mean_high[ci,:], neu_1_mean_low[ci,:]]))
-                for ci in range(self.n_clusters)]
-            # define layouts.
-            ax0 = ax.inset_axes([0, 0.97, 0.25, 0.03], transform=ax.transAxes)
-            ax1 = ax.inset_axes([0, 0, 0.25, 0.95], transform=ax.transAxes)
-            ax2 = ax.inset_axes([0.35, 0, 0.25, 0.95], transform=ax.transAxes)
-            ax3 = ax.inset_axes([0.7, 0, 0.25, 0.95], transform=ax.transAxes)
-            axs = [ax1.inset_axes([0, ci/self.n_clusters, 1, 0.7/self.n_clusters], transform=ax1.transAxes)
-                      for ci in range(self.n_clusters)]
-            axs.reverse()
-            # plot evaluation window.
-            if oddball == 0:
-                ax0.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
-            if oddball == 1:
-                ax0.axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
-                ax0.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
-            for i in range(stim_seq.shape[0]):
-                ax0.fill_between(
-                    stim_seq[i,:], 0, 1,
-                    color=color0, edgecolor='none', alpha=0.25, step='mid')
-            self.plot_win_mag_quant_win_eval(ax0, win_eval, color0, xlim, False)
-            # plot results for each class.
-            for ci in range(self.n_clusters):
-                self.plot_pred_mod_index_dist(axs[ci], mi1, mi2, color0, color1, color2)
-            # plot high index.
-            if oddball == 0:
-                ax2.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
-            if oddball == 1:
-                ax2.axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
-                ax2.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
-            c_stim = [color0 if i in (c_idx, c_idx + 1) else f'empty{color0}' for i in range(stim_seq.shape[0])]
-            self.plot_cluster_mean_sem(
-                ax2, neu_0_mean_high, neu_0_sem_high,
-                self.alignment['neu_time'], norm_params,
-                stim_seq,
-                c_stim, [color1]*self.n_clusters, xlim)
-            self.plot_cluster_mean_sem(
-                ax2, neu_1_mean_high, neu_1_sem_high,
-                self.alignment['neu_time'], norm_params,
-                None, None, [color2]*self.n_clusters, xlim,
-                scale_bar=False)
-            # plot low index.
-            if oddball == 0:
-                ax3.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
-            if oddball == 1:
-                ax3.axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
-                ax3.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
-            c_stim = [color0 if i in (c_idx, c_idx + 1) else f'empty{color0}' for i in range(stim_seq.shape[0])]
-            self.plot_cluster_mean_sem(
-                ax3, neu_0_mean_low, neu_0_sem_low,
-                self.alignment['neu_time'], norm_params,
-                stim_seq,
-                c_stim, [color1]*self.n_clusters, xlim)
-            self.plot_cluster_mean_sem(
-                ax3, neu_1_mean_low, neu_1_sem_low,
-                self.alignment['neu_time'], norm_params,
-                None, None, [color2]*self.n_clusters, xlim,
-                scale_bar=False)
-            # adjust layouts.
-            for ci in range(self.n_clusters):
-                if ci != self.n_clusters-1:
-                    axs[ci].set_xticks([])
-                    axs[ci].set_yticklabels([])
-            ax.set_title(pe+' PE')
-            ax2.set_title(f'MI>{mi_tol}')
-            ax3.set_title(f'MI<{mi_tol}')
-            ax2.set_xlabel('Time from deviant (s)')
-            ax3.set_xlabel('Time from deviant (s)')
-            ax2.set_ylabel(r'$\Delta F/F$ (z-scored)')
-            hide_all_axis(ax)
-            hide_all_axis(ax0)
-            hide_all_axis(ax1)
-        @show_resource_usage
-        def plot_pred_mod_index_box_trial(ax, oddball, pe):
-            # collect data.
-            [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_stim_labels,
-                trial_idx=[l[oddball] for l in self.list_odd_idx],
-                trial_param=[None, None, [0], None, [0], [0]],
-                cate=cate, roi_id=None)
-            c_idx = stim_seq.shape[0]//2
-            neu_seq_fix, neu_seq_jitter = self.get_neu_seq_trial_fix_jitter(jitter_trial_mode, oddball, cate, isi_win)
-            # define evaluation windows.
-            if pe == 'pos':
-                win_eval = [[-2500, 0],
-                            [stim_seq[c_idx,0], stim_seq[c_idx,0]+300],
-                            [stim_seq[c_idx+1,0], stim_seq[c_idx+1,0]+300]]
-            if pe == 'neg':
-                win_eval = [[-2500, 0],
-                            [stim_seq[c_idx,1]+self.expect-300, stim_seq[c_idx,1]+self.expect],
-                            [stim_seq[c_idx,1]+self.expect, stim_seq[c_idx,1]+self.expect+300]]
-            # define layouts.
-            ax.axis('off')
-            ax0 = ax.inset_axes([0, 0.97, 0.6, 0.03], transform=ax.transAxes)
-            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
-            axs = [ax.inset_axes([0.2, ci/self.n_clusters, 0.6, 0.7/self.n_clusters], transform=ax.transAxes)
-                      for ci in range(self.n_clusters)]
-            axs.reverse()
-            # plot evaluation window.
-            if oddball == 0:
-                ax0.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
-            if oddball == 1:
-                ax0.axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
-                ax0.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
-            for i in range(stim_seq.shape[0]):
-                ax0.fill_between(
-                    stim_seq[i,:], 0, 1,
-                    color=color0, edgecolor='none', alpha=0.25, step='mid')
-            self.plot_win_mag_quant_win_eval(ax0, win_eval, color0, xlim, False)
-            # plot results for each class.
-            mode = ['lower', 'higher', 'higher']
-            for ci in range(self.n_clusters):
-                if np.sum(cluster_id==ci) > 0:
-                    # get neurons within class.
-                    neu_seq_ci_0 = [ns[:,dcid==ci,:] for ns, dcid in zip(neu_seq_fix, day_cluster_id)]
-                    neu_seq_ci_1 = [ns[:,dcid==ci,:] for ns, dcid in zip(neu_seq_jitter, day_cluster_id)]
-                    # average across neurons.
-                    neu_seq_ci_0 = np.concatenate([np.nanmean(ns, axis=1) for ns in neu_seq_ci_0], axis=0)
-                    neu_seq_ci_1 = np.concatenate([np.nanmean(ns, axis=1) for ns in neu_seq_ci_1], axis=0)
-                    # compute index.
-                    mi1 = get_modulation_index_neu_seq(neu_seq_ci_0, self.alignment['neu_time'], 0, win_eval, mode, False)
-                    mi2 = get_modulation_index_neu_seq(neu_seq_ci_1, self.alignment['neu_time'], 0, win_eval, mode, False)
-                    # plot results.
-                    self.plot_pred_mod_index_dist(axs[ci], mi1, mi2, color0, color1, color2)
-                    # adjust layouts.
-                    if ci != self.n_clusters-1:
-                        axs[ci].set_xticks([])
-                        axs[ci].set_yticklabels([])
-            axs[self.n_clusters-1].set_xlabel('Modulation Index')
-            axs[self.n_clusters-1].set_ylabel('Density')
-            hide_all_axis(ax)
-            hide_all_axis(ax0)
-        @show_resource_usage
         def plot_block_win_decode_all(ax, oddball):
             color_model = 'plum'
             win_sample = 200
@@ -931,49 +758,6 @@ class plotter_utils(utils_basic):
             hide_all_axis(ax)
             hide_all_axis(axs2[0])
             hide_all_axis(axs2[1])
-        @show_resource_usage
-        def plot_oddball_jitter_exclude(ax, oddball):
-            # collect data.
-            [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
-                self.alignment, self.list_labels, self.list_stim_labels,
-                trial_idx=[l[oddball] for l in self.list_odd_idx],
-                trial_param=[None, None, [0], None, [0], [0]],
-                cate=cate, roi_id=None)
-            c_idx = stim_seq.shape[0]//2
-            neu_seq_fix, neu_seq_jitter = self.get_neu_seq_trial_fix_jitter(jitter_trial_mode, oddball, cate, isi_win)
-            # get response within cluster.
-            neu_seq_jitter = np.concatenate([np.nanmean(neu, axis=0) for neu in neu_seq_jitter], axis=0)
-            neu_seq_fix = np.concatenate([np.nanmean(neu, axis=0) for neu in neu_seq_fix], axis=0)
-            # get exclude cluster response.
-            neu_fix_mean, neu_fix_sem = get_mean_sem_cluster(neu_seq_fix, 1, -cluster_id-1)
-            neu_jitter_mean, neu_jitter_sem = get_mean_sem_cluster(neu_seq_jitter, 1, -cluster_id-1)
-            norm_params = [get_norm01_params(
-                np.concatenate([neu_fix_mean[ci,:], neu_jitter_mean[ci,:]]))
-                for ci in range(1)]
-            # define layouts.
-            ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
-            ax.axis('off')
-            ax = ax.inset_axes([0, 0, 1, 0.2], transform=ax.transAxes)
-            # plot results.
-            if oddball == 0:
-                ax.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
-            if oddball == 1:
-                ax.axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
-                ax.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
-            c_stim = [color0 if i in (c_idx, c_idx + 1) else f'empty{color0}' for i in range(stim_seq.shape[0])]
-            self.plot_cluster_mean_sem(
-                ax, neu_fix_mean, neu_fix_sem,
-                self.alignment['neu_time'], norm_params,
-                stim_seq,
-                c_stim, [color1], xlim)
-            self.plot_cluster_mean_sem(
-                ax, neu_jitter_mean, neu_jitter_sem,
-                self.alignment['neu_time'], norm_params,
-                None, None, [color2], xlim,
-                scale_bar=False)
-            # adjust layouts.
-            ax.set_xlabel('Time from deviant (s)')
         # plot all.
         try: plot_oddball_jitter(axs[0], 0)
         except: traceback.print_exc()
@@ -1001,27 +785,11 @@ class plotter_utils(utils_basic):
         except: traceback.print_exc()
         try: plot_legend(axs[12])
         except: traceback.print_exc()
-        try: plot_pred_mod_index_box(axs[13], 0, 'pos')
+        try: plot_block_win_decode_all(axs[13], 0)
         except: traceback.print_exc()
-        try: plot_pred_mod_index_box(axs[14], 1, 'pos')
+        try: plot_block_win_decode_all(axs[14], 1)
         except: traceback.print_exc()
-        try: plot_pred_mod_index_box(axs[15], 1, 'neg')
-        except: traceback.print_exc()
-        try: plot_block_win_decode_all(axs[16], 0)
-        except: traceback.print_exc()
-        try: plot_block_win_decode_all(axs[17], 1)
-        except: traceback.print_exc()
-        try: plot_oddball_jitter_layers(axs[18])
-        except: traceback.print_exc()
-        try: plot_oddball_jitter_exclude(axs[19], 0)
-        except: traceback.print_exc()
-        try: plot_oddball_jitter_exclude(axs[20], 1)
-        except: traceback.print_exc()
-        try: plot_pred_mod_index_box_trial(axs[21], 0, 'pos')
-        except: traceback.print_exc()
-        try: plot_pred_mod_index_box_trial(axs[22], 1, 'pos')
-        except: traceback.print_exc()
-        try: plot_pred_mod_index_box_trial(axs[23], 1, 'neg')
+        try: plot_oddball_jitter_layers(axs[15])
         except: traceback.print_exc()
 
     def plot_cluster_oddball_jitter_local_all(self, axs, jitter_trial_mode, cate):
@@ -1441,6 +1209,217 @@ class plotter_utils(utils_basic):
         try: plot_legend(axs[14])
         except: traceback.print_exc()
     
+    def plot_cluster_oddball_jitter_global_modulation(self, axs, cate):
+        jitter_trial_mode = 'global'
+        color0 = 'dimgrey'
+        color1 = 'deeppink'
+        color2 = 'royalblue'
+        isi_win = 250
+        xlim = [-2500, 4000]
+        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
+        _, cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
+        split_idx = get_split_idx(self.list_labels, cate)
+        day_cluster_id = np.split(cluster_id, split_idx)
+        @show_resource_usage
+        def plot_pred_mod_index_box(ax, oddball, pe):
+            mi_tol = 0.1
+            n_trials = 10
+            # collect data.
+            [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_stim_labels,
+                trial_idx=[l[oddball] for l in self.list_odd_idx],
+                trial_param=[None, None, [0], None, [0], [0]],
+                cate=cate, roi_id=None)
+            c_idx = stim_seq.shape[0]//2
+            neu_seq_fix, neu_seq_jitter = self.get_neu_seq_trial_fix_jitter(jitter_trial_mode, oddball, cate, isi_win)
+            neu_seq_0 = np.concatenate([np.nanmean(neu, axis=0) for neu in neu_seq_fix], axis=0)
+            neu_seq_1 = np.concatenate([np.nanmean(neu, axis=0) for neu in neu_seq_jitter], axis=0)
+            # define evaluation windows.
+            if pe == 'pos':
+                win_eval = [[-2500, 4000],
+                            [stim_seq[c_idx,0]-100, stim_seq[c_idx,0]+500],
+                            [stim_seq[c_idx+1,0]-100, stim_seq[c_idx+1,0]+500]]
+            if pe == 'neg':
+                win_eval = [[-2500, 4000],
+                            [stim_seq[c_idx,1]+self.expect-500, stim_seq[c_idx,1]+self.expect],
+                            [stim_seq[c_idx,1]+self.expect, stim_seq[c_idx,1]+self.expect+500]]
+            # compute index.
+            mi1 = np.full(neu_seq_0.shape[0], np.nan)
+            mi2 = np.full(neu_seq_1.shape[0], np.nan)
+            for ni, _ in enumerate(mi1):
+                mi1[ni] = get_modulation_index_neu_seq(neu_seq_0[ni,:].reshape(1,-1), self.alignment['neu_time'], 0, win_eval)
+                mi2[ni] = get_modulation_index_neu_seq(neu_seq_1[ni,:].reshape(1,-1), self.alignment['neu_time'], 0, win_eval)
+            # get response within cluster.
+            neu_seq_0 = np.concatenate([np.nanmean(neu[:n_trials,:,:], axis=0) for neu in neu_seq_fix], axis=0)
+            neu_seq_1 = np.concatenate([np.nanmean(neu[:n_trials,:,:], axis=0) for neu in neu_seq_jitter], axis=0)
+            cluster_id_high = cluster_id.copy()
+            cluster_id_low  = cluster_id.copy()
+            cluster_id_high[(mi1 < mi_tol) | (mi2 < mi_tol)] = -1
+            cluster_id_low[(mi1 > -mi_tol) | (mi2 > -mi_tol)] = -1
+            neu_0_mean_high, neu_0_sem_high = get_mean_sem_cluster(neu_seq_0, self.n_clusters, cluster_id_high)
+            neu_0_mean_low,  neu_0_sem_low  = get_mean_sem_cluster(neu_seq_0, self.n_clusters, cluster_id_low)
+            neu_1_mean_high, neu_1_sem_high = get_mean_sem_cluster(neu_seq_1, self.n_clusters, cluster_id_high)
+            neu_1_mean_low,  neu_1_sem_low  = get_mean_sem_cluster(neu_seq_1, self.n_clusters, cluster_id_low)
+            norm_params = [get_norm01_params(
+                np.concatenate([neu_0_mean_high[ci,:], neu_0_mean_low[ci,:], neu_1_mean_high[ci,:], neu_1_mean_low[ci,:]]))
+                for ci in range(self.n_clusters)]
+            # define layouts.
+            ax0 = ax.inset_axes([0, 0.97, 0.25, 0.03], transform=ax.transAxes)
+            ax1 = ax.inset_axes([0, 0, 0.25, 0.95], transform=ax.transAxes)
+            ax2 = ax.inset_axes([0.4, 0, 0.25, 0.95], transform=ax.transAxes)
+            ax3 = ax.inset_axes([0.75, 0, 0.25, 0.95], transform=ax.transAxes)
+            axs = [ax1.inset_axes([0, ci/self.n_clusters, 1, 0.7/self.n_clusters], transform=ax1.transAxes)
+                      for ci in range(self.n_clusters)]
+            axs.reverse()
+            # plot evaluation window.
+            if oddball == 0:
+                ax0.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+            if oddball == 1:
+                ax0.axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
+                ax0.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+            for i in range(stim_seq.shape[0]):
+                ax0.fill_between(
+                    stim_seq[i,:], 0, 1,
+                    color=color0, edgecolor='none', alpha=0.25, step='mid')
+            self.plot_win_mag_quant_win_eval(ax0, win_eval, color0, xlim, False)
+            # plot results for each class.
+            for ci in range(self.n_clusters):
+                if np.sum(cluster_id==ci) > 0:
+                    self.plot_pred_mod_index_dist(axs[ci], mi1[cluster_id==ci], mi2[cluster_id==ci], color0, color1, color2)
+            # plot high index.
+            if oddball == 0:
+                ax2.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+            if oddball == 1:
+                ax2.axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
+                ax2.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+            c_stim = [color0 if i in (c_idx, c_idx + 1) else f'empty{color0}' for i in range(stim_seq.shape[0])]
+            self.plot_cluster_mean_sem(
+                ax2, neu_0_mean_high, neu_0_sem_high,
+                self.alignment['neu_time'], norm_params,
+                stim_seq,
+                c_stim, [color1]*self.n_clusters, xlim)
+            self.plot_cluster_mean_sem(
+                ax2, neu_1_mean_high, neu_1_sem_high,
+                self.alignment['neu_time'], norm_params,
+                None, None, [color2]*self.n_clusters, xlim,
+                scale_bar=False)
+            # plot low index.
+            if oddball == 0:
+                ax3.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+            if oddball == 1:
+                ax3.axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
+                ax3.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+            c_stim = [color0 if i in (c_idx, c_idx + 1) else f'empty{color0}' for i in range(stim_seq.shape[0])]
+            self.plot_cluster_mean_sem(
+                ax3, neu_0_mean_low, neu_0_sem_low,
+                self.alignment['neu_time'], norm_params,
+                stim_seq,
+                c_stim, [color1]*self.n_clusters, xlim)
+            self.plot_cluster_mean_sem(
+                ax3, neu_1_mean_low, neu_1_sem_low,
+                self.alignment['neu_time'], norm_params,
+                None, None, [color2]*self.n_clusters, xlim,
+                scale_bar=False)
+            # adjust layouts.
+            for ci in range(self.n_clusters):
+                axs[ci].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+                axs[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
+                axs[ci].xaxis.set_minor_locator(mtick.AutoMinorLocator(2))
+                axs[ci].tick_params(axis='x', which='minor', labelbottom=False)
+                axs[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+                axs[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
+                if ci != self.n_clusters-1:
+                    axs[ci].set_xticklabels([])
+            axs[self.n_clusters-1].set_xlabel('Modulation Index \n (single neuron)')
+            axs[self.n_clusters-1].set_ylabel('Density')
+            ax.set_title(pe+' PE')
+            ax2.set_title(f'MI>{mi_tol}')
+            ax3.set_title(f'MI<-{mi_tol}')
+            ax2.set_xlabel('Time from deviant (s)')
+            ax3.set_xlabel('Time from deviant (s)')
+            ax3.set_ylabel(r'$\Delta F/F$ (z-scored)')
+            ax3.yaxis.set_label_position('right')
+            hide_all_axis(ax)
+            hide_all_axis(ax0)
+            hide_all_axis(ax1)
+        @show_resource_usage
+        def plot_pred_mod_index_box_trial(ax, oddball, pe):
+            # collect data.
+            [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_stim_labels,
+                trial_idx=[l[oddball] for l in self.list_odd_idx],
+                trial_param=[None, None, [0], None, [0], [0]],
+                cate=cate, roi_id=None)
+            c_idx = stim_seq.shape[0]//2
+            neu_seq_fix, neu_seq_jitter = self.get_neu_seq_trial_fix_jitter(jitter_trial_mode, oddball, cate, isi_win)
+            # define evaluation windows.
+            if pe == 'pos':
+                win_eval = [[-2500, 4000],
+                            [stim_seq[c_idx,0]-100, stim_seq[c_idx,0]+500],
+                            [stim_seq[c_idx+1,0]-100, stim_seq[c_idx+1,0]+500]]
+            if pe == 'neg':
+                win_eval = [[-2500, 4000],
+                            [stim_seq[c_idx,1]+self.expect-500, stim_seq[c_idx,1]+self.expect],
+                            [stim_seq[c_idx,1]+self.expect, stim_seq[c_idx,1]+self.expect+500]]
+            # define layouts.
+            ax.axis('off')
+            ax0 = ax.inset_axes([0, 0.97, 0.6, 0.03], transform=ax.transAxes)
+            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            axs = [ax.inset_axes([0.2, ci/self.n_clusters, 0.6, 0.7/self.n_clusters], transform=ax.transAxes)
+                      for ci in range(self.n_clusters)]
+            axs.reverse()
+            # plot evaluation window.
+            if oddball == 0:
+                ax0.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+            if oddball == 1:
+                ax0.axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
+                ax0.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+            for i in range(stim_seq.shape[0]):
+                ax0.fill_between(
+                    stim_seq[i,:], 0, 1,
+                    color=color0, edgecolor='none', alpha=0.25, step='mid')
+            self.plot_win_mag_quant_win_eval(ax0, win_eval, color0, xlim, False)
+            # plot results for each class.
+            for ci in range(self.n_clusters):
+                if np.sum(cluster_id==ci) > 0:
+                    # get neurons within class.
+                    neu_seq_ci_0 = [ns[:,dcid==ci,:] for ns, dcid in zip(neu_seq_fix, day_cluster_id)]
+                    neu_seq_ci_1 = [ns[:,dcid==ci,:] for ns, dcid in zip(neu_seq_jitter, day_cluster_id)]
+                    # average across neurons.
+                    neu_seq_ci_0 = np.concatenate([np.nanmean(ns, axis=1) for ns in neu_seq_ci_0], axis=0)
+                    neu_seq_ci_1 = np.concatenate([np.nanmean(ns, axis=1) for ns in neu_seq_ci_1], axis=0)
+                    # compute index.
+                    mi1 = get_modulation_index_neu_seq(neu_seq_ci_0, self.alignment['neu_time'], 0, win_eval)
+                    mi2 = get_modulation_index_neu_seq(neu_seq_ci_1, self.alignment['neu_time'], 0, win_eval)
+                    # plot results.
+                    self.plot_pred_mod_index_dist(axs[ci], mi1, mi2, color0, color1, color2)
+                    # adjust layouts.
+                    axs[ci].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+                    axs[ci].xaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
+                    axs[ci].xaxis.set_minor_locator(mtick.AutoMinorLocator(2))
+                    axs[ci].tick_params(axis='x', which='minor', labelbottom=False)
+                    axs[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+                    axs[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=3))
+                    if ci != self.n_clusters-1:
+                        axs[ci].set_xticklabels([])
+            axs[self.n_clusters-1].set_xlabel('Modulation Index \n (single trial)')
+            axs[self.n_clusters-1].set_ylabel('Density')
+            hide_all_axis(ax)
+            hide_all_axis(ax0)
+        try: plot_pred_mod_index_box(axs[0], 1, 'neg')
+        except: traceback.print_exc()
+        try: plot_pred_mod_index_box(axs[1], 1, 'pos')
+        except: traceback.print_exc()
+        try: plot_pred_mod_index_box(axs[2], 0, 'pos')
+        except: traceback.print_exc()
+        try: plot_pred_mod_index_box_trial(axs[3], 1, 'neg')
+        except: traceback.print_exc()
+        try: plot_pred_mod_index_box_trial(axs[4], 1, 'pos')
+        except: traceback.print_exc()
+        try: plot_pred_mod_index_box_trial(axs[5], 0, 'pos')
+        except: traceback.print_exc()
+        
+    
     def plot_cell_communication(self, axs, cate):
         color0 = 'dimgrey'
         color1 = 'deeppink'
@@ -1497,11 +1476,11 @@ class plotter_utils(utils_basic):
                         axs[(ci, cj)].axvline(stim_seq[c_idx + 1, 0], color='red', lw=1, linestyle='--')
                     for si in [0, 1]:
                         axs[(ci, cj)].fill_between(
-                            stim_seq[c_idx + si, :], -1, 1,
+                            stim_seq[c_idx + si, :], -0.03, 0.03,
                             color=color0, edgecolor='none', alpha=0.25, step='mid')
                     for si in [-1, 2]:
                         axs[(ci, cj)].fill_between(
-                            stim_seq[c_idx + si, :], -1, 1,
+                            stim_seq[c_idx + si, :], -0.03, 0.03,
                             color='none', edgecolor=color0, alpha=0.25, step='mid')
                     # plot traces.
                     self.plot_mean_sem(axs[(ci, cj)], neu_time, m_0, s_0, color1)
@@ -1910,6 +1889,156 @@ class plotter_utils(utils_basic):
         try: plot_jitter_global_oddball(axs[5], 1, [0,1])
         except: traceback.print_exc()
     
+    def plot_excluded(self, axs, cate):
+        color0 = 'dimgrey'
+        color1 = 'deeppink'
+        color2 = 'royalblue'
+        color_model = 'plum'
+        isi_win = 250
+        xlim = [-2500, 4000]
+        l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, xlim[0], xlim[1])
+        _, cluster_id, neu_labels = get_cluster_cate(self.cluster_id, self.list_labels, cate)
+        split_idx = get_split_idx(self.list_labels, cate)
+        day_cluster_id = np.split(cluster_id, split_idx)
+        @show_resource_usage
+        def plot_ramp_cate_fraction(ax):
+            colors = ['skyblue', 'peachpuff', 'palegreen']
+            nl_excluded = neu_labels[np.isin(cluster_id, [-1])]
+            frac_excluded = np.array([np.nansum(nl_excluded==ci)/np.nansum(neu_labels==ci) for ci in cate])
+            ax.pie(
+                frac_excluded/np.nansum(frac_excluded),
+                labels=['Exc', 'VIP', 'SST'],
+                colors=colors,
+                autopct='%1.1f%%',
+                wedgeprops={'linewidth': 1, 'edgecolor':'white', 'width':0.2})
+            ax.set_title('Mixed')
+        @show_resource_usage
+        def plot_oddball_jitter(ax, oddball):
+            # collect data.
+            [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_stim_labels,
+                trial_idx=[l[oddball] for l in self.list_odd_idx],
+                trial_param=[None, None, [0], None, [0], [0]],
+                cate=cate, roi_id=None)
+            c_idx = stim_seq.shape[0]//2
+            neu_seq_fix, neu_seq_jitter = self.get_neu_seq_trial_fix_jitter('global', oddball, cate, isi_win)
+            # get response within cluster.
+            neu_seq_jitter = np.concatenate([np.nanmean(neu, axis=0) for neu in neu_seq_jitter], axis=0)
+            neu_seq_fix = np.concatenate([np.nanmean(neu, axis=0) for neu in neu_seq_fix], axis=0)
+            # get exclude cluster response.
+            neu_fix_mean, neu_fix_sem = get_mean_sem_cluster(neu_seq_fix, 1, -cluster_id-1)
+            neu_jitter_mean, neu_jitter_sem = get_mean_sem_cluster(neu_seq_jitter, 1, -cluster_id-1)
+            norm_params = [get_norm01_params(
+                np.concatenate([neu_fix_mean[ci,:], neu_jitter_mean[ci,:]]))
+                for ci in range(1)]
+            # define layouts.
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 1, 1/self.n_clusters], transform=ax.transAxes)
+            # plot results.
+            if oddball == 0:
+                ax.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+            if oddball == 1:
+                ax.axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
+                ax.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+            c_stim = [color0 if i in (c_idx, c_idx + 1) else f'empty{color0}' for i in range(stim_seq.shape[0])]
+            self.plot_cluster_mean_sem(
+                ax, neu_fix_mean, neu_fix_sem,
+                self.alignment['neu_time'], norm_params,
+                stim_seq,
+                c_stim, [color1], xlim)
+            self.plot_cluster_mean_sem(
+                ax, neu_jitter_mean, neu_jitter_sem,
+                self.alignment['neu_time'], norm_params,
+                None, None, [color2], xlim,
+                scale_bar=False)
+            # adjust layouts.
+            ax.set_xlabel('Time from deviant (s)')
+        @show_resource_usage
+        def plot_block_win_decode(ax, oddball):
+            win_sample = 100
+            # collect data.
+            neu_seq_fix, neu_seq_jitter = self.get_neu_seq_trial_fix_jitter('global', oddball, cate, isi_win)
+            [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
+                self.alignment, self.list_labels, self.list_stim_labels,
+                trial_idx=[l[oddball] for l in self.list_odd_idx],
+                trial_param=[None, None, [0], None, [0], [0]],
+                cate=cate, roi_id=None)
+            c_idx = stim_seq.shape[0]//2
+            # run decoding for each class.
+            results_all = []
+            win_decode = [-500, stim_seq[c_idx+1,1]+500]
+            # construct input data.
+            neu_x = [
+                [nsf[:,dci==-1,:] for nsf,dci in zip(neu_seq_fix, day_cluster_id)],
+                [nsj[:,dci==-1,:] for nsj,dci in zip(neu_seq_jitter, day_cluster_id)]]
+            # run decoding.
+            r = multi_sess_decoding_slide_win(
+                 neu_x, self.alignment['neu_time'],
+                 win_decode, win_sample)
+            results_all.append(r)
+            # split results.
+            decode_model_mean  = [results_all[0][1]]
+            decode_model_sem   = [results_all[0][2]]
+            decode_chance_mean = [results_all[0][3]]
+            decode_chance_sem  = [results_all[0][4]]
+            # define layouts.
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 1, 0.95], transform=ax.transAxes)
+            axs = [ax.inset_axes([0, 1, 0.8, 0.8/self.n_clusters], transform=ax.transAxes)]
+            axs.reverse()
+            # plot results for each class.
+            for ci in range(1):
+                # find bounds.
+                upper = np.nanmax([decode_model_mean[ci], decode_chance_mean[ci]])
+                lower = np.nanmin([decode_model_mean[ci], decode_chance_mean[ci]])
+                # plot stimulus.
+                c_idx = stim_seq.shape[0]//2
+                if oddball == 0:
+                    axs[ci].axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+                if oddball == 1:
+                    axs[ci].axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
+                    axs[ci].axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+                for si in [0,1]:
+                    axs[ci].fill_between(
+                        stim_seq[c_idx+si,:],
+                        0, 1,
+                        color=color0, edgecolor='none', alpha=0.25, step='mid')
+                # plot decoding results.
+                self.plot_mean_sem(
+                    axs[ci],
+                    results_all[ci][0], decode_chance_mean[ci], decode_chance_sem[ci],
+                    color0, None)
+                self.plot_mean_sem(
+                    axs[ci],
+                    results_all[ci][0], decode_model_mean[ci], decode_model_sem[ci],
+                    color_model, None)
+                # adjust layouts.
+                axs[ci].set_xlim(xlim)
+                axs[ci].set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+            for ci in range(1):     
+                add_ax_ticks(axs[ci], 'x', 8)
+                axs[ci].spines['right'].set_visible(False)
+                axs[ci].spines['top'].set_visible(False)
+                axs[ci].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+                axs[ci].yaxis.set_major_locator(mtick.MaxNLocator(nbins=2))
+                axs[ci].set_ylim([0.4, 0.9])
+            axs[0].set_xlabel('Time from deviant (s)')
+            axs[0].set_ylabel('Decoding accuracy (cross validated) \n (fixed vs jittered)')
+            hide_all_axis(ax)
+        # plot all.
+        try: plot_ramp_cate_fraction(axs[0])
+        except: traceback.print_exc()
+        try: plot_oddball_jitter(axs[1], 0)
+        except: traceback.print_exc()
+        try: plot_block_win_decode(axs[2], 0)
+        except: traceback.print_exc()
+        try: plot_oddball_jitter(axs[3], 1)
+        except: traceback.print_exc()
+        try: plot_block_win_decode(axs[4], 1)
+        except: traceback.print_exc()
+    
     def plot_pupil(self, axs):
         color0 = 'dimgrey'
         color1 = 'deeppink'
@@ -2043,6 +2172,16 @@ class plotter_main(plotter_utils):
                 
             except: traceback.print_exc()
     
+    def cluster_oddball_jitter_global_modulation(self, axs_all):
+        for cate, axs in zip(self.cate_list, axs_all):
+            try:
+                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+                print(f'plotting results for {label_name}')
+                
+                self.plot_cluster_oddball_jitter_global_modulation(axs, cate=cate)
+
+            except: traceback.print_exc()
+    
     def cell_communication(self, axs_all):
         for cate, axs in zip(self.cate_list, axs_all):
             try:
@@ -2071,6 +2210,16 @@ class plotter_main(plotter_utils):
                 print(f'plotting results for {label_name}')
                 
                 self.plot_latent_all(axs, cate=cate)
+
+            except: traceback.print_exc()
+    
+    def excluded(self, axs_all):
+        for cate, axs in zip(self.cate_list, axs_all):
+            try:
+                label_name = self.label_names[str(cate[0])] if len(cate)==1 else 'all'
+                print(f'plotting results for {label_name}')
+
+                self.plot_excluded(axs, cate=cate)
 
             except: traceback.print_exc()
 

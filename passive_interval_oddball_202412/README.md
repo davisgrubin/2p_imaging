@@ -785,3 +785,18 @@
 - Now fit_linear_regression returns slope.
 - Adjusted plot_trial_quant layouts.
 - Fixed plot_latent_all layouts.
+
+## 2026.05.09
+- Separate excluded cluster into one plot.
+- Adjusted plot_corr_time layouts.
+- Added plot_cross_epoch to plot_excluded.
+- Now plot_ramp_fraction also plots excluded cluster.
+- Now plot_ramp_type_cell_fraction_table also shows fractions.
+- Added plot_ramp_cate_fraction to plot_excluded.
+- Adjusted plot_glm_kernel layouts.
+- Adjusted plot_standard_time_decode_all layouts.
+- Adjusted plot_trial_quant layouts.
+- Separate plot_cluster_oddball_jitter_global_modulation.
+- Adjusted plot_pred_mod_index_dist layouts.
+- Rewritten get_modulation_index_neu_seq.
+- Added errorbar to plot_cluster_standard_time_decode_confusion line plot.
