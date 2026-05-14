@@ -1,91 +1,51 @@
 # `2p_imaging`
 
-Welcome to the documentation site for the `2p_imaging` repository.
+This site documents the major analysis stacks in the `2p_imaging` repository.
 
-This documentation is intended to give a project-level overview of the codebase and provide an entry point for understanding how the major pipelines are organized. The initial focus is on the shared pipeline layers:
+The repo is not a single polished package. It is a collection of shared preprocessing layers plus experiment-specific downstream projects. The docs therefore focus on:
 
-- **Preprocessing**: Suite2p-oriented ingestion, parameter setup, and raw voltage/session sidecar handling
-- **Postprocessing**: ROI quality control, channel-based ROI labeling, and ΔF/F extraction
+- where each pipeline lives
+- which scripts act as entry points
+- what intermediate files are expected between stages
+- how the experiment-specific directories are organized
 
-Experiment-specific sections are included in the navigation so the documentation structure is stable, but those pages are intentionally placeholders for now.
+## 2p Data Preparation Workflow
 
-## Repository structure
+- `2p_processing_pipeline_202401/`: Suite2p-oriented preprocessing, voltage extraction, and session metadata handoff
+- `2p_post_process_module_202404/`: ROI QC, cross-channel labeling, and `dff.h5` generation
 
-At a high level, the repository mixes shared pipeline components with experiment-specific downstream analysis projects.
+Most downstream projects assume these outputs already exist in each session directory:
 
-- `2p_processing_pipeline_202401/`: preprocessing entry points and Suite2p configuration
-- `2p_post_process_module_202404/`: postprocessing modules applied after Suite2p
-- `passive_interval_oddball_202412/`: passive visual experiment analysis
-- `2p_2AFC_double_block_version/` and `2p_2AFC_reg_version/`: 2AFC-related analysis
-- `joystick_basic_202304/` and `JoystickProcessing2026/`: joystick-related analysis stacks
-- `ebc_basic_202410/` and `ebc_data_analysis/`: eyeblink conditioning analysis
+- `suite2p/plane0/ops.npy`
+- `raw_voltages.h5`
+- `bpod_session_data.mat`
+- `masks.h5`
+- `dff.h5`
+- often `neural_trials.h5` after trialization
 
-## Documentation scope
+## Experiment families
 
-The current version of this documentation site populates:
-
-- `Preprocessing`
-- `Postprocessing`
-
-The following sections are present as placeholders only:
-
-- `Passive`
-- `2AFC`
-- `Closed Loop`
-- `Joystick`
-- `EBC`
+- `passive_interval_oddball_202412/`: passive visual oddball and interval paradigms with HTML report generation
+- `2p_2AFC_double_block_version/`, `2p_2AFC_reg_version/`, `single_interval_discrimination_202505/`: 2AFC and related decision-task analyses
+- `opto_pilot/`: optogenetic or closed-loop pilot analyses with opto/control comparisons
+- `joystick_basic_202304/` and `JoystickProcessing2026/`: joystick behavior and imaging analyses
+- `ebc_basic_202410/` and `ebc_data_analysis/`: eyeblink conditioning pipelines and exploratory analyses
 
 ## Local preview
 
-This docs site is configured for MkDocs using the Read the Docs theme.
-
-For local preview, the site is configured to serve from the root path `/`, which works better for SSH tunneling and remote development.
-
-For GitHub Pages deployment, the workflow injects the production site URL so the published docs still build under `/2p_imaging/`.
-
-To preview locally from the repository root:
+Install the docs dependencies and start a local preview from the repository root:
 
 ```bash
-python -m pip install mkdocs
+python -m pip install -r requirements-docs.txt
 mkdocs serve
 ```
 
-If you are previewing through an SSH tunnel from a remote server, you can use:
-
-```bash
-mkdocs serve -a 127.0.0.1:8001
-```
-
-Then open:
-
-```text
-http://127.0.0.1:8001/
-```
-
-To build the static site:
+To build the site without serving it:
 
 ```bash
 mkdocs build
 ```
 
-To deploy to GitHub Pages:
+## GitHub Pages deployment
 
-```bash
-mkdocs gh-deploy
-```
-
-## GitHub Pages hosting
-
-This repository also includes a GitHub Actions workflow for static hosting via GitHub Pages:
-
-- workflow file: `.github/workflows/docs.yml`
-- build system: `mkdocs build`
-- published artifact: the generated `site/` directory
-
-To enable hosting on GitHub without your own server:
-
-1. Push the workflow and docs files to GitHub
-2. Open `Settings` → `Pages`
-3. Set the source to `GitHub Actions`
-
-After that, pushes to `main` will automatically rebuild and deploy the docs site.
+The repository includes a GitHub Actions workflow at `.github/workflows/docs.yml` that builds the site with MkDocs and deploys the generated `site/` directory to GitHub Pages.

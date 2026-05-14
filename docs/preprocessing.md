@@ -14,12 +14,12 @@ The preprocessing layer lives primarily in `2p_processing_pipeline_202401/` and 
 
 The preprocessing script performs four main steps:
 
-1. Load a Suite2p parameter template based on the requested target structure
-2. Override key runtime parameters from command-line arguments
-3. Read and binarize raw voltage recordings, then save them to `raw_voltages.h5`
-4. Copy the Bpod session `.mat` file into the processed output directory and run Suite2p
+1. Load a Suite2p parameter template based on the requested target structure.
+2. Override key runtime parameters from command-line arguments.
+3. Read and binarize raw voltage recordings, then save them to `raw_voltages.h5`.
+4. Copy the Bpod session `.mat` file into the processed output directory and run Suite2p.
 
-The core workflow is launched at the bottom of `2p_processing_pipeline_202401/run_suite2p_pipeline.py:200`:
+The core workflow is launched at the bottom of `2p_processing_pipeline_202401/run_suite2p_pipeline.py`:
 
 - parse CLI arguments
 - call `set_params(args)`
@@ -31,8 +31,6 @@ The core workflow is launched at the bottom of `2p_processing_pipeline_202401/ru
 
 ### `set_params(args)`
 
-Defined in `2p_processing_pipeline_202401/run_suite2p_pipeline.py:24`.
-
 Purpose:
 
 - selects a JSON config template based on `target_structure`
@@ -40,7 +38,7 @@ Purpose:
 - injects runtime parameters such as input path, output path, channel count, and functional channel
 - constructs the `db` dictionary required by `suite2p.run_s2p`
 
-Important inputs:
+Important arguments:
 
 - `--target_structure`
 - `--data_path`
@@ -50,14 +48,7 @@ Important inputs:
 - `--denoise`
 - `--spatial_scale`
 
-Important outputs:
-
-- `ops`: runtime Suite2p parameter dictionary
-- `db`: Suite2p database/input descriptor
-
 ### `process_vol(args)`
-
-Defined in `2p_processing_pipeline_202401/run_suite2p_pipeline.py:70`.
 
 Purpose:
 
@@ -78,51 +69,41 @@ Recorded channels include:
 - `vol_led`
 - `vol_2p_stim`
 
-The saved HDF5 layout is documented directly in the `save_vol()` helper inside `process_vol()` around `2p_processing_pipeline_202401/run_suite2p_pipeline.py:161`.
-
 ### `move_bpod_mat(args)`
-
-Defined in `2p_processing_pipeline_202401/run_suite2p_pipeline.py:192`.
 
 Purpose:
 
 - copies the Bpod session `.mat` file from the raw acquisition directory into the output directory as `bpod_session_data.mat`
 
-This is important because downstream trialization and behavior alignment code frequently assumes this file exists next to the processed imaging outputs.
+This handoff matters because many downstream `Trialization` and `ReadResults` modules assume the MATLAB session file exists beside the processed imaging outputs.
 
 ## Inputs and outputs
 
-### Inputs
-
-Typical preprocessing inputs include:
+Typical inputs:
 
 - raw imaging data directory
 - voltage CSV exported by the acquisition system
-- a single Bpod session `.mat` file
-- a config JSON defining Suite2p defaults
+- one Bpod session `.mat` file
+- one config JSON defining Suite2p defaults
 
-### Outputs
+Typical outputs:
 
-Typical outputs include:
-
-- Suite2p outputs under the configured results directory
+- Suite2p outputs under the configured result directory
 - `raw_voltages.h5`
 - `bpod_session_data.mat`
-- `ops.npy` and other Suite2p-generated files
+- `ops.npy` and related Suite2p artifacts
 
-## Configuration files
+## Configuration templates
 
-The preprocessing layer relies on JSON configuration templates:
+The JSON templates define baseline Suite2p settings for different acquisition modes:
 
-- `2p_processing_pipeline_202401/config_neuron.json`
-- `2p_processing_pipeline_202401/config_neuron_1chan.json`
-- `2p_processing_pipeline_202401/config_dendrite.json`
+- `config_neuron.json`
+- `config_neuron_1chan.json`
+- `config_dendrite.json`
 
-These define the baseline Suite2p settings used for different acquisition/ROI detection modes. Runtime arguments then override selected fields.
+Runtime arguments override selected fields without requiring manual editing of the templates.
 
 ## CLI example
-
-Example from the project README:
 
 ```bash
 python run_suite2p_pipeline.py \

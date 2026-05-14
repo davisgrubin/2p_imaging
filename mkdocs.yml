@@ -14,8 +14,10 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Preprocessing: preprocessing.md
-  - Postprocessing: postprocessing.md
+  - 2p Data Preparation Workflow:
+      - Overview: workflow.md
+      - Preprocessing: preprocessing.md
+      - Postprocessing: postprocessing.md
   - Passive: passive.md
   - 2AFC: twoafc.md
   - Closed Loop: closed-loop.md
