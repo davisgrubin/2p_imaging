@@ -1,23 +1,30 @@
 # 2p Data Preparation Workflow
 
-This section groups the shared upstream imaging pipeline that most downstream projects in this repository depend on.
+Raw imaging files and experimental recordings pass through five main steps to become the dF/F time series used for downstream analysis:
 
-## Scope
+<p class="workflow-heading"><strong>Processing</strong></p>
 
-The data preparation workflow is split into two stages:
+<ol class="workflow-steps">
+  <li>Prep</li>
+  <li>Suite2p</li>
+</ol>
 
-- `Preprocessing`: Suite2p-oriented ingestion, voltage extraction, and session metadata handoff
-- `Postprocessing`: ROI quality control, channel-aware labeling, and `dff.h5` generation
+<p class="workflow-heading"><strong>Postprocessing</strong></p>
 
-## Expected handoff files
+<ol start="3" class="workflow-steps">
+  <li>QC</li>
+  <li>Label</li>
+  <li>dF/F</li>
+</ol>
 
-Most downstream analysis projects assume these files already exist in each processed session directory:
+## Five-Step Workflow Overview
 
-- `suite2p/plane0/ops.npy`
-- `raw_voltages.h5`
-- `bpod_session_data.mat`
-- `masks.h5`
-- `dff.h5`
-- often `neural_trials.h5` after trialization
+<div class="overview-flowchart">
+  <img src="../assets/flowchart-large.svg" alt="2p imaging workflow flowchart" />
+</div>
 
-Use the next two pages for the actual preprocessing and postprocessing details.
+The following sections provide more detail on each data processing step, files generated, and definitions of the fields and data contained within.
+
+The two main locations where data is stored are PACE project storage, where files are uploaded from experimental or lab PCs after recording sessions, and the long-term CEDAR data storage.
+
+For more information on the technical specifications of the 2p imaging rig and experimental recording setup, see the respective OneDrive documentation links when they are added here in the future.

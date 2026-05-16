@@ -12,14 +12,18 @@ markdown_extensions:
   - toc:
       permalink: true
 
+extra_css:
+  - stylesheets/extra.css
+
 nav:
   - Home: index.md
   - 2p Data Preparation Workflow:
       - Overview: workflow.md
       - Preprocessing: preprocessing.md
       - Postprocessing: postprocessing.md
-  - Passive: passive.md
-  - 2AFC: twoafc.md
-  - Closed Loop: closed-loop.md
-  - Joystick: joystick.md
-  - EBC: ebc.md
+  - Experiments and Analyses:
+      - Passive: passive.md
+      - 2AFC: twoafc.md
+      - Closed Loop: closed-loop.md
+      - Joystick: joystick.md
+      - EBC: ebc.md
