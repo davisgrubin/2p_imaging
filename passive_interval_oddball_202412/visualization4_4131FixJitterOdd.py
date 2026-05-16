@@ -221,7 +221,8 @@ def run(session_config_list, smooth, cate_list):
             gs = GridSpec(n_row, n_col, figure=fig)
             axs_all = []
             for s in cate_gap*np.arange(len(plotter.cate_list)):
-                a = [plt.subplot(gs[s, i:i+3]) for i in [0,3,6]]
+                a = [plt.subplot(gs[s, i]) for i in range(8)]
+                a+= [plt.subplot(gs[s+1, 0:3])]
                 axs_all.append(a)
             plotter.cell_communication(axs_all)
             fig.set_size_inches(n_col*size_scale, n_row*size_scale)
@@ -297,10 +298,10 @@ def run(session_config_list, smooth, cate_list):
             #plot_sorted_heatmaps_fix_all(),
             #plot_cluster_oddball_jitter_global_all(),
             #plot_cluster_oddball_jitter_local_all(),
-            plot_cluster_oddball_jitter_global_modulation(),
-            #plot_cell_communication(),
+            #plot_cluster_oddball_jitter_global_modulation(),
+            plot_cell_communication(),
             #plot_latent_all(),
-            plot_excluded(),
+            #plot_excluded(),
             #plot_pupil_all(),
         ]
         print('Clearing memory usage')

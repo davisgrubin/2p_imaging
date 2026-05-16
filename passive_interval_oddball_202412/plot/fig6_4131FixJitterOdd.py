@@ -24,7 +24,8 @@ from utils import get_modulation_index_neu_seq
 from utils import get_isi_bin_neu
 from utils import get_expect_interval
 from utils import get_split_idx
-from utils import pair_corr_subsample
+from utils import get_stat_test
+from utils import get_pair_corr
 from utils import get_cmap_color
 from utils import hide_all_axis
 from utils import get_random_rotate_mat_3d
@@ -1419,7 +1420,6 @@ class plotter_utils(utils_basic):
         try: plot_pred_mod_index_box_trial(axs[5], 0, 'pos')
         except: traceback.print_exc()
         
-    
     def plot_cell_communication(self, axs, cate):
         color0 = 'dimgrey'
         color1 = 'deeppink'
@@ -1428,8 +1428,7 @@ class plotter_utils(utils_basic):
         split_idx = get_split_idx(self.list_labels, cate)
         day_cluster_id = np.split(cluster_id, split_idx)
         day_neu_labels = np.split(neu_labels, split_idx)
-        def plot_corr_time(ax, oddball):
-            terget_cate = [-1,1,2]
+        def plot_corr_time(ax, oddball, terget_cate_pair):
             xlim = [-2500, 4000]
             # collect data.
             [_, [_, _, stim_seq, _], _, _] = get_neu_trial(
@@ -1439,68 +1438,71 @@ class plotter_utils(utils_basic):
                 cate=cate, roi_id=None)
             c_idx = stim_seq.shape[0]//2
             neu_seq_fix, neu_seq_jitter = self.get_neu_seq_trial_fix_jitter('global', 1, cate, None)
-            neu_seq_jitter = np.concatenate([np.nanmean(neu, axis=0) for neu in neu_seq_jitter], axis=0)
-            neu_seq_fix = np.concatenate([np.nanmean(neu, axis=0) for neu in neu_seq_fix], axis=0)
             # get data within range.
             win = [-500, stim_seq[c_idx+1,1]+500]
             l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win[0], win[1])
-            neu_seq_fix = neu_seq_fix[:,l_idx:r_idx]
-            neu_seq_jitter = neu_seq_jitter[:,l_idx:r_idx]
+            neu_seq_fix = [ns[:,:,l_idx:r_idx] for ns in neu_seq_fix]
+            neu_seq_jitter = [ns[:,:,l_idx:r_idx] for ns in neu_seq_jitter]
             neu_time = self.alignment['neu_time'][l_idx:r_idx]
-            # split data into populations.
-            list_neu_seq_fix = [neu_seq_fix[np.isin(neu_labels, [tc])] for tc in terget_cate]
-            list_neu_seq_jitter = [neu_seq_jitter[np.isin(neu_labels, [tc])] for tc in terget_cate]
-            # compute similarity across time.
-            corr_fix = pair_corr_subsample(list_neu_seq_fix)
-            corr_jitter = pair_corr_subsample(list_neu_seq_jitter)
+            # separate response pairs.
+            neu_seq_fix_pair = [[ns[:,dnl==terget_cate_pair[0],:], ns[:,dnl==terget_cate_pair[1],:]]
+                                for ns, dnl in zip(neu_seq_fix, day_neu_labels)
+                                if np.sum(dnl == terget_cate_pair[0]) > 0 and np.sum(dnl == terget_cate_pair[1]) > 0]
+            neu_seq_jitter_pair = [[ns[:,dnl==terget_cate_pair[0],:], ns[:,dnl==terget_cate_pair[1],:]]
+                                   for ns, dnl in zip(neu_seq_jitter, day_neu_labels)
+                                   if np.sum(dnl == terget_cate_pair[0]) > 0 and np.sum(dnl == terget_cate_pair[1]) > 0]
+            # get correlations.
+            corr_fix = np.concatenate([get_pair_corr(ns) for ns in neu_seq_fix_pair], axis=0)
+            corr_jitter = np.concatenate([get_pair_corr(ns) for ns in neu_seq_jitter_pair], axis=0)
+            m_0, s_0 = get_mean_sem(corr_fix)
+            m_1, s_1 = get_mean_sem(corr_jitter)
+            # define evaluation windows.
+            if oddball == 0:
+                win_eval = [stim_seq[c_idx+1,0], stim_seq[c_idx+1,0]+500]
+            if oddball == 1:
+                win_eval = [stim_seq[c_idx,1]+self.expect, stim_seq[c_idx,1]+self.expect+500]
+            l_idx, r_idx = get_frame_idx_from_time(self.alignment['neu_time'], 0, win_eval[0], win_eval[1])
+            # find bounds.
+            upper = np.nanmax([m_0, m_1])
+            lower = np.nanmin([m_0, m_1])
             # define layouts.
-            pairs = [(ci, cj) for ci, _ in enumerate(terget_cate)
-                 for cj, _ in enumerate(terget_cate)
-                 if ci > cj]
-            w = (1-0.05*(len(pairs)+1))/len(pairs)
-            axs = {}
-            for k, (ci, cj) in enumerate(pairs):
-                axs[(ci, cj)] = ax.inset_axes([0.05+k*(w+0.05), 0.15, (1-0.05*(len(pairs)+1))/len(pairs), 0.6])
+            ax.axis('off')
+            ax = ax.inset_axes([0, 0, 1, 0.60], transform=ax.transAxes)
+            # plot stimulus.
+            c_idx = stim_seq.shape[0]//2
+            if oddball == 0:
+                ax.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+            if oddball == 1:
+                ax.axvline(stim_seq[c_idx,1]+self.expect, color='gold', lw=1, linestyle='--')
+                ax.axvline(stim_seq[c_idx+1,0], color='red', lw=1, linestyle='--')
+            for si in [0,1]:
+                ax.fill_between(
+                    stim_seq[c_idx+si,:],
+                    lower, upper,
+                    color=color0, edgecolor='none', alpha=0.25, step='mid')
+            for si in [-1,2]:
+                ax.fill_between(
+                    stim_seq[c_idx+si,:],
+                    lower, upper,
+                    color='none', edgecolor=color0, alpha=0.25, step='mid')
             # plot results.
-            for ci, _ in enumerate(terget_cate):
-                for cj, _ in enumerate(terget_cate):
-                    if ci <= cj: continue
-                    axs[(ci, cj)] = axs[(ci, cj)]
-                    m_0, s_0 = get_mean_sem(corr_fix[ci, cj, :, :].reshape(-1, corr_fix.shape[3]))
-                    m_1, s_1 = get_mean_sem(corr_jitter[ci, cj, :, :].reshape(-1, corr_jitter.shape[3]))
-                    # plot stimulus.
-                    if oddball == 0:
-                        axs[(ci, cj)].axvline(stim_seq[c_idx + 1, 0], color='red', lw=1, linestyle='--')
-                    if oddball == 1:
-                        axs[(ci, cj)].axvline(stim_seq[c_idx, 1] + self.expect, color='gold', lw=1, linestyle='--')
-                        axs[(ci, cj)].axvline(stim_seq[c_idx + 1, 0], color='red', lw=1, linestyle='--')
-                    for si in [0, 1]:
-                        axs[(ci, cj)].fill_between(
-                            stim_seq[c_idx + si, :], -0.03, 0.03,
-                            color=color0, edgecolor='none', alpha=0.25, step='mid')
-                    for si in [-1, 2]:
-                        axs[(ci, cj)].fill_between(
-                            stim_seq[c_idx + si, :], -0.03, 0.03,
-                            color='none', edgecolor=color0, alpha=0.25, step='mid')
-                    # plot traces.
-                    self.plot_mean_sem(axs[(ci, cj)], neu_time, m_0, s_0, color1)
-                    self.plot_mean_sem(axs[(ci, cj)], neu_time, m_1, s_1, color2)
-                    # adjust layouts.
-                    axs[(ci, cj)].spines['right'].set_visible(False)
-                    axs[(ci, cj)].spines['top'].set_visible(False)
-                    add_ax_ticks(axs[(ci, cj)], 'x', 8)
-                    axs[(ci, cj)].set_xlim(xlim)
-                    axs[(ci, cj)].set_ylim([-0.03, 0.03])
-                    axs[(ci, cj)].yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
-                    axs[(ci, cj)].yaxis.set_major_locator(mtick.MaxNLocator(nbins=5))
-                    if (ci, cj) != pairs[0]:
-                        axs[(ci, cj)].set_yticks([])
-                    # clear title for each subplot
-                    axs[(ci, cj)].set_title(f'{self.label_names[str(terget_cate[ci])]} - {self.label_names[str(terget_cate[cj])]}')
-            # shared labels on first subplot
-            axs[pairs[0]].set_xlabel('Time from deviant (s)')
-            axs[pairs[0]].set_ylabel('Correlation coefficient')
-            hide_all_axis(ax)
+            self.plot_mean_sem(ax, neu_time, m_0, s_0, color1)
+            self.plot_mean_sem(ax, neu_time, m_1, s_1, color2)
+            # plot evaluation window.
+            ax.hlines(upper, win_eval[0], win_eval[1], color='black', lw=1)
+            _, r = get_stat_test(m_0[l_idx:r_idx], m_1[l_idx:r_idx], method='wilcoxon')
+            ax.text(np.mean(win_eval), upper + 0.05*(upper-lower), self.stat_sym[r], ha='center', va='center')
+            # adjust layouts.
+            ax.spines['right'].set_visible(False)
+            ax.spines['top'].set_visible(False)
+            add_ax_ticks(ax, 'x', 8)
+            ax.set_xlim(xlim)
+            ax.set_ylim([lower - 0.1*(upper-lower), upper + 0.1*(upper-lower)])
+            ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.3f'))
+            ax.yaxis.set_major_locator(mtick.MaxNLocator(nbins=4))
+            ax.set_xlabel('Time from deviant (s)')
+            ax.set_ylabel('Correlation coefficient')
+            ax.set_title(f'{self.label_names[str(terget_cate_pair[0])]} - {self.label_names[str(terget_cate_pair[1])]}')
         def plot_interaction_strength(ax):
             target_cate = [-1,1]
             xlim = [-500, 4000]
@@ -1661,11 +1663,23 @@ class plotter_utils(utils_basic):
             hide_all_axis(ax_xy)
             hide_all_axis(ax_yx)
         # plot all.
-        try: plot_corr_time(axs[0], 0)
+        try: plot_corr_time(axs[0], 1, [-1,-1])
         except: traceback.print_exc()
-        try: plot_corr_time(axs[1], 1)
+        try: plot_corr_time(axs[1], 1, [1,1])
         except: traceback.print_exc()
-        try: plot_interaction_strength(axs[2])
+        try: plot_corr_time(axs[2], 1, [-1,1])
+        except: traceback.print_exc()
+        try: plot_corr_time(axs[3], 1, [2,2])
+        except: traceback.print_exc()
+        try: plot_corr_time(axs[4], 0, [-1,-1])
+        except: traceback.print_exc()
+        try: plot_corr_time(axs[5], 0, [1,1])
+        except: traceback.print_exc()
+        try: plot_corr_time(axs[6], 0, [-1,1])
+        except: traceback.print_exc()
+        try: plot_corr_time(axs[7], 0, [2,2])
+        except: traceback.print_exc()
+        try: plot_interaction_strength(axs[8])
         except: traceback.print_exc()
         
     def plot_sorted_heatmaps_fix_all(self, axs, norm_mode, cate):

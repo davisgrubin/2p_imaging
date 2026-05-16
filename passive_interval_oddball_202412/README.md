@@ -800,3 +800,11 @@
 - Adjusted plot_pred_mod_index_dist layouts.
 - Rewritten get_modulation_index_neu_seq.
 - Added errorbar to plot_cluster_standard_time_decode_confusion line plot.
+
+## 2026.05.12
+- Rewritten plot_corr_time.
+- Rewritten get_pair_corr.
+
+
+
+

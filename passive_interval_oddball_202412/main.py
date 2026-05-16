@@ -71,14 +71,14 @@ def run(session_config_list, cate_list):
     print('===============================================')
     print('======= plotting 1451ShortLong results ========')
     print('===============================================')
-    fn3 = visualization3_1451ShortLong.run(session_config_list, smooth, cate_list)
-    #fn3 = []
+    #fn3 = visualization3_1451ShortLong.run(session_config_list, smooth, cate_list)
+    fn3 = []
 
     print('===============================================')
     print('====== plotting 4131FixJitterOdd results ======')
     print('===============================================')
-    #fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
-    fn4 = []
+    fn4 = visualization4_4131FixJitterOdd.run(session_config_list, smooth, cate_list)
+    #fn4 = []
 
     print('===============================================')
     print('===== plotting 3331RandomExtended results =====')
@@ -108,7 +108,7 @@ def run(session_config_list, cate_list):
 
 
 if __name__ == "__main__":
-    COMMANDLINE_MODE = 0
+    COMMANDLINE_MODE = 1
     cate_list = [[-1,1,2]]
     #cate_list = [[-1], [1], [2], [-1,1,2]]
     from session_configs import all_config_list
@@ -143,22 +143,22 @@ if __name__ == "__main__":
                 #'YH18VT_V1_20250528_3331Random' : 'random',
                 #'YH18VT_V1_20250529_3331Random' : 'random',
                 #'YH18VT_V1_20250530_3331Random' : 'random',
-                #'YH18VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250331_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250401_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250402_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250403_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250407_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250408_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250409_4131FixJitterOdd' : 'fix_jitter_odd',
-                #'YH18VT_V1_20250410_4131FixJitterOdd' : 'fix_jitter_odd',
-                'VTYH02_PPC_20250118_4131FixJitterOdd' : 'fix_jitter_odd',
-                'VTYH02_PPC_20250127_4131FixJitterOdd' : 'fix_jitter_odd',
-                'VTYH02_PPC_20250123_4131FixJitterOdd' : 'fix_jitter_odd',
-                'VTYH02_PPC_20250122_4131FixJitterOdd' : 'fix_jitter_odd',
-                'VTYH02_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
-                'VTYH02_PPC_20250120_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250326_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250328_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250331_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250401_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250402_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250403_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250407_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250408_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250409_4131FixJitterOdd' : 'fix_jitter_odd',
+                'YH18VT_V1_20250410_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'VTYH02_PPC_20250118_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'VTYH02_PPC_20250127_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'VTYH02_PPC_20250123_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'VTYH02_PPC_20250122_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'VTYH02_PPC_20250121_4131FixJitterOdd' : 'fix_jitter_odd',
+                #'VTYH02_PPC_20250120_4131FixJitterOdd' : 'fix_jitter_odd',
                 },
             'session_folder' : 'test',
             'sig_tag' : 'all',

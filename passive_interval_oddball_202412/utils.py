@@ -22,6 +22,7 @@ from scipy.stats import anderson_ksamp
 from scipy.stats import wilcoxon
 from scipy.stats import permutation_test
 from scipy.stats import rankdata
+from scipy.stats import zscore
 from scipy.spatial.distance import pdist
 from scipy.signal import savgol_filter
 from scipy.signal import find_peaks
@@ -696,19 +697,16 @@ def get_win_mag_quant_stat_test(neu_seq_1, neu_seq_2, neu_time, c_time, win_eval
     r = np.array([get_stat_test(n1, n2, method)[1] for n1, n2 in zip(neu_1, neu_2)])
     return p, r
 
-# compute correlation through time between rows for all pairs.
-def pair_corr_subsample(list_data):
-    n_subample = 100
-    n_splits = 250
-    corr = np.full((len(list_data), len(list_data), n_splits, list_data[0].shape[1]), np.nan)
-    for s in range(n_splits):
-        idx = [np.random.choice(x.shape[0], n_subample, replace=False) for x in list_data]
-        rank = [rankdata(x[i], axis=0) for x, i in zip(list_data, idx)]
-        rank = [(r - r.mean(0)) / r.std(0) for r in rank]
-        for i,_ in enumerate(list_data):
-            for j,_ in enumerate(list_data):
-                c = (rank[i] * rank[j]).mean(0)
-                corr[i, j, s] = corr[j, i, s] = c
+# compute correlation through time between for all neuron pairs across trials.
+def get_pair_corr(neu_seq_pair):
+    x = rankdata(neu_seq_pair[0], axis=0)
+    y = rankdata(neu_seq_pair[1], axis=0)
+    x -= np.mean(x, axis=0, keepdims=True)
+    y -= np.mean(y, axis=0, keepdims=True)
+    x /= np.linalg.norm(x, axis=0, keepdims=True)
+    y /= np.linalg.norm(y, axis=0, keepdims=True)
+    corr = np.einsum('ant,bnt->abt', x.transpose(1,0,2), y.transpose(1,0,2)).reshape(-1, x.shape[2])
+    #corr = savgol_filter(corr, window_length=3, polyorder=1, axis=1)
     return corr
 
 # average across subsampling neurons.

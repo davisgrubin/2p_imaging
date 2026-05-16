@@ -241,7 +241,7 @@ def decoding_time_single(neu_x, neu_time, bin_times):
 
 # regression from one population to another.
 def regression_pop(neu_x, neu_y):
-    n_splits = 25
+    n_splits = 5
     test_size = 0.2
     alphas = np.logspace(-3, 3, 13)
     # run model.
