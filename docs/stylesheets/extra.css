@@ -20,3 +20,54 @@
   width: 100%;
   height: auto;
 }
+
+.channel-diagram {
+  position: relative;
+  max-width: 760px;
+  margin: 1.5rem auto 0.75rem;
+  padding: 1rem 0 2.5rem;
+  height: 430px;
+}
+
+.channel-card {
+  position: absolute;
+  width: 62%;
+  background: #fff;
+  border: 1px solid #d8dee9;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.channel-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.channel-label {
+  padding: 0.6rem 0.85rem 0.75rem;
+  font-size: 0.95rem;
+  text-align: center;
+  font-weight: 600;
+  background: #f8fafc;
+}
+
+.channel-card.functional {
+  left: 0;
+  top: 0;
+  z-index: 1;
+}
+
+.channel-card.anatomical {
+  right: 0;
+  top: 3.2rem;
+  z-index: 2;
+}
+
+.channel-caption {
+  text-align: center;
+  font-size: 0.95rem;
+  color: #4a5568;
+  margin-top: 0.25rem;
+}
