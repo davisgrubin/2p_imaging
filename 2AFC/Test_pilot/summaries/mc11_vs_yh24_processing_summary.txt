@@ -1,0 +1,15 @@
+[MC11] /storage/scratch1/3/grubin6/2p_processing_results/MC11_20260319_2afc_PFC-1332
+  nchannels=2 functional_chan=2 align_by_chan=1
+  denoise=1 spatial_scale=1 threshold_scaling=1.0 diameter=0
+  meanImg_chan2=present
+  raw_stat=669 iscell_true=465 qc_stat=30
+  labels={-1: 29, 0: 1}
+  masks_anat_nonzero=560
+  masks_anat_corrected_nonzero=560
+
+[YH24] /storage/cedar/cedar0/cedarp-fnajafi3-0/2p_imaging/processed/2afc/YH24LG/YH24LG_CRBL_lobulev_20250701_2afc-533
+  nchannels=1 functional_chan=2 align_by_chan=1
+  denoise=1 spatial_scale=1 threshold_scaling=1.0 diameter=0
+  meanImg_chan2=missing
+  raw_stat=2379 iscell_true=209 qc_stat=293
+  labels={-1: 293}

@@ -1,0 +1,7 @@
+--recursive /storage/scratch1/3/grubin6/2p_processing_results/MC11_20260317_2afc_PFC-1326 /Users/davisgrubin/MC11_2AFC/MC11_20260317_2afc_PFC-1326
+--recursive /storage/scratch1/3/grubin6/2p_processing_results/MC11_20260318_2afc_PFC-1329 /Users/davisgrubin/MC11_2AFC/MC11_20260318_2afc_PFC-1329
+--recursive /storage/scratch1/3/grubin6/2p_processing_results/MC11_20260319_2afc_PFC-1332 /Users/davisgrubin/MC11_2AFC/MC11_20260319_2afc_PFC-1332
+--recursive /storage/scratch1/3/grubin6/2p_processing_results/MC11_20260320_2afc_PFC-1335 /Users/davisgrubin/MC11_2AFC/MC11_20260320_2afc_PFC-1335
+--recursive /storage/scratch1/3/grubin6/2p_processing_results/MC11_20260324_2afc_PFC-1342 /Users/davisgrubin/MC11_2AFC/MC11_20260324_2afc_PFC-1342
+--recursive /storage/scratch1/3/grubin6/2p_processing_results/MC11_20260327_2afc_PFC-1359 /Users/davisgrubin/MC11_2AFC/MC11_20260327_2afc_PFC-1359
+--recursive /storage/scratch1/3/grubin6/2p_processing_results/MC11_20260330_2afc_PFC-1377 /Users/davisgrubin/MC11_2AFC/MC11_20260330_2afc_PFC-1377

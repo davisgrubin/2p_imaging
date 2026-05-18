@@ -1,0 +1,55 @@
+MC11 channel and QC explanation
+
+What "processed as 2-channel" means
+- The MC11 pipeline run used:
+  - nchannels = 2
+  - functional_chan = 2
+  - align_by_chan = 1
+- In plain language, Suite2p was told there are two imaging channels in the data.
+- It treated channel 2 as the functional/calcium channel for ROI extraction.
+- It used channel 1 for registration alignment.
+- Because nchannels=2, the later labeling code also expects an anatomy image in `meanImg_chan2` / channel-2-related outputs for overlap-based inhibitory labeling.
+
+What "effectively 1-channel" means for the YH24 comparison session
+- The YH24 processed session we compared has:
+  - nchannels = 1
+  - meanImg_chan2 missing
+- In plain language, the processed output only has one usable imaging channel.
+- That means there is no second anatomy/reference channel available for inhibitory labeling.
+- So the analysis code can still try to plot inhibitory responses, but the processing output does not contain the information needed to label cells as inhibitory.
+
+Why this matters
+- If a session is processed as 1-channel:
+  - ROI detection can still work
+  - dF/F can still work
+  - but anatomy-based inhibitory labeling usually cannot
+- If a session is processed as 2-channel:
+  - the pipeline assumes one channel can support anatomy-based labeling
+  - but that only helps if the second channel really contains the expected anatomy signal
+
+What this means for your current sessions
+- YH24 comparison session:
+  - no inhibitory labels are expected, because it is effectively 1-channel
+- MC11:
+  - inhibitory labeling is at least possible in principle because it was processed as 2-channel
+  - but it still produced no inhibitory labels, which suggests the anatomy/overlap step is not identifying them successfully
+
+Why MC11 still looks worse than YH24
+- The bigger issue is not just labeling.
+- MC11 is losing many ROIs during QC.
+- For the compared MC11 session:
+  - raw Suite2p ROIs = 669
+  - after QC = 30
+- The two strongest QC bottlenecks are:
+  - skew threshold
+  - compact threshold
+- So even before worrying about inhibitory labeling, MC11 is already being reduced to a very small ROI set.
+
+Most likely interpretation
+- "2-channel" vs "1-channel" mostly explains why inhibitory labeling is even possible or impossible.
+- It does not by itself explain the very low MC11 ROI count.
+- The low MC11 ROI count is more likely due to QC thresholds being poorly matched to MC11 ROI statistics.
+
+Best next step
+- First address QC for MC11 (especially skew and compact thresholds).
+- Then separately verify whether the MC11 second channel is actually the intended anatomy channel for inhibitory labeling.

@@ -1,0 +1,7 @@
+--recursive /storage/scratch1/3/grubin6/2p_processing_results/MC11_20260317_2afc_PFC-1326 {LOCAL_BASE}/MC11_20260317_2afc_PFC-1326
+--recursive /storage/scratch1/3/grubin6/2p_processing_results/MC11_20260318_2afc_PFC-1329 {LOCAL_BASE}/MC11_20260318_2afc_PFC-1329
+--recursive /storage/scratch1/3/grubin6/2p_processing_results/MC11_20260319_2afc_PFC-1332 {LOCAL_BASE}/MC11_20260319_2afc_PFC-1332
+--recursive /storage/scratch1/3/grubin6/2p_processing_results/MC11_20260320_2afc_PFC-1335 {LOCAL_BASE}/MC11_20260320_2afc_PFC-1335
+--recursive /storage/scratch1/3/grubin6/2p_processing_results/MC11_20260324_2afc_PFC-1342 {LOCAL_BASE}/MC11_20260324_2afc_PFC-1342
+--recursive /storage/scratch1/3/grubin6/2p_processing_results/MC11_20260327_2afc_PFC-1359 {LOCAL_BASE}/MC11_20260327_2afc_PFC-1359
+--recursive /storage/scratch1/3/grubin6/2p_processing_results/MC11_20260330_2afc_PFC-1377 {LOCAL_BASE}/MC11_20260330_2afc_PFC-1377

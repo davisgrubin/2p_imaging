@@ -1,0 +1,49 @@
+MC11 processed session QC summary
+
+QC thresholds used in staged workflow:
+- skew in [0.4, 1]
+- compact in [1.1, 5]
+- footprint in [1, 2]
+- connect <= 30
+- aspect <= 55
+
+MC11_20260317_2afc_PFC-1326
+- raw_stat: 329
+- iscell_true: 101
+- qc_stat: 19
+- labels: {0: 19}
+- dropped_by_any_qc_rule: 310
+- main_qc_hits: skew=309, compact=86, footprint=18, connect=8, aspect=0
+- median_metrics: skew=1.680, compact=1.412, footprint=2.000, connect=9.000, aspect=1.084
+
+MC11_20260318_2afc_PFC-1329
+- raw_stat: 386
+- iscell_true: 137
+- qc_stat: 23
+- labels: {-1: 23}
+- dropped_by_any_qc_rule: 363
+- main_qc_hits: skew=234, compact=288, footprint=36, connect=7, aspect=0
+- median_metrics: skew=0.577, compact=1.038, footprint=1.000, connect=2.000, aspect=1.119
+
+MC11_20260319_2afc_PFC-1332
+- raw_stat: 669
+- iscell_true: 465
+- qc_stat: 30
+- labels: {-1: 29, 0: 1}
+- dropped_by_any_qc_rule: 639
+- main_qc_hits: skew=536, compact=515, footprint=18, connect=4, aspect=0
+- median_metrics: skew=1.100, compact=1.045, footprint=2.000, connect=2.000, aspect=1.131
+
+MC11_20260320_2afc_PFC-1335
+- raw_stat: 528
+- iscell_true: 428
+- qc_stat: 30
+- labels: {-1: 30}
+- dropped_by_any_qc_rule: 498
+- main_qc_hits: skew=396, compact=456, footprint=24, connect=8, aspect=0
+- median_metrics: skew=1.251, compact=1.029, footprint=2.000, connect=3.000, aspect=1.118
+
+Settings consistency check
+
+- same core Suite2p settings across processed MC11 sessions: True
+- reference settings from MC11_20260317_2afc_PFC-1326: {'nchannels': 2, 'functional_chan': 2, 'align_by_chan': 1, 'denoise': 1, 'spatial_scale': 1, 'threshold_scaling': 1.0, 'diameter': 0, 'tau': 0.25, 'fs': 30.0, 'high_pass': 100.0, 'max_overlap': 0.75}

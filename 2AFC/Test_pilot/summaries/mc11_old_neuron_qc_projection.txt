@@ -1,0 +1,14 @@
+MC11 projected ROI counts under old neuron QC thresholds
+skew=[-5, 5], max_connect=1, max_aspect=5, footprint=[1, 2], compact=[0, 1.06]
+
+MC11_20260317_2afc_PFC-1326: raw_stat=329, projected_qc_stat=14, dropped=315
+  main_hits: connect=312, compact=263, footprint=18, aspect=0, skew=0
+
+MC11_20260318_2afc_PFC-1329: raw_stat=386, projected_qc_stat=133, dropped=253
+  main_hits: connect=229, compact=145, footprint=36, aspect=0, skew=0
+
+MC11_20260319_2afc_PFC-1332: raw_stat=669, projected_qc_stat=164, dropped=505
+  main_hits: connect=457, compact=260, footprint=18, aspect=0, skew=1
+
+MC11_20260320_2afc_PFC-1335: raw_stat=528, projected_qc_stat=123, dropped=405
+  main_hits: connect=402, compact=138, footprint=24, aspect=0, skew=0

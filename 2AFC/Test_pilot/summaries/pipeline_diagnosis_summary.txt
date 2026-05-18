@@ -1,0 +1,82 @@
+Pipeline diagnosis summary
+
+1) Why analysis expects inhibitory neurons
+- The plotting/analysis code uses `labels` from `masks.h5` and assumes:
+  - -1 = excitatory
+  -  0 = unsure
+  -  1 = inhibitory
+- Inhibitory labels are assigned only when anatomy masks overlap functional masks strongly enough.
+- Code path:
+  - LabelExcInh.get_mask() uses `ops['meanImg_chan2']` only if `ops['nchannels'] == 2`
+  - LabelExcInh.get_label() sets label=1 only if overlap probability > 0.5
+- Therefore the analysis can plot inhibitory columns, but only if processing generated any `labels == 1`.
+
+2) Why no inhibitory labels appear
+- YH24 comparison session (`YH24LG_CRBL_lobulev_20250701_2afc-533`) is 1-channel:
+  - nchannels=1
+  - meanImg_chan2 missing
+  - so inhibitory labeling is effectively unavailable
+- MC11 comparison session is 2-channel:
+  - nchannels=2
+  - meanImg_chan2 present
+  - but labels are only {-1:29, 0:1}, so Cellpose/anatomy overlap never exceeded the inhibitory threshold
+- Conclusion: empty inhibitory plots are expected from current processed outputs.
+
+3) Why MC11 loses so many ROIs
+Compared sessions:
+- MC11_20260319_2afc_PFC-1332
+  - raw_stat=669
+  - iscell_true=465
+  - qc_stat=30
+- YH24LG_CRBL_lobulev_20250701_2afc-533
+  - raw_stat=2379
+  - iscell_true=209
+  - qc_stat=293
+
+MC11 actual run settings:
+- nchannels=2
+- functional_chan=2
+- align_by_chan=1
+- denoise=1
+- spatial_scale=1
+- threshold_scaling=1.0
+- diameter=0
+
+QC thresholds used by the local staged workflow:
+- skew in [0.4, 1]
+- compact in [1.1, 5]
+- footprint in [1, 2]
+- connect <= 30
+- aspect <= 55
+
+QC metric breakdown on raw Suite2p ROIs:
+- MC11
+  - total=669 keep=30 drop=639
+  - skew_bad=536
+  - compact_bad=515
+  - footprint_bad=18
+  - connect_bad=4
+- YH24 (same thresholds applied to raw Suite2p stat)
+  - total=2379 keep=552 drop=1827
+  - skew_bad=1280
+  - compact_bad=798
+  - footprint_bad=549
+  - connect_bad=35
+
+Key observation:
+- MC11 median skew=1.10, above the max allowed 1.0
+- MC11 median compact=1.045, below the min allowed 1.1
+- So MC11 is hit especially hard by the skew and compact thresholds.
+
+4) Main likely causes
+- The analysis expects inhibitory labels because it was written for datasets where anatomy-based labeling exists.
+- The chosen YH24 comparison session is 1-channel, so inhibitory labels are not possible there.
+- MC11 is 2-channel, but anatomy overlap is still too weak/different to produce label=1 cells.
+- The big MC11 ROI loss is primarily a QC-threshold mismatch, especially skew/compact, not just notebook behavior.
+- There is also a channel-layout mismatch between cohorts:
+  - MC11 processed as nchannels=2, functional_chan=2, align_by_chan=1
+  - YH24 comparison session is effectively 1-channel
+
+5) Most actionable next step
+- Relax or re-tune MC11 QC thresholds first, especially skew and compact.
+- Separately, verify whether MC11 channel 2 is actually the intended anatomy/inhibitory-label channel.

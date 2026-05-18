@@ -1,0 +1,71 @@
+QC thresholds comparison
+
+1) Older 202404 postprocess module
+Source:
+- 2p_imaging/blob/main/2p_post_process_module_202404/run_postprocess.py
+
+Dendrites preset:
+- range_skew = [0, 2]
+- max_connect = 2
+- range_aspect = [1.2, 5]
+- range_footprint = [1, 2]
+- range_compact = [1.06, 5]
+- diameter = 6
+
+Neurons preset:
+- range_skew = [-5, 5]
+- max_connect = 1
+- range_aspect = [0, 5]
+- range_footprint = [1, 2]
+- range_compact = [0, 1.06]
+- diameter = 6
+
+2) Shared current postprocess defaults
+Source:
+- /storage/project/r-fnajafi3-0/saminnaji3/Projects/JoystickProcessing2026/PostProcessing/run_postprocess.py
+
+Active default block:
+- range_skew = [0.4, 1]
+- max_connect = 30
+- max_aspect = 55
+- range_footprint = [1, 2]
+- range_compact = [1, 1.5]
+- diameter = 6
+
+3) Actual MC11 staged pipeline values
+Source:
+- /storage/scratch1/3/grubin6/2p_processing_pipeline_20250522/sbatch_mc11/run_postprocess_stage.py
+
+Values used:
+- range_skew = [0.4, 1]
+- max_connect = 30
+- max_aspect = 55
+- range_footprint = [1, 2]
+- range_compact = [1.1, 5]
+- diameter = 6
+
+4) Provenance / interpretation
+- The MC11 staged workflow did NOT use the older 202404 neuron preset.
+- It was based on the newer shared PostProcessing code path, not the older module.
+- Most MC11 QC values match the newer shared defaults exactly:
+  - skew
+  - connect
+  - aspect
+  - footprint
+  - diameter
+- The one notable difference is compact:
+  - shared default: [1, 1.5]
+  - MC11 staged wrapper: [1.1, 5]
+
+5) Where the MC11 values came from
+- They came from the local staged wrapper we used to run MC11:
+  - /storage/scratch1/3/grubin6/2p_processing_pipeline_20250522/sbatch_mc11/run_postprocess_stage.py
+- They were not taken from the notebook folder.
+- They were not inferred from the processed MC11 outputs after the fact.
+- They appear to have been set manually in that wrapper when adapting the pipeline.
+- I did NOT infer the currently-used values; I read them directly from the wrapper code.
+- I also did NOT invent the shared-default values; I read them directly from the shared run_postprocess.py.
+
+6) Practical implication
+- The main mismatch is that MC11 was run with a hand-edited compact threshold set.
+- Because many MC11 ROIs have compact around ~1.03 to ~1.05, the MC11 lower bound of 1.1 likely removes many cells.

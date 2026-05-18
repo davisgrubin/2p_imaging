@@ -1,0 +1,37 @@
+defaults:
+  - model: nlb_mc_maze    # Standard architecture for single-population data
+  - datamodule: base      # Standard data loader
+  - callbacks: default
+  - trainer: default
+  - _self_
+
+datamodule:
+  # The basic datamodule uses 'datafile_pattern', not 'data_paths'
+  datafile_pattern: "lfads_data.h5" 
+  batch_size: 64
+
+model:
+  # --- CRITICAL: GAUSSIAN FOR dF/F ---
+  # Instead of defining the class target manually, we use this flag.
+  # The model handles the switch to GaussianReconstruction internally.
+  recon_loss: "mse" 
+  
+  # --- DIMENSIONS (Matched to your data) ---
+  encod_data_dim: 253    # Your n_neurons
+  encod_seq_len: 180     # Your n_time_steps
+  recon_seq_len: 180     # Must match encod_seq_len for standard LFADS
+  ext_input_dim: 1       # Your stimulus channel
+
+  # --- HYPERPARAMETERS ---
+  # These control the model capacity
+  fac_dim: 4             # Latent factors (bottleneck)
+  co_dim: 2              # Controller dimension
+  
+  # Regularization (helps prevent overfitting on calcium data)
+  dropout_rate: 0.1      
+  l2_gen_scale: 1e-5     # Small penalty on generator weights
+  l2_con_scale: 1e-5     # Small penalty on controller weights
+  lr_init: 1.0e-3        # 1e-4 is often too slow; 1e-3 is a better start
+
+trainer:
+  max_epochs: 200
